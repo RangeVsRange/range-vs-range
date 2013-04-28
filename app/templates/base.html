@@ -1,0 +1,14 @@
+<html>
+  <head>
+    {% if title %}
+    <title>{{title}} - Range vs. Range</title>
+    {% else %}
+    <title>Range vs. Range</title>
+    {% endif %}
+  </head>
+  <body>
+    <div>Range vs. Range: <a href="/index">Home</a></div>
+    <hr>
+    {% block content %}{% endblock %}
+  </body>
+</html>
