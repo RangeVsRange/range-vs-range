@@ -1,13 +1,13 @@
 from flask import render_template, make_response
-from rvr import app
+from rvr import APP
 
-@app.route('/')
-@app.route('/index')
+@APP.route('/')
+@APP.route('/index')
 def index():
-  return render_template('index.html', title = 'Home')
+    return render_template('index.html', title = 'Home')
 
-@app.route('/robots.txt')
+@APP.route('/robots.txt')
 def robots_exclusion():
-  response = make_response(render_template('robots.txt'))
-  response.headers['Content-Type'] = 'text/plain'
-  return response
+    response = make_response(render_template('robots.txt'))
+    response.headers['Content-Type'] = 'text/plain'
+    return response
