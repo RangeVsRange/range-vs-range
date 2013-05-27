@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Preflop Page</h2>
+<p>Range vs. Range supports 2, 3 and 6-player preflop games<sup><a href="#note1">[1]</a></sup>. Pick one!</p>
+<form>
+<p>
+<input type="radio" name="preflop" id="idPreflop1" value="0" checked="checked" />
+<label for="idPreflop1">Heads-up</label>
+<br>
+<input type="radio" name="preflop" id="idPreflop2" value="1" checked="checked" />
+<label for="idPreflop2">Blind vs. blind</label>
+<br>
+<input type="radio" name="preflop" id="idPreflop3" value="2" checked="checked" />
+<label for="idPreflop3">BTN vs. both blinds</label>
+<br>
+<input type="radio" name="preflop" id="idPreflop4" value="3" checked="checked" />
+<label for="idPreflop4">6-max preflop</label>
+</p>
+<p><input type="submit" value="Go!" /><em> (will take the user to the <a href="/confirmation">Confirmation Page</a>)</em></p>
+<hr>
+</form>
+<p>Or you can <a href="/open-games">Browse Open Games</a> and choose from one of 3 preflop games waiting to start!</p>
+<hr>
+<p><a name="note1" /><strong>Note 1:</strong> Keep in mind, the more players, the slower the game.</p>
+{% endblock %}

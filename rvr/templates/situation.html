@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Situation Page</h2>
+<p>Range vs. Range is very new, and there are only a few training situations. We've chosen the most profitable<sup><a href="#note1">[1]</a></sup> situations to start with. Soon, you will be able to customise situations entirely. Pick a situation!</p>
+<form>
+<p>
+<input type="radio" name="situation" id="idSituation1" value="0" checked="checked" />
+<label for="idSituation1">BB vs. a steal</label>
+<br>
+<input type="radio" name="situation" id="idSituation2" value="1" />
+<label for="idSituation2">CO vs. a re-steal</label>
+<br>
+<input type="radio" name="situation" id="idSituation3" value="2" />
+<label for="idSituation3">BTN cold call</label>
+</p>
+<p><input type="submit" value="Go!" /><em> (will take the user to the <a href="/texture">Flop Texture Page</a>)</em></p>
+<hr>
+</form>
+<p>Or you can <a href="/open-games">Browse Open Games</a> and choose from one of 4 games waiting to start!</p>
+<hr>
+<p><a name="note1" /><strong>Note 1:</strong> Here, profitable means that you have the most room to improve your winrate. While flopping middle set in position on a dry board against an aggressive opponent might be a very profitable situation to be in, it's not a spot where post-flop training is going to make much difference to your winrate!</p>
+{% endblock %}

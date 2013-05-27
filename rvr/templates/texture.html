@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Flop Texture Page</h2>
+<p>Range vs. Range lets you target the exact spots where your game needs the most work. This includes training for specific board textures. Pick one!</p>
+<form>
+<p>
+<input type="radio" name="texture" id="idTexture1" value="0" checked="checked" />
+<label for="id1">Random Flop</label>
+<br>
+<input type="radio" name="texture" id="idTexture2" value="1" />
+<label for="id2"><strong>Kh 8d 3c</strong> - Dry Flop</label>
+<br>
+<input type="radio" name="texture" id="idTexture3" value="2" />
+<label for="id3"><strong>As Jc 8c</strong> - Semi-Wet Flop</label>
+<br>
+<input type="radio" name="texture" id="idTexture3" value="2" />
+<label for="id3"><strong>9h 8h 6d</strong> - Wet Flop</label>
+</p>
+<p><input type="submit" value="Go!" /><em> (will take the user to the <a href="/confirmation">Confirmation Page</a>)</em></p>
+<hr>
+</form>
+<p>Or you can <a href="/open-games">Browse Open Games</a> and choose from one of 2 <strong>"BB vs. a steal"</strong> games waiting to start!</p>
+{% endblock %}
