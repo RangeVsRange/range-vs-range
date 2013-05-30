@@ -2,6 +2,7 @@
 {% block content %}
 <h2>Start Page</h2>
 <p>Range vs. Range lets you train specific post-flop situations or complete hands starting preflop. Pick one!</p>
+<!--
 <form>
 <p>
   <input type="radio" name="path" id="idSituations" value="situations" checked="checked" />
@@ -11,7 +12,17 @@
   <label for="idPreflop">Preflop</label><em> (will take the user to the <a href="/preflop">Preflop Page</a>)</em>
 </p>
 <p><input type="submit" value="Go!" /></p>
-<hr>
 </form>
+-->
+<form action="" method="post" name="start">
+  {{form.hidden_tag()}}
+  <p>
+    {% for subfield in form.path %}
+    {{subfield}} {{subfield.label}}<br>
+    {% endfor %}
+  </p>
+  <p><input type="submit" value="Go!" /></p>
+</form>
+<hr>
 <p>Or you can <a href="/open-games">Browse Open Games</a> and choose from one of {{matching_games}} games waiting to start!</p>
 {% endblock %}

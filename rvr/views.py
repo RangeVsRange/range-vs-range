@@ -1,20 +1,28 @@
 """
 Defines and generates available web content.
 """
-from flask import render_template, make_response
+from flask import render_template, make_response, redirect
 from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
 import random
+from rvr.forms.start import StartForm
 
-@APP.route('/')
+@APP.route('/', methods=['GET', 'POST'])
 def start_page():
     """
     Generates the start page. AKA the main or home page.
     """
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_all()
-    return render_template('start.html', title='Home',
-        matching_games=matching_games)
+    form = StartForm()
+    if form.validate_on_submit():
+        if form.path.data == 'situations':
+            return redirect('/situation')
+        else:
+            return redirect('/preflop')
+    else:
+        return render_template('start.html', title='Home',
+            matching_games=matching_games, form=form)
 
 @APP.route('/situation')
 def situation_page():

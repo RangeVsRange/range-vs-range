@@ -1,5 +1,5 @@
 """
-Mock objects, to be used with the IoC container: FEATURES
+Mock objects, to be used with the IoC container: rvr.infrastructure.ioc.FEATURES
 """
 from rvr.infrastructure.ioc import IocComponent
 from collections import namedtuple

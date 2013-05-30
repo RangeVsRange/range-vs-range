@@ -1,6 +1,10 @@
 """
 Configuration for various Flask plugins
 """
-# Flask-WTF
+# Flask-WTF configuration
+import random
 CSRF_ENABLED = True
-SECRET_KEY = 'rLiO8Zd14Fl991LV69KyvoTEDdgM166s'
+# Note: we're recreating this at system restart,
+# so old forms will become invalid.
+SECRET_KEY = ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")  #IGNORE:C0301
+    for _ in range(32)])

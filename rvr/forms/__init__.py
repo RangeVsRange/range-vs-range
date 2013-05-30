@@ -1,0 +1,3 @@
+"""
+Flask-WTF form classes
+"""
