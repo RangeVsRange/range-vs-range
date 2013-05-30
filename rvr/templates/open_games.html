@@ -1,29 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Open Games Page</h2>
-<p>Get started immediately with one of the following situations:</p>
+<p>Get started immediately with one of the following open games:</p>
 <form>
 <p>
-<input type="radio" name="game" id="idGame1" value="0" checked="checked" />
-<label for="idGame1">Situation: BB vs. a steal; Random flop</label>
+{% for game in games %}
+<input type="radio" name="game" id="idGame1" value="{{game.id}}" />
+<label for="idGame1">{{game.description}}</label>
 <br>
-<input type="radio" name="game" id="idGame2" value="0" />
-<label for="idGame2">Situation: BB vs. a steal; Wet flop</label>
-<br>
-<input type="radio" name="game" id="idGame3" value="0" />
-<label for="idGame3">Situation: CO vs. a re-steal; Random flop</label>
-<br>
-<input type="radio" name="game" id="idGame4" value="0" />
-<label for="idGame4">Situation: BTN cold call; Random flop</label>
-<br>
-<input type="radio" name="game" id="idGame5" value="0" />
-<label for="idGame5">Preflop: Heads-up</label>
-<br>
-<input type="radio" name="game" id="idGame6" value="0" />
-<label for="idGame6">Preflop: Blind vs. blind</label>
-<br>
-<input type="radio" name="game" id="idGame7" value="0" />
-<label for="idGame7">Preflop: 6-max preflop</label>
+{% endfor %}
 </p>
 <p><input type="submit" value="Go!" /><em> (will take the user to the <a href="/confirmation">Confirmation Page</a>)</em></p>
 </form>

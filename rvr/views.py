@@ -51,7 +51,10 @@ def open_games_page():
     """
     Generates a list of open games to choose from.
     """
-    return render_template('open_games.html', title='Select an Open Game')
+    matcher = FEATURES['GameFilter']
+    matching_games = matcher.all_games()
+    return render_template('open_games.html', title='Select an Open Game',
+        games=matching_games)
 
 @APP.route('/confirmation')
 def confirmation_page():
