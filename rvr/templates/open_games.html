@@ -5,8 +5,8 @@
 <form>
 <p>
 {% for game in games %}
-<input type="radio" name="game" id="idGame1" value="{{game.id}}" />
-<label for="idGame1">{{game.description}}</label>
+<input type="radio" name="game" id="id{{game.id}}" value="{{game.id}}" />
+<label for="id{{game.id}}">{{game.description}}</label>
 <br>
 {% endfor %}
 </p>

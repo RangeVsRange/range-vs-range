@@ -4,6 +4,7 @@ Defines and generates available web content.
 from flask import render_template, make_response
 from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
+import random
 
 @APP.route('/')
 def start_page():
@@ -52,9 +53,12 @@ def open_games_page():
     Generates a list of open games to choose from.
     """
     matcher = FEATURES['GameFilter']
-    matching_games = matcher.all_games()
-    return render_template('open_games.html', title='Select an Open Game',
-        games=matching_games)
+    if random.random() > 0.5:  # Just so we can see what each looks like
+        matching_games = matcher.all_games()
+        return render_template('open_games.html', title='Select an Open Game',
+            games=matching_games)
+    else:
+        return render_template('no_open_games.html', title='Sorry!')
 
 @APP.route('/confirmation')
 def confirmation_page():
