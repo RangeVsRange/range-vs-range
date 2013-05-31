@@ -52,7 +52,7 @@ def flop_texture_page():
     try:
         situationid = request.args['situationid']
     except KeyError:
-        # Well shit, they done something wrong.
+        # They done something wrong.
         return redirect("/error?id=0")
     matching_games = matcher.count_situation(situationid)
     cls = texture_form(matcher.all_textures(), situationid)
@@ -62,6 +62,9 @@ def flop_texture_page():
         return redirect('/confirmation?situationid=%s&texture=%s' %
             (situationid, texture))
     else:
+        # TODO: Look up situation name by id
+        # TODO: Pass situation name to render_template
+        # TODO: Show selected situation to user to recap what they chose so far
         return render_template('texture.html', title='Select a Flop Texture',
             matching_games=matching_games, situation="BB vs. a steal",
             form=form)
