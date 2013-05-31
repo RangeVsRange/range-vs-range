@@ -8,6 +8,7 @@ import random
 from rvr.forms.start import StartForm
 from rvr.forms.situation import situation_form
 from flask.globals import request
+from rvr.forms.texture import texture_form
 
 @APP.route('/', methods=['GET', 'POST'])
 def start_page():
@@ -42,7 +43,7 @@ def situation_page():
         return render_template('situation.html', form=form,
             title='Select a Training Situation', matching_games=matching_games)
 
-@APP.route('/texture')
+@APP.route('/texture', methods=['GET', 'POST'])
 def flop_texture_page():
     """
     Generates the flop texture selection page.
@@ -54,8 +55,16 @@ def flop_texture_page():
         # Well shit, they done something wrong.
         return redirect("/error?id=0")
     matching_games = matcher.count_situation(situationid)
-    return render_template('texture.html', title='Select a Flop Texture',
-        matching_games=matching_games, situation="BB vs. a steal")
+    cls = texture_form(matcher.all_textures(), situationid)
+    form = cls()
+    if form.validate_on_submit():
+        texture = form.texture.data
+        return redirect('/confirmation?situationid=%s&texture=%s' %
+            (situationid, texture))
+    else:
+        return render_template('texture.html', title='Select a Flop Texture',
+            matching_games=matching_games, situation="BB vs. a steal",
+            form=form)
 
 @APP.route('/preflop')
 def preflop_page():
