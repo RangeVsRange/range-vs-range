@@ -115,13 +115,13 @@ def error_page():
     Generates an error page.
     """
     data = [
-        "You ended up at the texture page, but with no situation chosen. That shouldn't happen.",
+        "You ended up at the texture page, but with no situation chosen. That shouldn't happen.",  #IGNORE:C0301
     ]
     try:
         index = int(request.args['id'])
         msg = data[index]
     except:  #IGNORE:W0702
-        msg = "Something went wrong, and we can't figure out what. Sorry about that."
+        msg = "Something went wrong, and we can't figure out what. Sorry about that."  #IGNORE:C0301
     return render_template('error.html', title="This isn't right", msg=msg)
 
 @APP.route('/robots.txt')
