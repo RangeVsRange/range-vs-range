@@ -1,4 +1,3 @@
-# coding: UTF-8
 """
 Form for start page
 """
