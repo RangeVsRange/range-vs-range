@@ -4,12 +4,12 @@ Mock objects, to be used with the IoC container: rvr.infrastructure.ioc.FEATURES
 from rvr.infrastructure.ioc import IocComponent
 from collections import namedtuple
 
-#pylint:disable=R0201,R0903,C0103
+# pylint:disable=R0201,R0903,C0103
 OpenGameDetails = namedtuple("OpenGameDetails", "description, id")
 PostflopSituationDetails = namedtuple("PostflopSituationDetails",
-    "description, players, id")
+    "name, players, id")
 PreflopSituationDetails = namedtuple("PreflopSituationDetails",
-    "description, players, id")
+    "name, players, id")
 TextureDetails = namedtuple("TextureDetails", "name, cards, id")
 
 class MockGameFilter(IocComponent):
@@ -29,7 +29,7 @@ class MockGameFilter(IocComponent):
         """
         return 13
     
-    def count_all_situations(self):
+    def count_all_postflop(self):
         """
         All postflop situations
         """
@@ -64,17 +64,6 @@ class MockGameFilter(IocComponent):
             PostflopSituationDetails("CO vs. a re-steal", 2, "2"),
             PostflopSituationDetails("BTN cold call", 2, "3")
         ]
-
-    def all_preflop(self):
-        """
-        All preflop situations
-        """
-        return [
-            PreflopSituationDetails("Heads-up", 2, "1"),
-            PreflopSituationDetails("Blind vs. blind", 2, "2"),
-            PreflopSituationDetails("BTN vs. both blinds", 2, "3"),
-            PreflopSituationDetails("6-max preflop", 2, "4")
-        ]
         
     def all_textures(self):
         """
@@ -86,3 +75,21 @@ class MockGameFilter(IocComponent):
             TextureDetails("Semi-Wet Flop", "As Jc 8c", "semiwet"),
             TextureDetails("Wet Flop", "9h 8h 6d", "wet")
         ]
+
+    def all_preflop(self):
+        """
+        All preflop situations
+        """
+        return [
+            PreflopSituationDetails("Heads-up", 2, "1"),
+            PreflopSituationDetails("Blind vs. blind", 2, "2"),
+            PreflopSituationDetails("BTN vs. both blinds", 2, "3"),
+            PreflopSituationDetails("6-max preflop", 2, "4")
+        ]
+
+    def get_postflop(self, situationid):
+        """
+        Return a PostflopSituationDetails for the given situationid
+        """
+        d = {details.id: details for details in self.all_postflop()}
+        return d[situationid]

@@ -9,6 +9,7 @@ from rvr.forms.start import StartForm
 from rvr.forms.situation import situation_form
 from flask.globals import request
 from rvr.forms.texture import texture_form
+from rvr.forms.preflop import preflop_form
 
 @APP.route('/', methods=['GET', 'POST'])
 def start_page():
@@ -33,12 +34,12 @@ def situation_page():
     Generates the situation selection page.
     """
     matcher = FEATURES['GameFilter']
-    matching_games = matcher.count_all_situations()
+    matching_games = matcher.count_all_postflop()
     cls = situation_form(matcher.all_postflop())
     form = cls()
     if form.validate_on_submit():
         situationid = form.situationid.data
-        return redirect('/texture?situationid=' + situationid)
+        return redirect('/texture?situationid=%s' % (situationid,))  # TODO: URL-encode situationid
     else:
         return render_template('situation.html', form=form,
             title='Select a Training Situation', matching_games=matching_games)
@@ -59,25 +60,33 @@ def flop_texture_page():
     form = cls()
     if form.validate_on_submit():
         texture = form.texture.data
-        return redirect('/confirmation?situationid=%s&texture=%s' %
-            (situationid, texture))
+        return redirect(
+            '/confirmation?path=postflop&situationid=%s&texture=%s' %
+            (situationid, texture))  # TODO: URL-encode situationid, texture
     else:
-        # TODO: Look up situation name by id
-        # TODO: Pass situation name to render_template
-        # TODO: Show selected situation to user to recap what they chose so far
+        try:
+            details = matcher.get_postflop(situationid)
+        except KeyError:
+            return redirect("/error?id=1")
         return render_template('texture.html', title='Select a Flop Texture',
-            matching_games=matching_games, situation="BB vs. a steal",
+            matching_games=matching_games, situation=details.name,
             form=form)
 
-@APP.route('/preflop')
+@APP.route('/preflop', methods=['GET', 'POST'])
 def preflop_page():
     """
     Generates the preflop situation selection page.
     """
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_all_preflop()
+    cls = preflop_form(matcher.all_preflop())
+    form = cls()
+    if form.validate_on_submit():
+        situationid = form.situationid.data
+        return redirect('/confirmation?path=preflop&situationid=%s'
+            % (situationid,))  # TODO: URL-encode situationid
     return render_template('preflop.html', title='Select a Preflop Situation',
-        matching_games=matching_games)
+        matching_games=matching_games, form=form)
 
 @APP.route('/open-games')
 def open_games_page():
@@ -98,6 +107,7 @@ def confirmation_page():
     Generates a game start confirmation page. May be confirming new game, or
     join game.
     """
+    # TODO: read URL parameters 'path', 'situationid' and 'texture' (only when path is postflop)
     return render_template('confirmation.html', title='Pre-Game Confirmation')
 
 @APP.route('/game/not-started')
@@ -126,14 +136,19 @@ def error_page():
     """
     Generates an error page.
     """
+    # pylint:disable=C0301
     data = [
-        "You ended up at the texture page, but with no situation chosen. That shouldn't happen.",  #IGNORE:C0301
+        "You ended up at the texture page, but with no situation chosen. That shouldn't happen, sorry.",
+        "It seems like the situation you chose doesn't exist. That shouldn't happen, sorry."
     ]
+    # pylint:enable=C0301
     try:
         index = int(request.args['id'])
         msg = data[index]
-    except:  #IGNORE:W0702
-        msg = "Something went wrong, and we can't figure out what. Sorry about that."  #IGNORE:C0301
+    except:  # IGNORE:W0702
+        index = -1
+        msg = "Something went wrong, and we can't figure out what. Or maybe something went wrong when we were trying to figure out what went wrong. We really don't know. Sorry about that."  # IGNORE:C0301
+    msg = msg + " (The code for this error message is %d.)" % (index,)
     return render_template('error.html', title="This isn't right", msg=msg)
 
 @APP.route('/robots.txt')
