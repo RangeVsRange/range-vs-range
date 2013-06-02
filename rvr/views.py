@@ -35,8 +35,7 @@ def situation_page():
     """
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_all_postflop()
-    cls = situation_form(matcher.all_postflop())
-    form = cls()
+    form = situation_form(matcher.all_postflop())
     if form.validate_on_submit():
         situationid = form.situationid.data
         return redirect('/texture?situationid=%s' % (situationid,))  # TODO: URL-encode situationid
@@ -56,8 +55,7 @@ def flop_texture_page():
         # They done something wrong.
         return redirect("/error?id=0")
     matching_games = matcher.count_situation(situationid)
-    cls = texture_form(matcher.all_textures(), situationid)
-    form = cls()
+    form = texture_form(matcher.all_textures(), situationid)
     if form.validate_on_submit():
         texture = form.texture.data
         return redirect(
@@ -79,8 +77,7 @@ def preflop_page():
     """
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_all_preflop()
-    cls = preflop_form(matcher.all_preflop())
-    form = cls()
+    form = preflop_form(matcher.all_preflop())
     if form.validate_on_submit():
         situationid = form.situationid.data
         return redirect('/confirmation?path=preflop&situationid=%s'

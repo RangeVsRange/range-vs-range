@@ -5,17 +5,17 @@ from wtforms.fields.core import RadioField
 from wtforms.validators import Required
 from flask_wtf.form import Form
 
+class PreflopForm(Form):  # IGNORE:R0924
+    """
+    User chooses a preflop situation.
+    """
+    situationid = RadioField(default='1', validators=[Required()])
+    
 def preflop_form(situations):
     """
-    Return a custom postflop form for listing the given situations.
+    Return a custom preflop situation form for listing the available textures.
     """
-    choices = [(situation.id, situation.name)
-               for situation in situations]
-    class PreflopForm(Form):  # IGNORE:R0924
-        """
-        User chooses a preflop situation.
-        """
-        situationid = RadioField(choices=choices,
-            default='1',
-            validators=[Required()])
-    return PreflopForm
+    form = PreflopForm()
+    form.situationid.choices = [(situation.id, situation.name)
+        for situation in situations]
+    return form
