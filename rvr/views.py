@@ -10,7 +10,8 @@ from flask.globals import request
 from rvr.forms.texture import texture_form
 from rvr.forms.preflop import preflop_form
 from urllib import urlencode
-from rvr.forms.confirmation import SituationConfirmationForm
+from rvr.forms.confirmation import ConfirmationForm
+from rvr.forms.opengames import open_games_form
 
 @APP.route('/', methods=['GET', 'POST'])
 def start_page():
@@ -94,42 +95,58 @@ def preflop_page():
         matching_games=matching_games, form=form,
         open_games_url=url_for('open_games_page', path='preflop'))
 
-@APP.route('/open-games')
-def open_games_page():
+def get_open_games(path, situationid, textureid):
     """
-    Generates a list of open games to choose from.
+    Use the registered GameFilter to filter the available games by path,
+    situationid, textureid.
+
     If path is not specified, display all games.
     If path is specified but situationid is not, display all for that path.
     If path and situationid are both specified, display all for that situation.
     If path is postflop and situationid and textureid are both specified,
         display all for that sitaution + texture.
     """
-    path = request.args.get('path', None)
-    situationid = request.args.get('situationid', None)
-    textureid = request.args.get('textureid', None)
     matcher = FEATURES['GameFilter']
     if path is None:
         # all games
-        matching_games = matcher.all_games()
+        return matcher.all_games()
     elif situationid is None:
         # filter to path
         if path == 'preflop':
-            matching_games = matcher.preflop_games()
+            return matcher.preflop_games()
         elif path == 'postflop':
-            matching_games = matcher.postflop_games()
+            return matcher.postflop_games()
         else:
             # path is invalid, give them all games
-            matching_games = matcher.all_games()
+            return matcher.all_games()
     # ... path and situationid are both present ...
     elif textureid is not None and path == 'postflop':
         # filter to situation and texture (implicitly includes path)
-        matching_games = matcher.postflop_texture_games(situationid, textureid)
+        return matcher.postflop_texture_games(situationid, textureid)
     else:
         # filter to situation (implicitly includes path)
-        matching_games = matcher.situation_games(situationid)
+        return matcher.situation_games(situationid)
+
+@APP.route('/open-games', methods=['GET', 'POST'])
+def open_games_page():
+    """
+    Generates a list of open games to choose from.
+    
+    See get_open_games for details.
+    """
+    path = request.args.get('path', None)
+    situationid = request.args.get('situationid', None)
+    textureid = request.args.get('textureid', None)
+    matching_games = get_open_games(path, situationid, textureid)
+    form = open_games_form(matching_games)
+    if form.validate_on_submit():
+        # Note: Form data can be validated, but still choose a game that no
+        # longer exists. For that reason, gameids should not be reused.
+        return redirect(url_for('confirm_join', gameid=form.gameid.data))
     if matching_games:
+        form.gameid.default = matching_games[0].gameid
         return render_template('open_games.html', title='Select an Open Game',
-            games=matching_games)
+            games=matching_games, form=form)
     else:
         return render_template('no_open_games.html', title='Sorry!')
 
@@ -159,8 +176,9 @@ def confirm_situation_page():
     error = confirm_situation_validation(path, situationid, textureid)
     if error is not None:
         return redirect('/error?' + urlencode({'id': error}))
-    form = SituationConfirmationForm()
+    form = ConfirmationForm()
     if form.validate_on_submit():
+        # TODO: actually start an actual game
         return redirect('/game/not-started')
     elif path == 'preflop':
         return confirm_preflop_page(form, situationid)
@@ -212,9 +230,20 @@ def confirm_preflop_page(form, situationid):
 @APP.route('/confirm-join', methods=['GET', 'POST'])
 def confirm_join():
     """
-    Generates a game join confirmation page.
+    Generates a game join confirmation page. Like the confirm situation page,
+    but for joining a game instead of starting a game.
     """
-    return "Hello World!"  # TODO: confirm-join template, form, functionality
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        return redirect(url_for('error_page', id=2))
+    form = ConfirmationForm()
+    if form.validate_on_submit():
+        # TODO: actually join an actual game
+        return redirect('/game/not-started')
+    else:
+        return render_template('confirm_join.html',
+            title='Confirm Join Page', form=form,
+            heading='Join Game Page')
 
 @APP.route('/game/not-started')
 def game_not_started():

@@ -2,14 +2,14 @@
 {% block content %}
 <h2>Open Games Page</h2>
 <p>Get started immediately with one of the following open games:</p>
-<form>
-<p>
-{% for game in games %}
-<input type="radio" name="game" id="id{{game.gameid}}" value="{{game.gameid}}" />
-<label for="id{{game.gameid}}">{{game.description}}</label>
-<br>
-{% endfor %}
-</p>
-<p><input type="submit" value="Go!" /><em> (will take the user to the <a href="/confirm-join">Confirmation Page</a>)</em></p>
+<form method="post" name="games">
+  {# Note: we don't handle validation errors, because they can't really get this form wrong! #}
+  {{form.hidden_tag()}}
+  <p>
+    {% for subfield in form.gameid %}
+    {{subfield}} {{subfield.label}}<br>
+    {% endfor %}
+  </p>
+  <p><input type="submit" value="Go!" /></p>
 </form>
 {% endblock %}

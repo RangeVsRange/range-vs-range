@@ -92,13 +92,13 @@ class MockGameFilter(IocComponent):
         all_t = {t.id: t for t in
             self.situation_provider.all_textures()}
         return [
-            OpenPostflop(0, all_post["0"], all_t["random"]),
-            OpenPostflop(1, all_post["0"], all_t["wet"]),
-            OpenPostflop(2, all_post["1"], all_t["random"]),
-            OpenPostflop(3, all_post["2"], all_t["random"]),
-            OpenPreflop(4, all_pre["100"]),
-            OpenPreflop(5, all_pre["101"]),
-            OpenPreflop(6, all_pre["102"])
+            OpenPostflop("0", all_post["0"], all_t["random"]),
+            OpenPostflop("1", all_post["0"], all_t["wet"]),
+            OpenPostflop("2", all_post["1"], all_t["random"]),
+            OpenPostflop("3", all_post["2"], all_t["random"]),
+            OpenPreflop("4", all_pre["100"]),
+            OpenPreflop("5", all_pre["101"]),
+            OpenPreflop("6", all_pre["102"])
         ]
         
     def preflop_games(self):
