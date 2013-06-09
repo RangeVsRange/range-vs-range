@@ -27,6 +27,6 @@ def texture_form(textures):
     Return a custom texture form for listing the available textures.
     """
     form = TextureForm()
-    form.texture.choices = [(texture.id, format_texture(texture))
-        for texture in textures]
+    form.texture.choices = [(details.id, format_texture(details))
+        for details in sorted(textures, key=lambda d: d.order)]
     return form

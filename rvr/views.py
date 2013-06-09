@@ -66,14 +66,13 @@ def flop_texture_page():
             urlencode({'path': 'postflop',
                        'situationid': situationid,
                        'texture': texture}))
-    else:
-        try:
-            details = provider.get_postflop(situationid)
-        except KeyError:
-            return redirect("/error?id=1")
-        return render_template('texture.html', title='Select a Flop Texture',
-            matching_games=matching_games, situation=details.name,
-            form=form)
+    try:
+        details = provider.get_situation(situationid)
+    except KeyError:
+        return redirect("/error?id=1")
+    return render_template('texture.html', title='Select a Flop Texture',
+        matching_games=matching_games, situation=details.name,
+        form=form)
 
 @APP.route('/preflop', methods=['GET', 'POST'])
 def preflop_page():
@@ -126,17 +125,54 @@ def confirm_situation_page():
     Generates a game start confirmation page. May be confirming new game, or
     join game.
     """
-    # TODO: show an open game link in the confirmation page
     path = request.args.get('path', None)
     situationid = request.args.get('situationid', None)
-    texture = request.args.get('texture', None)
-    error = confirm_situation_validation(path, situationid, texture)
+    textureid = request.args.get('texture', None)
+    error = confirm_situation_validation(path, situationid, textureid)
     if error is not None:
         return redirect('/error?' + urlencode({'id': error}))
     form = SituationConfirmationForm()
     if form.validate_on_submit():
         return redirect('/game/not-started')
+    elif path == 'preflop':
+        return confirm_preflop_page(form, situationid)
+    else:
+        return confirm_postflop_page(form, situationid, textureid)
+
+def confirm_postflop_page(form, situationid, textureid):
+    """
+    Confirm user's request to start a postflop game
+    """
+    provider = FEATURES['SituationProvider']
+    try:
+        s_details = provider.get_situation(situationid)
+    except KeyError:
+        return redirect("/error?id=1")
+    try:
+        t_details = provider.get_texture(textureid)
+    except KeyError:
+        return redirect("/error?id=3")
+    game_name = "%s (%s)" % (s_details.name, t_details.name)
+    matcher = FEATURES['GameFilter']
+    matching_games = matcher.count_situation_texture(situationid, textureid)
     return render_template('confirm_situation.html',
+        matching_games=matching_games, situation=game_name,
+        title='Pre-Game Confirmation', form=form)
+
+def confirm_preflop_page(form, situationid):
+    """
+    Confirm user's request to start a preflop game
+    """
+    provider = FEATURES['SituationProvider']
+    try:
+        s_details = provider.get_situation(situationid)
+    except KeyError:
+        return redirect("/error?id=1")
+    game_name = s_details.name
+    matcher = FEATURES['GameFilter']
+    matching_games = matcher.count_situation(situationid)
+    return render_template('confirm_situation.html',
+        matching_games=matching_games, situation=game_name,
         title='Pre-Game Confirmation', form=form)
 
 @APP.route('/confirm-join', methods=['GET', 'POST'])
@@ -176,7 +212,8 @@ def error_page():
     data = [
         "You ended up at the texture page, but with no situation chosen. That shouldn't happen, sorry.",
         "It seems like the situation you chose doesn't exist. That shouldn't happen, sorry.",
-        "You ended up at the confirmation page, but without all the details of a game. That shouldn't happen, sorry."
+        "You ended up at the confirmation page, but without all the details of a game. That shouldn't happen, sorry.",
+        "It seems like the texture you chose doesn't exist. That shouldn't happen, sorry."
     ]
     # pylint:enable=C0301
     try:

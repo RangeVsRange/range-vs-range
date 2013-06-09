@@ -16,6 +16,6 @@ def situation_form(situations):
     Returns a SituationForm object populated with appropriate situations.
     """
     form = SituationForm()
-    form.situationid.choices = [(situation.id, situation.name)
-        for situation in situations]
+    form.situationid.choices = [(details.id, details.name)
+        for details in sorted(situations, key=lambda d: d.order)]
     return form
