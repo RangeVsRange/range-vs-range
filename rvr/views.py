@@ -4,7 +4,6 @@ Defines and generates available web content.
 from flask import render_template, make_response, redirect, url_for
 from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
-import random
 from rvr.forms.start import StartForm
 from rvr.forms.situation import situation_form
 from flask.globals import request
@@ -63,11 +62,11 @@ def flop_texture_page():
     matching_games = matcher.count_situation(situationid)
     form = texture_form(provider.all_textures())
     if form.validate_on_submit():
-        texture = form.texture.data
+        textureid = form.texture.data
         return redirect('/confirm-situation?' +
             urlencode({'path': 'postflop',
                        'situationid': situationid,
-                       'texture': texture}))
+                       'textureid': textureid}))
     try:
         details = provider.get_situation(situationid)
     except KeyError:
@@ -99,15 +98,36 @@ def preflop_page():
 def open_games_page():
     """
     Generates a list of open games to choose from.
+    If path is not specified, display all games.
+    If path is specified but situationid is not, display all for that path.
+    If path and situationid are both specified, display all for that situation.
+    If path is postflop and situationid and textureid are both specified,
+        display all for that sitaution + texture.
     """
     path = request.args.get('path', None)
     situationid = request.args.get('situationid', None)
-    textureid = request.args.get('texture', None)
-    # TODO: accept filter parameters from previous pages: situation, texture
-    # then pass them to the matcher, of course!
+    textureid = request.args.get('textureid', None)
     matcher = FEATURES['GameFilter']
-    if random.random() > 0.5:  # Just so we can see what each looks like
+    if path is None:
+        # all games
         matching_games = matcher.all_games()
+    elif situationid is None:
+        # filter to path
+        if path == 'preflop':
+            matching_games = matcher.preflop_games()
+        elif path == 'postflop':
+            matching_games = matcher.postflop_games()
+        else:
+            # path is invalid, give them all games
+            matching_games = matcher.all_games()
+    # ... path and situationid are both present ...
+    elif textureid is not None and path == 'postflop':
+        # filter to situation and texture (implicitly includes path)
+        matching_games = matcher.postflop_texture_games(situationid, textureid)
+    else:
+        # filter to situation (implicitly includes path)
+        matching_games = matcher.situation_games(situationid)
+    if matching_games:
         return render_template('open_games.html', title='Select an Open Game',
             games=matching_games)
     else:
@@ -135,7 +155,7 @@ def confirm_situation_page():
     """
     path = request.args.get('path', None)
     situationid = request.args.get('situationid', None)
-    textureid = request.args.get('texture', None)
+    textureid = request.args.get('textureid', None)
     error = confirm_situation_validation(path, situationid, textureid)
     if error is not None:
         return redirect('/error?' + urlencode({'id': error}))

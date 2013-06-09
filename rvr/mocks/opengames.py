@@ -10,16 +10,17 @@ class OpenGameDetails(object):
     """
     Details about an open (joinable) game
     """
-    def __init__(self, gameid):
+    def __init__(self, path, gameid, s):
+        self.path = path
         self.gameid = gameid
+        self.situation = s
 
 class OpenPostflop(OpenGameDetails):
     """
     Details of an open postflop game
     """
     def __init__(self, gameid, s, t):
-        super(OpenPostflop, self).__init__(gameid)
-        self.situation = s
+        super(OpenPostflop, self).__init__('postflop', gameid, s)
         self.texture = t
     
     @property
@@ -34,8 +35,7 @@ class OpenPreflop(OpenGameDetails):
     Details of an open preflop game
     """
     def __init__(self, gameid, s):
-        super(OpenPreflop, self).__init__(gameid)
-        self.situation = s
+        super(OpenPreflop, self).__init__('preflop', gameid, s)
     
     @property
     def description(self):
@@ -92,11 +92,36 @@ class MockGameFilter(IocComponent):
         all_t = {t.id: t for t in
             self.situation_provider.all_textures()}
         return [
-            OpenPostflop(0, all_post["1"], all_t["random"]),
-            OpenPostflop(1, all_post["1"], all_t["wet"]),
-            OpenPostflop(2, all_post["2"], all_t["random"]),
-            OpenPostflop(3, all_post["3"], all_t["random"]),
-            OpenPreflop(4, all_pre["1"]),
-            OpenPreflop(5, all_pre["2"]),
-            OpenPreflop(6, all_pre["4"])
+            OpenPostflop(0, all_post["0"], all_t["random"]),
+            OpenPostflop(1, all_post["0"], all_t["wet"]),
+            OpenPostflop(2, all_post["1"], all_t["random"]),
+            OpenPostflop(3, all_post["2"], all_t["random"]),
+            OpenPreflop(4, all_pre["100"]),
+            OpenPreflop(5, all_pre["101"]),
+            OpenPreflop(6, all_pre["102"])
         ]
+        
+    def preflop_games(self):
+        """
+        All open preflop games
+        """
+        return [g for g in self.all_games() if g.path == 'preflop']
+    
+    def postflop_games(self):
+        """
+        All open postflop games
+        """
+        return [g for g in self.all_games() if g.path == 'postflop']
+    
+    def situation_games(self, situationid):
+        """
+        All open games with given situationid
+        """
+        return [g for g in self.all_games() if g.situation.id == situationid]
+        
+    def postflop_texture_games(self, situationid, textureid):
+        """
+        All open postflop games with given situationid, textureid
+        """
+        return [g for g in self.all_games() if g.path == 'postflop' and  \
+            g.situation.id == situationid and g.texture.id == textureid]

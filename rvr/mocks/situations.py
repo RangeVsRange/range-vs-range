@@ -23,9 +23,9 @@ class MockSituationProvider(IocComponent):
         All postflop situations
         """
         return [
-            SituationDetails(TYPE_POSTFLOP, "BB vs. a steal", 2, "1", 0),
-            SituationDetails(TYPE_POSTFLOP, "CO vs. a re-steal", 2, "2", 1),
-            SituationDetails(TYPE_POSTFLOP, "BTN cold call", 2, "3", 2)
+            SituationDetails(TYPE_POSTFLOP, "BB vs. a steal", 2, "0", 0),
+            SituationDetails(TYPE_POSTFLOP, "CO vs. a re-steal", 2, "1", 1),
+            SituationDetails(TYPE_POSTFLOP, "BTN cold call", 2, "2", 2)
         ]
         
     def all_textures(self):
@@ -43,12 +43,14 @@ class MockSituationProvider(IocComponent):
         """
         All preflop situations
         """
+        #pylint:disable=C0301
         return [
-            SituationDetails(TYPE_PREFLOP, "Heads-up", 2, "1", 100),
-            SituationDetails(TYPE_PREFLOP, "Blind vs. blind", 2, "2", 101),
-            SituationDetails(TYPE_PREFLOP, "BTN vs. both blinds", 2, "3", 102),
-            SituationDetails(TYPE_PREFLOP, "6-max preflop", 2, "4", 103)
+            SituationDetails(TYPE_PREFLOP, "Heads-up", 2, "100", 100),
+            SituationDetails(TYPE_PREFLOP, "Blind vs. blind", 2, "101", 101),
+            SituationDetails(TYPE_PREFLOP, "BTN vs. both blinds", 2, "102", 102),
+            SituationDetails(TYPE_PREFLOP, "6-max preflop", 2, "103", 103)
         ]
+        #pylint:enable=C0301
 
     def get_situation(self, situationid):
         """
