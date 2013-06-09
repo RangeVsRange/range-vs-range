@@ -1,7 +1,7 @@
 """
 Defines and generates available web content.
 """
-from flask import render_template, make_response, redirect
+from flask import render_template, make_response, redirect, url_for
 from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
 import random
@@ -28,7 +28,8 @@ def start_page():
             return redirect('/preflop')
     else:
         return render_template('start.html', title='Home',
-            matching_games=matching_games, form=form)
+            matching_games=matching_games, form=form,
+            open_games_url=url_for('open_games_page'))
 
 @APP.route('/situation', methods=['GET', 'POST'])
 def situation_page():
@@ -44,7 +45,8 @@ def situation_page():
         return redirect('/texture?' + urlencode({'situationid': situationid}))
     else:
         return render_template('situation.html', form=form,
-            title='Select a Training Situation', matching_games=matching_games)
+            title='Select a Training Situation', matching_games=matching_games,
+            open_games_url=url_for('open_games_page', path='postflop'))
 
 @APP.route('/texture', methods=['GET', 'POST'])
 def flop_texture_page():
@@ -70,9 +72,11 @@ def flop_texture_page():
         details = provider.get_situation(situationid)
     except KeyError:
         return redirect("/error?id=1")
+    open_games_url = url_for('open_games_page', path='postflop',
+        situationid=situationid)
     return render_template('texture.html', title='Select a Flop Texture',
         matching_games=matching_games, situation=details.name,
-        form=form)
+        form=form, open_games_url=open_games_url)
 
 @APP.route('/preflop', methods=['GET', 'POST'])
 def preflop_page():
@@ -88,13 +92,17 @@ def preflop_page():
         return redirect('/confirm-situation?' + 
             urlencode({'path': 'preflop', 'situationid': situationid}))
     return render_template('preflop.html', title='Select a Preflop Situation',
-        matching_games=matching_games, form=form)
+        matching_games=matching_games, form=form,
+        open_games_url=url_for('open_games_page', path='preflop'))
 
 @APP.route('/open-games')
 def open_games_page():
     """
     Generates a list of open games to choose from.
     """
+    path = request.args.get('path', None)
+    situationid = request.args.get('situationid', None)
+    textureid = request.args.get('texture', None)
     # TODO: accept filter parameters from previous pages: situation, texture
     # then pass them to the matcher, of course!
     matcher = FEATURES['GameFilter']
@@ -155,9 +163,12 @@ def confirm_postflop_page(form, situationid, textureid):
     game_name = "%s (%s)" % (s_details.name, t_details.name)
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_situation_texture(situationid, textureid)
+    open_games_url = url_for('open_games_page', path='postflop',
+        situationid=situationid, textureid=textureid)
     return render_template('confirm_situation.html',
         matching_games=matching_games, situation=game_name,
-        title='Pre-Game Confirmation', form=form)
+        title='Pre-Game Confirmation', form=form,
+        open_games_url=open_games_url)
 
 def confirm_preflop_page(form, situationid):
     """
@@ -171,9 +182,12 @@ def confirm_preflop_page(form, situationid):
     game_name = s_details.name
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_situation(situationid)
+    open_games_url = url_for('open_games_page', path='preflop',
+        situationid=situationid)
     return render_template('confirm_situation.html',
         matching_games=matching_games, situation=game_name,
-        title='Pre-Game Confirmation', form=form)
+        title='Pre-Game Confirmation', form=form,
+        open_games_url=open_games_url)
 
 @APP.route('/confirm-join', methods=['GET', 'POST'])
 def confirm_join():
