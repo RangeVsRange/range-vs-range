@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <style> td { padding:15px; } </style>
     {% if title %}
     <title>{{title}} - Range vs. Range</title>
     {% else %}
@@ -24,7 +25,12 @@
     {% endwith %}
     {% block content %}{% endblock %}
     <hr>
-    <p><a href="https://github.com/RangeVsRange/range-vs-range/">Range vs. Range on GitHub</a></p>
-    <div><a href="http://validator.w3.org/check?uri=referer">HTML 5 Validator</a></div>
+    <table >
+    <tr>
+      <td><a href="http://validator.w3.org/check?uri=referer">Validate HTML 5</a></td>
+      <td><a href="https://github.com/RangeVsRange/range-vs-range/">Range vs. Range on GitHub</a></td>
+      <td><a href="http://rangevsrange.wordpress.com/">The website for the existing client/server version</a></td>
+    </tr>
+    </table>
   </body>
 </html>
