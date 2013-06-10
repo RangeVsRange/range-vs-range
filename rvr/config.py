@@ -9,3 +9,6 @@ CSRF_ENABLED = True
 # key is, outside of a debug session.
 SECRET_KEY = ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")  #IGNORE:C0301
     for _ in range(32)])
+
+DEBUG = False
+RELOADER = False
