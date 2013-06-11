@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>No Open Games Page</h2>
-<p>Sorry, there are no open games right now, but if you go back to <a href="/">the home page</a>, you can create one!</p>
-<p>Or just <a href="">refresh this page</a> to see if anything has changed.</p>
+<p>Sorry, there are no open games right now, but if you go back to <a href="{{ url_for('start_page') }}">the home page</a>, you can create one!</p>
+<p>Or just <a href="{{ url_for('open_games_page) }}">refresh this page</a> to see if anything has changed.</p>
 {% endblock %}

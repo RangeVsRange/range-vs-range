@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Open Games Page</h2>
 <p>Get started immediately with one of the following open games:</p>
-<form method="post" name="games">
+<form method="post" name="games" action="{{ url_for('open_games_page') }}">
   {# Note: we don't handle validation errors, because they can't really get this form wrong! #}
   {{form.hidden_tag()}}
   <p>

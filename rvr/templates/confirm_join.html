@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Join Game Confirmation Page</h2>
 <p>It may take some time for your opponent to make a move in this game. Range vs. Range will send you an email when it's your turn. You can also wait online and start playing as soon as it's your turn.</p>
-<form method="post" name="join">
+<form method="post" name="join" action="{{ url_for('confirm_join') }}">
   {{form.hidden_tag()}}
   <p>
     {% for error in form.errors.email %}
@@ -13,3 +13,4 @@
   <p><input type="submit" value="Play now!" /></p>
 </form>
 {% endblock %}
+
