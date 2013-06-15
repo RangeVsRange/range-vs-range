@@ -1,2 +1,7 @@
 local-settings.py
+
 *.pyc
+
+.project
+.pydevproject
+*.prefs
