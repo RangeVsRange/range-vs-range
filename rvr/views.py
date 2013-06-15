@@ -1,7 +1,7 @@
 """
 Defines and generates available web content.
 """
-from flask import render_template, make_response, redirect, url_for
+from flask import render_template, redirect, url_for
 from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
 from rvr.forms.start import StartForm
@@ -9,7 +9,6 @@ from rvr.forms.situation import situation_form
 from flask.globals import request
 from rvr.forms.texture import texture_form
 from rvr.forms.preflop import preflop_form
-from urllib import urlencode
 from rvr.forms.confirmation import ConfirmationForm
 from rvr.forms.opengames import open_games_form
 
@@ -71,8 +70,8 @@ def flop_texture_page():
     except KeyError:
         return redirect(url_for('error_page', id=1))
     return render_template('texture.html', title='Select a Flop Texture',
-                           matching_games=matching_games, situation=details.name,
-                           situationid=situationid, form=form)
+        matching_games=matching_games, situation=details.name,
+        situationid=situationid, form=form)
 
 @APP.route('/preflop', methods=['GET', 'POST'])
 def preflop_page():
@@ -199,7 +198,8 @@ def confirm_postflop_page(form, situationid, textureid):
     matching_games = matcher.count_situation_texture(situationid, textureid)
     return render_template('confirm_situation.html',
         matching_games=matching_games, situation=game_name,
-        title='Pre-Game Confirmation', form=form, situationid=situationid, textureid=textureid)
+        title='Pre-Game Confirmation', form=form, situationid=situationid,
+        textureid=textureid)
 
 
 def confirm_preflop_page(form, situationid):
@@ -216,7 +216,8 @@ def confirm_preflop_page(form, situationid):
     matching_games = matcher.count_situation(situationid)
     return render_template('confirm_situation.html',
         matching_games=matching_games, situation=game_name,
-        title='Pre-Game Confirmation', form=form, situationid=situationid, textureid=None)
+        title='Pre-Game Confirmation', form=form, situationid=situationid,
+        textureid=None)
 
 @APP.route('/confirm-join', methods=['GET', 'POST'])
 def confirm_join():
