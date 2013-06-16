@@ -1,5 +1,5 @@
 """
-Defines and generates available web content.
+The main pages for the site
 """
 from flask import render_template, redirect, url_for
 from rvr import APP
