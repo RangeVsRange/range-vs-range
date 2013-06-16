@@ -59,11 +59,11 @@ class MockSituationProvider(IocComponent):
         """
         all_post = {p.id: p for p in self.all_postflop()}
         all_pre = {p.id: p for p in self.all_preflop()}
-        return all_post.get(situationid, all_pre.get(situationid))
+        return all_post.get(situationid, all_pre.get(situationid, None))
     
     def get_texture_by_id(self, textureid):
         """
         Return a TextureDetails
         """
         all_ = {t.id: t for t in self.all_textures()}
-        return all_[textureid]
+        return all_.get(textureid, None)

@@ -67,9 +67,8 @@ def flop_texture_page():
                                 path='postflop',
                                 situationid=situationid,
                                 textureid=textureid))
-    try:
-        details = provider.get_situation_by_id(situationid)
-    except KeyError:
+    details = provider.get_situation_by_id(situationid)
+    if details is None:
         return redirect_to_error(id_=ERROR_NO_SITUATION)
     return render_template('texture.html', title='Select a Flop Texture',
         matching_games=matching_games, situation=details.name,
@@ -159,13 +158,11 @@ def confirm_postflop_page(form, situationid, textureid):
     Confirm user's request to start a postflop game
     """
     provider = FEATURES['SituationProvider']
-    try:
-        s_details = provider.get_situation_by_id(situationid)
-    except KeyError:
+    s_details = provider.get_situation_by_id(situationid)
+    if s_details is None:
         return redirect_to_error(id_=ERROR_NO_SITUATION)
-    try:
-        t_details = provider.get_texture_by_id(textureid)
-    except KeyError:
+    t_details = provider.get_texture_by_id(textureid)
+    if t_details is None:
         return redirect_to_error(id_=ERROR_TEXTURE)
     game_name = "%s (%s)" % (s_details.name, t_details.name)
     matcher = FEATURES['GameFilter']
@@ -181,9 +178,8 @@ def confirm_preflop_page(form, situationid):
     Confirm user's request to start a preflop game
     """
     provider = FEATURES['SituationProvider']
-    try:
-        s_details = provider.get_situation_by_id(situationid)
-    except KeyError:
+    s_details = provider.get_situation_by_id(situationid)
+    if s_details is None:
         return redirect_to_error(id_=ERROR_NO_SITUATION)
     game_name = s_details.name
     matcher = FEATURES['GameFilter']

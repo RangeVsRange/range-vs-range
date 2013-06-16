@@ -39,6 +39,6 @@ def error_page():
         msg = data[index]
     except:  # IGNORE:W0702
         index = -1
-        msg = "Something went wrong, and we can't figure out what. Or maybe something went wrong when we were trying to figure out what went wrong. We really don't know. Sorry about that."  # IGNORE:C0301
-    msg = msg + " (The code for this error message is %d.)" % (index,)
-    return render_template('error.html', title="This isn't right", msg=msg)
+        msg = "Something went wrong, and we can't figure out what. Or maybe something went wrong while we were trying to figure out what went wrong. We really don't know. Sorry about that."  # IGNORE:C0301
+    return render_template('error.html',
+        title="This isn't right", id=index, msg=msg), 500
