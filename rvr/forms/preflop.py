@@ -18,6 +18,7 @@ def preflop_form(situations):
     form = PreflopForm()
     form.situationid.choices = [(situation.id, situation.name)
         for situation in situations]
-    if situations:
+    if situations and form.situationid.data == u'None':
+        # None ensures we don't overwrite submitted data
         form.situationid.data = situations[0].id
     return form

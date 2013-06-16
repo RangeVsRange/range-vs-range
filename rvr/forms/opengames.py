@@ -18,6 +18,7 @@ def open_games_form(games):
     """
     form = OpenGamesForm()
     form.gameid.choices = [(game.gameid, game.description) for game in games]
-    if games:
+    if games and form.gameid.data == u'None':
+        # None ensures we don't overwrite submitted data
         form.gameid.data = games[0].gameid
     return form
