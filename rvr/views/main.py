@@ -11,6 +11,8 @@ from rvr.forms.texture import texture_form
 from rvr.forms.preflop import preflop_form
 from rvr.forms.confirmation import ConfirmationForm
 from rvr.forms.opengames import open_games_form
+from rvr.views.error import ERROR_CONFIRMATION, ERROR_NO_SITUATION, \
+    ERROR_TEXTURE, ERROR_SITUATION
 
 @APP.route('/', methods=['GET', 'POST'])
 def start_page():
@@ -56,7 +58,7 @@ def flop_texture_page():
         situationid = request.args['situationid']
     except KeyError:
         # They done something wrong.
-        return redirect(url_for('error_page', id=0))
+        return redirect(url_for('error_page', id=ERROR_SITUATION))
     matching_games = matcher.count_situation(situationid)
     form = texture_form(provider.all_textures())
     if form.validate_on_submit():
@@ -68,7 +70,7 @@ def flop_texture_page():
     try:
         details = provider.get_situation(situationid)
     except KeyError:
-        return redirect(url_for('error_page', id=1))
+        return redirect(url_for('error_page', id=ERROR_NO_SITUATION))
     return render_template('texture.html', title='Select a Flop Texture',
         matching_games=matching_games, situation=details.name,
         situationid=situationid, form=form)
@@ -155,7 +157,7 @@ def confirm_situation_validation(path, situationid, texture):
     if (situationid is None or
         path not in ('preflop', 'postflop') or
         (texture is not None) != (path == 'postflop')):
-        return 2
+        return ERROR_CONFIRMATION
     return None
 
 @APP.route('/confirm-situation', methods=['GET', 'POST'])
@@ -187,11 +189,11 @@ def confirm_postflop_page(form, situationid, textureid):
     try:
         s_details = provider.get_situation(situationid)
     except KeyError:
-        return redirect(url_for('error_page', id=1))
+        return redirect(url_for('error_page', id=ERROR_NO_SITUATION))
     try:
         t_details = provider.get_texture(textureid)
     except KeyError:
-        return redirect(url_for('error_page', id=3))
+        return redirect(url_for('error_page', id=ERROR_TEXTURE))
     game_name = "%s (%s)" % (s_details.name, t_details.name)
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_situation_texture(situationid, textureid)
@@ -209,7 +211,7 @@ def confirm_preflop_page(form, situationid):
     try:
         s_details = provider.get_situation(situationid)
     except KeyError:
-        return redirect(url_for('error_page', id=1))
+        return redirect(url_for('error_page', id=ERROR_NO_SITUATION))
     game_name = s_details.name
     matcher = FEATURES['GameFilter']
     matching_games = matcher.count_situation(situationid)
@@ -226,7 +228,7 @@ def confirm_join():
     """
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        return redirect(url_for('error_page', id=2))
+        return redirect(url_for('error_page', id=ERROR_CONFIRMATION))
     form = ConfirmationForm()
     if form.validate_on_submit():
         # TODO: actually join an actual game
@@ -256,25 +258,3 @@ def game_waiting():
     Generates the game page seen when it's the opponent's turn.
     """
     return render_template('game_waiting.html', title='Game - Waiting')
-
-@APP.route('/error')
-def error_page():
-    """
-    Generates an error page.
-    """
-    # pylint:disable=C0301
-    data = [
-        "You ended up at the texture page, but with no situation chosen. That shouldn't happen, sorry.",
-        "It seems like the situation you chose doesn't exist. That shouldn't happen, sorry.",
-        "You ended up at the confirmation page, but without all the details of a game. That shouldn't happen, sorry.",
-        "It seems like the texture you chose doesn't exist. That shouldn't happen, sorry."
-    ]
-    # pylint:enable=C0301
-    try:
-        index = int(request.args['id'])
-        msg = data[index]
-    except:  # IGNORE:W0702
-        index = -1
-        msg = "Something went wrong, and we can't figure out what. Or maybe something went wrong when we were trying to figure out what went wrong. We really don't know. Sorry about that."  # IGNORE:C0301
-    msg = msg + " (The code for this error message is %d.)" % (index,)
-    return render_template('error.html', title="This isn't right", msg=msg)

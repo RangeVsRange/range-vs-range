@@ -20,7 +20,7 @@ def format_texture(texture):
         return Markup("%s - <strong>%s</strong>" %
             (texture.name, texture.cards))
     else:
-        return texture.name  # which happens for random only
+        return texture.name  # which means it's random
 
 def texture_form(textures):
     """
