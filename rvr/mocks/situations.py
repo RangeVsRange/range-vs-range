@@ -18,6 +18,7 @@ class MockSituationProvider(IocComponent):
     """
     Mocks out getting lists of available situations.
     """
+    #pylint:disable=C0301
     def all_postflop(self):
         """
         All postflop situations
@@ -26,6 +27,17 @@ class MockSituationProvider(IocComponent):
             SituationDetails(TYPE_POSTFLOP, "BB vs. a steal", 2, "0", 0),
             SituationDetails(TYPE_POSTFLOP, "CO vs. a re-steal", 2, "1", 1),
             SituationDetails(TYPE_POSTFLOP, "BTN cold call", 2, "2", 2)
+        ]
+
+    def all_preflop(self):
+        """
+        All preflop situations
+        """
+        return [
+            SituationDetails(TYPE_PREFLOP, "Heads-up", 2, "100", 100),
+            SituationDetails(TYPE_PREFLOP, "Blind vs. blind", 2, "101", 101),
+            SituationDetails(TYPE_PREFLOP, "BTN vs. both blinds", 2, "102", 102),
+            SituationDetails(TYPE_PREFLOP, "6-max preflop", 2, "103", 103)
         ]
         
     def all_textures(self):
@@ -38,21 +50,9 @@ class MockSituationProvider(IocComponent):
             TextureDetails("Semi-Wet Flop", "As Jc 8c", "semiwet", 2),
             TextureDetails("Wet Flop", "9h 8h 6d", "wet", 3)
         ]
+    #pylint:enable=C0301
 
-    def all_preflop(self):
-        """
-        All preflop situations
-        """
-        #pylint:disable=C0301
-        return [
-            SituationDetails(TYPE_PREFLOP, "Heads-up", 2, "100", 100),
-            SituationDetails(TYPE_PREFLOP, "Blind vs. blind", 2, "101", 101),
-            SituationDetails(TYPE_PREFLOP, "BTN vs. both blinds", 2, "102", 102),
-            SituationDetails(TYPE_PREFLOP, "6-max preflop", 2, "103", 103)
-        ]
-        #pylint:enable=C0301
-
-    def get_situation(self, situationid):
+    def get_situation_by_id(self, situationid):
         """
         Return a SituationDetails for the given situationid, whether preflop or
         postflop.
@@ -61,7 +61,7 @@ class MockSituationProvider(IocComponent):
         all_pre = {p.id: p for p in self.all_preflop()}
         return all_post.get(situationid, all_pre.get(situationid))
     
-    def get_texture(self, textureid):
+    def get_texture_by_id(self, textureid):
         """
         Return a TextureDetails
         """

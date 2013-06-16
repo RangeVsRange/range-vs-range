@@ -41,8 +41,9 @@ FEATURES = FeatureBroker()
 
 class LateResolvedSingleton(object):
     """
-    An attribute descriptor to "declare" required features,
-    lazy-loads from FEATURES.
+    An attribute descriptor to "declare" required features, lazy-loads from
+    FEATURES. On load, a singleton is created, so even if the feature is not a
+    singleton, this is (hence the name).
     """
     def __init__(self, feature):
         self.feature = feature

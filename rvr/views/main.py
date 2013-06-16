@@ -12,7 +12,7 @@ from rvr.forms.preflop import preflop_form
 from rvr.forms.confirmation import ConfirmationForm
 from rvr.forms.opengames import open_games_form
 from rvr.views.error import ERROR_CONFIRMATION, ERROR_NO_SITUATION, \
-    ERROR_TEXTURE, ERROR_SITUATION
+    ERROR_TEXTURE, ERROR_SITUATION, redirect_to_error, ERROR_BAD_SEARCH
 
 @APP.route('/', methods=['GET', 'POST'])
 def start_page():
@@ -20,7 +20,7 @@ def start_page():
     Generates the start page. AKA the main or home page.
     """
     matcher = FEATURES['GameFilter']
-    matching_games = matcher.count_all()
+    matching_games = matcher.count()
     form = StartForm()
     if form.validate_on_submit():
         if form.path.data == 'situations':
@@ -38,7 +38,7 @@ def situation_page():
     """
     matcher = FEATURES['GameFilter']
     provider = FEATURES['SituationProvider']    
-    matching_games = matcher.count_all_postflop()
+    matching_games = matcher.count(path='postflop')
     form = situation_form(provider.all_postflop())
     if form.validate_on_submit():
         situationid = form.situationid.data
@@ -58,8 +58,8 @@ def flop_texture_page():
         situationid = request.args['situationid']
     except KeyError:
         # They done something wrong.
-        return redirect(url_for('error_page', id=ERROR_SITUATION))
-    matching_games = matcher.count_situation(situationid)
+        return redirect_to_error(id_=ERROR_SITUATION)
+    matching_games = matcher.count(situationid=situationid)
     form = texture_form(provider.all_textures())
     if form.validate_on_submit():
         textureid = form.texture.data
@@ -68,9 +68,9 @@ def flop_texture_page():
                                 situationid=situationid,
                                 textureid=textureid))
     try:
-        details = provider.get_situation(situationid)
+        details = provider.get_situation_by_id(situationid)
     except KeyError:
-        return redirect(url_for('error_page', id=ERROR_NO_SITUATION))
+        return redirect_to_error(id_=ERROR_NO_SITUATION)
     return render_template('texture.html', title='Select a Flop Texture',
         matching_games=matching_games, situation=details.name,
         situationid=situationid, form=form)
@@ -82,7 +82,7 @@ def preflop_page():
     """
     matcher = FEATURES['GameFilter']
     provider = FEATURES['SituationProvider']
-    matching_games = matcher.count_all_preflop()
+    matching_games = matcher.count(path='preflop')
     form = preflop_form(provider.all_preflop())
     if form.validate_on_submit():
         situationid = form.situationid.data
@@ -92,38 +92,6 @@ def preflop_page():
     return render_template('preflop.html', title='Select a Preflop Situation',
         matching_games=matching_games, form=form)
 
-def get_open_games(path, situationid, textureid):
-    """
-    Use the registered GameFilter to filter the available games by path,
-    situationid, textureid.
-
-    If path is not specified, display all games.
-    If path is specified but situationid is not, display all for that path.
-    If path and situationid are both specified, display all for that situation.
-    If path is postflop and situationid and textureid are both specified,
-        display all for that sitaution + texture.
-    """
-    matcher = FEATURES['GameFilter']
-    if path is None:
-        # all games
-        return matcher.all_games()
-    elif situationid is None:
-        # filter to path
-        if path == 'preflop':
-            return matcher.preflop_games()
-        elif path == 'postflop':
-            return matcher.postflop_games()
-        else:
-            # path is invalid, give them all games
-            return matcher.all_games()
-    # ... path and situationid are both present ...
-    elif textureid is not None and path == 'postflop':
-        # filter to situation and texture (implicitly includes path)
-        return matcher.postflop_texture_games(situationid, textureid)
-    else:
-        # filter to situation (implicitly includes path)
-        return matcher.situation_games(situationid)
-
 @APP.route('/open-games', methods=['GET', 'POST'])
 def open_games_page():
     """
@@ -131,10 +99,15 @@ def open_games_page():
     
     See get_open_games for details.
     """
+    matcher = FEATURES['GameFilter']
     path = request.args.get('path', None)
     situationid = request.args.get('situationid', None)
     textureid = request.args.get('textureid', None)
-    matching_games = get_open_games(path, situationid, textureid)
+    try:
+        matching_games = matcher.games(path=path, situationid=situationid,
+            textureid=textureid)
+    except ValueError:
+        return redirect_to_error(ERROR_BAD_SEARCH)
     form = open_games_form(matching_games)
     if form.validate_on_submit():
         # Note: Form data can be validated, but still choose a game that no
@@ -171,7 +144,7 @@ def confirm_situation_page():
     textureid = request.args.get('textureid', None)
     error = confirm_situation_validation(path, situationid, textureid)
     if error is not None:
-        return redirect(url_for('error_page', id=error))
+        return redirect_to_error(id_=error)
     form = ConfirmationForm()
     if form.validate_on_submit():
         # TODO: actually start an actual game
@@ -187,16 +160,16 @@ def confirm_postflop_page(form, situationid, textureid):
     """
     provider = FEATURES['SituationProvider']
     try:
-        s_details = provider.get_situation(situationid)
+        s_details = provider.get_situation_by_id(situationid)
     except KeyError:
-        return redirect(url_for('error_page', id=ERROR_NO_SITUATION))
+        return redirect_to_error(id_=ERROR_NO_SITUATION)
     try:
-        t_details = provider.get_texture(textureid)
+        t_details = provider.get_texture_by_id(textureid)
     except KeyError:
-        return redirect(url_for('error_page', id=ERROR_TEXTURE))
+        return redirect_to_error(id_=ERROR_TEXTURE)
     game_name = "%s (%s)" % (s_details.name, t_details.name)
     matcher = FEATURES['GameFilter']
-    matching_games = matcher.count_situation_texture(situationid, textureid)
+    matching_games = matcher.count(situationid=situationid, textureid=textureid)
     return render_template('confirm_situation.html',
         matching_games=matching_games, situation=game_name,
         title='Pre-Game Confirmation', form=form, situationid=situationid,
@@ -209,12 +182,12 @@ def confirm_preflop_page(form, situationid):
     """
     provider = FEATURES['SituationProvider']
     try:
-        s_details = provider.get_situation(situationid)
+        s_details = provider.get_situation_by_id(situationid)
     except KeyError:
-        return redirect(url_for('error_page', id=ERROR_NO_SITUATION))
+        return redirect_to_error(id_=ERROR_NO_SITUATION)
     game_name = s_details.name
     matcher = FEATURES['GameFilter']
-    matching_games = matcher.count_situation(situationid)
+    matching_games = matcher.count(situationid=situationid)
     return render_template('confirm_situation.html',
         matching_games=matching_games, situation=game_name,
         title='Pre-Game Confirmation', form=form, situationid=situationid,
@@ -228,7 +201,7 @@ def confirm_join():
     """
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        return redirect(url_for('error_page', id=ERROR_CONFIRMATION))
+        return redirect_to_error(id_=ERROR_CONFIRMATION)
     form = ConfirmationForm()
     if form.validate_on_submit():
         # TODO: actually join an actual game

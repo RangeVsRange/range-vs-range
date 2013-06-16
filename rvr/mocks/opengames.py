@@ -50,37 +50,7 @@ class MockGameFilter(IocComponent):
     on the partial signup information entered by the user during signup.
     """
     situation_provider = LateResolvedSingleton('SituationProvider')
-    
-    def count_all(self):
-        """
-        All open games
-        """
-        return 17
-    
-    def count_all_preflop(self):
-        """
-        All preflop games
-        """
-        return 13
-    
-    def count_all_postflop(self):
-        """
-        All postflop games
-        """
-        return 14
-    
-    def count_situation(self, _situationid):
-        """
-        Games that match situation
-        """
-        return 12
-    
-    def count_situation_texture(self, _situationid, _textureid):
-        """
-        Games that match situation and texture 
-        """
-        return 1
-    
+        
     def all_games(self):
         """
         All open games
@@ -100,28 +70,38 @@ class MockGameFilter(IocComponent):
             OpenPreflop("5", all_pre["101"]),
             OpenPreflop("6", all_pre["102"])
         ]
-        
-    def preflop_games(self):
-        """
-        All open preflop games
-        """
-        return [g for g in self.all_games() if g.path == 'preflop']
     
-    def postflop_games(self):
+    def games(self, **criteria):
+        #pylint:disable=C0322
         """
-        All open postflop games
+        Return games filtered to given criteria. Criteria kwargs supported are:
+          path - preflop or postflop
+          situationid - situation ID
+          texture - flop texture, only valid for postflop situations
+        If a kwarg value is None, it will be ignored
         """
-        return [g for g in self.all_games() if g.path == 'postflop']
-    
-    def situation_games(self, situationid):
+        criteria = {k: v for k, v in criteria.iteritems() if v is not None}
+        expr = lambda g: True
+        if criteria.has_key('path'):
+            path = criteria.pop('path')
+            expr = lambda g, expr=expr:  \
+                expr(g) and g.path == path
+        if criteria.has_key('situationid'):
+            situationid = criteria.pop('situationid')
+            expr = lambda g, expr=expr:  \
+                expr(g) and g.situation.id == situationid
+        if criteria.has_key('textureid'):
+            textureid = criteria.pop('textureid')
+            expr = lambda g, expr=expr:  \
+                expr(g) and g.texture.id == textureid
+        if criteria:
+            return ValueError('Invalid game selection criteria: "%s"' %
+                (criteria.keys()[0],))
+        return [g for g in self.all_games() if expr(g)]
+        #pylint:enable=C0322
+
+    def count(self, **criteria):
         """
-        All open games with given situationid
+        Return count of filtered games. See games() for details.
         """
-        return [g for g in self.all_games() if g.situation.id == situationid]
-        
-    def postflop_texture_games(self, situationid, textureid):
-        """
-        All open postflop games with given situationid, textureid
-        """
-        return [g for g in self.all_games() if g.path == 'postflop' and  \
-            g.situation.id == situationid and g.texture.id == textureid]
+        return len(self.games(**criteria))
