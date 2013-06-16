@@ -9,7 +9,7 @@ class PreflopForm(Form):  # IGNORE:R0924
     """
     User chooses a preflop situation.
     """
-    situationid = RadioField(default='1', validators=[Required()])
+    situationid = RadioField(validators=[Required()])
     
 def preflop_form(situations):
     """
@@ -18,4 +18,6 @@ def preflop_form(situations):
     form = PreflopForm()
     form.situationid.choices = [(situation.id, situation.name)
         for situation in situations]
+    if situations:
+        form.situationid.data = situations[0].id
     return form

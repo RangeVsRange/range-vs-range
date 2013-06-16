@@ -18,4 +18,6 @@ def open_games_form(games):
     """
     form = OpenGamesForm()
     form.gameid.choices = [(game.gameid, game.description) for game in games]
+    if games:
+        form.gameid.data = games[0].gameid
     return form

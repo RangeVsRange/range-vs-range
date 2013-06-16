@@ -139,7 +139,6 @@ def open_games_page():
         # longer exists. For that reason, gameids should not be reused.
         return redirect(url_for('confirm_join', gameid=form.gameid.data))
     if matching_games:
-        form.gameid.default = matching_games[0].gameid
         return render_template('open_games.html', title='Select an Open Game',
             games=matching_games, form=form)
     else:
