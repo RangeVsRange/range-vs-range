@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Start Page</h2>
 <p>Range vs. Range lets you train specific post-flop situations or complete hands starting preflop. Pick one!</p>
-<form method="post" name="start" action="{{ url_for('start_page') }}">
+<form method="post" name="start">
   {# Note: we don't handle validation errors, because they can't really get this form wrong! #}
   {{form.hidden_tag()}}
   <p>

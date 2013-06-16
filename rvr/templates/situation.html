@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Situation Page</h2>
 <p>Range vs. Range is very new, and there are only a few training situations. We've chosen the most profitable<sup><a href="#note1">[1]</a></sup> situations to start with. Soon, you will be able to customise situations entirely. Pick a situation!</p>
-<form method="post" name="situation" action="{{ url_for('situation_page') }}">
+<form method="post" name="situation">
   {# Note: we don't handle validation errors, because they can't really get this form wrong! #}
   {{form.hidden_tag()}}
   <p>

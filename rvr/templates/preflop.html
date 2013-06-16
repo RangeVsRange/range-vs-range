@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Preflop Page</h2>
 <p>Range vs. Range supports 2, 3 and 6-player preflop games<sup><a href="#note1">[1]</a></sup>. Pick one!</p>
-<form method="post" name="preflop" action="{{ url_for('preflop_page') }}">
+<form method="post" name="preflop">
   {# Note: we don't handle validation errors, because they can't really get this form wrong! #}
   {{form.hidden_tag()}}
   <p>
