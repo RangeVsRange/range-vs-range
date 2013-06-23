@@ -111,7 +111,6 @@ def open_games_page():
     if form.validate_on_submit():
         # Note: Form data can be validated, but still choose a game that no
         # longer exists. For that reason, gameids should not be reused.
-        # TODO: for some reason, gameid is always 0
         return redirect(url_for('confirm_join', gameid=form.gameid.data))
     if matching_games:
         return render_template('open_games.html', title='Select an Open Game',

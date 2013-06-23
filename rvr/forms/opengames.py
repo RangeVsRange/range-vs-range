@@ -20,5 +20,6 @@ def open_games_form(games):
     form.gameid.choices = [(game.gameid, game.description) for game in games]
     if games and form.gameid.data == u'None':
         # None ensures we don't overwrite submitted data
+        # But this really doesn't seem like the right way!
         form.gameid.data = games[0].gameid
     return form

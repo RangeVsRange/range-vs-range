@@ -20,5 +20,6 @@ def preflop_form(situations):
         for situation in situations]
     if situations and form.situationid.data == u'None':
         # None ensures we don't overwrite submitted data
+        # But this really doesn't seem like the right way!
         form.situationid.data = situations[0].id
     return form
