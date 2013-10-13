@@ -12,3 +12,4 @@ SECRET_KEY = ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopq
 
 DEBUG = False
 RELOADER = False
+OPENID_FS_STORE_PATH = 'openid-store'

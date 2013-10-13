@@ -4,7 +4,7 @@ Declares database tables
 from rvr.db.connect import DB
 
 #pylint:disable=E1101,R0903
-class User(DB.Model):
+class RvrUser(DB.Model):
     """
     A user of the application
     """
