@@ -146,7 +146,6 @@ def confirm_situation_page():
         return redirect_to_error(id_=error)
     form = ConfirmationForm()
     if form.validate_on_submit():
-        # TODO: actually start an actual game
         return redirect(url_for('game_not_started'))
     elif path == 'preflop':
         return confirm_preflop_page(form, situationid)
@@ -200,7 +199,6 @@ def confirm_join():
         return redirect_to_error(id_=ERROR_CONFIRMATION)
     form = ConfirmationForm()
     if form.validate_on_submit():
-        # TODO: actually join an actual game
         return redirect(url_for('game_not_started'))
     else:
         return render_template('confirm_join.html',
