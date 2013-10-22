@@ -1,9 +1,9 @@
-import sys; sys.path.append('/root/rvr/src/')
 from cmd import Cmd
 import logging
 from rvr.core.api import API
 from rvr.core.dtos import LoginDetails
 from rvr.db.creation import do_create
+from rvr.db.initialise import do_initialise
 
 class AdminCmd(Cmd):        
     def __init__(self):
@@ -16,6 +16,8 @@ class AdminCmd(Cmd):
         """
         do_create()
         print "Database created"
+        do_initialise()
+        print "Database initialised"
     
     def do_adduser(self, params):
         """

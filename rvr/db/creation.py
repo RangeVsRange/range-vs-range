@@ -12,6 +12,6 @@ BASE = declarative_base()
 
 def do_create():
     """
-    Create the database
+    Create and seed the database
     """
-    BASE.metadata.create_all(ENGINE) #@UndefinedVariable
+    BASE.metadata.create_all(ENGINE)

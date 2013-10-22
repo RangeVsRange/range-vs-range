@@ -2,8 +2,8 @@
 Declares database tables
 """
 from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
-from rvr.db.creation import BASE
 from sqlalchemy.orm import relationship
+from rvr.db.creation import BASE
 
 #pylint:disable=W0232
 
@@ -41,6 +41,7 @@ class OpenGame(BASE):
     """
     __tablename__ = 'open_game'
     gameid = Column(Integer, Sequence('open_game_seq'), primary_key=True)
+    situationid = Column(Integer, ForeignKey("situation.situationid"))
     situation = relationship("Situation", backref="open_games")
 
 class OpenGameParticipant(BASE):
@@ -62,6 +63,7 @@ class RunningGame(BASE):
     """
     __tablename__ = 'running_game'
     gameid = Column(Integer, Sequence('running_game_seq'), primary_key=True)
+    situationid = Column(Integer, ForeignKey("situation.situationid"))
     situation = relationship("Situation", backref="running_games")
 
 class RunningGameParticipant(BASE):
@@ -70,6 +72,8 @@ class RunningGameParticipant(BASE):
     running games.
     """
     __tablename__ = 'running_game_participant'
+    userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
+    gameid = Column(Integer, ForeignKey("running_game.gameid"), primary_key=True)
     user = relationship("User", backref="running_game_participants")
     game = relationship("RunningGame", backref="running_game_participants")
 
@@ -81,6 +85,7 @@ class FinishedGame(BASE):
     """
     __tablename__ = 'finished_game'
     gameid = Column(Integer, Sequence('finished_game_seq'), primary_key=True)
+    situationid = Column(Integer, ForeignKey("situation.situationid"))
     situation = relationship("Situation", backref="finished_games")
 
 class FinishedGameParticipant(BASE):
@@ -89,5 +94,7 @@ class FinishedGameParticipant(BASE):
     finished games.
     """
     __tablename__ = 'finished_game_participant'
+    userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
+    gameid = Column(Integer, ForeignKey("finished_game.gameid"), primary_key=True)
     user = relationship("User", backref="finished_game_participants")
     game = relationship("FinishedGame", backref="finished_game_participants")
