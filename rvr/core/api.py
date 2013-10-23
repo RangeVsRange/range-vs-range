@@ -63,7 +63,7 @@ class API(object):
                                 email=user.email,
                                 screenname=user.screenname)
     
-    def open_games(self):
+    def get_open_games(self):
         """
         2. Retrieve open games including registered users
         inputs: (none)
@@ -75,7 +75,7 @@ class API(object):
                    for game in all_open_games]
         return results
     
-    def user_games(self):
+    def get_user_games(self):
         """
         3. Retrieve user's games and their statuses
         inputs: userid

@@ -36,7 +36,8 @@ class OpenGameDetails(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, screennames, description):
+    def __init__(self, gameid,  screennames, description):
+        self.gameid = gameid
         self.screennames = screennames
         self.description = description
     
@@ -44,7 +45,7 @@ class OpenGameDetails(object):
     def from_open_game(cls, open_game):
         names = [user.screenname for user in open_game.open_game_participants] 
         description = open_game.situation.description
-        return cls(names, description)
+        return cls(open_game.gameid, names, description)
 
 class GameDetails(object):
     """

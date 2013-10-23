@@ -30,7 +30,7 @@ class AdminCmd(Cmd):
                                    screenname=params[2])
         else:
             print "Need exactly 3 parameters."
-            print "For more info, help adduser"
+            print "For more info, help login"
             return
         response = self.api.login(details)
         print "Created user with userid='%s', provider='%s', email='%s', screenname='%s'" %  \
@@ -40,15 +40,16 @@ class AdminCmd(Cmd):
         """
         Display open games, their descriptions, and their registered users.
         """
-        response = self.api.open_games()
+        response = self.api.get_open_games()
         print "Open games:"
-        for number, details in enumerate(response):
+        for details in response:
             if details.screennames:
                 names = ', '.join(["'%s'" % (name, ) 
                                    for name in details.screennames])
             else:
                 names = '(empty)'
-            print "%d -> '%s': %s" % (number, details.description, names)
+            gameid = details.gameid
+            print "%d -> '%s': %s" % (gameid, details.description, names)
 
     def do_update(self, _details):
         """
