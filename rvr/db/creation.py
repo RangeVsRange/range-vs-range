@@ -9,9 +9,3 @@ from rvr.core import backendconfig
 ENGINE = create_engine('sqlite:///%s' % backendconfig.DB_PATH, echo=False)
 SESSION = sessionmaker(bind=ENGINE)
 BASE = declarative_base()
-
-def do_create():
-    """
-    Create and seed the database
-    """
-    BASE.metadata.create_all(ENGINE)

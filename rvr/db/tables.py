@@ -31,7 +31,7 @@ class Situation(BASE):
     """
     __tablename__ = 'situation'
     situationid = Column(Integer, primary_key=True)
-    description = Column(String(500), nullable=False)
+    description = Column(String(500), nullable=False, unique=True)
     
 class OpenGame(BASE):
     """

@@ -2,8 +2,6 @@ from cmd import Cmd
 import logging
 from rvr.core.api import API
 from rvr.core.dtos import LoginDetails
-from rvr.db.creation import do_create
-from rvr.db.initialise import do_initialise
 
 class AdminCmd(Cmd):        
     def __init__(self):
@@ -14,15 +12,15 @@ class AdminCmd(Cmd):
         """
         Create the database
         """
-        do_create()
+        self.api.create_db()
         print "Database created"
-        do_initialise()
+        self.api.initialise_db()
         print "Database initialised"
     
-    def do_adduser(self, params):
+    def do_login(self, params):
         """
-        Calls the adduser API function
-        adduser(provider, email, screenname)
+        Calls the login API function
+        login(provider, email, screenname)
         """
         params = params.split(None, 2)
         if len(params) == 3:
@@ -38,12 +36,35 @@ class AdminCmd(Cmd):
         print "Created user with userid='%s', provider='%s', email='%s', screenname='%s'" %  \
             (response.userid, response.provider, response.email, response.screenname)
 
+    def do_opengames(self, _details):
+        """
+        Display open games, their descriptions, and their registered users.
+        """
+        response = self.api.open_games()
+        print "Open games:"
+        for number, details in enumerate(response):
+            if details.screennames:
+                names = ', '.join(["'%s'" % (name, ) 
+                                   for name in details.screennames])
+            else:
+                names = '(empty)'
+            print "%d -> '%s': %s" % (number, details.description, names)
+
+    def do_update(self, _details):
+        """
+        The kind of updates a background process would normally do. Currently
+        includes:
+         - ensure there's exactly one empty open game of each situation.
+        """
+        delta = self.api.ensure_open_games()
+        print "Open games refreshed. Game count delta: %d" % (delta, )
+
     def do_exit(self, _details):
         """
         Close the admin interface
         """
         print "Goodbye."
-        return True       
+        return True
 
 logging.basicConfig()
 logging.root.setLevel(logging.DEBUG)

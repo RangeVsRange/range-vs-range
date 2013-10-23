@@ -34,9 +34,17 @@ class RangeBasedActionDetails(object):
 
 class OpenGameDetails(object):
     """
-    list of users registered and details of situation
+    list of users in game, and details of situation
     """
-    pass
+    def __init__(self, screennames, description):
+        self.screennames = screennames
+        self.description = description
+    
+    @classmethod
+    def from_open_game(cls, open_game):
+        names = [user.screenname for user in open_game.open_game_participants] 
+        description = open_game.situation.description
+        return cls(names, description)
 
 class GameDetails(object):
     """

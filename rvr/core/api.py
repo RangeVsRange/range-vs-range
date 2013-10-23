@@ -1,6 +1,7 @@
-from rvr.core.dtos import LoginDetails
-from rvr.db.creation import SESSION
-from rvr.db.tables import User
+from rvr.core.dtos import LoginDetails, OpenGameDetails
+from rvr.db.creation import SESSION, BASE, ENGINE
+from rvr.db.tables import User, Situation, OpenGame
+
 class API(object):
     """
     A reference to the backend. You can have more than one reference to the same
@@ -12,6 +13,22 @@ class API(object):
         Initialises a connection to the backend
         """
         pass
+    
+    def create_db(self):
+        """
+        Create and seed the database
+        """
+        BASE.metadata.create_all(ENGINE)
+        
+    def initialise_db(self):
+        """
+        Create initial data for database
+        """
+        situation = Situation()
+        situation.description = "Heads-up preflop, 100 BB"
+        session = SESSION()
+        session.add(situation)
+        session.commit()
     
     def login(self, request):
         """
@@ -52,6 +69,11 @@ class API(object):
         inputs: (none)
         outputs: list of open games. for each game, users in game, details of game
         """
+        session = SESSION()
+        all_open_games = session.query(OpenGame).all()
+        results = [OpenGameDetails.from_open_game(game)
+                   for game in all_open_games]
+        return results
     
     def user_games(self):
         """
@@ -95,3 +117,27 @@ class API(object):
         inputs: userid, gameid
         outputs: hand history partially populated with ranges for userid only
         """    
+    
+    def ensure_open_games(self):
+        """
+        Ensure there is exactly one empty open game for each situation in the
+        database.
+        """
+        session = SESSION()
+        for situation in session.query(Situation).all():
+            empty_open = session.query(OpenGame)  \
+                .filter(Situation.situationid == situation.situationid).all()
+            if len(empty_open) > 1:
+                # delete one!
+                session.delete(empty_open[0])
+                session.commit()
+                return -1
+            elif len(empty_open) == 0:
+                # add one!
+                new_game = OpenGame()
+                new_game.situationid = situation.situationid
+                session.add(new_game)
+                session.commit()
+                return 1
+            else:
+                return 0
