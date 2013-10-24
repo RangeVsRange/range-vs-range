@@ -1,4 +1,4 @@
-from rvr.core.dtos import LoginDetails, OpenGameDetails
+from rvr.core.dtos import LoginDetails, OpenGameDetails, UserDetails
 from rvr.db.creation import SESSION, BASE, ENGINE
 from rvr.db.tables import User, Situation, OpenGame
 
@@ -62,6 +62,19 @@ class API(object):
                                 provider=user.provider,
                                 email=user.email,
                                 screenname=user.screenname)
+    
+    def get_user_by_screenname(self, screenname):
+        """
+        Return list of all users userid, screenname
+        """
+        session = SESSION()
+        matches = session.query(User)  \
+            .filter(User.screenname == screenname).all()
+        if matches:
+            user = matches[0]
+            return UserDetails(user.userid, user.screenname)
+        else:
+            return None
     
     def get_open_games(self):
         """

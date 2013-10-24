@@ -36,6 +36,17 @@ class AdminCmd(Cmd):
         print "Created user with userid='%s', provider='%s', email='%s', screenname='%s'" %  \
             (response.userid, response.provider, response.email, response.screenname)
 
+    def do_getuser(self, details):
+        """
+        getuser <screenname>
+        gets userid by screenname
+        """
+        user = self.api.get_user_by_screenname(details)
+        if user is None:
+            print "No such user"
+        else:
+            print "'%s' has userid %s" % (user.screenname, user.userid)
+
     def do_opengames(self, _details):
         """
         Display open games, their descriptions, and their registered users.

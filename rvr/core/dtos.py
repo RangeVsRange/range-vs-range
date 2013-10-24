@@ -22,9 +22,11 @@ class LoginDetails(object):
 
 class UserDetails(object):
     """
-    userid
+    userid, screenname
     """
-    pass
+    def __init__(self, userid, screenname):
+        self.userid = userid
+        self.screenname = screenname
 
 class RangeBasedActionDetails(object):
     """
