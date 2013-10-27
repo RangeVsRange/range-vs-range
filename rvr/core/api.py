@@ -15,13 +15,13 @@ def exception_mapper(fun):
     @wraps(fun)
     def inner(*args, **kwargs):
         """
-        Catch exceptions and return API.UNKNOWN_ERROR
+        Catch exceptions and return API.ERR_UNKNOWN
         """
         try:
             return fun(*args, **kwargs)
         except Exception as ex:
             logging.debug(ex)
-            return API.UNKNOWN_ERROR
+            return API.ERR_UNKNOWN
     return inner
 
 def api(fun):
@@ -53,9 +53,9 @@ class API(object):
     backend. You can also have references to multiple backends, but I don't
     expect that to happen.
     """
-    UNKNOWN_ERROR = APIError("Internal error")
-    NO_SUCH_USER = APIError("No such user")
-    NO_SUCH_OPEN_GAME = APIError("No such open game")
+    ERR_UNKNOWN = APIError("Internal error")
+    ERR_NO_SUCH_USER = APIError("No such user")
+    ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
     
     def __init__(self):
         """
@@ -77,7 +77,7 @@ class API(object):
         """
         situation = Situation()
         situation.description = "Heads-up preflop, 100 BB"
-        situation.participants = 3
+        situation.participants = 2
         session.add(situation)
     
     @api
@@ -152,13 +152,16 @@ class API(object):
         return results
     
     @api
-    def get_user_games(self, session):
+    def get_user_games(self, session, userid):
         """
         3. Retrieve user's games and their statuses
         inputs: userid
         outputs: list of user's games. each may be open game, running (not our turn),
         running (our turn), finished. no more details of each game.
         """
+        open_games = []
+        running_games = []
+        finished_games = []
         
     def _start_game(self, session, open_game):
         """
@@ -177,6 +180,7 @@ class API(object):
         yet.
         """
         running_game = RunningGame()
+        running_game.gameid = open_game.gameid
         running_game.situationid = open_game.situationid
         session.delete(open_game)
         session.add(running_game)
@@ -188,8 +192,8 @@ class API(object):
             session.add(rgp)
         return running_game
 
-    JOIN_GAME__ALREADY_IN = APIError("User is already registered")
-    JOIN_GAME__GAME_FULL = APIError("Game is full")
+    ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
+    ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
 
     @api
     def join_game(self, userid, gameid, session):
@@ -207,17 +211,17 @@ class API(object):
         games = session.query(OpenGame)  \
             .filter(OpenGame.gameid == gameid).all()
         if not games:
-            return self.NO_SUCH_OPEN_GAME
+            return self.ERR_NO_SUCH_OPEN_GAME
         game = games[0]
         users = session.query(User).filter(User.userid == userid).all()
         if not users:
-            return self.NO_SUCH_USER
+            return self.ERR_NO_SUCH_USER
         user = users[0]
         if any(ogp.userid == userid for ogp in game.ogps):
-            return self.JOIN_GAME__ALREADY_IN
+            return self.ERR_JOIN_GAME_ALREADY_IN
         game.participants += 1
         if game.participants > game.situation.participants:
-            return self.JOIN_GAME__GAME_FULL
+            return self.ERR_JOIN_GAME_GAME_FULL
         
         # add user to game
         ogp = OpenGameParticipant()
@@ -250,7 +254,7 @@ class API(object):
         if running_game is not None:
             return running_game.gameid
 
-    LEAVE_GAME__NOT_IN = APIError("User was not registered")
+    ERR_LEAVE_GAME_NOT_IN = APIError("User was not registered")
 
     @api
     def leave_game(self, userid, gameid, session):
@@ -263,19 +267,21 @@ class API(object):
         games = session.query(OpenGame)  \
             .filter(OpenGame.gameid == gameid).all()
         if not games:
-            return self.NO_SUCH_OPEN_GAME
+            return self.ERR_NO_SUCH_OPEN_GAME
         game = games[0]
         users = session.query(User).filter(User.userid == userid).all()
         if not users:
-            return self.NO_SUCH_USER
+            return self.ERR_NO_SUCH_USER
         for ogp in game.ogps:
             if ogp.userid == userid:
                 session.delete(ogp)
                 break
         else:
-            return self.LEAVE_GAME__NOT_IN
+            return self.ERR_LEAVE_GAME_NOT_IN
         game.participants -= 1        
-        session.commit()
+        # I don't know why, but flush here causes
+        # ensure_open_games to fail.
+        session.commit()  # TODO: Why won't flush work?
         self.ensure_open_games(session)        
 
     @api
@@ -285,6 +291,7 @@ class API(object):
         inputs: userid, gameid, action
         outputs: (none)
         """
+        # TODO:
     
     @api
     def get_public_game(self, session):
@@ -293,14 +300,18 @@ class API(object):
         inputs: gameid
         outputs: hand history populated with ranges iff finished
         """
+        # TODO:
+        # To start with, just return basic details of the game
 
     @api
-    def get_user_game(self, session):
+    def get_private_game(self, session):
         """
         8. Retrieve game history with current player's ranges
         inputs: userid, gameid
         outputs: hand history partially populated with ranges for userid only
-        """    
+        """
+        # TODO:
+        # To start with, just do what get_public_game does
     
     @api
     def ensure_open_games(self, session):
@@ -313,8 +324,7 @@ class API(object):
                 .filter(Situation.situationid == situation.situationid)  \
                 .filter(OpenGame.participants == 0).all()
             if len(empty_open) > 1:
-                # delete all bar one
-                # TODO: untested
+                # delete all except one
                 for game in empty_open[:-1]:
                     logging.debug("Deleted open game %d for situation %d",
                                   game.gameid, situation.situationid)

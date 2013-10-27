@@ -41,7 +41,7 @@ class OpenGame(BASE):
     Has a many-to-many relationship with User, via OpenGameParticipant.
     """
     __tablename__ = 'open_game'
-    gameid = Column(Integer, Sequence('open_game_seq'), primary_key=True)
+    gameid = Column(Integer, Sequence('gameid_seq'), primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"), nullable=False)
     participants = Column(Integer, nullable=False)
     situation = relationship("Situation", backref="open_games")
@@ -64,7 +64,7 @@ class RunningGame(BASE):
     Has a many-to-many relationship with User, via RunningGameParticipant.
     """
     __tablename__ = 'running_game'
-    gameid = Column(Integer, Sequence('running_game_seq'), primary_key=True)
+    gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"), nullable=False)
     situation = relationship("Situation", backref="running_games")
 
@@ -86,7 +86,7 @@ class FinishedGame(BASE):
     Has a many-to-many relationship with User, via FinishedGameParticipant.
     """
     __tablename__ = 'finished_game'
-    gameid = Column(Integer, Sequence('finished_game_seq'), primary_key=True)
+    gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"), nullable=False)
     situation = relationship("Situation", backref="finished_games")
 
