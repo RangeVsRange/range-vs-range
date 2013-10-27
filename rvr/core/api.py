@@ -2,9 +2,10 @@ from rvr.core.dtos import LoginDetails, OpenGameDetails, UserDetails,\
     RunningGameDetails
 from rvr.db.creation import BASE, ENGINE, with_session
 from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant,\
-    RunningGame, RunningGameParticipant
+    RunningGame, RunningGameParticipant, FinishedGame, FinishedGameParticipant
 from functools import wraps
 import logging
+import random
 
 hack = False
 
@@ -159,9 +160,7 @@ class API(object):
         outputs: list of user's games. each may be open game, running (not our turn),
         running (our turn), finished. no more details of each game.
         """
-        open_games = []
-        running_games = []
-        finished_games = []
+        # TODO:
         
     def _start_game(self, session, open_game):
         """
@@ -182,6 +181,7 @@ class API(object):
         running_game = RunningGame()
         running_game.gameid = open_game.gameid
         running_game.situationid = open_game.situationid
+        running_game.current_userid = random.choice(open_game.ogps).userid
         session.delete(open_game)
         session.add(running_game)
         for ogp in open_game.ogps:
@@ -237,9 +237,10 @@ class API(object):
         else:
             running_game = None
             
-        # retry in the case of db inconsistency errors
         try:
-            session.commit()  # Explicitly check that it commits okay
+            # This commits both the add, and the start game if present.
+            # This is important so that there are never duplicate game ids.
+            session.commit()  # explicitly check that it commits okay
         except Exception as _ex:
             # An error will occur if game no longer exists, or user no longer
             # exists, or user has already been added to game, or game has

@@ -27,6 +27,10 @@ class UserDetails(object):
     def __init__(self, userid, screenname):
         self.userid = userid
         self.screenname = screenname
+        
+    @classmethod
+    def from_user(cls, user):
+        return cls(user.userid, user.screenname)
 
 class RangeBasedActionDetails(object):
     """
@@ -54,17 +58,35 @@ class RunningGameDetails(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, gameid, screennames, description):
+    def __init__(self, gameid, screennames, description, user_details):
         self.gameid = gameid
         self.screennames = screennames
         self.description = description
+        self.current_user_details = user_details
     
     @classmethod
     def from_running_game(cls, running_game):
         names = [rgp.user.screenname
                  for rgp in running_game.rgps] 
         description = running_game.situation.description
-        return cls(running_game.gameid, names, description)
+        user_details = UserDetails.from_user(running_game.current_user)
+        return cls(running_game.gameid, names, description, user_details)
+
+class FinishedGameDetails(object):
+    """
+    list of users in game, and details of situation
+    """
+    def __init__(self, gameid, screennames, description):
+        self.gameid = gameid
+        self.screennames = screennames
+        self.description = description
+    
+    @classmethod
+    def from_finished_game(cls, finished_game):
+        names = [rgp.user.screenname
+                 for rgp in finished_game.rgps] 
+        description = finished_game.situation.description
+        return cls(finished_game.gameid, names, description)
 
 class GameDetails(object):
     """

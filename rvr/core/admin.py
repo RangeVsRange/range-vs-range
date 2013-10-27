@@ -86,7 +86,9 @@ class AdminCmd(Cmd):
             names = ', '.join(["'%s'" % (name, )
                                for name in details.screennames])
             gameid = details.gameid
-            print "%d -> '%s': %s" % (gameid, details.description, names)
+            current = details.current_user_details.screenname
+            print "%d -> '%s': %s (current '%s')"  \
+                % (gameid, details.description, names, current)
 
     def do_joingame(self, params):
         """

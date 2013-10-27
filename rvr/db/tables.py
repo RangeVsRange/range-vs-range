@@ -66,7 +66,9 @@ class RunningGame(BASE):
     __tablename__ = 'running_game'
     gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"), nullable=False)
+    current_userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     situation = relationship("Situation", backref="running_games")
+    current_user = relationship("User")
 
 class RunningGameParticipant(BASE):
     """
