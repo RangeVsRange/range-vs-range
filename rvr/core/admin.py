@@ -58,6 +58,9 @@ class AdminCmd(Cmd):
         Display open games, their descriptions, and their registered users.
         """
         response = self.api.get_open_games()
+        if isinstance(response, APIError):
+            print response
+            return
         print "Open games:"
         for details in response:
             if details.screennames:
@@ -103,8 +106,11 @@ class AdminCmd(Cmd):
         includes:
          - ensure there's exactly one empty open game of each situation.
         """
-        delta = self.api.ensure_open_games()
-        print "Open games refreshed. Game count delta: %d" % (delta, )
+        result = self.api.ensure_open_games()
+        if result is APIError:
+            print result
+        else:
+            print "Open games refreshed."
 
     def do_exit(self, _details):
         """

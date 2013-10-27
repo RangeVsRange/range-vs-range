@@ -43,6 +43,9 @@ def api(fun):
 class APIError(object):
     def __init__(self, description):
         self.description = description
+    
+    def __str__(self):
+        return self.description
 
 class API(object):
     """
@@ -59,25 +62,24 @@ class API(object):
         pass
     
     @api
-    def create_db(self, **kwargs):
+    def create_db(self, session):
         """
         Create and seed the database
         """
         BASE.metadata.create_all(ENGINE)
         
     @api
-    def initialise_db(self, **kwargs):
+    def initialise_db(self, session):
         """
         Create initial data for database
         """
-        session = kwargs['session']
         situation = Situation()
         situation.description = "Heads-up preflop, 100 BB"
         situation.participants = 2
         session.add(situation)
     
     @api
-    def login(self, request, **kwargs):
+    def login(self, request, session):
         """
         1. Create or validate OpenID-based account
         inputs: provider, email, screenname
@@ -85,7 +87,6 @@ class API(object):
         """
         if request.userid is not None:
             raise Exception("don't specify a userid when logging in")
-        session = kwargs['session']
         matches = session.query(User)  \
             .filter(User.provider == request.provider)  \
             .filter(User.email == request.email)  \
@@ -110,11 +111,10 @@ class API(object):
                                 screenname=user.screenname)
     
     @api
-    def get_user_by_screenname(self, screenname, **kwargs):
+    def get_user_by_screenname(self, screenname, session):
         """
         Return list of all users userid, screenname
         """
-        session = kwargs['session']
         matches = session.query(User)  \
             .filter(User.screenname == screenname).all()
         if matches:
@@ -124,51 +124,39 @@ class API(object):
             return None
     
     @api
-    def get_open_games(self, **kwargs):
+    def get_open_games(self, session):
         """
         2. Retrieve open games including registered users
         inputs: (none)
         outputs: List of open games. For each game, users in game, details of
                  game
         """
-        session = kwargs['session']
         all_open_games = session.query(OpenGame).all()
         results = [OpenGameDetails.from_open_game(game)
                    for game in all_open_games]
         return results
     
     @api
-    def get_running_games(self, **kwargs):
+    def get_running_games(self, session):
         """
         Retrieve running games including registered users
         input: (none)
         outputs: List of running games. For each game, users in game, details
                  of game
         """
-        session = kwargs['session']
         all_running_games = session.query(RunningGame).all()
         results = [RunningGameDetails.from_running_game(game)
                    for game in all_running_games]
         return results
     
     @api
-    def get_user_games(self, **kwargs):
+    def get_user_games(self, session):
         """
         3. Retrieve user's games and their statuses
         inputs: userid
         outputs: list of user's games. each may be open game, running (not our turn),
         running (our turn), finished. no more details of each game.
         """
-        session = kwargs['session']
-
-    @api
-    def leave_game(self, **kwargs):
-        """
-        4. Leave/cancel game we're in
-        inputs: userid, gameid
-        outputs: (none)
-        """
-        session = kwargs['session']
         
     def _start_game(self, session, open_game):
         """
@@ -204,7 +192,7 @@ class API(object):
     JOIN_GAME__ALREADY_IN = APIError("User is already registered")
 
     @api
-    def join_game(self, userid, gameid, **kwargs):
+    def join_game(self, userid, gameid, session):
         """
         5. Join/start game we're not in
         inputs: userid, gameid
@@ -215,8 +203,6 @@ class API(object):
                 - game is full
                 - user is already registered
         """
-        session = kwargs['session']
-        
         # check error conditions
         games = session.query(OpenGame)  \
             .filter(OpenGame.gameid == gameid).all()
@@ -256,63 +242,70 @@ class API(object):
             # already been filled, or problems with starting the game!
             session.rollback()
             # Complete fail, okay, here we just try again!
-            running_game = self.join_game(userid, gameid, session=session)
+            running_game = self.join_game(userid, gameid, session)
 
-        self.ensure_open_games(session=session)
+        self.ensure_open_games(session)
 
         # it's committed, so we will have the id
         if running_game is not None:
             return running_game.gameid
 
     @api
-    def perform_action(self, **kwargs):
+    def leave_game(self, session):
+        """
+        4. Leave/cancel game we're in
+        inputs: userid, gameid
+        outputs: (none)
+        """
+
+    @api
+    def perform_action(self, session):
         """
         6. Perform action in game we're in
         inputs: userid, gameid, action
         outputs: (none)
         """
-        session = kwargs['session']
     
     @api
-    def get_public_game(self, **kwargs):
+    def get_public_game(self, session):
         """
         7. Retrieve game history without current player's ranges
         inputs: gameid
         outputs: hand history populated with ranges iff finished
         """
-        session = kwargs['session']
 
     @api
-    def get_user_game(self, **kwargs):
+    def get_user_game(self, session):
         """
         8. Retrieve game history with current player's ranges
         inputs: userid, gameid
         outputs: hand history partially populated with ranges for userid only
         """    
-        session = kwargs['session']
     
     @api
-    def ensure_open_games(self, **kwargs):
+    def ensure_open_games(self, session):
         """
         Ensure there is exactly one empty open game for each situation in the
         database.
-        
-        Returns change in number of games.
         """
-        session = kwargs['session']
         for situation in session.query(Situation).all():
             empty_open = session.query(OpenGame)  \
-                .filter(Situation.situationid == situation.situationid).all()
+                .filter(Situation.situationid == situation.situationid)  \
+                .filter(OpenGame.participants == 0).all()
             if len(empty_open) > 1:
-                # delete one!
-                session.delete(empty_open[0])
-                return -1
+                # delete all bar one
+                # TODO: untested
+                for game in empty_open[:-1]:
+                    logging.debug("Deleted open game %d for situation %d",
+                                  game.gameid, situation.situationid)
+                    session.delete(game)
             elif len(empty_open) == 0:
                 # add one!
                 new_game = OpenGame()
                 new_game.situationid = situation.situationid
                 new_game.participants = 0
                 session.add(new_game)
-                return 1
-            else:
-                return 0
+                session.flush()  # get gameid
+                logging.debug("Created open game %d for situation %d",
+                              new_game.gameid, situation.situationid)
+                

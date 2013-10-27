@@ -36,24 +36,20 @@ def with_session(fun):
         If session argument exists, call fun as such.
         If session argument doesn't exist, wrap fun in session_scope()
         """
-        # TODO: make session last arg, not kwarg. Check for presense of session
-        # before injecting.
-        if 'session' in kwargs:
+        if isinstance(args[-1], SESSION):
             return fun(*args, **kwargs)
         else:
             with session_scope() as session:
-                kwargs['session'] = session
-                return fun(*args, **kwargs)
+                return fun(*(args + (session,)), **kwargs)
     return inner
 
 if __name__ == '__main__':
     @with_session
-    def func(arg, **kwargs):
-        """Pull out session, recurse iff arg"""
-        session = kwargs['session']
+    def func(arg, session):
+        """Recurse iff arg"""
         print arg, session
         if arg:
-            func(False, session=session)
+            func(False, session)
     
     print "func(True):"
     func(True)
