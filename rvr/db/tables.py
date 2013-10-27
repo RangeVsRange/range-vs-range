@@ -32,6 +32,7 @@ class Situation(BASE):
     __tablename__ = 'situation'
     situationid = Column(Integer, primary_key=True)
     description = Column(String(500), nullable=False, unique=True)
+    participants = Column(Integer, nullable=False)
     
 class OpenGame(BASE):
     """
@@ -41,7 +42,8 @@ class OpenGame(BASE):
     """
     __tablename__ = 'open_game'
     gameid = Column(Integer, Sequence('open_game_seq'), primary_key=True)
-    situationid = Column(Integer, ForeignKey("situation.situationid"))
+    situationid = Column(Integer, ForeignKey("situation.situationid"), nullable=False)
+    participants = Column(Integer, nullable = False)
     situation = relationship("Situation", backref="open_games")
 
 class OpenGameParticipant(BASE):
@@ -52,8 +54,8 @@ class OpenGameParticipant(BASE):
     __tablename__ = 'open_game_participant'
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("open_game.gameid"), primary_key=True)
-    user = relationship("User", backref="open_game_participants")
-    game = relationship("OpenGame", backref="open_game_participants")
+    user = relationship("User", backref="ogps")
+    game = relationship("OpenGame", backref="ogps")
 
 class RunningGame(BASE):
     """
@@ -63,7 +65,7 @@ class RunningGame(BASE):
     """
     __tablename__ = 'running_game'
     gameid = Column(Integer, Sequence('running_game_seq'), primary_key=True)
-    situationid = Column(Integer, ForeignKey("situation.situationid"))
+    situationid = Column(Integer, ForeignKey("situation.situationid"), nullable=False)
     situation = relationship("Situation", backref="running_games")
 
 class RunningGameParticipant(BASE):
@@ -74,8 +76,8 @@ class RunningGameParticipant(BASE):
     __tablename__ = 'running_game_participant'
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("running_game.gameid"), primary_key=True)
-    user = relationship("User", backref="running_game_participants")
-    game = relationship("RunningGame", backref="running_game_participants")
+    user = relationship("User", backref="rgps")
+    game = relationship("RunningGame", backref="rgps")
 
 class FinishedGame(BASE):
     """
@@ -85,7 +87,7 @@ class FinishedGame(BASE):
     """
     __tablename__ = 'finished_game'
     gameid = Column(Integer, Sequence('finished_game_seq'), primary_key=True)
-    situationid = Column(Integer, ForeignKey("situation.situationid"))
+    situationid = Column(Integer, ForeignKey("situation.situationid"), nullable=False)
     situation = relationship("Situation", backref="finished_games")
 
 class FinishedGameParticipant(BASE):

@@ -38,16 +38,33 @@ class OpenGameDetails(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, gameid,  screennames, description):
+    def __init__(self, gameid, screennames, description):
         self.gameid = gameid
         self.screennames = screennames
         self.description = description
     
     @classmethod
     def from_open_game(cls, open_game):
-        names = [user.screenname for user in open_game.open_game_participants] 
+        names = [ogp.user.screenname
+                 for ogp in open_game.ogps] 
         description = open_game.situation.description
         return cls(open_game.gameid, names, description)
+
+class RunningGameDetails(object):
+    """
+    list of users in game, and details of situation
+    """
+    def __init__(self, gameid, screennames, description):
+        self.gameid = gameid
+        self.screennames = screennames
+        self.description = description
+    
+    @classmethod
+    def from_running_game(cls, running_game):
+        names = [rgp.user.screenname
+                 for rgp in running_game.rgps] 
+        description = running_game.situation.description
+        return cls(running_game.gameid, names, description)
 
 class GameDetails(object):
     """

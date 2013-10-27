@@ -1,6 +1,6 @@
 from cmd import Cmd
 import logging
-from rvr.core.api import API
+from rvr.core.api import API, APIError
 from rvr.core.dtos import LoginDetails
 
 class AdminCmd(Cmd):        
@@ -12,10 +12,16 @@ class AdminCmd(Cmd):
         """
         Create the database
         """
-        self.api.create_db()
-        print "Database created"
-        self.api.initialise_db()
-        print "Database initialised"
+        result = self.api.create_db()
+        if result:
+            print "Error:", result.description
+        else:
+            print "Database created"
+        result = self.api.initialise_db()
+        if result:
+            print "Error:", result.description
+        else:
+            print "Database initialised"
     
     def do_login(self, params):
         """
@@ -62,6 +68,35 @@ class AdminCmd(Cmd):
             gameid = details.gameid
             print "%d -> '%s': %s" % (gameid, details.description, names)
 
+    def do_runninggames(self, _details):
+        """
+        Display running games, their descriptions, and their users.
+        """
+        response = self.api.get_running_games()
+        print "Running games:"
+        for details in response:
+            names = ', '.join(["'%s'" % (name, )
+                               for name in details.screennames])
+            gameid = details.gameid
+            print "%d -> '%s': %s" % (gameid, details.description, names)
+
+    def do_joingame(self, params):
+        """
+        joingame <userid> <gameid>
+        registers <userid> in open game <gameid>
+        """
+        args = params.split()
+        userid = int(args[0])
+        gameid = int(args[1])
+        result = self.api.join_game(userid, gameid)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        elif result is None:
+            print "Registered userid %d in open game %d" % (userid, gameid)
+        else:
+            print "Registered userid %d in open game %d" % (userid, gameid)
+            print "Started running game %d" % (result,)
+
     def do_update(self, _details):
         """
         The kind of updates a background process would normally do. Currently
@@ -82,5 +117,5 @@ logging.basicConfig()
 logging.root.setLevel(logging.DEBUG)
 
 cmd = AdminCmd()
-cmd.prompt = "Enter command (? for help): "
-cmd.cmdloop("Range vs. Range admin tool")
+cmd.prompt = "> "
+cmd.cmdloop("Range vs. Range admin tool. Type ? for help.")
