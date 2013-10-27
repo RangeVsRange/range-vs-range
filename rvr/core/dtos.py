@@ -48,7 +48,7 @@ class OpenGameDetails(object):
         self.description = description
 
     def __str__(self):
-        return "Open game %d, users %s, description %s" %  \
+        return "Open game %d, users: %s, description: %s" %  \
             (self.gameid, self.screennames, self.description)
     
     @classmethod
@@ -69,7 +69,7 @@ class RunningGameDetails(object):
         self.current_user_details = user_details
 
     def __str__(self):
-        return "Running game %d, users %s, description %s, current %s" %  \
+        return "Running game %d, users: %s, description: %s, current: %s" %  \
             (self.gameid, self.screennames, self.description,
              self.current_user_details.screenname)
     
@@ -91,7 +91,7 @@ class FinishedGameDetails(object):
         self.description = description
 
     def __str__(self):
-        return "Finished game %d, users %s, description %s" %  \
+        return "Finished game %d, users: %s, description: %s" %  \
             (self.gameid, self.screennames, self.description)
     
     @classmethod

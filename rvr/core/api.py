@@ -102,10 +102,13 @@ class API(object):
         else:
             # create user in database
             user = User()
-            session.add(user)
             user.provider = request.provider
             user.email = request.email
             user.screenname = request.screenname
+            session.add(user)
+            session.flush()
+            logging.debug("Created user %d with screenname '%s'",
+                          user.userid, user.screenname)
             return LoginDetails(userid=user.userid,
                                 provider=user.provider,
                                 email=user.email,
@@ -204,6 +207,7 @@ class API(object):
             rgp.userid = ogp.userid  # haven't loaded users, so just copy userid
             session.delete(ogp)
             session.add(rgp)
+        logging.debug("Started game %d", open_game.gameid)
         return running_game
 
     ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
@@ -263,6 +267,8 @@ class API(object):
             # Complete fail, okay, here we just try again!
             running_game = self.join_game(userid, gameid, session)
 
+        logging.debug("User %d joined game %d", userid, gameid)
+
         self.ensure_open_games(session)
 
         # it's committed, so we will have the id
@@ -297,6 +303,7 @@ class API(object):
         # I don't know why, but flush here causes
         # ensure_open_games to fail.
         session.commit()  # TODO: Why won't flush work?
+        logging.debug("User %d left game %d", userid, gameid)
         self.ensure_open_games(session)        
 
     @api
