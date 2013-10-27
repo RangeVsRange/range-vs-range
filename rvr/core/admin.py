@@ -14,14 +14,19 @@ class AdminCmd(Cmd):
         """
         result = self.api.create_db()
         if result:
-            print "Error:", result.description
+            print "Error:", result
         else:
             print "Database created"
         result = self.api.initialise_db()
         if result:
-            print "Error:", result.description
+            print "Error:", result
         else:
             print "Database initialised"
+        result = self.api.ensure_open_games()
+        if result:
+            print "Error:", result
+        else:
+            print "Open games refreshed."            
     
     def do_login(self, params):
         """
@@ -100,6 +105,20 @@ class AdminCmd(Cmd):
             print "Registered userid %d in open game %d" % (userid, gameid)
             print "Started running game %d" % (result,)
 
+    def do_leavegame(self, params):
+        """
+        leavegame <userid> <gameid>
+        unregisters <userid> from open game <gameid>
+        """
+        args = params.split()
+        userid = int(args[0])
+        gameid = int(args[1])
+        result = self.api.leave_game(userid, gameid)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        else:
+            print "Unregistered userid %d from open game %d" % (userid, gameid)
+
     def do_update(self, _details):
         """
         The kind of updates a background process would normally do. Currently
@@ -107,10 +126,10 @@ class AdminCmd(Cmd):
          - ensure there's exactly one empty open game of each situation.
         """
         result = self.api.ensure_open_games()
-        if result is APIError:
-            print result
+        if result:
+            print "Error:", result
         else:
-            print "Open games refreshed."
+            print "Open games refreshed."            
 
     def do_exit(self, _details):
         """

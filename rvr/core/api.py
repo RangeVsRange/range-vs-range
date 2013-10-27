@@ -54,6 +54,8 @@ class API(object):
     expect that to happen.
     """
     UNKNOWN_ERROR = APIError("Internal error")
+    NO_SUCH_USER = APIError("No such user")
+    NO_SUCH_OPEN_GAME = APIError("No such open game")
     
     def __init__(self):
         """
@@ -75,7 +77,7 @@ class API(object):
         """
         situation = Situation()
         situation.description = "Heads-up preflop, 100 BB"
-        situation.participants = 2
+        situation.participants = 3
         session.add(situation)
     
     @api
@@ -186,10 +188,8 @@ class API(object):
             session.add(rgp)
         return running_game
 
-    JOIN_GAME__NO_SUCH_GAME = APIError("No such game")
-    JOIN_GAME__NO_SUCH_USER = APIError("No such user")
-    JOIN_GAME__GAME_FULL = APIError("Game is full")
     JOIN_GAME__ALREADY_IN = APIError("User is already registered")
+    JOIN_GAME__GAME_FULL = APIError("Game is full")
 
     @api
     def join_game(self, userid, gameid, session):
@@ -207,11 +207,11 @@ class API(object):
         games = session.query(OpenGame)  \
             .filter(OpenGame.gameid == gameid).all()
         if not games:
-            return self.JOIN_GAME__NO_SUCH_GAME
+            return self.NO_SUCH_OPEN_GAME
         game = games[0]
         users = session.query(User).filter(User.userid == userid).all()
         if not users:
-            return self.JOIN_GAME__NO_SUCH_USER
+            return self.NO_SUCH_USER
         user = users[0]
         if any(ogp.userid == userid for ogp in game.ogps):
             return self.JOIN_GAME__ALREADY_IN
@@ -250,13 +250,33 @@ class API(object):
         if running_game is not None:
             return running_game.gameid
 
+    LEAVE_GAME__NOT_IN = APIError("User was not registered")
+
     @api
-    def leave_game(self, session):
+    def leave_game(self, userid, gameid, session):
         """
         4. Leave/cancel game we're in
         inputs: userid, gameid
         outputs: (none)
         """
+        # check error conditions
+        games = session.query(OpenGame)  \
+            .filter(OpenGame.gameid == gameid).all()
+        if not games:
+            return self.NO_SUCH_OPEN_GAME
+        game = games[0]
+        users = session.query(User).filter(User.userid == userid).all()
+        if not users:
+            return self.NO_SUCH_USER
+        for ogp in game.ogps:
+            if ogp.userid == userid:
+                session.delete(ogp)
+                break
+        else:
+            return self.LEAVE_GAME__NOT_IN
+        game.participants -= 1        
+        session.commit()
+        self.ensure_open_games(session)        
 
     @api
     def perform_action(self, session):
