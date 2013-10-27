@@ -68,13 +68,7 @@ class AdminCmd(Cmd):
             return
         print "Open games:"
         for details in response:
-            if details.screennames:
-                names = ', '.join(["'%s'" % (name, ) 
-                                   for name in details.screennames])
-            else:
-                names = '(empty)'
-            gameid = details.gameid
-            print "%d -> '%s': %s" % (gameid, details.description, names)
+            print details
 
     def do_runninggames(self, _details):
         """
@@ -83,12 +77,7 @@ class AdminCmd(Cmd):
         response = self.api.get_running_games()
         print "Running games:"
         for details in response:
-            names = ', '.join(["'%s'" % (name, )
-                               for name in details.screennames])
-            gameid = details.gameid
-            current = details.current_user_details.screenname
-            print "%d -> '%s': %s (current '%s')"  \
-                % (gameid, details.description, names, current)
+            print details
 
     def do_joingame(self, params):
         """
@@ -120,6 +109,26 @@ class AdminCmd(Cmd):
             print "Error:", result.description
         else:
             print "Unregistered userid %d from open game %d" % (userid, gameid)
+
+    def do_usersgames(self, params):
+        """
+        usersgames <userid>
+        show details of all games associated with userid
+        """
+        userid = int(params)
+        result = self.api.get_user_games(userid)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+            return
+        print "Open games:"
+        for game in result.open_details:
+            print game
+        print "Running games:"
+        for game in result.running_details:
+            print game
+        print "Finished games:"
+        for game in result.finished_details:
+            print game
 
     def do_update(self, _details):
         """

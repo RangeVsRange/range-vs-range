@@ -1,13 +1,11 @@
 from rvr.core.dtos import LoginDetails, OpenGameDetails, UserDetails,\
-    RunningGameDetails
+    RunningGameDetails, FinishedGameDetails, UsersGameDetails
 from rvr.db.creation import BASE, ENGINE, with_session
 from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant,\
-    RunningGame, RunningGameParticipant, FinishedGame, FinishedGameParticipant
+    RunningGame, RunningGameParticipant, FinishedGameParticipant
 from functools import wraps
 import logging
 import random
-
-hack = False
 
 def exception_mapper(fun):
     """
@@ -153,14 +151,30 @@ class API(object):
         return results
     
     @api
-    def get_user_games(self, session, userid):
+    def get_user_games(self, userid, session):
         """
         3. Retrieve user's games and their statuses
         inputs: userid
         outputs: list of user's games. each may be open game, running (not our turn),
         running (our turn), finished. no more details of each game.
+        
+        Note: we don't validate that userid is a real userid!
         """
-        # TODO:
+        ogps = session.query(OpenGameParticipant)  \
+            .filter(OpenGameParticipant.userid == userid).all()
+        open_games = [OpenGameDetails.from_open_game(ogp.game)
+                      for ogp in ogps]
+        rgps = session.query(RunningGameParticipant)  \
+            .filter(RunningGameParticipant.userid == userid).all()
+        running_games = [RunningGameDetails.from_running_game(rgp.game)
+                         for rgp in rgps]
+        fgps = session.query(FinishedGameParticipant)  \
+            .filter(FinishedGameParticipant.userid == userid).all()
+        finished_games = [FinishedGameDetails.from_finished_game(fgp.game)
+                          for fgp in fgps]
+        return UsersGameDetails(userid, open_games, running_games,
+                                finished_games)
+
         
     def _start_game(self, session, open_game):
         """

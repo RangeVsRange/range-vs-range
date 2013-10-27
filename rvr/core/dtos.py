@@ -46,6 +46,10 @@ class OpenGameDetails(object):
         self.gameid = gameid
         self.screennames = screennames
         self.description = description
+
+    def __str__(self):
+        return "Open game %d, users %s, description %s" %  \
+            (self.gameid, self.screennames, self.description)
     
     @classmethod
     def from_open_game(cls, open_game):
@@ -63,6 +67,11 @@ class RunningGameDetails(object):
         self.screennames = screennames
         self.description = description
         self.current_user_details = user_details
+
+    def __str__(self):
+        return "Running game %d, users %s, description %s, current %s" %  \
+            (self.gameid, self.screennames, self.description,
+             self.current_user_details.screenname)
     
     @classmethod
     def from_running_game(cls, running_game):
@@ -80,6 +89,10 @@ class FinishedGameDetails(object):
         self.gameid = gameid
         self.screennames = screennames
         self.description = description
+
+    def __str__(self):
+        return "Finished game %d, users %s, description %s" %  \
+            (self.gameid, self.screennames, self.description)
     
     @classmethod
     def from_finished_game(cls, finished_game):
@@ -87,6 +100,17 @@ class FinishedGameDetails(object):
                  for rgp in finished_game.rgps] 
         description = finished_game.situation.description
         return cls(finished_game.gameid, names, description)
+
+class UsersGameDetails(object):
+    """
+    lists of open game details, running game details, finished game details, for
+    a specific user
+    """
+    def __init__(self, userid, open_details, running_details, finished_details):
+        self.userid = userid
+        self.open_details = open_details
+        self.running_details = running_details
+        self.finished_details = finished_details
 
 class GameDetails(object):
     """
