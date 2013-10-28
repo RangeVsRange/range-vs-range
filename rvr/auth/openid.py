@@ -1,3 +1,6 @@
+"""
+Views to implement flask_openid support
+"""
 from rvr.app import APP
 from flask_openid import OpenID
 from flask.globals import g, session, request
@@ -8,6 +11,8 @@ from rvr.core.dtos import LoginDetails
 from rvr.core.api import API
 
 OID = OpenID(APP)  # gets store location from config
+
+# pylint:disable=E1120
 
 @APP.before_request
 def ensure_login():

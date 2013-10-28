@@ -28,7 +28,7 @@ def session_scope():
 
 def with_session(fun):
     """
-    Creates a session_scope() and passes it as first parameter.
+    Creates a session_scope() and replace last parameter with it (if None)
     """
     @wraps(fun)
     def inner(*args, **kwargs):
@@ -36,11 +36,12 @@ def with_session(fun):
         If session argument exists, call fun as such.
         If session argument doesn't exist, wrap fun in session_scope()
         """
-        if isinstance(args[-1], SESSION):
+        if len(args) > 0 and isinstance(args[-1], SESSION):
             return fun(*args, **kwargs)
         else:
             with session_scope() as session:
-                return fun(*(args + (session,)), **kwargs)
+                args2 = args + (session,)
+                return fun(*args2, **kwargs)
     return inner
 
 if __name__ == '__main__':

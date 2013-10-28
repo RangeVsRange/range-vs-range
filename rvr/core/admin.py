@@ -1,28 +1,28 @@
 from cmd import Cmd
 import logging
-from rvr.core.api import API, APIError
+import api
+from rvr.core.api import APIError
 from rvr.core.dtos import LoginDetails
 
 class AdminCmd(Cmd):        
     def __init__(self):
         Cmd.__init__(self)
-        self.api = API()
     
     def do_createdb(self, _details):
         """
         Create the database
         """
-        result = self.api.create_db()
+        result = api.create_db()
         if result:
             print "Error:", result
         else:
             print "Database created"
-        result = self.api.initialise_db()
+        result = api.initialise_db()
         if result:
             print "Error:", result
         else:
             print "Database initialised"
-        result = self.api.ensure_open_games()
+        result = api.ensure_open_games()
         if result:
             print "Error:", result
         else:
@@ -43,7 +43,7 @@ class AdminCmd(Cmd):
             print "Need exactly 3 parameters."
             print "For more info, help login"
             return
-        response = self.api.login(details)
+        response = api.login(details)
         print "Created user with userid='%s', provider='%s', email='%s', screenname='%s'" %  \
             (response.userid, response.provider, response.email, response.screenname)
 
@@ -52,7 +52,7 @@ class AdminCmd(Cmd):
         getuser <screenname>
         gets userid by screenname
         """
-        user = self.api.get_user_by_screenname(details)
+        user = api.get_user_by_screenname(details)
         if user is None:
             print "No such user"
         else:
@@ -62,7 +62,7 @@ class AdminCmd(Cmd):
         """
         Display open games, their descriptions, and their registered users.
         """
-        response = self.api.get_open_games()
+        response = api.get_open_games()
         if isinstance(response, APIError):
             print response
             return
@@ -74,7 +74,7 @@ class AdminCmd(Cmd):
         """
         Display running games, their descriptions, and their users.
         """
-        response = self.api.get_running_games()
+        response = api.get_running_games()
         print "Running games:"
         for details in response:
             print details
@@ -87,7 +87,7 @@ class AdminCmd(Cmd):
         args = params.split()
         userid = int(args[0])
         gameid = int(args[1])
-        result = self.api.join_game(userid, gameid)
+        result = api.join_game(userid, gameid)
         if isinstance(result, APIError):
             print "Error:", result.description
         elif result is None:
@@ -104,7 +104,7 @@ class AdminCmd(Cmd):
         args = params.split()
         userid = int(args[0])
         gameid = int(args[1])
-        result = self.api.leave_game(userid, gameid)
+        result = api.leave_game(userid, gameid)
         if isinstance(result, APIError):
             print "Error:", result.description
         else:
@@ -116,7 +116,7 @@ class AdminCmd(Cmd):
         show details of all games associated with userid
         """
         userid = int(params)
-        result = self.api.get_user_games(userid)
+        result = api.get_user_games(userid)
         if isinstance(result, APIError):
             print "Error:", result.description
             return
@@ -136,7 +136,7 @@ class AdminCmd(Cmd):
         includes:
          - ensure there's exactly one empty open game of each situation.
         """
-        result = self.api.ensure_open_games()
+        result = api.ensure_open_games()
         if result:
             print "Error:", result
         else:
