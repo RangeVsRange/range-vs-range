@@ -14,6 +14,8 @@ OID = OpenID(APP)  # gets store location from config
 
 # pylint:disable=E1120
 
+UNAUTHENTICATED = ['login', 'landing_page']
+
 @APP.before_request
 def ensure_login():
     """
@@ -24,7 +26,7 @@ def ensure_login():
     g.userid = None
     if 'userid' in session:
         g.userid = session['userid']
-    elif request.endpoint != 'login':
+    elif request.endpoint not in UNAUTHENTICATED:
         return redirect(url_for('login', next=request.url))
 
 @APP.route('/login', methods=['GET', 'POST'])

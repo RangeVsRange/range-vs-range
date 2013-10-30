@@ -14,7 +14,14 @@ from rvr.forms.opengames import open_games_form
 from rvr.views.error import ERROR_CONFIRMATION, ERROR_NO_SITUATION, \
     ERROR_TEXTURE, ERROR_SITUATION, redirect_to_error, ERROR_BAD_SEARCH
 
-@APP.route('/', methods=['GET', 'POST'])
+@APP.route('/', methods=['GET'])
+def landing_page():
+    """
+    Generates the unauthenticated landing page. AKA the main or home page.
+    """
+    return render_template('landing.html', title='Welcome')
+
+@APP.route('/home', methods=['GET', 'POST'])
 def start_page():
     """
     Generates the start page. AKA the main or home page.
