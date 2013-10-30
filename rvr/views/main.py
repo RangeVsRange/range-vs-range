@@ -22,6 +22,11 @@ def landing_page():
     return render_template('landing.html', title='Welcome')
 
 @APP.route('/home', methods=['GET', 'POST'])
+def home_page():
+    """
+    """
+    return render_template('home.html', title='Home')
+
 def start_page():
     """
     Generates the start page. AKA the main or home page.
