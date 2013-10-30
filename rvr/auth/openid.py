@@ -8,7 +8,7 @@ from werkzeug.utils import redirect
 from flask.templating import render_template
 from flask.helpers import flash, url_for
 from rvr.core.dtos import LoginDetails
-from rvr.core.api import API
+from rvr.core import api
 
 OID = OpenID(APP)  # gets store location from config
 
@@ -56,7 +56,7 @@ def create_or_login(resp):
                        provider='Google',
                        email=resp.email,
                        screenname=resp.nickname or resp.fullname)
-    result = API().login(req)
+    result = api.login(req)
     if result.userid is not None:
         session['userid'] = result.userid
         flash(u'Successfully signed in')
