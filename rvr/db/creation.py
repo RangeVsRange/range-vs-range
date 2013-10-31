@@ -26,34 +26,41 @@ def session_scope():
     finally:
         session.close()
 
-def with_session(fun):
+def create_session(fun):
     """
-    Creates a session_scope() and replace last parameter with it (if None)
+    Creates a session_scope() for session and assigns it to the parent object,
+    setting it back to None after the call. This is a neater approach than the
+    old with_session, which was not object-aware. 
     """
     @wraps(fun)
     def inner(*args, **kwargs):
-        """
-        If session argument exists, call fun as such.
-        If session argument doesn't exist, wrap fun in session_scope()
-        """
-        if len(args) > 0 and isinstance(args[-1], SESSION):
-            return fun(*args, **kwargs)
-        else:
+        self = args[0]
+        if self.session is None:
             with session_scope() as session:
-                args2 = args + (session,)
-                return fun(*args2, **kwargs)
+                self.session = session
+                try:
+                    return fun(*args, **kwargs)
+                finally:
+                    self.session = None
+        else:
+            return fun(*args, **kwargs)
     return inner
 
 if __name__ == '__main__':
-    @with_session
-    def func(arg, session):
-        """Recurse iff arg"""
-        print arg, session
-        if arg:
-            func(False, session)
+    class Class(object):
+        def __init__(self):
+            self.session = None
+            
+        @create_session
+        def method(self, arg):
+            """ recurse iff arg """
+            print arg, self.session
+            if arg:
+                self.method(False)
     
-    print "func(True):"
-    func(True)
+    cls = Class()
+    print "cls.method(True):"
+    cls.method(True)
     print
-    print "func(False):"
-    func(False)
+    print "cls.method(False):"
+    cls.method(False)

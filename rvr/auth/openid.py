@@ -8,7 +8,7 @@ from werkzeug.utils import redirect
 from flask.templating import render_template
 from flask.helpers import flash, url_for
 from rvr.core.dtos import LoginDetails
-from rvr.core import api
+from rvr.core.api import API
 
 OID = OpenID(APP)  # gets store location from config
 
@@ -54,6 +54,7 @@ def create_or_login(resp):
     # provider.
     # The session is secured by HMAC using our SECRET_KEY.
     """
+    api = API()
     req = LoginDetails(userid=None,
                        provider='Google',
                        email=resp.email,

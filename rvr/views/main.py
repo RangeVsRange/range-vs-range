@@ -24,6 +24,7 @@ def landing_page():
 @APP.route('/home', methods=['GET', 'POST'])
 def home_page():
     """
+    Authenticated landing page. User is taken here when logged in.
     """
     return render_template('home.html', title='Home')
 
