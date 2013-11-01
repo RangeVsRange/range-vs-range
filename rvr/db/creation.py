@@ -29,8 +29,7 @@ def session_scope():
 def create_session(fun):
     """
     Creates a session_scope() for session and assigns it to the parent object,
-    setting it back to None after the call. This is a neater approach than the
-    old with_session, which was not object-aware. 
+    setting it back to None after the call.
     """
     @wraps(fun)
     def inner(*args, **kwargs):

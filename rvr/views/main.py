@@ -6,13 +6,14 @@ from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
 from rvr.forms.start import StartForm
 from rvr.forms.situation import situation_form
-from flask.globals import request
+from flask.globals import request, session
 from rvr.forms.texture import texture_form
 from rvr.forms.preflop import preflop_form
 from rvr.forms.confirmation import ConfirmationForm
 from rvr.forms.opengames import open_games_form
 from rvr.views.error import ERROR_CONFIRMATION, ERROR_NO_SITUATION, \
     ERROR_TEXTURE, ERROR_SITUATION, redirect_to_error, ERROR_BAD_SEARCH
+from rvr.core.api import API
 
 @APP.route('/', methods=['GET'])
 def landing_page():
@@ -26,7 +27,23 @@ def home_page():
     """
     Authenticated landing page. User is taken here when logged in.
     """
-    return render_template('home.html', title='Home')
+    api = API()
+    userid = session['userid']  # is always there if logged in
+    open_games = api.get_open_games()
+    my_games = api.get_user_games(userid)
+    
+    #my_open = games.open_details where my screenname in screennames
+    #others_open = where not
+    #my_turn_games = games.running_details where current_user_details.screenname is my screenname
+    #others_turn_games = where not
+    #finished_games = games.finished_details 
+    return render_template('home.html', title='Home',
+        #my_open=my_open,
+        #others_open=others_open,
+        #my_turn_games=my_turn_games,
+        #others_turn_games=others_turn_games,
+        #finished_games=finished_games
+        )
 
 def start_page():
     """

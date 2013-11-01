@@ -120,9 +120,6 @@ class AdminCmd(Cmd):
         if isinstance(result, APIError):
             print "Error:", result.description
             return
-        print "Open games:"
-        for game in result.open_details:
-            print game
         print "Running games:"
         for game in result.running_details:
             print game

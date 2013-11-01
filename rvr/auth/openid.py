@@ -62,6 +62,7 @@ def create_or_login(resp):
     result = api.login(req)
     if result.userid is not None:
         session['userid'] = result.userid
+        session['screenname'] = result.screenname
         flash(u'Successfully signed in')
         g.userid = result.userid
         return redirect(OID.get_next_url())

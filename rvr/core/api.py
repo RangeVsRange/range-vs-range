@@ -166,10 +166,6 @@ class API(object):
         
         Note: we don't validate that userid is a real userid!
         """
-        ogps = self.session.query(OpenGameParticipant)  \
-            .filter(OpenGameParticipant.userid == userid).all()
-        open_games = [OpenGameDetails.from_open_game(ogp.game)
-                      for ogp in ogps]
         rgps = self.session.query(RunningGameParticipant)  \
             .filter(RunningGameParticipant.userid == userid).all()
         running_games = [RunningGameDetails.from_running_game(rgp.game)
@@ -178,10 +174,8 @@ class API(object):
             .filter(FinishedGameParticipant.userid == userid).all()
         finished_games = [FinishedGameDetails.from_finished_game(fgp.game)
                           for fgp in fgps]
-        return UsersGameDetails(userid, open_games, running_games,
-                                finished_games)
+        return UsersGameDetails(userid, running_games, finished_games)
     
-        
     def _start_game(self, open_game):
         """
         Takes the id of a full OpenGame, creates a new RunningGame from it,
