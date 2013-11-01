@@ -6,14 +6,33 @@ from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
 from rvr.forms.start import StartForm
 from rvr.forms.situation import situation_form
-from flask.globals import request, session
+from flask.globals import request, g, session
 from rvr.forms.texture import texture_form
 from rvr.forms.preflop import preflop_form
 from rvr.forms.confirmation import ConfirmationForm
 from rvr.forms.opengames import open_games_form
 from rvr.views.error import ERROR_CONFIRMATION, ERROR_NO_SITUATION, \
     ERROR_TEXTURE, ERROR_SITUATION, redirect_to_error, ERROR_BAD_SEARCH
-from rvr.core.api import API
+from rvr.core.api import API, APIError
+from rvr.app import AUTH
+from rvr.core.dtos import LoginDetails
+from werkzeug.exceptions import abort  # @UnresolvedImport
+import logging
+
+@APP.before_request
+def ensure_user():
+    if g.user and 'identity' in g.user:  # @UndefinedVariable
+        api = API()
+        req = LoginDetails(userid=None,
+                           provider=g.user.identity,  # @UndefinedVariable
+                           email=g.user.email,  # @UndefinedVariable
+                           screenname=g.user.name)  # @UndefinedVariable
+        result = api.login(req)
+        if isinstance(result, APIError):
+            logging.debug("%s", result)
+            abort(403)
+        session['userid'] = result.userid
+        session['screenname'] = result.screenname
 
 @APP.route('/', methods=['GET'])
 def landing_page():
@@ -23,26 +42,32 @@ def landing_page():
     return render_template('landing.html', title='Welcome')
 
 @APP.route('/home', methods=['GET', 'POST'])
+@AUTH.required
 def home_page():
     """
     Authenticated landing page. User is taken here when logged in.
     """
     api = API()
-    userid = session['userid']  # is always there if logged in
+    userid = session['userid']
+    screenname = session['screenname']
     open_games = api.get_open_games()
     my_games = api.get_user_games(userid)
-    
-    #my_open = games.open_details where my screenname in screennames
-    #others_open = where not
-    #my_turn_games = games.running_details where current_user_details.screenname is my screenname
-    #others_turn_games = where not
-    #finished_games = games.finished_details 
+    my_open = [og for og in open_games
+               if any([u.userid == userid for u in og.users])]
+    others_open = [og for og in open_games
+                   if not any([u.userid == userid for u in og.users])]
+    my_turn_games = [mg for mg in my_games.running_details
+                     if mg.current_user_details.userid == userid]
+    others_turn_games = [mg for mg in my_games.running_details
+                         if mg.current_user_details.userid != userid]
+    finished_games = my_games.finished_details
     return render_template('home.html', title='Home',
-        #my_open=my_open,
-        #others_open=others_open,
-        #my_turn_games=my_turn_games,
-        #others_turn_games=others_turn_games,
-        #finished_games=finished_games
+        screenname=screenname,
+        my_open=my_open,
+        others_open=others_open,
+        my_turn_games=my_turn_games,
+        others_turn_games=others_turn_games,
+        finished_games=finished_games
         )
 
 def start_page():
@@ -85,7 +110,7 @@ def flop_texture_page():
     matcher = FEATURES['GameFilter']
     provider = FEATURES['SituationProvider']
     try:
-        situationid = request.args['situationid']
+        situationid = request.args['situationid']  # @UndefinedVariable
     except KeyError:
         # They done something wrong.
         return redirect_to_error(id_=ERROR_SITUATION)
@@ -129,9 +154,9 @@ def open_games_page():
     See get_open_games for details.
     """
     matcher = FEATURES['GameFilter']
-    path = request.args.get('path', None)
-    situationid = request.args.get('situationid', None)
-    textureid = request.args.get('textureid', None)
+    path = request.args.get('path', None)  # @UndefinedVariable
+    situationid = request.args.get('situationid', None)  # @UndefinedVariable
+    textureid = request.args.get('textureid', None)  # @UndefinedVariable
     try:
         matching_games = matcher.games(path=path, situationid=situationid,
             textureid=textureid)
@@ -168,9 +193,9 @@ def confirm_situation_page():
     Generates a game start confirmation page. May be confirming new game, or
     join game.
     """
-    path = request.args.get('path', None)
-    situationid = request.args.get('situationid', None)
-    textureid = request.args.get('textureid', None)
+    path = request.args.get('path', None)  # @UndefinedVariable
+    situationid = request.args.get('situationid', None)  # @UndefinedVariable
+    textureid = request.args.get('textureid', None)  # @UndefinedVariable
     error = confirm_situation_validation(path, situationid, textureid)
     if error is not None:
         return redirect_to_error(id_=error)
@@ -224,7 +249,7 @@ def confirm_join():
     Generates a game join confirmation page. Like the confirm situation page,
     but for joining a game instead of starting a game.
     """
-    gameid = request.args.get('gameid', None)
+    gameid = request.args.get('gameid', None)  # @UndefinedVariable
     if gameid is None:
         return redirect_to_error(id_=ERROR_CONFIRMATION)
     form = ConfirmationForm()

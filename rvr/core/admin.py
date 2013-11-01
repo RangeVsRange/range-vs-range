@@ -118,7 +118,7 @@ class AdminCmd(Cmd):
         userid = int(params)
         result = self.api.get_user_games(userid)
         if isinstance(result, APIError):
-            print "Error:", result.description
+            print "Error:", result.description  # pylint:disable=E1101
             return
         print "Running games:"
         for game in result.running_details:

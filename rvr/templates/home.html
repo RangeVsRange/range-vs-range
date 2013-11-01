@@ -1,13 +1,50 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Home</h2>
-<p>You are logged in.</p>
-TODO: open games we're not in (can join)
-TODO: open games we're in (can leave)
-TODO: user's running games where it's user's turn (can play)
-TODO: user's running games where it's not user's turn (can view)
-TODO: user's finished games (can view)
-we can get all this information from API.get_user_games
-(we have the screenname from the session cookies)
-games.open_details.
+<p>You are logged in as: <strong>{{screenname}}</strong><p>
+
+{% if others_open %}
+  <p>Open games you can join:</p>
+  <ul>{% for game in others_open %}{% set pipe = joiner() %}
+    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em>
+    {% if game.users %}
+      with players: {% for user in game.users %}{{pipe()}}'<strong>{{user.screenname}}</strong>'{% endfor %}.
+    {% else %}
+      with no players registered.
+    {% endif %}</li>
+  {% endfor %}</ul></p>
+{% endif %}
+
+{% if my_open %}
+  <p>Open games you're registered in:</p>
+  <ul>{% for game in my_open %}{% set pipe = joiner() %}
+    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
+    {% for user in game.users %}{{pipe()}}'<strong>{{user.screenname}}</strong>'{% endfor %}.</li>
+  {% endfor %}</ul></p>
+{% endif %}
+
+{% if my_turn_games %}
+  <p>Games where it's your turn:</p>
+  <ul>{% for game in my_turn_games %}{% set pipe = joiner() %}
+    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
+    {% for user in game.users %}{{pipe()}}'<strong>{{user.screenname}}</strong>'{% endfor %}.</li>
+  {% endfor %}</ul></p>
+{% endif %}
+
+{% if others_turn_games %}
+  <p>Games where it's not your turn:</p>
+  <ul>{% for game in others_turn_games %}{% set pipe = joiner() %}
+    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
+    {% for user in game.users %}{{pipe()}}'<strong>{{user.screenname}}</strong>'{% endfor %}.</li>
+  {% endfor %}</ul></p>
+{% endif %}
+
+{% if finished_games %}
+  <p>Games you've played:</p>
+  <ul>{% for game in finished_games %}{% set pipe = joiner() %}
+    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
+    {% for user in game.users %}{{pipe()}}'<strong>{{user.screenname}}</strong>'{% endfor %}.</li>
+  {% endfor %}</ul></p>
+{% endif %}
+
 {% endblock %}

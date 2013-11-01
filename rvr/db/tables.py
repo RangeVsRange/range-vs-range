@@ -75,6 +75,7 @@ class RunningGameParticipant(BASE):
     Association object for the many-to-many relationship between users and
     running games.
     """
+    # TODO: record the order of players in the game!
     __tablename__ = 'running_game_participant'
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("running_game.gameid"), primary_key=True)
