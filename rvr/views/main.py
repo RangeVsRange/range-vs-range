@@ -21,6 +21,9 @@ import logging
 
 @APP.before_request
 def ensure_user():
+    """
+    Commit user to database and determine userid
+    """
     if g.user and 'identity' in g.user:  # @UndefinedVariable
         api = API()
         req = LoginDetails(userid=None,
