@@ -31,12 +31,12 @@ class AdminCmd(Cmd):
     def do_login(self, params):
         """
         Calls the login API function
-        login(provider, email, screenname)
+        login(identity, email, screenname)
         """
         params = params.split(None, 2)
         if len(params) == 3:
             details = LoginDetails(userid=None,
-                                   provider=params[0],
+                                   identity=params[0],
                                    email=params[1],
                                    screenname=params[2])
         else:
@@ -44,19 +44,35 @@ class AdminCmd(Cmd):
             print "For more info, help login"
             return
         response = self.api.login(details)
-        print "Created user with userid='%s', provider='%s', email='%s', screenname='%s'" %  \
-            (response.userid, response.provider, response.email, response.screenname)
+        print "Created user with userid='%s', identity='%s'" %  \
+            (response.userid, response.identity),
+        print "email='%s', screenname='%s'" %  \
+            (response.email, response.screenname)
 
-    def do_getuser(self, details):
+    def do_getuserid(self, details):
         """
-        getuser <screenname>
-        gets userid by screenname
+        getuserid <screenname>
+        shows userid by screenname
         """
         user = self.api.get_user_by_screenname(details)
         if user is None:
             print "No such user"
         else:
             print "'%s' has userid %s" % (user.screenname, user.userid)
+            
+    def do_getuser(self, details):
+        """
+        getuser <userid>
+        shows user's login details
+        """
+        userid = int(details)
+        response = self.api.get_user(userid)
+        if isinstance(response, APIError):
+            print "Error:", response
+        else:
+            print "userid='%s'\nidentity='%s'\nemail='%s'\nscreenname='%s'" %  \
+                (response.userid, response.identity, response.email,
+                 response.screenname)
 
     def do_opengames(self, _details):
         """
