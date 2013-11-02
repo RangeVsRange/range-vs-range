@@ -86,26 +86,26 @@ class API(object):
     def login(self, request):
         """
         1. Create or validate OpenID-based account
-        inputs: provider, email, screenname
+        inputs: identity, email, screenname
         outputs: userid
         """
         if request.userid is not None:
             raise Exception("don't specify a userid when logging in")
         matches = self.session.query(User)  \
-            .filter(User.provider == request.provider)  \
+            .filter(User.identity == request.identity)  \
             .filter(User.email == request.email)  \
             .filter(User.screenname == request.screenname).all()
         if matches:
             # return user from database
             user = matches[0]
             return LoginDetails(userid=user.userid,
-                                provider=user.provider,
+                                identity=user.identity,
                                 email=user.email,
                                 screenname=user.screenname)
         else:
             # create user in database
             user = User()
-            user.provider = request.provider
+            user.identity = request.identity
             user.email = request.email
             user.screenname = request.screenname
             self.session.add(user)
@@ -113,9 +113,24 @@ class API(object):
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
             return LoginDetails(userid=user.userid,
-                                provider=user.provider,
+                                identity=user.identity,
                                 email=user.email,
                                 screenname=user.screenname)
+            
+    @api
+    def get_user(self, userid):
+        """
+        Get user's LoginDetails
+        """
+        matches = self.session.query(User)  \
+            .filter(User.userid == userid).all()
+        if not matches:
+            return self.ERR_NO_SUCH_USER
+        user = matches[0]
+        return LoginDetails(userid=user.userid,
+                            identity=user.identity,
+                            email=user.email,
+                            screenname=user.screenname)
     
     @api
     def get_user_by_screenname(self, screenname):

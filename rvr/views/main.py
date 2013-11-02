@@ -27,7 +27,7 @@ def ensure_user():
     if g.user and 'identity' in g.user:  # @UndefinedVariable
         api = API()
         req = LoginDetails(userid=None,
-                           provider=g.user.identity,  # @UndefinedVariable
+                           identity=g.user.identity,  # @UndefinedVariable
                            email=g.user.email,  # @UndefinedVariable
                            screenname=g.user.name)  # @UndefinedVariable
         result = api.login(req)

@@ -15,7 +15,7 @@ class User(BASE):
     """
     __tablename__ = 'user'
     userid = Column(Integer, Sequence('user_seq'), primary_key=True)
-    provider = Column(String(120), nullable=False)
+    identity = Column(String(120), nullable=False)
     screenname = Column(String(20), nullable=False, unique=True)
     email = Column(String(256), nullable=False, unique=True)
     

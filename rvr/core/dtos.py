@@ -1,6 +1,6 @@
 """
 Data transfer objects:
-- login, with OpenID, OpenID provider, email address, screenname
+- login, with OpenID, OpenID identity, email address, screenname
 - user, with userid for user, system generated
 - gameid for open, running or finished game
 - range-based action
@@ -12,11 +12,11 @@ Data transfer objects:
 
 class LoginDetails(object):
     """
-    OpenID provider, email address, screenname
+    OpenID identity, email address, screenname
     """
-    def __init__(self, userid, provider, email, screenname):
+    def __init__(self, userid, identity, email, screenname):
         self.userid = userid
-        self.provider = provider
+        self.identity = identity
         self.email = email
         self.screenname = screenname
 
