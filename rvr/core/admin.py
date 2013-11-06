@@ -1,7 +1,7 @@
 from cmd import Cmd
 import logging
 from rvr.core.api import APIError, API
-from rvr.core.dtos import LoginDetails
+from rvr.core.dtos import LoginRequest
 
 class AdminCmd(Cmd):        
     def __init__(self):
@@ -35,19 +35,19 @@ class AdminCmd(Cmd):
         """
         params = params.split(None, 2)
         if len(params) == 3:
-            details = LoginDetails(userid=None,
-                                   identity=params[0],
+            request = LoginRequest(identity=params[0],
                                    email=params[1],
                                    screenname=params[2])
         else:
             print "Need exactly 3 parameters."
             print "For more info, help login"
             return
-        response = self.api.login(details)
-        print "Created user with userid='%s', identity='%s'" %  \
-            (response.userid, response.identity),
-        print "email='%s', screenname='%s'" %  \
-            (response.email, response.screenname)
+        response = self.api.login(request)
+        if isinstance(response, APIError):
+            print "Error:", response
+            return
+        print "User is logged in with userid='%s', screenname='%s'" % \
+            (response.userid, response.screenname)
 
     def do_getuserid(self, details):
         """

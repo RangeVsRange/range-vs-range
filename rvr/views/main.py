@@ -4,38 +4,67 @@ The main pages for the site
 from flask import render_template, redirect, url_for
 from rvr import APP
 from rvr.infrastructure.ioc import FEATURES
-from rvr.forms.start import StartForm
-from rvr.forms.situation import situation_form
-from flask.globals import request, g, session
-from rvr.forms.texture import texture_form
-from rvr.forms.preflop import preflop_form
-from rvr.forms.confirmation import ConfirmationForm
-from rvr.forms.opengames import open_games_form
+from rvr.forms.change import ChangeForm
 from rvr.views.error import ERROR_CONFIRMATION, ERROR_NO_SITUATION, \
     ERROR_TEXTURE, ERROR_SITUATION, redirect_to_error, ERROR_BAD_SEARCH
 from rvr.core.api import API, APIError
 from rvr.app import AUTH
-from rvr.core.dtos import LoginDetails
+from rvr.core.dtos import LoginRequest
 from werkzeug.exceptions import abort  # @UnresolvedImport
 import logging
+from flask.helpers import flash
+from flask.globals import request, session, g
 
 @APP.before_request
 def ensure_user():
     """
     Commit user to database and determine userid
     """
-    if g.user and 'identity' in g.user:  # @UndefinedVariable
-        api = API()
-        req = LoginDetails(userid=None,
-                           identity=g.user.identity,  # @UndefinedVariable
-                           email=g.user.email,  # @UndefinedVariable
-                           screenname=g.user.name)  # @UndefinedVariable
-        result = api.login(req)
-        if isinstance(result, APIError):
-            logging.debug("%s", result)
-            abort(403)
-        session['userid'] = result.userid
-        session['screenname'] = result.screenname
+    if request.endpoint == 'change_screenname':
+        # avoid redirect loop
+        return
+    if not g.user or 'identity' not in g.user:
+        # user is not authenticated yet
+        return
+    if 'userid' in session and 'screenname' in session:
+        # user is authenticated and authorised (logged in)
+        return
+    if 'screenname' in session:
+        screenname = session['screenname']
+    else:
+        screenname = g.user.name
+    api = API()
+    req = LoginRequest(identity=g.user.identity,  # @UndefinedVariable
+                       email=g.user.email,  # @UndefinedVariable
+                       screenname=screenname)  # @UndefinedVariable
+    result = api.login(req)
+    if result == API.ERR_LOGIN_DUPLICATE_SCREENNAME:
+        # User is authenticated with OpenID, but not yet authorised (logged
+        # in). We redirect them to a page that allows them to choose a
+        # different screenname.
+        flash("The screenname '%s' is already taken." % g.user.name)
+        return redirect(url_for('change_screenname'))
+    if isinstance(result, APIError):
+        logging.debug("%s", result)
+        abort(403)
+    session['userid'] = result.userid
+    session['screenname'] = result.screenname
+
+@APP.route('/change', methods=['GET', 'POST'])
+@AUTH.required
+def change_screenname():
+    """
+    Without the user being logged in, give the user the option to change their
+    screenname from what Google OpenID gave us.
+    """
+    form = ChangeForm()
+    if form.validate_on_submit():
+        new_screenname = form.change.data
+        session['screenname'] = new_screenname
+        flash("Your screenname has been changed to '%s'." % new_screenname)
+        return redirect(url_for('home_page'))
+    return render_template('change.html', title='Change Your Screenname',
+                           current=g.user.name, form=form)
 
 @APP.route('/', methods=['GET'])
 def landing_page():

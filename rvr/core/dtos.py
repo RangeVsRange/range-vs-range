@@ -10,7 +10,57 @@ Data transfer objects:
 - hand history(!)
 """
 
-class LoginDetails(object):
+# Note: We do not log the user in until they have chosen a unique screenname
+# But also note that we only know if their screenname is unique by trying.
+class LoginRequest(object):
+    """
+    Details to record (or ensure) a user in the database.
+    """
+    def __init__(self, identity, email, screenname):
+        """
+        If the screenname is already taken, then error, ask user for new
+        screenname, and try again.
+        
+        Response will be an error only when BOTH:
+         - this user doesn't exist, AND
+         - another user has this screenname
+        """
+        self.identity = identity
+        self.email = email
+        self.screenname = screenname
+        
+class LoginResponse(object):
+    """
+    Response from a LoginRequest. Note that the screenname may change because
+    the user has chosen a different one.
+    
+    If response has a different screenname to request, it means that the user
+    has previously chosen to have a different screenname, possibly because their
+    name was taken.
+    
+    If response has the same screenname, it means either that the user has
+    logged in previously, or they were created with that screenname.
+    """
+    def __init__(self, userid, screenname):
+        self.userid = userid
+        self.screenname = screenname
+
+class ChangeScreennameRequest(object):
+    """
+    When the initial automatic login fails, the user gets a chance to choose a
+    different screenname and try again. All is well, and this class is not
+    needed.
+    
+    When the initial automatic login succeeds, the user may still want to change
+    their screenname, and we give them that option. When they do so, this
+    request object is sent to the backend to change their name.
+    """
+    def __init__(self, userid, screenname):
+        self.userid = userid
+        self.screenname = screenname
+
+# TODO: 1 for req, 1 resp
+class _LoginDetails(object):
     """
     OpenID identity, email address, screenname
     """

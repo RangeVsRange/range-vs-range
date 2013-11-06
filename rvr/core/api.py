@@ -1,14 +1,16 @@
 """
 Core API for Range vs. Range backend.
 """
-from rvr.core.dtos import LoginDetails, OpenGameDetails, UserDetails, \
-    RunningGameDetails, FinishedGameDetails, UsersGameDetails
+from rvr.core.dtos import OpenGameDetails, UserDetails, \
+    RunningGameDetails, FinishedGameDetails, UsersGameDetails, LoginRequest,\
+    LoginResponse, _LoginDetails
 from rvr.db.creation import BASE, ENGINE, create_session
 from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant, \
     RunningGame, RunningGameParticipant, FinishedGameParticipant
 from functools import wraps
 import logging
 import random
+from sqlalchemy.exc import IntegrityError
 
 def exception_mapper(fun):
     """
@@ -61,6 +63,9 @@ class API(object):
     ERR_UNKNOWN = APIError("Internal error")
     ERR_NO_SUCH_USER = APIError("No such user")
     ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
+    ERR_LOGIN_DUPLICATE_SCREENNAME = APIError("Duplicate screenname")
+    ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
+    ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
     
     def __init__(self):
         self.session = None  # required for @create_session
@@ -89,19 +94,14 @@ class API(object):
         inputs: identity, email, screenname
         outputs: userid
         """
-        if request.userid is not None:
-            raise Exception("don't specify a userid when logging in")
         matches = self.session.query(User)  \
             .filter(User.identity == request.identity)  \
-            .filter(User.email == request.email)  \
-            .filter(User.screenname == request.screenname).all()
+            .filter(User.email == request.email).all()
         if matches:
             # return user from database
             user = matches[0]
-            return LoginDetails(userid=user.userid,
-                                identity=user.identity,
-                                email=user.email,
-                                screenname=user.screenname)
+            return LoginResponse(userid=user.userid,
+                                 screenname=user.screenname)
         else:
             # create user in database
             user = User()
@@ -109,13 +109,21 @@ class API(object):
             user.email = request.email
             user.screenname = request.screenname
             self.session.add(user)
-            self.session.flush()
+            try:
+                self.session.flush()
+            except IntegrityError:
+                self.session.rollback()
+                # special error if it's just screenname (most likely cause)
+                matches = self.session.query(User)  \
+                    .filter(User.screenname == request.screenname).all()
+                if matches:
+                    return self.ERR_LOGIN_DUPLICATE_SCREENNAME
+                else:
+                    raise
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
-            return LoginDetails(userid=user.userid,
-                                identity=user.identity,
-                                email=user.email,
-                                screenname=user.screenname)
+            return LoginResponse(userid=user.userid,
+                                 screenname=user.screenname)
             
     @api
     def get_user(self, userid):
@@ -127,7 +135,7 @@ class API(object):
         if not matches:
             return self.ERR_NO_SUCH_USER
         user = matches[0]
-        return LoginDetails(userid=user.userid,
+        return _LoginDetails(userid=user.userid,
                             identity=user.identity,
                             email=user.email,
                             screenname=user.screenname)
@@ -221,9 +229,6 @@ class API(object):
             self.session.add(rgp)
         logging.debug("Started game %d", open_game.gameid)
         return running_game
-    
-    ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
-    ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
     
     @api
     def join_game(self, userid, gameid):
