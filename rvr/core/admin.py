@@ -60,6 +60,18 @@ class AdminCmd(Cmd):
         else:
             print "'%s' has userid %s" % (user.screenname, user.userid)
             
+    def do_rmuser(self, details):
+        """
+        rmuser <userid>
+        deletes user <userid>
+        """
+        userid = int(details)
+        response = self.api.delete_user(userid)
+        if isinstance(response, APIError):
+            print "Error:", response
+        else:
+            print "Deleted."
+    
     def do_getuser(self, details):
         """
         getuser <userid>

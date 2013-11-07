@@ -12,6 +12,8 @@ ENGINE = create_engine('sqlite:///%s' % backendconfig.DB_PATH, echo=False)
 SESSION = sessionmaker(bind=ENGINE)
 BASE = declarative_base()
 
+#pylint:disable=R0903
+
 # from http://docs.sqlalchemy.org/en/rel_0_8/orm/session.html
 @contextmanager
 def session_scope():
@@ -33,6 +35,9 @@ def create_session(fun):
     """
     @wraps(fun)
     def inner(*args, **kwargs):
+        """
+        See parent.
+        """
         self = args[0]
         if self.session is None:
             with session_scope() as session:
@@ -47,6 +52,9 @@ def create_session(fun):
 
 if __name__ == '__main__':
     class Class(object):
+        """
+        Class to test @create_session only
+        """
         def __init__(self):
             self.session = None
             
@@ -57,9 +65,9 @@ if __name__ == '__main__':
             if arg:
                 self.method(False)
     
-    cls = Class()
+    CLS = Class()
     print "cls.method(True):"
-    cls.method(True)
+    CLS.method(True)
     print
     print "cls.method(False):"
-    cls.method(False)
+    CLS.method(False)

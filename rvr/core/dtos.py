@@ -10,6 +10,8 @@ Data transfer objects:
 - hand history(!)
 """
 
+#pylint:disable=R0903
+
 # Note: We do not log the user in until they have chosen a unique screenname
 # But also note that we only know if their screenname is unique by trying.
 class LoginRequest(object):
@@ -28,22 +30,6 @@ class LoginRequest(object):
         self.identity = identity
         self.email = email
         self.screenname = screenname
-        
-class LoginResponse(object):
-    """
-    Response from a LoginRequest. Note that the screenname may change because
-    the user has chosen a different one.
-    
-    If response has a different screenname to request, it means that the user
-    has previously chosen to have a different screenname, possibly because their
-    name was taken.
-    
-    If response has the same screenname, it means either that the user has
-    logged in previously, or they were created with that screenname.
-    """
-    def __init__(self, userid, screenname):
-        self.userid = userid
-        self.screenname = screenname
 
 class ChangeScreennameRequest(object):
     """
@@ -59,8 +45,7 @@ class ChangeScreennameRequest(object):
         self.userid = userid
         self.screenname = screenname
 
-# TODO: 1 for req, 1 resp
-class _LoginDetails(object):
+class DetailedUser(object):
     """
     OpenID identity, email address, screenname
     """
@@ -72,7 +57,15 @@ class _LoginDetails(object):
 
 class UserDetails(object):
     """
-    userid, screenname
+    Response from a LoginRequest. Note that the screenname may change because
+    the user has chosen a different one.
+    
+    If response has a different screenname to request, it means that the user
+    has previously chosen to have a different screenname, possibly because their
+    name was taken.
+    
+    If response has the same screenname, it means either that the user has
+    logged in previously, or they were created with that screenname.
     """
     def __init__(self, userid, screenname):
         self.userid = userid
@@ -80,6 +73,9 @@ class UserDetails(object):
         
     @classmethod
     def from_user(cls, user):
+        """
+        Create object from dtos.User
+        """
         return cls(user.userid, user.screenname)
 
 class RangeBasedActionDetails(object):
@@ -104,6 +100,9 @@ class OpenGameDetails(object):
     
     @classmethod
     def from_open_game(cls, open_game):
+        """
+        Create object from dtos.OpenGame
+        """
         users = [UserDetails.from_user(o.user) for o in open_game.ogps]
         description = open_game.situation.description
         return cls(open_game.gameid, users, description)
@@ -125,6 +124,9 @@ class RunningGameDetails(object):
     
     @classmethod
     def from_running_game(cls, running_game):
+        """
+        Create object from dtos.RunningGame
+        """
         users = [UserDetails.from_user(r.user) for r in running_game.rgps]
         description = running_game.situation.description
         user_details = UserDetails.from_user(running_game.current_user)
@@ -146,6 +148,9 @@ class FinishedGameDetails(object):
     
     @classmethod
     def from_finished_game(cls, finished_game):
+        """
+        Create object from dtos.FinishedGame
+        """
         users = [UserDetails.from_user(f.user) for f in finished_game.fgps]
         description = finished_game.situation.description
         return cls(finished_game.gameid, users, description)

@@ -2,8 +2,7 @@
 Core API for Range vs. Range backend.
 """
 from rvr.core.dtos import OpenGameDetails, UserDetails, \
-    RunningGameDetails, FinishedGameDetails, UsersGameDetails, LoginRequest,\
-    LoginResponse, _LoginDetails
+    RunningGameDetails, FinishedGameDetails, UsersGameDetails, DetailedUser
 from rvr.db.creation import BASE, ENGINE, create_session
 from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant, \
     RunningGame, RunningGameParticipant, FinishedGameParticipant
@@ -11,6 +10,8 @@ from functools import wraps
 import logging
 import random
 from sqlalchemy.exc import IntegrityError
+
+#pylint:disable=R0903
 
 def exception_mapper(fun):
     """
@@ -60,6 +61,13 @@ class APIError(object):
         return self.description
 
 class API(object):
+    """
+    Core Range vs. Range API, which may be called by:
+     - a website
+     - an admin console or command line
+     - a thick client
+    """
+    
     ERR_UNKNOWN = APIError("Internal error")
     ERR_NO_SUCH_USER = APIError("No such user")
     ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
@@ -75,6 +83,7 @@ class API(object):
         """
         Create and seed the database
         """
+        #pylint:disable=R0201
         BASE.metadata.create_all(ENGINE)
         
     @api
@@ -100,8 +109,7 @@ class API(object):
         if matches:
             # return user from database
             user = matches[0]
-            return LoginResponse(userid=user.userid,
-                                 screenname=user.screenname)
+            return UserDetails.from_user(user)
         else:
             # create user in database
             user = User()
@@ -122,9 +130,16 @@ class API(object):
                     raise
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
-            return LoginResponse(userid=user.userid,
-                                 screenname=user.screenname)
+            return UserDetails.from_user(user)
             
+    @api
+    def change_screenname(self, request):
+        """
+        Change user's screenname
+        """
+        self.session.query(User).filter(User.userid == request.userid)  \
+            .one().screenname = request.screenname
+    
     @api
     def get_user(self, userid):
         """
@@ -135,21 +150,28 @@ class API(object):
         if not matches:
             return self.ERR_NO_SUCH_USER
         user = matches[0]
-        return _LoginDetails(userid=user.userid,
+        return DetailedUser(userid=user.userid,
                             identity=user.identity,
                             email=user.email,
                             screenname=user.screenname)
     
     @api
+    def delete_user(self, userid):
+        """
+        Delete user if not playing any games.
+        """
+        #TODO:
+    
+    @api
     def get_user_by_screenname(self, screenname):
         """
-        Return list of all users userid, screenname
+        Return userid, screenname
         """
         matches = self.session.query(User)  \
             .filter(User.screenname == screenname).all()
         if matches:
             user = matches[0]
-            return UserDetails(user.userid, user.screenname)
+            return UserDetails.from_user(user)
         else:
             return None
     
@@ -276,7 +298,7 @@ class API(object):
             # This commits both the add, and the start game if present.
             # This is important so that there are never duplicate game ids.
             self.session.commit()  # explicitly check that it commits okay
-        except Exception as _ex:
+        except IntegrityError as _ex:
             # An error will occur if game no longer exists, or user no longer
             # exists, or user has already been added to game, or game has
             # already been filled, or problems with starting the game!
