@@ -44,7 +44,7 @@ def ensure_user():
         flash("The screenname '%s' is already taken." % g.user.name)
         return redirect(url_for('change_screenname'))
     if isinstance(result, APIError):
-        logging.debug("%s", result)
+        logging.debug("login error: %s", result)
         abort(403)
     session['userid'] = result.userid
     session['screenname'] = result.screenname
@@ -65,7 +65,8 @@ def change_screenname():
                                           session['screenname'])
             resp = API().change_screenname(req)
             if isinstance(resp, APIError):
-                flash("Error: %s" % (resp,))
+                logging.debug("change_screenname error: %s", resp)
+                flash("An error occurred.")
             else:
                 flash("Your screenname has been changed to '%s'." %
                       (new_screenname, ))

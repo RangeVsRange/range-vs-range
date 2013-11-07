@@ -74,6 +74,7 @@ class API(object):
     ERR_LOGIN_DUPLICATE_SCREENNAME = APIError("Duplicate screenname")
     ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
     ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
+    ERR_DELETE_USER_PLAYING = APIError("User is playing")
     
     def __init__(self):
         self.session = None  # required for @create_session
@@ -160,7 +161,7 @@ class API(object):
         """
         Delete user if not playing any games.
         """
-        #TODO:
+        # TODO: delete_user        
     
     @api
     def get_user_by_screenname(self, screenname):
@@ -352,7 +353,7 @@ class API(object):
         inputs: userid, gameid, action
         outputs: (none)
         """
-        # TODO:
+        # TODO: perform_action
     
     @api
     def get_public_game(self):
@@ -361,7 +362,7 @@ class API(object):
         inputs: gameid
         outputs: hand history populated with ranges iff finished
         """
-        # TODO:
+        # TODO: get_public_game
         # To start with, just return basic details of the game
     
     @api
@@ -371,7 +372,7 @@ class API(object):
         inputs: userid, gameid
         outputs: hand history partially populated with ranges for userid only
         """
-        # TODO:
+        # TODO: get_private_game
         # To start with, just do what get_public_game does
     
     @api

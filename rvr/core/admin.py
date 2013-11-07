@@ -1,9 +1,16 @@
+"""
+Admin Cmd class for interacting with API
+"""
 from cmd import Cmd
 import logging
 from rvr.core.api import APIError, API
-from rvr.core.dtos import LoginRequest
+from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
+#pylint:disable=R0201,R0904
 
-class AdminCmd(Cmd):        
+class AdminCmd(Cmd):
+    """
+    Cmd class to make calls to an API instance
+    """
     def __init__(self):
         Cmd.__init__(self)
         self.api = API()
@@ -59,7 +66,7 @@ class AdminCmd(Cmd):
             print "No such user"
         else:
             print "'%s' has userid %s" % (user.screenname, user.userid)
-            
+    
     def do_rmuser(self, details):
         """
         rmuser <userid>
@@ -85,6 +92,22 @@ class AdminCmd(Cmd):
             print "userid='%s'\nidentity='%s'\nemail='%s'\nscreenname='%s'" %  \
                 (response.userid, response.identity, response.email,
                  response.screenname)
+
+    def do_changesn(self, details):
+        """
+        changesn <userid> <newname>
+        changes user's screenname to <newname>
+        """
+        args = details.split(None, 1)
+        userid = int(args[0])
+        newname = args[1]
+        req = ChangeScreennameRequest(userid, newname)
+        result = self.api.change_screenname(req)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        else:
+            print "Changed userid %d's screenname to '%s'" %  \
+                (userid, newname)
 
     def do_opengames(self, _details):
         """
@@ -177,6 +200,6 @@ class AdminCmd(Cmd):
 logging.basicConfig()
 logging.root.setLevel(logging.DEBUG)
 
-cmd = AdminCmd()
-cmd.prompt = "> "
-cmd.cmdloop("Range vs. Range admin tool. Type ? for help.")
+CMD = AdminCmd()
+CMD.prompt = "> "
+CMD.cmdloop("Range vs. Range admin tool. Type ? for help.")
