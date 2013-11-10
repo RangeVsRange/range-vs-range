@@ -161,7 +161,16 @@ class API(object):
         """
         Delete user if not playing any games.
         """
-        # TODO: delete_user        
+        matches = self.session.query(User).filter(User.userid == userid).all()
+        if not matches:
+            return self.ERR_NO_SUCH_USER
+        user = matches[0]
+        if user.rgps or user.fgps:
+            return self.ERR_DELETE_USER_PLAYING
+        for ogp in user.ogps:
+            self.session.delete(ogp)
+        self.session.delete(user)
+        return True
     
     @api
     def get_user_by_screenname(self, screenname):

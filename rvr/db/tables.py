@@ -20,8 +20,8 @@ class User(BASE):
     email = Column(String(256), nullable=False, unique=True)
     
     def __repr__(self):
-        return "User<userid='%s', screenname='%s'>" %  \
-            (self.userid, self.screenname)
+        return "User<userid='%s', screenname='%s', email='%s'>" %  \
+            (self.userid, self.screenname, self.email)
 
 class Situation(BASE):
     """

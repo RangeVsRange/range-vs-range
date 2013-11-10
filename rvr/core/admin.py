@@ -76,8 +76,10 @@ class AdminCmd(Cmd):
         response = self.api.delete_user(userid)
         if isinstance(response, APIError):
             print "Error:", response
-        else:
+        elif response:
             print "Deleted."
+        else:
+            print "Nothing happened."
     
     def do_getuser(self, details):
         """
