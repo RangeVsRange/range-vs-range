@@ -111,15 +111,16 @@ class RunningGameDetails(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, gameid, users, description, user_details):
+    def __init__(self, gameid, user_map, description, user_details):
         self.gameid = gameid
-        self.users = users
+        self.user_map = user_map
         self.description = description
         self.current_user_details = user_details
 
     def __str__(self):
         return "Running game %d, users: %s, description: %s, current: %s" %  \
-            (self.gameid, [u.screenname for u in self.users],
+            (self.gameid, {k: u.screenname for
+                           k, u in self.user_map.iteritems()},
              self.description, self.current_user_details.screenname)
     
     @classmethod
@@ -127,10 +128,11 @@ class RunningGameDetails(object):
         """
         Create object from dtos.RunningGame
         """
-        users = [UserDetails.from_user(r.user) for r in running_game.rgps]
+        user_map = {r.order: UserDetails.from_user(r.user)
+                    for r in running_game.rgps}
         description = running_game.situation.description
         user_details = UserDetails.from_user(running_game.current_user)
-        return cls(running_game.gameid, users, description, user_details)
+        return cls(running_game.gameid, user_map, description, user_details)
 
 class FinishedGameDetails(object):
     """

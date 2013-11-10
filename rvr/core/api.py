@@ -253,10 +253,11 @@ class API(object):
         running_game.current_userid = random.choice(open_game.ogps).userid
         self.session.delete(open_game)
         self.session.add(running_game)
-        for ogp in open_game.ogps:
+        for order, ogp in enumerate(open_game.ogps):
             rgp = RunningGameParticipant()
             rgp.game = running_game
             rgp.userid = ogp.userid  # haven't loaded users, so just copy userid
+            rgp.order = order
             self.session.delete(ogp)
             self.session.add(rgp)
         logging.debug("Started game %d", open_game.gameid)
@@ -349,9 +350,9 @@ class API(object):
         else:
             return self.ERR_LEAVE_GAME_NOT_IN
         game.participants -= 1        
-        # I don't know why, but flush here causes
-        # ensure_open_games to fail.
-        self.session.commit()  # TODO: Why won't flush work?
+        # I don't know why, but flush here causes ensure_open_games to fail.
+        # Failure to merge appropriately?
+        self.session.commit()
         logging.debug("User %d left game %d", userid, gameid)
         self.ensure_open_games()        
     
