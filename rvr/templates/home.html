@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Home</h2>
-<p>You are logged in as: <strong>{{screenname}}</strong>.</p>
+<p>You are logged in as: <strong>{{screenname}}</strong>.
+ You can change your screenname, <a href="{{ url_for('change_screenname') }}">here</a>.</p>
 
 {% if others_open %}
   <p>Open games you can join:</p>

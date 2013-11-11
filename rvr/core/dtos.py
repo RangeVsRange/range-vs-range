@@ -127,7 +127,7 @@ class RunningGameDetails(object):
     def from_running_game(cls, running_game):
         """
         Create object from dtos.RunningGame
-        """
+        """ 
         user_map = {r.order: UserDetails.from_user(r.user)
                     for r in running_game.rgps}
         description = running_game.situation.description

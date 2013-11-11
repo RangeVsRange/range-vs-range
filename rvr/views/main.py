@@ -17,9 +17,6 @@ def ensure_user():
     """
     Commit user to database and determine userid
     """
-    if request.endpoint == 'change_screenname':
-        # avoid redirect loop
-        return
     if not g.user or 'identity' not in g.user:
         # user is not authenticated yet
         return
@@ -38,16 +35,19 @@ def ensure_user():
                        screenname=screenname)  # @UndefinedVariable
     result = api.login(req)
     if result == API.ERR_LOGIN_DUPLICATE_SCREENNAME:
+        session['screenname'] = g.user.name
         # User is authenticated with OpenID, but not yet authorised (logged
         # in). We redirect them to a page that allows them to choose a
         # different screenname.
-        flash("The screenname '%s' is already taken." % g.user.name)
-        return redirect(url_for('change_screenname'))
-    if isinstance(result, APIError):
+        flash("The screenname '%s' is already taken." % screenname)
+        if request.endpoint != 'change_screenname':
+            return redirect(url_for('change_screenname'))
+    elif isinstance(result, APIError):
         logging.debug("login error: %s", result)
         abort(403)
-    session['userid'] = result.userid
-    session['screenname'] = result.screenname
+    else:
+        session['screenname'] = result.screenname
+        session['userid'] = result.userid
 
 @APP.route('/change', methods=['GET', 'POST'])
 @AUTH.required
@@ -71,8 +71,10 @@ def change_screenname():
                 flash("Your screenname has been changed to '%s'." %
                       (new_screenname, ))
         return redirect(url_for('home_page'))
+    screenname = session['screenname'] if 'screenname' in session  \
+        else g.user.name
     return render_template('change.html', title='Change Your Screenname',
-                           current=g.user.name, form=form)
+                           current=screenname, form=form)
 
 @APP.route('/', methods=['GET'])
 def landing_page():
