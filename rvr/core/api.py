@@ -265,7 +265,6 @@ class API(object):
     
     @api
     def join_game(self, userid, gameid):
-        # TODO: call this from the front end (join_game)
         """
         5. Join/start game we're not in
         inputs: userid, gameid
@@ -290,7 +289,7 @@ class API(object):
             return self.ERR_JOIN_GAME_ALREADY_IN
         game.participants += 1
         if game.participants > game.situation.participants:
-            return self.ERR_JOIN_GAME_GAME_FULL
+            return self.ERR_JOIN_GAME_GAME_FULL  # This can't happen.
         
         # add user to game
         ogp = OpenGameParticipant()
