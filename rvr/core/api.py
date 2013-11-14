@@ -265,6 +265,7 @@ class API(object):
     
     @api
     def join_game(self, userid, gameid):
+        # TODO: call this from the front end (join_game)
         """
         5. Join/start game we're not in
         inputs: userid, gameid
@@ -329,6 +330,7 @@ class API(object):
     
     @api
     def leave_game(self, userid, gameid):
+        # TODO: call this from the front end (leave_game)
         """
         4. Leave/cancel game we're in
         inputs: userid, gameid

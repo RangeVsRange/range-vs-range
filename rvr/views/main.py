@@ -111,3 +111,8 @@ def home_page():
         others_turn_games=others_turn_games,
         finished_games=finished_games
         )
+
+@APP.route('/join', methods=['GET', 'POST'])
+@AUTH.required
+def join_game():
+    return "Hello world."

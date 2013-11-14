@@ -12,7 +12,8 @@
       with players: {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
     {% else %}
       with no players registered.
-    {% endif %}</li>
+    {% endif %}
+    <a href="{{ url_for('join_game', gameid=game.gameid) }}">Join!</a></li>
   {% endfor %}</ul>
 {% endif %}
 
