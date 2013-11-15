@@ -21,7 +21,8 @@
   <p>Open games you're registered in:</p>
   <ul>{% for game in my_open %}{% set pipe = joiner() %}
     <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
-    {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
+    {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
+    <a href="{{ url_for('leave_game', gameid=game.gameid) }}">Leave.</a></li>
   {% endfor %}</ul>
 {% endif %}
 

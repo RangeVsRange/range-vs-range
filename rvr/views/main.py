@@ -49,7 +49,7 @@ def ensure_user():
         session['screenname'] = result.screenname
         session['userid'] = result.userid
 
-@APP.route('/change', methods=['GET', 'POST'])
+@APP.route('/change', methods=['GET'])
 @AUTH.required
 def change_screenname():
     """
@@ -83,7 +83,7 @@ def landing_page():
     """
     return render_template('landing.html', title='Welcome')
 
-@APP.route('/home', methods=['GET', 'POST'])
+@APP.route('/home', methods=['GET'])
 @AUTH.required
 def home_page():
     """
@@ -112,7 +112,7 @@ def home_page():
         finished_games=finished_games
         )
 
-@APP.route('/join', methods=['GET', 'POST'])
+@APP.route('/join', methods=['GET'])
 @AUTH.required
 def join_game():
     """
@@ -140,5 +140,34 @@ def join_game():
         msg = "An unknown error occurred."
     else:
         msg = "You have joined game %s." % (gameid,)
+    flash(msg)
+    return redirect(url_for('home_page'))
+
+@APP.route('/leave', methods=['GET'])
+@AUTH.required
+def leave_game():
+    """
+    Leave game, flash status, redirect back to /home
+    """
+    api = API()
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        flash("Invalid game ID.")
+        return redirect(url_for('home_page'))
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        flash("Invalid game ID.")
+        return redirect(url_for('home_page'))
+    userid = session['userid']
+    response = api.leave_game(userid, gameid)
+    if response is api.ERR_LEAVE_GAME_NOT_IN:
+        msg = "You are not registered in game %s." % (gameid,)
+    elif response is api.ERR_NO_SUCH_OPEN_GAME:
+        msg = "Invalid game ID."
+    elif isinstance(response, APIError):
+        msg = "An unknown error occurred."
+    else:
+        msg = "You have left game %s." % (gameid,)
     flash(msg)
     return redirect(url_for('home_page'))
