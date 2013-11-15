@@ -2,10 +2,10 @@
 Core API for Range vs. Range backend.
 """
 from rvr.core.dtos import OpenGameDetails, UserDetails, \
-    RunningGameDetails, FinishedGameDetails, UsersGameDetails, DetailedUser
+    RunningGameDetails, UsersGameDetails, DetailedUser
 from rvr.db.creation import BASE, ENGINE, create_session
 from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant, \
-    RunningGame, RunningGameParticipant, FinishedGameParticipant
+    RunningGame, RunningGameParticipant
 from functools import wraps
 import logging
 import random
@@ -216,8 +216,8 @@ class API(object):
         """
         3. Retrieve user's games and their statuses
         inputs: userid
-        outputs: list of user's games. each may be open game, running (not our turn),
-        running (our turn), finished. no more details of each game.
+        outputs: list of user's games. each may be open game, running (not our
+        turn), running (our turn), finished. no more details of each game.
         
         Note: we don't validate that userid is a real userid!
         """
@@ -225,11 +225,7 @@ class API(object):
             .filter(RunningGameParticipant.userid == userid).all()
         running_games = [RunningGameDetails.from_running_game(rgp.game)
                          for rgp in rgps]
-        fgps = self.session.query(FinishedGameParticipant)  \
-            .filter(FinishedGameParticipant.userid == userid).all()
-        finished_games = [FinishedGameDetails.from_finished_game(fgp.game)
-                          for fgp in fgps]
-        return UsersGameDetails(userid, running_games, finished_games)
+        return UsersGameDetails(userid, running_games)
     
     def _start_game(self, open_game):
         """
@@ -329,7 +325,6 @@ class API(object):
     
     @api
     def leave_game(self, userid, gameid):
-        # TODO: call this from the front end (leave_game)
         """
         4. Leave/cancel game we're in
         inputs: userid, gameid

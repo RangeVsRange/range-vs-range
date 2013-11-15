@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Home</h2>
 <p>You are logged in as: <strong>{{screenname}}</strong>.
- You can change your screenname, <a href="{{ url_for('change_screenname') }}">here</a>.</p>
+ To change your screenname, <a href="{{ url_for('change_screenname') }}">click here</a>.</p>
 
 {% if others_open %}
   <p>Open games you can join:</p>
@@ -13,7 +13,7 @@
     {% else %}
       with no players registered.
     {% endif %}
-    <a href="{{ url_for('join_game', gameid=game.gameid) }}">Join!</a></li>
+    To join this game, <a href="{{ url_for('join_game', gameid=game.gameid) }}">click here</a>.</li>
   {% endfor %}</ul>
 {% endif %}
 
@@ -22,7 +22,7 @@
   <ul>{% for game in my_open %}{% set pipe = joiner() %}
     <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
     {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
-    <a href="{{ url_for('leave_game', gameid=game.gameid) }}">Leave.</a></li>
+    To leave this game, <a href="{{ url_for('leave_game', gameid=game.gameid) }}">click here</a>.</li>
   {% endfor %}</ul>
 {% endif %}
 
@@ -37,14 +37,6 @@
 {% if others_turn_games %}
   <p>Games where it's not your turn:</p>
   <ul>{% for game in others_turn_games %}{% set pipe = joiner() %}
-    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
-    {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
-  {% endfor %}</ul>
-{% endif %}
-
-{% if finished_games %}
-  <p>Games you've played:</p>
-  <ul>{% for game in finished_games %}{% set pipe = joiner() %}
     <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
     {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
   {% endfor %}</ul>

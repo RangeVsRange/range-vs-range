@@ -102,14 +102,12 @@ def home_page():
                      if mg.current_user_details.userid == userid]
     others_turn_games = [mg for mg in my_games.running_details
                          if mg.current_user_details.userid != userid]
-    finished_games = my_games.finished_details
     return render_template('home.html', title='Home',
         screenname=screenname,
         my_open=my_open,
         others_open=others_open,
         my_turn_games=my_turn_games,
-        others_turn_games=others_turn_games,
-        finished_games=finished_games
+        others_turn_games=others_turn_games
         )
 
 @APP.route('/join', methods=['GET'])

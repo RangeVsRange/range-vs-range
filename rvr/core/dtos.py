@@ -133,38 +133,13 @@ class RunningGameDetails(object):
         user_details = UserDetails.from_user(running_game.current_user)
         return cls(running_game.gameid, users, description, user_details)
 
-class FinishedGameDetails(object):
-    """
-    list of users in game, and details of situation
-    """
-    def __init__(self, gameid, users, description):
-        self.gameid = gameid
-        self.users = users
-        self.description = description
-
-    def __str__(self):
-        return "Finished game %d, users: %s, description: %s" %  \
-            (self.gameid, [u.screenname for u in self.users],
-             self.description)
-    
-    @classmethod
-    def from_finished_game(cls, finished_game):
-        """
-        Create object from dtos.FinishedGame
-        """
-        users = [UserDetails.from_user(f.user) for f in finished_game.fgps]
-        description = finished_game.situation.description
-        return cls(finished_game.gameid, users, description)
-
 class UsersGameDetails(object):
     """
-    lists of open game details, running game details, finished game details, for
-    a specific user
+    lists of open game details, running game details, for a specific user
     """
-    def __init__(self, userid, running_details, finished_details):
+    def __init__(self, userid, running_details):
         self.userid = userid
         self.running_details = running_details
-        self.finished_details = finished_details
 
 class GameDetails(object):
     """

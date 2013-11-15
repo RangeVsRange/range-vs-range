@@ -11,7 +11,7 @@ class User(BASE):
     """
     A user of the application.
     
-    Has many-to-many relationships with OpenGame, RunningGame and FinishedGame.
+    Has many-to-many relationships with OpenGame, RunningGame.
     """
     __tablename__ = 'user'
     userid = Column(Integer, Sequence('user_seq'), primary_key=True)
@@ -27,7 +27,7 @@ class Situation(BASE):
     """
     Training situations, e.g. HU NL HE for 100 BB preflop.
     
-    Has one-to-many relationships with OpenGame, RunningGame and FinishedGame. 
+    Has one-to-many relationships with OpenGame, RunningGame. 
     """
     __tablename__ = 'situation'
     situationid = Column(Integer, primary_key=True)
@@ -68,8 +68,8 @@ class RunningGame(BASE):
     gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          nullable=False)
-    current_userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     situation = relationship("Situation", backref="running_games")
+    current_userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     current_user = relationship("User")
 
 class RunningGameParticipant(BASE):
@@ -84,27 +84,3 @@ class RunningGameParticipant(BASE):
     order = Column(Integer, primary_key=True)
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"))
-
-class FinishedGame(BASE):
-    """
-    A record of a game that has been played and finished.
-
-    Has a many-to-many relationship with User, via FinishedGameParticipant.
-    """
-    __tablename__ = 'finished_game'
-    gameid = Column(Integer, primary_key=True)
-    situationid = Column(Integer, ForeignKey("situation.situationid"),
-                         nullable=False)
-    situation = relationship("Situation", backref="finished_games")
-
-class FinishedGameParticipant(BASE):
-    """
-    Association object for the many-to-many relationship between users and
-    finished games.
-    """
-    __tablename__ = 'finished_game_participant'
-    userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
-    gameid = Column(Integer, ForeignKey("finished_game.gameid"),
-                    primary_key=True)
-    user = relationship("User", backref="fgps")
-    game = relationship("FinishedGame", backref="fgps")
