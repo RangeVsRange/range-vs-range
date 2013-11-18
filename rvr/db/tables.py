@@ -68,6 +68,7 @@ class RunningGame(BASE):
     gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          nullable=False)
+    next_hh = Column(Integer, default=0, nullable=False)
     situation = relationship("Situation", backref="running_games")
     current_userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     current_user = relationship("User")
@@ -84,3 +85,47 @@ class RunningGameParticipant(BASE):
     order = Column(Integer, primary_key=True)
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"))
+
+class HandHistoryBase(BASE):
+    """
+    Base table for all different kinds of hand history items.
+    
+    Each item of whatever type has a link to a base item.
+    """
+    __tablename__ = 'hand_history_base'
+    gameid = Column(Integer, ForeignKey("running_game.gameid"),
+                    primary_key=True)
+    order = Column(Integer, primary_key=True)
+    game = relationship("RunningGame", backref=backref("hh", cascade="all"))
+
+class HhUserRange(BASE):
+    """
+    User has range. We have one of these for each user at the start of a hand,
+    and after each range action.
+    """
+    __tablename__ = "hh_user_range"
+    gameid = Column(Integer, ForeignKey("hand_history_base.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("hand_history_base.order"),
+                   primary_key=True)
+    range_ = Column(String(), nullable=False)  # longest possible range = 6,629 chars
+    hh_base = relationship("HandHistoryBase",
+        primaryjoin="and_(HandHistoryBase.gameid==HhUserRange.gameid," +  \
+                    " HandHistoryBase.order==HhUserRange.order)")
+
+# TODO: New table for hand / game history. It should be a base table with an
+# ordinal, and then other tables that provide the details, e.g:
+#  - user has range
+#  - card dealt to the board
+#  - hand dealt to player
+#  - player makes a range-based action
+#  - player bets / raises
+#  - player calls / checks
+#  - player folds
+# (that's enough to play)
+#  - analysis of a fold, bet, call
+#  - fold equity payment
+#  - board card equity payment
+#  - showdown equities
+#  - showdown payment
+#  - chat

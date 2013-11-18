@@ -5,7 +5,7 @@ from rvr.core.dtos import OpenGameDetails, UserDetails, \
     RunningGameDetails, UsersGameDetails, DetailedUser
 from rvr.db.creation import BASE, ENGINE, create_session
 from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant, \
-    RunningGame, RunningGameParticipant
+    RunningGame, RunningGameParticipant, HandHistoryBase, HhUserRange
 from functools import wraps
 import logging
 import random
@@ -227,7 +227,7 @@ class API(object):
                          for rgp in rgps]
         return UsersGameDetails(userid, running_games)
     
-    def _start_game(self, open_game):
+    def _start_game(self, open_game, final_ogp):
         """
         Takes the id of a full OpenGame, creates a new RunningGame from it,
         deletes the original and returns the id of the new RunningGame.
@@ -244,21 +244,40 @@ class API(object):
         yet.
         """
         running_game = RunningGame()
-        running_game.gameid = open_game.gameid
-        running_game.situationid = open_game.situationid
+        running_game.next_hh = 0
+        running_game.game = open_game
+        running_game.situation = open_game.situation
         running_game.current_userid = random.choice(open_game.ogps).userid
-        self.session.delete(open_game)
         self.session.add(running_game)
-        for order, ogp in enumerate(open_game.ogps):
+        self.session.flush()  # get gameid from database
+        for order, ogp in enumerate(open_game.ogps + [final_ogp]):
             rgp = RunningGameParticipant()
-            rgp.game = running_game
+            rgp.gameid = running_game.gameid
             rgp.userid = ogp.userid  # haven't loaded users, so just copy userid
             rgp.order = order
-            self.session.delete(ogp)
             self.session.add(rgp)
+            self.session.flush()  # populate game
+            self._set_rgp_range(rgp, "")
+        self.session.delete(open_game)  # cascades to ogps
         logging.debug("Started game %d", open_game.gameid)
         return running_game
     
+    def _set_rgp_range(self, rgp, range_):
+        """
+        Record that this user now has this range in this game, in the hand
+        history.
+        """
+        base = HandHistoryBase()
+        base.gameid = rgp.gameid
+        base.order = rgp.game.next_hh
+        range_element = HhUserRange()
+        range_element.gameid = base.gameid
+        range_element.order = base.order
+        range_element.range_ = range_
+        rgp.game.next_hh += 1
+        self.session.add(base)
+        self.session.add(range_element)
+
     @api
     def join_game(self, userid, gameid):
         """
@@ -286,23 +305,22 @@ class API(object):
         game.participants += 1
         if game.participants > game.situation.participants:
             return self.ERR_JOIN_GAME_GAME_FULL  # This can't happen.
-        
-        # add user to game
+
         ogp = OpenGameParticipant()
-        ogp.game = game
-        ogp.user = user
-        self.session.add(ogp)
-    
+        ogp.gameid = game.gameid
+        ogp.userid = user.userid
+            
         # start game?
         start_game = game.participants == game.situation.participants
         if start_game:
-            self.session.flush()
-            running_game = self._start_game(game)
+            running_game = self._start_game(game, ogp)
         else:
+            # add user to game
+            self.session.add(ogp)
             running_game = None
             
         try:
-            # This commits both the add, and the start game if present.
+            # This commits either the add or the start game.
             # This is important so that there are never duplicate game ids.
             self.session.commit()  # explicitly check that it commits okay
         except IntegrityError as _ex:
