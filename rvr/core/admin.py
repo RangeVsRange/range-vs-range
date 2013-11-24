@@ -189,6 +189,27 @@ class AdminCmd(Cmd):
         else:
             print "Open games refreshed."            
 
+    def do_handhistory(self, params):
+        """
+        handhistory <gameid> [<userid>]
+        display hand history for given game, from given user's perspective, if
+        specified.
+        """
+        args = params.split(None, 1)
+        gameid = int(args[0])
+        if len(args) > 1:
+            userid = int(args[1])
+            result = self.api.get_private_game(gameid, userid)
+        else:
+            userid = None
+            result = self.api.get_public_game(gameid)
+        if isinstance(result, APIError):
+            print "Error:", result.description  # pylint:disable=E1101
+            return
+        print "Hand history for game %d, userid %s:" % (gameid, userid)
+        for item in result.history:
+            print item
+
     def do_exit(self, _details):
         """
         Close the admin interface

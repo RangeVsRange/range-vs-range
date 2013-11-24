@@ -70,7 +70,8 @@ class RunningGame(BASE):
                          nullable=False)
     next_hh = Column(Integer, default=0, nullable=False)
     situation = relationship("Situation", backref="running_games")
-    current_userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
+    # if current_userid is None, game is finished
+    current_userid = Column(Integer, ForeignKey("user.userid"), nullable=True)
     current_user = relationship("User")
 
 class RunningGameParticipant(BASE):
@@ -86,36 +87,39 @@ class RunningGameParticipant(BASE):
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"))
 
-class HandHistoryBase(BASE):
+class GameHistoryItem(BASE):
     """
     Base table for all different kinds of hand history items.
     
     Each item of whatever type has a link to a base item.
     """
-    __tablename__ = 'hand_history_base'
+    __tablename__ = 'game_history_item'
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
     order = Column(Integer, primary_key=True)
-    game = relationship("RunningGame", backref=backref("hh", cascade="all"))
+    game = relationship("RunningGame",
+                        backref=backref("history", cascade="all"))
 
-class HhUserRange(BASE):
+class GameHistoryUserRange(BASE):
     """
     User has range. We have one of these for each user at the start of a hand,
     and after each range action.
     """
-    __tablename__ = "hh_user_range"
-    gameid = Column(Integer, ForeignKey("hand_history_base.gameid"),
+    __tablename__ = "game_history_user_range"
+    gameid = Column(Integer, ForeignKey("game_history_item.gameid"),
                     primary_key=True)
-    order = Column(Integer, ForeignKey("hand_history_base.order"),
+    order = Column(Integer, ForeignKey("game_history_item.order"),
                    primary_key=True)
-    range_ = Column(String(), nullable=False)  # longest possible range = 6,629 chars
-    hh_base = relationship("HandHistoryBase",
-        primaryjoin="and_(HandHistoryBase.gameid==HhUserRange.gameid," +  \
-                    " HandHistoryBase.order==HhUserRange.order)")
+    userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
+    # longest possible range = 6,629 chars
+    range_ = Column(String(), nullable=False)
+    hh_base = relationship("GameHistoryItem", primaryjoin=  \
+        "and_(GameHistoryItem.gameid==GameHistoryUserRange.gameid," +  \
+        " GameHistoryItem.order==GameHistoryUserRange.order)")
+    user = relationship("User")
 
-# TODO: New table for hand / game history. It should be a base table with an
-# ordinal, and then other tables that provide the details, e.g:
-#  - user has range
+# TODO: the following hand history items:
+#  - (done) user has range
 #  - card dealt to the board
 #  - hand dealt to player
 #  - player makes a range-based action

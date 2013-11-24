@@ -2,16 +2,20 @@
 Core API for Range vs. Range backend.
 """
 from rvr.core.dtos import OpenGameDetails, UserDetails, \
-    RunningGameDetails, UsersGameDetails, DetailedUser
+    RunningGameDetails, UsersGameDetails, DetailedUser, RunningGameHistory,\
+    GameItem
 from rvr.db.creation import BASE, ENGINE, create_session
 from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant, \
-    RunningGame, RunningGameParticipant, HandHistoryBase, HhUserRange
+    RunningGame, RunningGameParticipant, GameHistoryItem, GameHistoryUserRange
 from functools import wraps
 import logging
 import random
 from sqlalchemy.exc import IntegrityError
+import itertools
 
 #pylint:disable=R0903
+
+GAME_HISTORY_TABLES = [GameHistoryUserRange]
 
 def exception_mapper(fun):
     """
@@ -28,7 +32,6 @@ def exception_mapper(fun):
         except Exception as ex:
             logging.debug(ex)
             return API.ERR_UNKNOWN
-        # pylint:enable=W0703
     return inner
 
 def api(fun):
@@ -71,6 +74,7 @@ class API(object):
     ERR_UNKNOWN = APIError("Internal error")
     ERR_NO_SUCH_USER = APIError("No such user")
     ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
+    ERR_NO_SUCH_RUNNING_GAME = APIError("No such running game")
     ERR_LOGIN_DUPLICATE_SCREENNAME = APIError("Duplicate screenname")
     ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
     ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
@@ -267,12 +271,13 @@ class API(object):
         Record that this user now has this range in this game, in the hand
         history.
         """
-        base = HandHistoryBase()
+        base = GameHistoryItem()
         base.gameid = rgp.gameid
         base.order = rgp.game.next_hh
-        range_element = HhUserRange()
+        range_element = GameHistoryUserRange()
         range_element.gameid = base.gameid
         range_element.order = base.order
+        range_element.userid = rgp.userid
         range_element.range_ = range_
         rgp.game.next_hh += 1
         self.session.add(base)
@@ -378,26 +383,61 @@ class API(object):
         outputs: (none)
         """
         # TODO: perform_action
+        
+    def _get_history_items(self, game, userid=None):
+        """
+        Returns a list of game history items (tables.GameHistoryItem with
+        additional details from child tables), with private data only for
+        <userid>, if specified.
+        """
+        # pylint:disable=W0142
+        is_finished = game.current_userid is None
+        child_items = [self.session.query(table)
+                       .filter(table.gameid == game.gameid).all()
+                       for table in GAME_HISTORY_TABLES]
+        child_dtos = [GameItem.from_game_history_child(child)
+                      for child in itertools.chain(*child_items)]
+        filtered_dtos = [dto for dto in child_dtos
+                         if is_finished or dto.should_include_for(userid)]
+        return filtered_dtos
+        
+    def _get_game(self, gameid, userid=None):
+        """
+        Return game <gameid>. If <userid> is not None, return private data for
+        the specified user. If the game is finished, return all private data.
+        Analysis items are considered private data, because they include both
+        players' ranges.
+        """
+        if userid is not None:
+            users = self.session.query(User).filter(User.userid == userid).all()
+            if not users:
+                return self.ERR_NO_SUCH_USER
+        games = self.session.query(RunningGame)  \
+            .filter(RunningGame.gameid == gameid).all()
+        if not games:
+            return self.ERR_NO_SUCH_RUNNING_GAME
+        game = games[0]
+        game_details = RunningGameDetails.from_running_game(game)
+        history_items = self._get_history_items(game, userid)
+        return RunningGameHistory(game_details, history_items)
     
     @api
-    def get_public_game(self):
+    def get_public_game(self, gameid):
         """
         7. Retrieve game history without current player's ranges
         inputs: gameid
         outputs: hand history populated with ranges iff finished
         """
-        # TODO: get_public_game
-        # To start with, just return basic details of the game
+        return self._get_game(gameid)
     
     @api
-    def get_private_game(self):
+    def get_private_game(self, gameid, userid):
         """
         8. Retrieve game history with current player's ranges
         inputs: userid, gameid
         outputs: hand history partially populated with ranges for userid only
         """
-        # TODO: get_private_game
-        # To start with, just do what get_public_game does
+        return self._get_game(gameid, userid)
     
     @api
     def ensure_open_games(self):

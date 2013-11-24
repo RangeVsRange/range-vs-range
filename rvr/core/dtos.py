@@ -9,6 +9,7 @@ Data transfer objects:
   situation as per open game list
 - hand history(!)
 """
+from rvr.db import tables
 
 #pylint:disable=R0903
 
@@ -77,6 +78,9 @@ class UserDetails(object):
         Create object from dtos.User
         """
         return cls(user.userid, user.screenname)
+    
+    def __str__(self):
+        return "%s (id %s)" % (self.screenname, self.userid)
 
 class RangeBasedActionDetails(object):
     """
@@ -141,16 +145,67 @@ class UsersGameDetails(object):
         self.userid = userid
         self.running_details = running_details
 
-class GameDetails(object):
+class GameItem(object):
     """
-    general game, with status (open/running/finished), whose turn?, details of
-    situation as per open game list
+    base class for hand history item DTOs
     """
-    pass
+    @classmethod
+    def from_game_history_child(cls, child):
+        """
+        Child is a GameHistoryUserRange, etc.
+        Construct a GameItemUserRange, etc. 
+        """
+        if isinstance(child, tables.GameHistoryUserRange):
+            return GameItemUserRange.from_history_item(child)
+        else:
+            raise TypeError("Object is not a GameHistoryItem associated object")
+    
+    def should_include_for(self, _userid):
+        """
+        Should this item be included in the hand history for user <userid>?
+        """
+        # pylint:disable=R0201
+        return True
 
-class HandHistoryDetails(object):
+class GameItemUserRange(GameItem):
     """
-    sufficient to show a completed game, analysis etc. to user
-    sufficient for the user to choose their new range-based action
+    user has range
     """
-    pass
+    def __init__(self, user, range_):
+        """
+        user is a UserDetails
+        range_ is a string describing the range
+        """
+        self.user = user
+        self.range_ = range_
+
+    @classmethod
+    def from_history_item(cls, item):
+        """
+        Create from a GameHistoryUserRange
+        """
+        user_details = UserDetails.from_user(item.user)
+        return cls(user_details, item.range_)
+        
+    def should_include_for(self, userid):
+        """
+        Ranges are only shown to the current user (while the game is running).
+        """
+        return self.user.userid == userid
+    
+    def __str__(self):
+        return "%s has range '%s'" % (self.user, self.range_)
+
+class RunningGameHistory(object):
+    """
+    Everything about a running game.
+    
+    This will contain range data for both players if the game is finished, for
+    one player if that user is requesting this object, or for no one if this is
+    a public view of a running game.
+    
+    It will contain analysis only if the game is finished.
+    """
+    def __init__(self, game_details, history_items):
+        self.game_details = game_details
+        self.history = history_items
