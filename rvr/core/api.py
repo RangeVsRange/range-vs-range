@@ -1,12 +1,9 @@
 """
 Core API for Range vs. Range backend.
 """
-from rvr.core.dtos import OpenGameDetails, UserDetails, \
-    RunningGameDetails, UsersGameDetails, DetailedUser, RunningGameHistory,\
-    GameItem
 from rvr.db.creation import BASE, ENGINE, create_session
-from rvr.db.tables import User, Situation, OpenGame, OpenGameParticipant, \
-    RunningGame, RunningGameParticipant, GameHistoryItem, GameHistoryUserRange
+from rvr.db import tables
+from rvr.core import dtos
 from functools import wraps
 import logging
 import random
@@ -15,7 +12,7 @@ import itertools
 
 #pylint:disable=R0903
 
-GAME_HISTORY_TABLES = [GameHistoryUserRange]
+GAME_HISTORY_TABLES = [tables.GameHistoryUserRange]
 
 def exception_mapper(fun):
     """
@@ -96,7 +93,7 @@ class API(object):
         """
         Create initial data for database
         """
-        situation = Situation()
+        situation = tables.Situation()
         situation.description = "Heads-up preflop, 100 BB"
         situation.participants = 2
         self.session.add(situation)
@@ -108,16 +105,16 @@ class API(object):
         inputs: identity, email, screenname
         outputs: userid
         """
-        matches = self.session.query(User)  \
-            .filter(User.identity == request.identity)  \
-            .filter(User.email == request.email).all()
+        matches = self.session.query(tables.User)  \
+            .filter(tables.User.identity == request.identity)  \
+            .filter(tables.User.email == request.email).all()
         if matches:
             # return user from database
             user = matches[0]
-            return UserDetails.from_user(user)
+            return dtos.UserDetails.from_user(user)
         else:
             # create user in database
-            user = User()
+            user = tables.User()
             user.identity = request.identity
             user.email = request.email
             user.screenname = request.screenname
@@ -127,22 +124,23 @@ class API(object):
             except IntegrityError:
                 self.session.rollback()
                 # special error if it's just screenname (most likely cause)
-                matches = self.session.query(User)  \
-                    .filter(User.screenname == request.screenname).all()
+                matches = self.session.query(tables.User)  \
+                    .filter(tables.User.screenname == request.screenname).all()
                 if matches:
                     return self.ERR_LOGIN_DUPLICATE_SCREENNAME
                 else:
                     raise
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
-            return UserDetails.from_user(user)
+            return dtos.UserDetails.from_user(user)
             
     @api
     def change_screenname(self, request):
         """
         Change user's screenname
         """
-        self.session.query(User).filter(User.userid == request.userid)  \
+        self.session.query(tables.User)  \
+            .filter(tables.User.userid == request.userid)  \
             .one().screenname = request.screenname
     
     @api
@@ -150,22 +148,23 @@ class API(object):
         """
         Get user's LoginDetails
         """
-        matches = self.session.query(User)  \
-            .filter(User.userid == userid).all()
+        matches = self.session.query(tables.User)  \
+            .filter(tables.User.userid == userid).all()
         if not matches:
             return self.ERR_NO_SUCH_USER
         user = matches[0]
-        return DetailedUser(userid=user.userid,
-                            identity=user.identity,
-                            email=user.email,
-                            screenname=user.screenname)
+        return dtos.DetailedUser(userid=user.userid,
+                                 identity=user.identity,
+                                 email=user.email,
+                                 screenname=user.screenname)
     
     @api
     def delete_user(self, userid):
         """
         Delete user if not playing any games.
         """
-        matches = self.session.query(User).filter(User.userid == userid).all()
+        matches = self.session.query(tables.User)  \
+            .filter(tables.User.userid == userid).all()
         if not matches:
             return self.ERR_NO_SUCH_USER
         user = matches[0]
@@ -181,11 +180,11 @@ class API(object):
         """
         Return userid, screenname
         """
-        matches = self.session.query(User)  \
-            .filter(User.screenname == screenname).all()
+        matches = self.session.query(tables.User)  \
+            .filter(tables.User.screenname == screenname).all()
         if matches:
             user = matches[0]
-            return UserDetails.from_user(user)
+            return dtos.UserDetails.from_user(user)
         else:
             return None
     
@@ -197,8 +196,8 @@ class API(object):
         outputs: List of open games. For each game, users in game, details of
                  game
         """
-        all_open_games = self.session.query(OpenGame).all()
-        results = [OpenGameDetails.from_open_game(game)
+        all_open_games = self.session.query(tables.OpenGame).all()
+        results = [dtos.OpenGameDetails.from_open_game(game)
                    for game in all_open_games]
         return results
     
@@ -210,8 +209,8 @@ class API(object):
         outputs: List of running games. For each game, users in game, details
                  of game
         """
-        all_running_games = self.session.query(RunningGame).all()
-        results = [RunningGameDetails.from_running_game(game)
+        all_running_games = self.session.query(tables.RunningGame).all()
+        results = [dtos.RunningGameDetails.from_running_game(game)
                    for game in all_running_games]
         return results
     
@@ -225,11 +224,11 @@ class API(object):
         
         Note: we don't validate that userid is a real userid!
         """
-        rgps = self.session.query(RunningGameParticipant)  \
-            .filter(RunningGameParticipant.userid == userid).all()
-        running_games = [RunningGameDetails.from_running_game(rgp.game)
+        rgps = self.session.query(tables.RunningGameParticipant)  \
+            .filter(tables.RunningGameParticipant.userid == userid).all()
+        running_games = [dtos.RunningGameDetails.from_running_game(rgp.game)
                          for rgp in rgps]
-        return UsersGameDetails(userid, running_games)
+        return dtos.UsersGameDetails(userid, running_games)
     
     def _start_game(self, open_game, final_ogp):
         """
@@ -247,7 +246,7 @@ class API(object):
         object hasn't been committed yet, so the database hasn't created the id
         yet.
         """
-        running_game = RunningGame()
+        running_game = tables.RunningGame()
         running_game.next_hh = 0
         running_game.game = open_game
         running_game.situation = open_game.situation
@@ -255,7 +254,7 @@ class API(object):
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
         for order, ogp in enumerate(open_game.ogps + [final_ogp]):
-            rgp = RunningGameParticipant()
+            rgp = tables.RunningGameParticipant()
             rgp.gameid = running_game.gameid
             rgp.userid = ogp.userid  # haven't loaded users, so just copy userid
             rgp.order = order
@@ -271,10 +270,10 @@ class API(object):
         Record that this user now has this range in this game, in the hand
         history.
         """
-        base = GameHistoryItem()
+        base = tables.GameHistoryItem()
         base.gameid = rgp.gameid
         base.order = rgp.game.next_hh
-        range_element = GameHistoryUserRange()
+        range_element = tables.GameHistoryUserRange()
         range_element.gameid = base.gameid
         range_element.order = base.order
         range_element.userid = rgp.userid
@@ -296,12 +295,13 @@ class API(object):
                 - user is already registered
         """
         # check error conditions
-        games = self.session.query(OpenGame)  \
-            .filter(OpenGame.gameid == gameid).all()
+        games = self.session.query(tables.OpenGame)  \
+            .filter(tables.OpenGame.gameid == gameid).all()
         if not games:
             return self.ERR_NO_SUCH_OPEN_GAME
         game = games[0]
-        users = self.session.query(User).filter(User.userid == userid).all()
+        users = self.session.query(tables.User)  \
+            .filter(tables.User.userid == userid).all()
         if not users:
             return self.ERR_NO_SUCH_USER
         user = users[0]
@@ -311,7 +311,7 @@ class API(object):
         if game.participants > game.situation.participants:
             return self.ERR_JOIN_GAME_GAME_FULL  # This can't happen.
 
-        ogp = OpenGameParticipant()
+        ogp = tables.OpenGameParticipant()
         ogp.gameid = game.gameid
         ogp.userid = user.userid
             
@@ -354,12 +354,13 @@ class API(object):
         outputs: (none)
         """
         # check error conditions
-        games = self.session.query(OpenGame)  \
-            .filter(OpenGame.gameid == gameid).all()
+        games = self.session.query(tables.OpenGame)  \
+            .filter(tables.OpenGame.gameid == gameid).all()
         if not games:
             return self.ERR_NO_SUCH_OPEN_GAME
         game = games[0]
-        users = self.session.query(User).filter(User.userid == userid).all()
+        users = self.session.query(tables.User)  \
+            .filter(tables.User.userid == userid).all()
         if not users:
             return self.ERR_NO_SUCH_USER
         for ogp in game.ogps:
@@ -395,7 +396,7 @@ class API(object):
         child_items = [self.session.query(table)
                        .filter(table.gameid == game.gameid).all()
                        for table in GAME_HISTORY_TABLES]
-        child_dtos = [GameItem.from_game_history_child(child)
+        child_dtos = [dtos.GameItem.from_game_history_child(child)
                       for child in itertools.chain(*child_items)]
         filtered_dtos = [dto for dto in child_dtos
                          if is_finished or dto.should_include_for(userid)]
@@ -409,17 +410,18 @@ class API(object):
         players' ranges.
         """
         if userid is not None:
-            users = self.session.query(User).filter(User.userid == userid).all()
+            users = self.session.query(tables.User)  \
+                .filter(tables.User.userid == userid).all()
             if not users:
                 return self.ERR_NO_SUCH_USER
-        games = self.session.query(RunningGame)  \
-            .filter(RunningGame.gameid == gameid).all()
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.gameid == gameid).all()
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
-        game_details = RunningGameDetails.from_running_game(game)
+        game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items = self._get_history_items(game, userid)
-        return RunningGameHistory(game_details, history_items)
+        return dtos.RunningGameHistory(game_details, history_items)
     
     @api
     def get_public_game(self, gameid):
@@ -445,10 +447,11 @@ class API(object):
         Ensure there is exactly one empty open game for each situation in the
         database.
         """
-        for situation in self.session.query(Situation).all():
-            empty_open = self.session.query(OpenGame)  \
-                .filter(Situation.situationid == situation.situationid)  \
-                .filter(OpenGame.participants == 0).all()
+        for situation in self.session.query(tables.Situation).all():
+            empty_open = self.session.query(tables.OpenGame)  \
+                .filter(tables.Situation.situationid ==
+                        situation.situationid)  \
+                .filter(tables.OpenGame.participants == 0).all()
             if len(empty_open) > 1:
                 # delete all except one
                 for game in empty_open[:-1]:
@@ -457,7 +460,7 @@ class API(object):
                     self.session.delete(game)
             elif len(empty_open) == 0:
                 # add one!
-                new_game = OpenGame()
+                new_game = tables.OpenGame()
                 new_game.situationid = situation.situationid
                 new_game.participants = 0
                 self.session.add(new_game)
