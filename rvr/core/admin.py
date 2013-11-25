@@ -206,7 +206,8 @@ class AdminCmd(Cmd):
         if isinstance(result, APIError):
             print "Error:", result.description  # pylint:disable=E1101
             return
-        print "Hand history for game %d, userid %s:" % (gameid, userid)
+        print "Game details: %r" % (result.game_details,)
+        print "History for game %d, userid %s:" % (gameid, userid)
         for item in result.history:
             print item
 

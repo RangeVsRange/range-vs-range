@@ -20,7 +20,7 @@ class User(BASE):
     email = Column(String(256), nullable=False, unique=True)
     
     def __repr__(self):
-        return "User<userid='%s', screenname='%s', email='%s'>" %  \
+        return "User(userid='%s', screenname='%s', email='%s')" %  \
             (self.userid, self.screenname, self.email)
 
 class Situation(BASE):
@@ -87,13 +87,13 @@ class RunningGameParticipant(BASE):
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"))
 
-class GameHistoryItem(BASE):
+class GameHistoryBase(BASE):
     """
     Base table for all different kinds of hand history items.
     
     Each item of whatever type has a link to a base item.
     """
-    __tablename__ = 'game_history_item'
+    __tablename__ = 'game_history_base'
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
     order = Column(Integer, primary_key=True)
@@ -106,16 +106,16 @@ class GameHistoryUserRange(BASE):
     and after each range action.
     """
     __tablename__ = "game_history_user_range"
-    gameid = Column(Integer, ForeignKey("game_history_item.gameid"),
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
                     primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_item.order"),
+    order = Column(Integer, ForeignKey("game_history_base.order"),
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     # longest possible range = 6,629 chars
     range_ = Column(String(), nullable=False)
-    hh_base = relationship("GameHistoryItem", primaryjoin=  \
-        "and_(GameHistoryItem.gameid==GameHistoryUserRange.gameid," +  \
-        " GameHistoryItem.order==GameHistoryUserRange.order)")
+    hh_base = relationship("GameHistoryBase", primaryjoin=  \
+        "and_(GameHistoryBase.gameid==GameHistoryUserRange.gameid," +  \
+        " GameHistoryBase.order==GameHistoryUserRange.order)")
     user = relationship("User")
 
 # TODO: the following hand history items:
@@ -126,7 +126,7 @@ class GameHistoryUserRange(BASE):
 #  - player bets / raises
 #  - player calls / checks
 #  - player folds
-# (that's enough to play)
+# (that's enough to play; then...)
 #  - analysis of a fold, bet, call
 #  - fold equity payment
 #  - board card equity payment

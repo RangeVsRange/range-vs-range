@@ -270,7 +270,7 @@ class API(object):
         Record that this user now has this range in this game, in the hand
         history.
         """
-        base = tables.GameHistoryItem()
+        base = tables.GameHistoryBase()
         base.gameid = rgp.gameid
         base.order = rgp.game.next_hh
         range_element = tables.GameHistoryUserRange()
@@ -387,7 +387,7 @@ class API(object):
         
     def _get_history_items(self, game, userid=None):
         """
-        Returns a list of game history items (tables.GameHistoryItem with
+        Returns a list of game history items (tables.GameHistoryBase with
         additional details from child tables), with private data only for
         <userid>, if specified.
         """

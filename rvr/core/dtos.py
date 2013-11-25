@@ -79,8 +79,8 @@ class UserDetails(object):
         """
         return cls(user.userid, user.screenname)
     
-    def __str__(self):
-        return "%s (id %s)" % (self.screenname, self.userid)
+    def __repr__(self):
+        return "UserDetails(%r, id=%r)" % (self.screenname, self.userid)
 
 class RangeBasedActionDetails(object):
     """
@@ -97,10 +97,9 @@ class OpenGameDetails(object):
         self.users = users
         self.description = description
 
-    def __str__(self):
-        return "Open game %d, users: %s, description: %s" %  \
-            (self.gameid, [u.screenname for u in self.users],
-             self.description)
+    def __repr__(self):
+        return "OpenGameDetails(gameid=%r, users=%r, description=%r)" %  \
+            (self.gameid, self.users, self.description)
     
     @classmethod
     def from_open_game(cls, open_game):
@@ -121,10 +120,11 @@ class RunningGameDetails(object):
         self.description = description
         self.current_user_details = user_details
 
-    def __str__(self):
-        return "Running game %d, users: %s, description: %s, current: %s" %  \
+    def __repr__(self):
+        return ("RunningGameDetails(gameid=%r, users=%r, description=%r, " +
+                "current_user_details=%r)") %  \
             (self.gameid, self.users, self.description,
-             self.current_user_details.screenname)
+             self.current_user_details)
 
     @classmethod
     def from_running_game(cls, running_game):
@@ -193,8 +193,12 @@ class GameItemUserRange(GameItem):
         """
         return self.user.userid == userid
     
+    def __repr__(self):
+        return "GameItemUserRange(user=%r, range_=%r)" %  \
+            (self.user, self.range_)
+    
     def __str__(self):
-        return "%s has range '%s'" % (self.user, self.range_)
+        return "%s has range '%s'" % (self.user.screenname, self.range_)
 
 class RunningGameHistory(object):
     """
@@ -209,3 +213,7 @@ class RunningGameHistory(object):
     def __init__(self, game_details, history_items):
         self.game_details = game_details
         self.history = history_items
+        
+    def __repr__(self):
+        return "RunningGameHistory(game_details=%r, history=%r)" %  \
+            (self.game_details, self.history)
