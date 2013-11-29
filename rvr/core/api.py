@@ -377,10 +377,10 @@ class API(object):
         self.ensure_open_games()        
     
     @api
-    def perform_action(self):
+    def perform_action(self, gameid, userid, range_action):
         """
         6. Perform action in game we're in
-        inputs: userid, gameid, action
+        inputs: gameid, userid, range_action
         outputs: (none)
         """
         # TODO: perform_action

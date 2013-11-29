@@ -106,6 +106,7 @@ class GameHistoryUserRange(BASE):
     and after each range action.
     """
     __tablename__ = "game_history_user_range"
+    
     gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
                     primary_key=True)
     order = Column(Integer, ForeignKey("game_history_base.order"),
@@ -113,19 +114,40 @@ class GameHistoryUserRange(BASE):
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     # longest possible range = 6,629 chars
     range_ = Column(String(), nullable=False)
+
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryUserRange.gameid," +  \
         " GameHistoryBase.order==GameHistoryUserRange.order)")
     user = relationship("User")
+    
+class GameHistoryRangeAction(BASE):
+    """
+    User folds part of range, checks or calls part of range, and bets or raises
+    part of range.
+    """
+    __tablename__ = "game_history_range_action"
+    
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_base.order"),
+                   primary_key=True)
+    userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
+    fold_range = Column(String(), nullable=False)
+    passive_range = Column(String(), nullable=False)
+    aggressive_range = Column(String(), nullable=False)
+    
+    hh_base = relationship("GameHistoryBase", primaryjoin=  \
+        "and_(GameHistoryBase.gameid==GameHistoryRangeAction.gameid," +  \
+        " GameHistoryBase.order==GameHistoryRangeAction.order)")
+    user = relationship("User")
 
 # TODO: the following hand history items:
 #  - (done) user has range
-#  - card dealt to the board
-#  - hand dealt to player
 #  - player makes a range-based action
 #  - player bets / raises
 #  - player calls / checks
 #  - player folds
+#  - card dealt to the board
 # (that's enough to play; then...)
 #  - analysis of a fold, bet, call
 #  - fold equity payment

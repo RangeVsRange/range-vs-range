@@ -84,9 +84,18 @@ class UserDetails(object):
 
 class RangeBasedActionDetails(object):
     """
-    range-based action
+    range-based action request object
     """
-    pass
+    def __init__(self, gameid, userid, fold_range, passive_range,
+                 aggressive_range):
+        """
+        fold_range is the part of their range they fold here
+        passive_range is the part of their range they check or call here
+        aggressive_range is the part of their range the bet or raise here
+        """
+        self.fold_range = fold_range
+        self.passive_range = passive_range
+        self.aggressive_range = aggressive_range
 
 class OpenGameDetails(object):
     """
@@ -199,6 +208,39 @@ class GameItemUserRange(GameItem):
     
     def __str__(self):
         return "%s has range '%s'" % (self.user.screenname, self.range_)
+
+class GameItemRangeAction(GameItem):
+    """
+    user folds fold_range, checks or calls passive_range, bets or raises
+    aggressive_range
+    """
+    def __init__(self, user, range_action):
+        """
+        user is a UserDetails
+        """
+        self.user = user
+        self.range_action = range_action
+    
+    @classmethod
+    def from_history_item(cls, item):
+        """
+        Create from a GameHistoryRangeAction
+        """        
+        user_details = UserDetails.from_user(item.user)
+        range_action = RangeBasedActionDetails(item.fold_range,
+            item.passive_range, item.aggressive_range)
+        return cls(user_details, range_action)
+    
+    def should_include_for(self, userid):
+        """
+        Range actions are only shown to the user who makes them
+        (while the game is running)
+        """
+        return self.user.userid == userid
+    
+    def __repr__(self):
+        return ("GameItemRangeAction(user=%r, range_action=%r)") %  \
+            (self.user, self.range_action)
 
 class RunningGameHistory(object):
     """
