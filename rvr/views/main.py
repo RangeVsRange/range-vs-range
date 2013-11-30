@@ -169,3 +169,21 @@ def leave_game():
         msg = "You have left game %s." % (gameid,)
     flash(msg)
     return redirect(url_for('home_page'))
+
+@APP.route('/game', methods=['GET'])
+@AUTH.required
+def game_page():
+    """
+    User's view of the specified game
+    """
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        flash("Invalid game ID.")
+        return redirect(url_for('home_page'))
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        flash("Invalid game ID.")
+        return redirect(url_for('home_page'))
+    # TODO:
+    return "This is the game page for game %d." % gameid

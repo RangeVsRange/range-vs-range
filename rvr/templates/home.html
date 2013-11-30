@@ -29,7 +29,7 @@
 {% if my_turn_games %}
   <p>Games where it's your turn:</p>
   <ul>{% for game in my_turn_games %}{% set pipe = joiner() %}
-    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
+    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.description}}"</em> with players:
     {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
   {% endfor %}</ul>
 {% endif %}
@@ -37,7 +37,7 @@
 {% if others_turn_games %}
   <p>Games where it's not your turn:</p>
   <ul>{% for game in others_turn_games %}{% set pipe = joiner() %}
-    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
+    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.description}}"</em> with players:
     {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
   {% endfor %}</ul>
 {% endif %}

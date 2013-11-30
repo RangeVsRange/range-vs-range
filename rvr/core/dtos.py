@@ -86,8 +86,7 @@ class RangeBasedActionDetails(object):
     """
     range-based action request object
     """
-    def __init__(self, gameid, userid, fold_range, passive_range,
-                 aggressive_range):
+    def __init__(self, fold_range, passive_range, aggressive_range):
         """
         fold_range is the part of their range they fold here
         passive_range is the part of their range they check or call here

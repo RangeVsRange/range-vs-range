@@ -379,9 +379,12 @@ class API(object):
     @api
     def perform_action(self, gameid, userid, range_action):
         """
-        6. Perform action in game we're in
-        inputs: gameid, userid, range_action
-        outputs: (none)
+        Performs range_action for specified user in specified game.
+        
+        Fails if:
+         - game is not a running game with user in it
+         - it's not user's turn
+         - range_action does not sum to user's current range
         """
         # TODO: perform_action
         
