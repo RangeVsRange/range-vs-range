@@ -37,7 +37,8 @@ class SituationPlayer(BASE):
     left_to_act = Column(Boolean, nullable=False)
 
     situation = relationship("Situation", primaryjoin=  \
-        "Situation.situationid==SituationPlayer.situationid")
+        "Situation.situationid==SituationPlayer.situationid",
+        backref="players")
 
 class Situation(BASE):
     """

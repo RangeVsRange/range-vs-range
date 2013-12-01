@@ -7,7 +7,7 @@
 {% if others_open %}
   <p>Open games you can join:</p>
   <ul>{% for game in others_open %}{% set pipe = joiner() %}
-    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em>
+    <li>Game {{game.gameid}}, <em>"{{game.situation.description}}"</em>
     {% if game.users %}
       with players: {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
     {% else %}
@@ -20,7 +20,7 @@
 {% if my_open %}
   <p>Open games you're registered in:</p>
   <ul>{% for game in my_open %}{% set pipe = joiner() %}
-    <li>Game {{game.gameid}}, <em>"{{game.description}}"</em> with players:
+    <li>Game {{game.gameid}}, <em>"{{game.situation.description}}"</em> with players:
     {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
     To leave this game, <a href="{{ url_for('leave_game', gameid=game.gameid) }}">click here</a>.</li>
   {% endfor %}</ul>
@@ -29,7 +29,7 @@
 {% if my_turn_games %}
   <p>Games where it's your turn:</p>
   <ul>{% for game in my_turn_games %}{% set pipe = joiner() %}
-    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.description}}"</em> with players:
+    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.situation.description}}"</em> with players:
     {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
   {% endfor %}</ul>
 {% endif %}
@@ -37,7 +37,7 @@
 {% if others_turn_games %}
   <p>Games where it's not your turn:</p>
   <ul>{% for game in others_turn_games %}{% set pipe = joiner() %}
-    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.description}}"</em> with players:
+    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.situation.description}}"</em> with players:
     {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
   {% endfor %}</ul>
 {% endif %}

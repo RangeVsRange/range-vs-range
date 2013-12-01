@@ -75,7 +75,7 @@ class UserDetails(object):
     @classmethod
     def from_user(cls, user):
         """
-        Create object from dtos.User
+        Create object from tables.User
         """
         return cls(user.userid, user.screenname)
     
@@ -91,6 +91,8 @@ class SituationPlayerDetails(object):
         self.contributed = contributed
         self.left_to_act = left_to_act
         self.range = range_
+
+    # TODO: __repr__
 
 class SituationDetails(object):
     """
@@ -120,6 +122,28 @@ class SituationDetails(object):
         self.increment = increment
         self.bet_count = bet_count
         
+    @classmethod
+    def from_situation(cls, situation):
+        """
+        Create instance from tables.Situation
+        """
+        ordered = sorted(situation.players, key=lambda p: p.order)
+        players = [SituationPlayerDetails(stack=player.stack,
+                                          contributed=player.contributed,
+                                          left_to_act=player.left_to_act,
+                                          range_=player.range_)
+                   for player in ordered]
+        return cls(description=situation.description,
+                   players=players,
+                   current_player=situation.current_player_num,
+                   is_limit=situation.is_limit,
+                   big_blind=situation.big_blind,
+                   board=situation.board,
+                   current_round=situation.current_round,
+                   pot_pre=situation.pot_pre,
+                   increment=situation.increment,
+                   bet_count=situation.bet_count)
+    
     def left_to_act(self):
         """
         From (but excluding) current_player, all players who are left to
@@ -131,6 +155,8 @@ class SituationDetails(object):
         potential = self.players[self.current_player + 1:] +  \
             self.players[:self.current_player]
         return [p for p in potential if p.left_to_act]
+    
+    # TODO: __repr__
 
 class RangeBasedActionDetails(object):
     """
@@ -150,50 +176,49 @@ class OpenGameDetails(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, gameid, users, description):
+    def __init__(self, gameid, users, situation):
         self.gameid = gameid
         self.users = users
-        self.description = description
+        self.situation = situation
 
     def __repr__(self):
-        return "OpenGameDetails(gameid=%r, users=%r, description=%r)" %  \
-            (self.gameid, self.users, self.description)
+        return "OpenGameDetails(gameid=%r, users=%r, situation=%r)" %  \
+            (self.gameid, self.users, self.situation)
     
     @classmethod
     def from_open_game(cls, open_game):
         """
-        Create object from dtos.OpenGame
+        Create object from table.OpenGame
         """
         users = [UserDetails.from_user(o.user) for o in open_game.ogps]
-        description = open_game.situation.description
-        return cls(open_game.gameid, users, description)
+        situation = SituationDetails.from_situation(open_game.situation)
+        return cls(open_game.gameid, users, situation)
 
 class RunningGameDetails(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, gameid, users, description, user_details):
+    def __init__(self, gameid, users, situation, current_user_details):
         self.gameid = gameid
         self.users = users
-        self.description = description
-        self.current_user_details = user_details
+        self.situation = situation
+        self.current_user_details = current_user_details
 
     def __repr__(self):
-        return ("RunningGameDetails(gameid=%r, users=%r, description=%r, " +
+        return ("RunningGameDetails(gameid=%r, users=%r, situation=%r, " +
                 "current_user_details=%r)") %  \
-            (self.gameid, self.users, self.description,
-             self.current_user_details)
+            (self.gameid, self.users, self.situation, self.current_user_details)
 
     @classmethod
     def from_running_game(cls, running_game):
         """
-        Create object from dtos.RunningGame
+        Create object from tables.RunningGame
         """ 
         rgps = sorted(running_game.rgps, key=lambda r:r.order)
         users = [UserDetails.from_user(r.user) for r in rgps]
-        description = running_game.situation.description
+        situation = SituationDetails.from_situation(running_game.situation)
         user_details = UserDetails.from_user(running_game.current_user)
-        return cls(running_game.gameid, users, description, user_details)
+        return cls(running_game.gameid, users, situation, user_details)
 
 class UsersGameDetails(object):
     """
