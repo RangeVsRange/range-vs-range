@@ -97,8 +97,9 @@ class SituationDetails(object):
     A training situation. If we ever allow custom situations, this should be
     enough to specify a new one.
     """
-    def __init__(self, players, current_player, is_limit, big_blind, board,
-                 current_round, pot_pre, increment, bet_count):
+    def __init__(self, description, players, current_player, is_limit,
+                 big_blind, board, current_round, pot_pre, increment,
+                 bet_count):
         """
         Note that board can contain fewer cards than current_round would
         suggest (e.g. to allow flop situations with random flops), but it can't
@@ -108,6 +109,7 @@ class SituationDetails(object):
         
         current_player is an index into the players list.
         """
+        self.description = description
         self.players = players
         self.current_player = current_player
         self.is_limit = is_limit

@@ -98,34 +98,28 @@ class API(object):
         """
         Create initial data for database
         """
-        situation = tables.Situation()
-        situation.description = "Heads-up preflop, 100 BB"
-        situation.participants = 2
-        situation.is_limit = False
-        situation.big_blind = 2
-        situation.board = ""
-        situation.current_round = PREFLOP
-        situation.pot_pre = 0
-        situation.increment = 2
-        situation.bet_count = 1
-        situation.current_player_num = 1  # BTN to act first preflop
-        self.session.add(situation)
-        bb = tables.SituationPlayer()  # pylint:disable=C0103
-        bb.situation = situation
-        bb.order = 0
-        bb.stack = 198
-        bb.contributed = 2
-        bb.range = ""
-        bb.left_to_act = True
-        self.session.add(bb)
-        btn = tables.SituationPlayer()
-        btn.situation = situation
-        btn.order = 1
-        btn.stack = 199
-        btn.contributed = 1
-        btn.range = ""
-        btn.left_to_act = True
-        self.session.add(btn)
+        bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+            stack=198,
+            contributed=2,
+            left_to_act=True,
+            range_='')
+        btn = dtos.SituationPlayerDetails(
+            stack=199,
+            contributed=1,
+            left_to_act=True,
+            range_='')
+        situation = dtos.SituationDetails(
+            description="Heads-up preflop, 100 BB",
+            players=[bb, btn],  # bb acts first in future rounds
+            current_player=1,  # btn acts next (this round)
+            is_limit=False,
+            big_blind=2,
+            board='',
+            current_round=PREFLOP,
+            pot_pre=0,
+            increment=2,
+            bet_count=1)
+        return self._add_situation(situation)
     
     @api
     def login(self, request):
@@ -216,6 +210,33 @@ class API(object):
             return dtos.UserDetails.from_user(user)
         else:
             return None
+    
+    def _add_situation(self, dto):
+        """
+        Add a dtos.SituationDetails to the database, as a tables.Situation and
+        associated tables.SituationPlayer objects.
+        """
+        situation = tables.Situation()
+        situation.description = dto.description
+        situation.participants = len(dto.players)
+        situation.is_limit = dto.is_limit
+        situation.big_blind = dto.big_blind
+        situation.board = dto.board
+        situation.current_round = dto.current_round
+        situation.pot_pre = dto.pot_pre
+        situation.increment = dto.increment
+        situation.bet_count = dto.bet_count
+        situation.current_player_num = dto.current_player
+        self.session.add(situation)
+        for order, player in enumerate(dto.players):
+            child = tables.SituationPlayer()
+            child.situation = situation
+            child.order = order
+            child.stack = player.stack
+            child.contributed = player.contributed
+            child.range = player.range
+            child.left_to_act = player.left_to_act
+            self.session.add(child)
     
     @api
     def get_open_games(self):
