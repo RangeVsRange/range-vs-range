@@ -11,7 +11,7 @@ Data transfer objects:
 """
 from rvr.db import tables
 
-#pylint:disable=R0903
+#pylint:disable=R0903,R0913,R0902
 
 # Note: We do not log the user in until they have chosen a unique screenname
 # But also note that we only know if their screenname is unique by trying.
@@ -81,6 +81,54 @@ class UserDetails(object):
     
     def __repr__(self):
         return "UserDetails(%r, id=%r)" % (self.screenname, self.userid)
+
+class SituationPlayerDetails(object):
+    """
+    Player-specific information for a situation.
+    """
+    def __init__(self, stack, contributed, left_to_act, range_):
+        self.stack = stack
+        self.contributed = contributed
+        self.left_to_act = left_to_act
+        self.range = range_
+
+class SituationDetails(object):
+    """
+    A training situation. If we ever allow custom situations, this should be
+    enough to specify a new one.
+    """
+    def __init__(self, players, current_player, is_limit, big_blind, board,
+                 current_round, pot_pre, increment, bet_count):
+        """
+        Note that board can contain fewer cards than current_round would
+        suggest (e.g. to allow flop situations with random flops), but it can't
+        contain more.
+        
+        players is a list of SituationPlayerDetails.
+        
+        current_player is an index into the players list.
+        """
+        self.players = players
+        self.current_player = current_player
+        self.is_limit = is_limit
+        self.big_blind = big_blind
+        self.board = board
+        self.current_round = current_round
+        self.pot_pre = pot_pre
+        self.increment = increment
+        self.bet_count = bet_count
+        
+    def left_to_act(self):
+        """
+        From (but excluding) current_player, all players who are left to
+        act, including those players before current_player, after the others.
+        
+        E.g. if the players are 1,2,3,4,5 and 3 is current, and only 4 and 2
+        have left_to_act=True, then this function returns [4, 2].
+        """
+        potential = self.players[self.current_player + 1:] +  \
+            self.players[:self.current_player]
+        return [p for p in potential if p.left_to_act]
 
 class RangeBasedActionDetails(object):
     """

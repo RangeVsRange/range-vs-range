@@ -14,6 +14,11 @@ import itertools
 
 GAME_HISTORY_TABLES = [tables.GameHistoryUserRange]
 
+PREFLOP = "preflop"
+FLOP = "flop"
+TURN = "turn"
+RIVER = "river"
+
 def exception_mapper(fun):
     """
     Converts database exceptions to APIError
@@ -96,7 +101,31 @@ class API(object):
         situation = tables.Situation()
         situation.description = "Heads-up preflop, 100 BB"
         situation.participants = 2
+        situation.is_limit = False
+        situation.big_blind = 2
+        situation.board = ""
+        situation.current_round = PREFLOP
+        situation.pot_pre = 0
+        situation.increment = 2
+        situation.bet_count = 1
+        situation.current_player_num = 1  # BTN to act first preflop
         self.session.add(situation)
+        bb = tables.SituationPlayer()  # pylint:disable=C0103
+        bb.situation = situation
+        bb.order = 0
+        bb.stack = 198
+        bb.contributed = 2
+        bb.range = ""
+        bb.left_to_act = True
+        self.session.add(bb)
+        btn = tables.SituationPlayer()
+        btn.situation = situation
+        btn.order = 1
+        btn.stack = 199
+        btn.contributed = 1
+        btn.range = ""
+        btn.left_to_act = True
+        self.session.add(btn)
     
     @api
     def login(self, request):

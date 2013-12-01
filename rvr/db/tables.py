@@ -1,7 +1,7 @@
 """
 Declares database tables
 """
-from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
 
@@ -23,6 +23,22 @@ class User(BASE):
         return "User(userid='%s', screenname='%s', email='%s')" %  \
             (self.userid, self.screenname, self.email)
 
+class SituationPlayer(BASE):
+    """
+    Details of a player in a situation
+    """
+    __tablename__ = 'situation_player'
+    situationid = Column(Integer, ForeignKey("situation.situationid"),
+                         primary_key=True)
+    order = Column(Integer, primary_key=True)
+    stack = Column(Integer, nullable=False)
+    contributed = Column(Integer, nullable=False)
+    range = Column(String, nullable=False)
+    left_to_act = Column(Boolean, nullable=False)
+
+    situation = relationship("Situation", primaryjoin=  \
+        "Situation.situationid==SituationPlayer.situationid")
+
 class Situation(BASE):
     """
     Training situations, e.g. HU NL HE for 100 BB preflop.
@@ -31,9 +47,19 @@ class Situation(BASE):
     """
     __tablename__ = 'situation'
     situationid = Column(Integer, primary_key=True)
-    description = Column(String(500), nullable=False, unique=True)
+    description = Column(String, nullable=False)
     participants = Column(Integer, nullable=False)
-    
+    is_limit = Column(Boolean, nullable=False)
+    big_blind = Column(Integer, nullable=False)
+    board = Column(String, nullable=False)
+    current_round = Column(Integer, nullable=False)
+    pot_pre = Column(Integer, nullable=False)
+    increment = Column(Integer, nullable=False)
+    bet_count = Column(Integer, nullable=False)
+    # It's possible to do this FK better: http://goo.gl/CHgYzP
+    current_player_num = Column(Integer, ForeignKey("situation_player.order",
+        use_alter=True, name="fk_current_player"), nullable=False)
+
 class OpenGame(BASE):
     """
     Details of an open game, not yet full of registered participants.
