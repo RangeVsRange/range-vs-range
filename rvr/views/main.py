@@ -185,5 +185,17 @@ def game_page():
     except ValueError:
         flash("Invalid game ID.")
         return redirect(url_for('home_page'))
-    # TODO:
-    return "This is the game page for game %d." % gameid
+    userid = session['userid']
+    api = API()
+    response = api.get_private_game(gameid, userid)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+            msg = "Invalid game ID."
+        else:
+            msg = "An unknown error occurred."
+        flash(msg)
+        return redirect(url_for('home_page'))
+    title = 'Game %d' % (gameid,)
+    return render_template('game.html', title=title,
+        game_details=response.game_details,
+        history=response.history)

@@ -206,7 +206,11 @@ class GameItemUserRange(GameItem):
             (self.user, self.range_)
     
     def __str__(self):
-        return "%s has range '%s'" % (self.user.screenname, self.range_)
+        if self.range_:
+            range_ = self.range_
+        else:
+            range_ = 'anything'
+        return "%s's range is: %s" % (self.user.screenname, range_)
 
 class GameItemRangeAction(GameItem):
     """

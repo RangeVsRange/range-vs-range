@@ -141,20 +141,22 @@ class GameHistoryRangeAction(BASE):
         " GameHistoryBase.order==GameHistoryRangeAction.order)")
     user = relationship("User")
 
-# TODO: represent game state:
-#  - is limit? (situation)
-#  - big blind (situation)
-#  - board
+# TODO: represent game state (note that the situations all need this):
+#  - in the situation (doesn't change during game):
+#    - is limit?
+#    - big blind
 #  - for each player:
 #    - stack
 #    - contributed this round
 #    - range
-#  - current round (flop, etc.)
-#  - pot at the start of the current round ("pot pre")
-#  - current betting increment
-#  - current bet count (relevant if limit)
-#  - player acting
-#  - who is left to act (or perhaps, for each player, are the still to act?)
+#    - left to act?
+#  - in the game itself
+#    - board
+#    - current round (flop, etc.)
+#    - pot at the start of the current round ("pot pre")
+#    - current betting increment
+#    - current bet count (relevant if limit)
+#    - player acting
 
 # TODO: the following hand history items:
 #  - (done) user has range

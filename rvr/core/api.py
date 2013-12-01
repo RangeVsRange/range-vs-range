@@ -401,9 +401,8 @@ class API(object):
                        for table in GAME_HISTORY_TABLES]
         child_dtos = [dtos.GameItem.from_game_history_child(child)
                       for child in itertools.chain(*child_items)]
-        filtered_dtos = [dto for dto in child_dtos
-                         if is_finished or dto.should_include_for(userid)]
-        return filtered_dtos
+        return [dto for dto in child_dtos
+                if is_finished or dto.should_include_for(userid)]
         
     def _get_game(self, gameid, userid=None):
         """
