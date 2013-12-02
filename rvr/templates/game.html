@@ -7,7 +7,7 @@
 {% for user in game_details.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
 It is <strong>{{game_details.current_user_details.screenname}}</strong>'s turn to act.</p>
 
-<p>Game description: <strong>{{game_details.description}}</strong>.</p>
+<p>Game description: <strong>{{game_details.situation.description}}</strong>.</p>
 
 <p>The game so far:<ul>{% for item in history %}
   <li>{{item}}</li>

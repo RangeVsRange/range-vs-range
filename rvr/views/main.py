@@ -49,7 +49,7 @@ def ensure_user():
         session['screenname'] = result.screenname
         session['userid'] = result.userid
 
-@APP.route('/change', methods=['GET'])
+@APP.route('/change', methods=['GET','POST'])
 @AUTH.required
 def change_screenname():
     """
