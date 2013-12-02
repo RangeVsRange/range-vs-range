@@ -327,7 +327,7 @@ class API(object):
         range_element.gameid = base.gameid
         range_element.order = base.order
         range_element.userid = rgp.userid
-        range_element.range_ = range_
+        range_element.range = range_
         rgp.game.next_hh += 1
         self.session.add(base)
         self.session.add(range_element)

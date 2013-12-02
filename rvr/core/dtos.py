@@ -92,7 +92,10 @@ class SituationPlayerDetails(object):
         self.left_to_act = left_to_act
         self.range = range_
 
-    # TODO: __repr__
+    def __repr__(self):
+        return ("SituationPlayerDetails(stack=%r, contributed=%r, " +  \
+            "left_to_act=%r, range=%r)") % (self.stack, self.contributed,
+            self.left_to_act, self.range)
 
 class SituationDetails(object):
     """
@@ -131,7 +134,7 @@ class SituationDetails(object):
         players = [SituationPlayerDetails(stack=player.stack,
                                           contributed=player.contributed,
                                           left_to_act=player.left_to_act,
-                                          range_=player.range_)
+                                          range_=player.range)
                    for player in ordered]
         return cls(description=situation.description,
                    players=players,
@@ -156,7 +159,13 @@ class SituationDetails(object):
             self.players[:self.current_player]
         return [p for p in potential if p.left_to_act]
     
-    # TODO: __repr__
+    def __repr__(self):
+        return ("SituationDetails(description=%r, players=%r, " +
+            "current_player=%r, is_limit=%r, big_blind=%r, board=%r, " + 
+            "current_round=%r, pot_pre=%r, increment=%r, bet_count=%r)") %  \
+            (self.description, self.players, self.current_player, self.is_limit,
+             self.big_blind, self.board, self.current_round, self.pot_pre,
+             self.increment, self.bet_count)
 
 class RangeBasedActionDetails(object):
     """
@@ -257,10 +266,10 @@ class GameItemUserRange(GameItem):
     def __init__(self, user, range_):
         """
         user is a UserDetails
-        range_ is a string describing the range
+        range is a string describing the range
         """
         self.user = user
-        self.range_ = range_
+        self.range = range_
 
     @classmethod
     def from_history_item(cls, item):
@@ -268,7 +277,7 @@ class GameItemUserRange(GameItem):
         Create from a GameHistoryUserRange
         """
         user_details = UserDetails.from_user(item.user)
-        return cls(user_details, item.range_)
+        return cls(user_details, item.range)
         
     def should_include_for(self, userid):
         """
@@ -277,12 +286,12 @@ class GameItemUserRange(GameItem):
         return self.user.userid == userid
     
     def __repr__(self):
-        return "GameItemUserRange(user=%r, range_=%r)" %  \
-            (self.user, self.range_)
+        return "GameItemUserRange(user=%r, range=%r)" %  \
+            (self.user, self.range)
     
     def __str__(self):
-        if self.range_:
-            range_ = self.range_
+        if self.range:
+            range_ = self.range
         else:
             range_ = 'anything'
         return "%s's range is: %s" % (self.user.screenname, range_)

@@ -140,7 +140,7 @@ class GameHistoryUserRange(BASE):
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     # longest possible range = 6,629 chars
-    range_ = Column(String(), nullable=False)
+    range = Column(String(), nullable=False)
 
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryUserRange.gameid," +  \
