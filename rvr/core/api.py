@@ -6,7 +6,6 @@ from rvr.db import tables
 from rvr.core import dtos
 from functools import wraps
 import logging
-import random
 from sqlalchemy.exc import IntegrityError
 import itertools
 
@@ -296,21 +295,39 @@ class API(object):
         object hasn't been committed yet, so the database hasn't created the id
         yet.
         """
+        situation = open_game.situation
+        all_ogps = open_game.ogps + [final_ogp]
         running_game = tables.RunningGame()
         running_game.next_hh = 0
         running_game.game = open_game
-        running_game.situation = open_game.situation
-        running_game.current_userid = random.choice(open_game.ogps).userid
+        running_game.situation = situation
+        running_game.current_userid =  \
+            all_ogps[situation.current_player_num].userid
+        running_game.board = situation.board
+        running_game.current_round = situation.current_round
+        running_game.pot_pre = situation.pot_pre
+        running_game.increment = situation.increment
+        running_game.bet_count = situation.bet_count
+        situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
-        for order, ogp in enumerate(open_game.ogps + [final_ogp]):
+        for order, (ogp, s_p) in enumerate(zip(all_ogps, situation_players)):
+            # create rgps in the order they will act in future rounds
             rgp = tables.RunningGameParticipant()
             rgp.gameid = running_game.gameid
             rgp.userid = ogp.userid  # haven't loaded users, so just copy userid
             rgp.order = order
+            rgp.stack = s_p.stack
+            rgp.contributed = s_p.contributed
+            rgp.range = s_p.range
+            rgp.left_to_act = s_p.left_to_act
+            if situation.current_player_num == order:
+                assert running_game.current_userid == ogp.userid
             self.session.add(rgp)
             self.session.flush()  # populate game
-            self._set_rgp_range(rgp, "")
+            # Note that we do NOT create a range history item for them,
+            # it is implied. But if we did, it would look like this:
+            # self._set_rgp_range(rgp, "")
         self.session.delete(open_game)  # cascades to ogps
         logging.debug("Started game %d", open_game.gameid)
         return running_game
@@ -453,7 +470,31 @@ class API(object):
                       for child in itertools.chain(*child_items)]
         return [dto for dto in child_dtos
                 if is_finished or dto.should_include_for(userid)]
+    
+    def _calculate_current_options(self, game):
+        """
+        Determines what options the current player has in a running game.
         
+        Returns a dtos.ActionOptions instance.
+        """
+# pylint:disable=C0301,R0201,W0613
+#         call_amount = min(self.stacks[player], self.raised_to - self.contributed[player])
+#         bet_lower = self.raised_to + self.increment  # min-raise
+#         bet_higher = self.stacks[player] + self.contributed[player]  # shove
+#         if bet_higher < bet_lower:  # i.e. all in
+#             bet_lower = bet_higher
+#         if self.declarative.is_limit:
+#             bet_higher = bet_lower  # minraise is only option for limit
+#         can_raise = bet_lower > self.raised_to  # i.e. there is a valid bet
+#         is_capped = (self.declarative.is_limit and  # No limit is never capped
+#             self.bet_count >= 4)  # Not capped until 4 bets in
+#         can_raise = can_raise and not is_capped
+        return None  # TODO: not this, once game state is stored
+#         if can_raise:
+#             return dtos.ActionOptions(call_amount, bet_lower, bet_higher)
+#         else:
+#             return dtos.ActionOptions(call_amount)
+    
     def _get_game(self, gameid, userid=None):
         """
         Return game <gameid>. If <userid> is not None, return private data for
@@ -473,7 +514,12 @@ class API(object):
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items = self._get_history_items(game, userid)
-        return dtos.RunningGameHistory(game_details, history_items)
+        if game_details.current_user_details is not None:
+            current_options = None
+        else:
+            current_options = self._calculate_current_options(game)
+        return dtos.RunningGameHistory(game_details, history_items,
+                                       current_options)
     
     @api
     def get_public_game(self, gameid):

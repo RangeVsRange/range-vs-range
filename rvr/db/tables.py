@@ -53,13 +53,20 @@ class Situation(BASE):
     is_limit = Column(Boolean, nullable=False)
     big_blind = Column(Integer, nullable=False)
     board = Column(String, nullable=False)
-    current_round = Column(Integer, nullable=False)
+    current_round = Column(String, nullable=False)
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
     # It's possible to do this FK better: http://goo.gl/CHgYzP
     current_player_num = Column(Integer, ForeignKey("situation_player.order",
         use_alter=True, name="fk_current_player"), nullable=False)
+    
+    def ordered_players(self):
+        """
+        Returns a list of SituationPlayer in the order they are seated.
+        """
+        # pylint:disable=E1101
+        return sorted(self.players, key=lambda p: p.order)
 
 class OpenGame(BASE):
     """
@@ -99,6 +106,13 @@ class RunningGame(BASE):
     situation = relationship("Situation", backref="running_games")
     # if current_userid is None, game is finished
     current_userid = Column(Integer, ForeignKey("user.userid"), nullable=True)
+    # game state
+    board = Column(String, nullable=False)
+    current_round = Column(String, nullable=False)
+    pot_pre = Column(Integer, nullable=False)
+    increment = Column(Integer, nullable=False)
+    bet_count = Column(Integer, nullable=False)
+    # relationships
     current_user = relationship("User")
 
 class RunningGameParticipant(BASE):
@@ -111,6 +125,12 @@ class RunningGameParticipant(BASE):
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
     order = Column(Integer, primary_key=True)
+    # game state
+    stack = Column(Integer, nullable=False)
+    contributed = Column(Integer, nullable=False)
+    range = Column(String, nullable=False)
+    left_to_act = Column(Boolean, nullable=False)
+    # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"))
 
@@ -167,23 +187,6 @@ class GameHistoryRangeAction(BASE):
         "and_(GameHistoryBase.gameid==GameHistoryRangeAction.gameid," +  \
         " GameHistoryBase.order==GameHistoryRangeAction.order)")
     user = relationship("User")
-
-# TODO: represent game state (note that the situations all need this):
-#  - in the situation (doesn't change during game):
-#    - is limit?
-#    - big blind
-#  - for each player:
-#    - stack
-#    - contributed this round
-#    - range
-#    - left to act?
-#  - in the game itself
-#    - board
-#    - current round (flop, etc.)
-#    - pot at the start of the current round ("pot pre")
-#    - current betting increment
-#    - current bet count (relevant if limit)
-#    - player acting
 
 # TODO: the following hand history items:
 #  - (done) user has range

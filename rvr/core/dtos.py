@@ -10,6 +10,7 @@ Data transfer objects:
 - hand history(!)
 """
 from rvr.db import tables
+from argparse import ArgumentError
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -71,6 +72,9 @@ class UserDetails(object):
     def __init__(self, userid, screenname):
         self.userid = userid
         self.screenname = screenname
+    
+    def __repr__(self):
+        return "UserDetails(%r, id=%r)" % (self.screenname, self.userid)
         
     @classmethod
     def from_user(cls, user):
@@ -78,9 +82,6 @@ class UserDetails(object):
         Create object from tables.User
         """
         return cls(user.userid, user.screenname)
-    
-    def __repr__(self):
-        return "UserDetails(%r, id=%r)" % (self.screenname, self.userid)
 
 class SituationPlayerDetails(object):
     """
@@ -124,6 +125,14 @@ class SituationDetails(object):
         self.pot_pre = pot_pre
         self.increment = increment
         self.bet_count = bet_count
+    
+    def __repr__(self):
+        return ("SituationDetails(description=%r, players=%r, " +
+            "current_player=%r, is_limit=%r, big_blind=%r, board=%r, " + 
+            "current_round=%r, pot_pre=%r, increment=%r, bet_count=%r)") %  \
+            (self.description, self.players, self.current_player, self.is_limit,
+             self.big_blind, self.board, self.current_round, self.pot_pre,
+             self.increment, self.bet_count)
         
     @classmethod
     def from_situation(cls, situation):
@@ -158,14 +167,6 @@ class SituationDetails(object):
         potential = self.players[self.current_player + 1:] +  \
             self.players[:self.current_player]
         return [p for p in potential if p.left_to_act]
-    
-    def __repr__(self):
-        return ("SituationDetails(description=%r, players=%r, " +
-            "current_player=%r, is_limit=%r, big_blind=%r, board=%r, " + 
-            "current_round=%r, pot_pre=%r, increment=%r, bet_count=%r)") %  \
-            (self.description, self.players, self.current_player, self.is_limit,
-             self.big_blind, self.board, self.current_round, self.pot_pre,
-             self.increment, self.bet_count)
 
 class RangeBasedActionDetails(object):
     """
@@ -222,7 +223,8 @@ class RunningGameDetails(object):
     def from_running_game(cls, running_game):
         """
         Create object from tables.RunningGame
-        """ 
+        """
+        # TODO: there are more columns now, and we need a rgp dto
         rgps = sorted(running_game.rgps, key=lambda r:r.order)
         users = [UserDetails.from_user(r.user) for r in rgps]
         situation = SituationDetails.from_situation(running_game.situation)
@@ -270,6 +272,17 @@ class GameItemUserRange(GameItem):
         """
         self.user = user
         self.range = range_
+    
+    def __repr__(self):
+        return "GameItemUserRange(user=%r, range=%r)" %  \
+            (self.user, self.range)
+    
+    def __str__(self):
+        if self.range:
+            range_ = self.range
+        else:
+            range_ = 'anything'
+        return "%s's range is: %s" % (self.user.screenname, range_)
 
     @classmethod
     def from_history_item(cls, item):
@@ -284,17 +297,6 @@ class GameItemUserRange(GameItem):
         Ranges are only shown to the current user (while the game is running).
         """
         return self.user.userid == userid
-    
-    def __repr__(self):
-        return "GameItemUserRange(user=%r, range=%r)" %  \
-            (self.user, self.range)
-    
-    def __str__(self):
-        if self.range:
-            range_ = self.range
-        else:
-            range_ = 'anything'
-        return "%s's range is: %s" % (self.user.screenname, range_)
 
 class GameItemRangeAction(GameItem):
     """
@@ -307,6 +309,10 @@ class GameItemRangeAction(GameItem):
         """
         self.user = user
         self.range_action = range_action
+    
+    def __repr__(self):
+        return ("GameItemRangeAction(user=%r, range_action=%r)") %  \
+            (self.user, self.range_action)
     
     @classmethod
     def from_history_item(cls, item):
@@ -324,10 +330,6 @@ class GameItemRangeAction(GameItem):
         (while the game is running)
         """
         return self.user.userid == userid
-    
-    def __repr__(self):
-        return ("GameItemRangeAction(user=%r, range_action=%r)") %  \
-            (self.user, self.range_action)
 
 class RunningGameHistory(object):
     """
@@ -339,10 +341,58 @@ class RunningGameHistory(object):
     
     It will contain analysis only if the game is finished.
     """
-    def __init__(self, game_details, history_items):
+    def __init__(self, game_details, history_items, current_options):
         self.game_details = game_details
         self.history = history_items
+        self.current_options = current_options
         
     def __repr__(self):
-        return "RunningGameHistory(game_details=%r, history=%r)" %  \
-            (self.game_details, self.history)
+        return ("RunningGameHistory(game_details=%r, history=%r, " +  \
+                "current_options=%r)") %  \
+            (self.game_details, self.history, self.current_options)
+            
+class ActionOptions(object):
+    """
+    Describes the options available to the current player, in general poker
+    terms. E.g. fold, check, raise between X and Y chips, call Z chips.
+    
+    (Note that being allowed to fold is implied. You're always allowed to fold.)
+    """
+    def __init__(self, call_cost, min_raise=None, max_raise=None):
+        """
+        User can check if call_cost is 0. Otherwise, cost to call is call_cost.
+        User can raise if min_raise and max_raise aren't None. If so, user can
+        raise to between min_raise and max_raise. Note that each of these
+        represents a raise total, not a contribution, and not what the amount of
+        their raising.
+        """
+        self.call_cost = call_cost
+        if (min_raise is None) != (max_raise is None):
+            raise ArgumentError(
+                "specify both min_raise and max_raise, or neither")
+        self.min_raise = min_raise
+        self.max_raise = max_raise
+        
+    def __repr__(self):
+        return "ActionOptions(call_cost=%r, min_raise=%r, max_raise=%r)" %  \
+            (self.call_cost, self.min_raise, self.max_raise)
+    
+    def can_fold(self):
+        """
+        Does the user have the option to fold?
+        """
+        # pylint:disable=R0201
+        return True
+    
+    def can_check(self):
+        """
+        Does the user have the option to check?
+        """
+        return self.call_cost == 0
+    
+    def can_raise(self):
+        """
+        Does the user have the option to raise? If so, minraise and max_raise
+        will be available to express how much the user can raise to.
+        """
+        return self.min_raise is not None
