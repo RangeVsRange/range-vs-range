@@ -4,8 +4,8 @@
 
 <p>Players in this game:
 {% set pipe = joiner() %}
-{% for user in game_details.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
-It is <strong>{{game_details.current_user_details.screenname}}</strong>'s turn to act.</p>
+{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}.
+It is <strong>{{game_details.current_user.screenname}}</strong>'s turn to act.</p>
 
 <p>Game description: <strong>{{game_details.situation.description}}</strong>.</p>
 

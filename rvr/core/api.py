@@ -472,74 +472,29 @@ class API(object):
         return [dto for dto in child_dtos
                 if is_finished or dto.should_include_for(userid)]
     
-    def _calculate_current_options(self, game):
+    def _calculate_current_options(self, game, rgp):
         """
         Determines what options the current player has in a running game.
         
         Returns a dtos.ActionOptions instance.
         """
-# pylint:disable=C0301,R0201,W0613
-#         call_amount = min(self.stacks[player], self.raised_to - self.contributed[player])
-#         bet_lower = self.raised_to + self.increment  # min-raise
-#         bet_higher = self.stacks[player] + self.contributed[player]  # shove
-#         if bet_higher < bet_lower:  # i.e. all in
-#             bet_lower = bet_higher
-#         if self.declarative.is_limit:
-#             bet_higher = bet_lower  # minraise is only option for limit
-#         can_raise = bet_lower > self.raised_to  # i.e. there is a valid bet
-#         is_capped = (self.declarative.is_limit and  # No limit is never capped
-#             self.bet_count >= 4)  # Not capped until 4 bets in
-#         can_raise = can_raise and not is_capped
-        return None  # TODO: not this, once game state is stored
-#         if can_raise:
-#             return dtos.ActionOptions(call_amount, bet_lower, bet_higher)
-#         else:
-#             return dtos.ActionOptions(call_amount)
-    
-    def _get_game_summary(self, gameid, userid=None):
-        # TODO: delete this when replaced by _get_game
-        """
-        Return game <gameid>. If <userid> is not None, return private data for
-        the specified user. If the game is finished, return all private data.
-        Analysis items are considered private data, because they include both
-        players' ranges.
-        """
-        if userid is not None:
-            users = self.session.query(tables.User)  \
-                .filter(tables.User.userid == userid).all()
-            if not users:
-                return self.ERR_NO_SUCH_USER
-        games = self.session.query(tables.RunningGame)  \
-            .filter(tables.RunningGame.gameid == gameid).all()
-        if not games:
-            return self.ERR_NO_SUCH_RUNNING_GAME
-        game = games[0]
-        game_details = dtos.RunningGameSummary.from_running_game(game)
-        history_items = self._get_history_items(game, userid)
-        if game_details.current_user_details is not None:
-            current_options = None
+        # pylint:disable=R0201
+        raised_to = max([rgp.contributed for rgp in game.rgps])
+        call_amount = min(rgp.stack, raised_to - rgp.contributed)
+        bet_lower = raised_to + game.increment  # min-raise
+        bet_higher = rgp.stack + rgp.contributed  # shove
+        if bet_higher < bet_lower:  # i.e. all in
+            bet_lower = bet_higher
+        if game.situation.is_limit:
+            bet_higher = bet_lower  # minraise is only option for limit
+        can_raise = bet_lower > raised_to  # i.e. there is a valid bet
+        is_capped = (game.situation.is_limit and  # No limit is never capped
+            game.bet_count >= 4)  # Not capped until 4 bets in
+        can_raise = can_raise and not is_capped
+        if can_raise:
+            return dtos.ActionOptions(call_amount, bet_lower, bet_higher)
         else:
-            current_options = self._calculate_current_options(game)
-        return dtos.RunningGameHistory(game_details, history_items,
-                                       current_options)
-
-    @api
-    def get_public_game_summary(self, gameid):
-        """
-        7. Retrieve game history without current player's ranges
-        inputs: gameid
-        outputs: hand history populated with ranges iff finished
-        """
-        return self._get_game_summary(gameid)
-    
-    @api
-    def get_private_game_summary(self, gameid, userid):
-        """
-        8. Retrieve game history with current player's ranges
-        inputs: userid, gameid
-        outputs: hand history partially populated with ranges for userid only
-        """
-        return self._get_game_summary(gameid, userid)
+            return dtos.ActionOptions(call_amount)
     
     def _get_game(self, gameid, userid=None):
         """
@@ -560,10 +515,11 @@ class API(object):
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items = self._get_history_items(game, userid)
-        if game_details.current_user is not None:
+        if game.current_rgp is None:
             current_options = None
         else:
-            current_options = self._calculate_current_options(game)
+            current_options = self._calculate_current_options(game,
+                                                              game.current_rgp)
         return dtos.RunningGameHistory(game_details, history_items,
                                        current_options)        
 

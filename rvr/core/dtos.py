@@ -227,7 +227,7 @@ class RunningGameSummary(object):
         rgps = sorted(running_game.rgps, key=lambda r:r.order)
         users = [UserDetails.from_user(r.user) for r in rgps]
         situation = SituationDetails.from_situation(running_game.situation)
-        user_details = UserDetails.from_user(running_game.current_user)
+        user_details = UserDetails.from_user(running_game.current_rgp.user)
         return cls(running_game.gameid, users, situation, user_details)
 
 class RunningGameParticipantDetails(object):
@@ -287,7 +287,7 @@ class RunningGameDetails(object):
         Create object from tables.RunningGame
         """
         situation = SituationDetails.from_situation(game.situation)
-        current_user = UserDetails.from_user(game.current_user)
+        current_user = UserDetails.from_user(game.current_rgp.user)
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in game.rgps]
         return cls(game.gameid, situation, current_user, game.board,

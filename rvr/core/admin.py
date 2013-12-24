@@ -127,9 +127,12 @@ class AdminCmd(Cmd):
         """
         Display running games, their descriptions, and their users.
         """
-        response = self.api.get_running_games()
+        result = self.api.get_running_games()
+        if isinstance(result, APIError):
+            print "Error:", result.description
+            return
         print "Running games:"
-        for details in response:
+        for details in result:
             print details
 
     def do_joingame(self, params):

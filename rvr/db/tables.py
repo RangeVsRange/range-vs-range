@@ -105,7 +105,8 @@ class RunningGame(BASE):
     next_hh = Column(Integer, default=0, nullable=False)
     situation = relationship("Situation", backref="running_games")
     # if current_userid is None, game is finished
-    current_userid = Column(Integer, ForeignKey("user.userid"), nullable=True)
+    current_userid = Column(Integer,
+        ForeignKey("running_game_participant.userid"), nullable=True)
     # game state
     board = Column(String, nullable=False)
     current_round = Column(String, nullable=False)
@@ -113,9 +114,11 @@ class RunningGame(BASE):
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
     # relationships
-    # TODO: 0 - should have relationship to RGP, not User
-    # implement as add / transfer / remove, perhaps?
-    current_user = relationship("User")
+    current_rgp = relationship("RunningGameParticipant", primaryjoin=
+        "and_(RunningGame.gameid==RunningGameParticipant.gameid," +  \
+        " RunningGame.current_userid==RunningGameParticipant.userid)", 
+        foreign_keys=[gameid, current_userid])
+    
 
 class RunningGameParticipant(BASE):
     """
@@ -134,7 +137,8 @@ class RunningGameParticipant(BASE):
     left_to_act = Column(Boolean, nullable=False)
     # relationships
     user = relationship("User", backref="rgps")
-    game = relationship("RunningGame", backref=backref("rgps", cascade="all"))
+    game = relationship("RunningGame", backref=backref("rgps", cascade="all"),
+        primaryjoin="RunningGame.gameid==RunningGameParticipant.gameid")
 
 class GameHistoryBase(BASE):
     """
