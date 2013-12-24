@@ -113,6 +113,8 @@ class RunningGame(BASE):
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
     # relationships
+    # TODO: 0 - should have relationship to RGP, not User
+    # implement as add / transfer / remove, perhaps?
     current_user = relationship("User")
 
 class RunningGameParticipant(BASE):
@@ -124,7 +126,7 @@ class RunningGameParticipant(BASE):
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
-    order = Column(Integer, primary_key=True)
+    order = Column(Integer, nullable=False)
     # game state
     stack = Column(Integer, nullable=False)
     contributed = Column(Integer, nullable=False)
