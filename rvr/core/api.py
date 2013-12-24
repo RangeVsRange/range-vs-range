@@ -259,7 +259,7 @@ class API(object):
                  of game
         """
         all_running_games = self.session.query(tables.RunningGame).all()
-        results = [dtos.RunningGameDetails.from_running_game(game)
+        results = [dtos.RunningGameSummary.from_running_game(game)
                    for game in all_running_games]
         return results
     
@@ -275,7 +275,7 @@ class API(object):
         """
         rgps = self.session.query(tables.RunningGameParticipant)  \
             .filter(tables.RunningGameParticipant.userid == userid).all()
-        running_games = [dtos.RunningGameDetails.from_running_game(rgp.game)
+        running_games = [dtos.RunningGameSummary.from_running_game(rgp.game)
                          for rgp in rgps]
         return dtos.UsersGameDetails(userid, running_games)
     
@@ -301,6 +301,7 @@ class API(object):
         running_game.next_hh = 0
         running_game.game = open_game
         running_game.situation = situation
+        # we have to calculate current userid in advance so we can flush
         running_game.current_userid =  \
             all_ogps[situation.current_player_num].userid
         running_game.board = situation.board
@@ -495,6 +496,51 @@ class API(object):
 #         else:
 #             return dtos.ActionOptions(call_amount)
     
+    def _get_game_summary(self, gameid, userid=None):
+        # TODO: delete this when replaced by _get_game
+        """
+        Return game <gameid>. If <userid> is not None, return private data for
+        the specified user. If the game is finished, return all private data.
+        Analysis items are considered private data, because they include both
+        players' ranges.
+        """
+        if userid is not None:
+            users = self.session.query(tables.User)  \
+                .filter(tables.User.userid == userid).all()
+            if not users:
+                return self.ERR_NO_SUCH_USER
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.gameid == gameid).all()
+        if not games:
+            return self.ERR_NO_SUCH_RUNNING_GAME
+        game = games[0]
+        game_details = dtos.RunningGameSummary.from_running_game(game)
+        history_items = self._get_history_items(game, userid)
+        if game_details.current_user_details is not None:
+            current_options = None
+        else:
+            current_options = self._calculate_current_options(game)
+        return dtos.RunningGameHistory(game_details, history_items,
+                                       current_options)
+
+    @api
+    def get_public_game_summary(self, gameid):
+        """
+        7. Retrieve game history without current player's ranges
+        inputs: gameid
+        outputs: hand history populated with ranges iff finished
+        """
+        return self._get_game_summary(gameid)
+    
+    @api
+    def get_private_game_summary(self, gameid, userid):
+        """
+        8. Retrieve game history with current player's ranges
+        inputs: userid, gameid
+        outputs: hand history partially populated with ranges for userid only
+        """
+        return self._get_game_summary(gameid, userid)
+    
     def _get_game(self, gameid, userid=None):
         """
         Return game <gameid>. If <userid> is not None, return private data for
@@ -514,13 +560,13 @@ class API(object):
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items = self._get_history_items(game, userid)
-        if game_details.current_user_details is not None:
+        if game_details.current_user is not None:
             current_options = None
         else:
             current_options = self._calculate_current_options(game)
         return dtos.RunningGameHistory(game_details, history_items,
-                                       current_options)
-    
+                                       current_options)        
+
     @api
     def get_public_game(self, gameid):
         """

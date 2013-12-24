@@ -204,7 +204,7 @@ class OpenGameDetails(object):
         situation = SituationDetails.from_situation(open_game.situation)
         return cls(open_game.gameid, users, situation)
 
-class RunningGameDetails(object):
+class RunningGameSummary(object):
     """
     list of users in game, and details of situation
     """
@@ -215,7 +215,7 @@ class RunningGameDetails(object):
         self.current_user_details = current_user_details
 
     def __repr__(self):
-        return ("RunningGameDetails(gameid=%r, users=%r, situation=%r, " +
+        return ("RunningGameSummary(gameid=%r, users=%r, situation=%r, " +
                 "current_user_details=%r)") %  \
             (self.gameid, self.users, self.situation, self.current_user_details)
 
@@ -224,12 +224,75 @@ class RunningGameDetails(object):
         """
         Create object from tables.RunningGame
         """
-        # TODO: there are more columns now, and we need a rgp dto
         rgps = sorted(running_game.rgps, key=lambda r:r.order)
         users = [UserDetails.from_user(r.user) for r in rgps]
         situation = SituationDetails.from_situation(running_game.situation)
         user_details = UserDetails.from_user(running_game.current_user)
         return cls(running_game.gameid, users, situation, user_details)
+
+class RunningGameParticipantDetails(object):
+    """
+    details of a user and their participation in a game
+    """
+    def __init__(self, user, order, stack, contributed, range_, left_to_act):
+        self.user = user  # UserDetails
+        self.order = order  # 0 is first to left of dealer
+        self.stack = stack
+        self.contributed = contributed
+        self.range = range_
+        self.left_to_act = left_to_act
+    
+    def __repr__(self):
+        return ("RunningGameParticipantDetails(user=%r, order=%r, stack=%r, " +
+                "contributed=%r, range=%r, left_to_act=%r)") %  \
+            (self.user, self.order, self.stack, self.contributed, self.range,
+             self.left_to_act)
+    
+    @classmethod
+    def from_rgp(cls, rgp):
+        """
+        Create object from tables.RunningGameParticipant
+        """
+        user = UserDetails.from_user(rgp.user)
+        return cls(user, rgp.order, rgp.stack, rgp.contributed, rgp.range,
+                   rgp.left_to_act)
+
+class RunningGameDetails(object):
+    """
+    details of a game, including game state (more than RunningGameSummary)
+    """
+    def __init__(self, gameid, situation, current_user, board, current_round,
+                 pot_pre, increment, bet_count, rgp_details):
+        self.gameid = gameid
+        self.situation = situation  # SituationDetails
+        self.current_user = current_user  # UserDetails
+        self.board = board
+        self.current_round = current_round
+        self.pot_pre = pot_pre
+        self.increment = increment
+        self.bet_count = bet_count
+        self.rgp_details = rgp_details  # RunningGameParticipantDetails
+    
+    def __repr__(self):
+        return ("RunningGameDetails(gameid=%r, situation=%r, " +
+                "current_user=%r, board=%r, current_round=%r, pot_pre=%r, " +
+                "increment=%r, bet_count=%r, rgp_details=%r") %  \
+            (self.gameid, self.situation, self.current_user, self.board,
+             self.current_round, self.pot_pre, self.increment, self.bet_count,
+             self.rgp_details)
+    
+    @classmethod
+    def from_running_game(cls, game):
+        """
+        Create object from tables.RunningGame
+        """
+        situation = SituationDetails.from_situation(game.situation)
+        current_user = UserDetails.from_user(game.current_user)
+        rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
+                       for rgp in game.rgps]
+        return cls(game.gameid, situation, current_user, game.board,
+                   game.current_round, game.pot_pre, game.increment,
+                   game.bet_count, rgp_details)
 
 class UsersGameDetails(object):
     """

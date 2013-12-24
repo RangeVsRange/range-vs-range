@@ -187,7 +187,8 @@ def game_page():
         return redirect(url_for('home_page'))
     userid = session['userid']
     api = API()
-    response = api.get_private_game(gameid, userid)
+    # TODO: replace with get_private_game
+    response = api.get_private_game_summary(gameid, userid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_RUNNING_GAME:
             msg = "Invalid game ID."
