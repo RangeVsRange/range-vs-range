@@ -196,7 +196,8 @@ def game_page():
         flash(msg)
         return redirect(url_for('home_page'))
     title = 'Game %d' % (gameid,)
-    # TODO: 0: if it is this user's turn, show them their options
+    # TODO: 0: lay out this page better, show the whole data structure somehow.
+    # TODO: 1: if it's the user's turn, let them make those actions; otherwise, hide them.  pylint:disable=C0301
     return render_template('game.html', title=title,
         game_details=response.game_details, history=response.history,
         current_options=response.current_options)
