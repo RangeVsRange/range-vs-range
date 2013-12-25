@@ -4,10 +4,11 @@
 
 <p>The game is: <strong>{{game_details.situation.description}}</strong>.</p>
 
-<p>The players are seated as follows:
-{% set pipe = joiner() %}
-{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}.
-</p>
+<p>The players are seated as follows:<ul>
+{% for rgp in game_details.rgp_details %}
+<li><strong>{{rgp.user.screenname}}</strong>, with a stack of <strong>{{rgp.stack}}</strong>, and <strong>{{rgp.contributed}}</strong> in the pot {% if rgp.user.screenname == game_details.current_user.screenname %}<em>(acting now)</em>{% elif rgp.left_to_act %}<em>(still to act)</em>{% else %}<em>(acted)</em>{% endif %}</li>
+{% endfor %}
+</ul></p>
 
 <p><strong>{{game_details.current_user.screenname}}</strong>'s options:<ul>
 {% if current_options.can_fold() %}<li>Fold</li>{% endif %}
