@@ -198,5 +198,5 @@ def game_page():
     title = 'Game %d' % (gameid,)
     # TODO: 0: if it is this user's turn, show them their options
     return render_template('game.html', title=title,
-        game_details=response.game_details,
-        history=response.history)
+        game_details=response.game_details, history=response.history,
+        current_options=response.current_options)

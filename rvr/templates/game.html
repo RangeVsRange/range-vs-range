@@ -5,12 +5,26 @@
 <p>Players in this game:
 {% set pipe = joiner() %}
 {% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}.
-It is <strong>{{game_details.current_user.screenname}}</strong>'s turn to act.</p>
+</p>
 
 <p>Game description: <strong>{{game_details.situation.description}}</strong>.</p>
 
+<p>It is <strong>{{game_details.current_user.screenname}}</strong>'s turn to act.</p>
+
+<p><strong>{{game_details.current_user.screenname}}</strong>'s options:<ul>
+{% if current_options.can_fold() %}<li>Fold</li>{% endif %}
+{% if current_options.can_check() %}<li>Check</li>
+{% else %}<li>Call <strong>{{current_options.call_cost}}</strong></li>{% endif %}
+{% if current_options.can_raise() %}<li>Raise to between <strong>{{current_options.min_raise}}</strong> and <strong>{{current_options.max_raise}}</strong></li>{% endif %}
+</ul></p>
+
 <p>The game so far:<ul>{% for item in history %}
   <li>{{item}}</li>
-{% endfor %}</ul></p>
+{% endfor %}
+{% if not history %}
+  <li>Nothing, yet.</li>
+{% endif %}
+</ul></p>
+
 
 {% endblock %}
