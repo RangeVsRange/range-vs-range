@@ -105,12 +105,12 @@ class RunningGame(BASE):
                          nullable=False)
     next_hh = Column(Integer, default=0, nullable=False)
     situation = relationship("Situation", backref="running_games")
-    # TODO: this should be a foreign key, but then SQLAlchemy thinks there's a
+    # TODO: ForeignKey("running_game_participant.userid")
+    # This should be a foreign key, but then SQLAlchemy thinks there's a
     # circular dependency, and won't create the database. Even with
     # post_update=True :(
     # Surely the fact that this is nullable should allow post_update to work!
     # if current_userid is None, game is finished
-    # ForeignKey("running_game_participant.userid")
     current_userid = Column(Integer, nullable=True)
     # game state
     board = Column(String, nullable=False)

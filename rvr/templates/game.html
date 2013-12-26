@@ -4,12 +4,18 @@
 
 <p>The game is: <strong>{{game_details.situation.description}}</strong>.</p>
 
-<p>The players are seated as follows:<br>
+<p>The current betting round is: <strong>{{game_details.current_round}}</strong>.<br>
+{% if game_details.current_round != "preflop" %}
+The board is: <strong>{{game_details.board}}</strong>.<br>
+The pot at that start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
+{% endif %}
+
+<p>The players are seated as follows:
 <table>
-<tr><td><strong>Screenname</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td></tr>
+<tr><td></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td></tr>
 {% for rgp in game_details.rgp_details %}
 <tr>
-  <td>{{rgp.user.screenname}}</td>
+  <td><strong>{{rgp.user.screenname}}</strong></td>
   <td>{{rgp.stack}}</td>
   <td>{{rgp.contributed}}</td>
   <td>
