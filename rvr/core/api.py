@@ -322,6 +322,7 @@ class API(object):
             rgp.contributed = s_p.contributed
             rgp.range = s_p.range
             rgp.left_to_act = s_p.left_to_act
+            rgp.folded = False
             if situation.current_player_num == order:
                 assert running_game.current_userid == ogp.userid
             self.session.add(rgp)

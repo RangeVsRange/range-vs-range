@@ -234,19 +234,21 @@ class RunningGameParticipantDetails(object):
     """
     details of a user and their participation in a game
     """
-    def __init__(self, user, order, stack, contributed, range_, left_to_act):
+    def __init__(self, user, order, stack, contributed, range_, left_to_act,
+                 folded):
         self.user = user  # UserDetails
         self.order = order  # 0 is first to left of dealer
         self.stack = stack
         self.contributed = contributed
         self.range = range_
         self.left_to_act = left_to_act
+        self.folded = folded
     
     def __repr__(self):
         return ("RunningGameParticipantDetails(user=%r, order=%r, stack=%r, " +
-                "contributed=%r, range=%r, left_to_act=%r)") %  \
+                "contributed=%r, range=%r, left_to_act=%r, folded=%r)") %  \
             (self.user, self.order, self.stack, self.contributed, self.range,
-             self.left_to_act)
+             self.left_to_act, self.folded)
     
     @classmethod
     def from_rgp(cls, rgp):
@@ -255,7 +257,7 @@ class RunningGameParticipantDetails(object):
         """
         user = UserDetails.from_user(rgp.user)
         return cls(user, rgp.order, rgp.stack, rgp.contributed, rgp.range,
-                   rgp.left_to_act)
+                   rgp.left_to_act, rgp.folded)
 
 class RunningGameDetails(object):
     """

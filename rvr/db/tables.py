@@ -135,6 +135,7 @@ class RunningGameParticipant(BASE):
     contributed = Column(Integer, nullable=False)
     range = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
+    folded = Column(Boolean, nullable=False)
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"),

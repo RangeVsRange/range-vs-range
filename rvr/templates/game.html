@@ -6,7 +6,16 @@
 
 <p>The players are seated as follows:<ul>
 {% for rgp in game_details.rgp_details %}
-<li><strong>{{rgp.user.screenname}}</strong>, with a stack of <strong>{{rgp.stack}}</strong>, and <strong>{{rgp.contributed}}</strong> in the pot {% if rgp.user.screenname == game_details.current_user.screenname %}<em>(acting now)</em>{% elif rgp.left_to_act %}<em>(still to act)</em>{% else %}<em>(acted)</em>{% endif %}</li>
+<li><strong>{{rgp.user.screenname}}</strong>, with a stack of <strong>{{rgp.stack}}</strong>, and <strong>{{rgp.contributed}}</strong> in the pot
+{% if rgp.user.screenname == game_details.current_user.screenname %}
+  <em>(acting now)</em>
+{% elif rgp.left_to_act %}
+  <em>(still to act)</em>
+{% elif rgp.folded %}
+  <em>(folded)</em>
+{% else %}
+  <em>(acted)</em>
+{% endif %}</li>
 {% endfor %}
 </ul></p>
 
