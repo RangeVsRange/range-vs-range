@@ -99,6 +99,7 @@ class RunningGame(BASE):
     Has a many-to-many relationship with User, via RunningGameParticipant.
     """
     __tablename__ = 'running_game'
+    # TODO: ForeignKey("running_game_participant.gameid")
     gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          nullable=False)
@@ -109,6 +110,7 @@ class RunningGame(BASE):
     # post_update=True :(
     # Surely the fact that this is nullable should allow post_update to work!
     # if current_userid is None, game is finished
+    # ForeignKey("running_game_participant.userid")
     current_userid = Column(Integer, nullable=True)
     # game state
     board = Column(String, nullable=False)
@@ -119,7 +121,8 @@ class RunningGame(BASE):
     # relationships
     current_rgp = relationship("RunningGameParticipant", primaryjoin=
         "and_(RunningGame.gameid==RunningGameParticipant.gameid," +  \
-        " RunningGame.current_userid==RunningGameParticipant.userid)")
+        " RunningGame.current_userid==RunningGameParticipant.userid)",
+        foreign_keys=[gameid, current_userid])
     
 
 class RunningGameParticipant(BASE):

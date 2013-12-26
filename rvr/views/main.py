@@ -93,7 +93,13 @@ def home_page():
     userid = session['userid']
     screenname = session['screenname']
     open_games = api.get_open_games()
+    if isinstance(open_games, APIError):
+        flash("An unknown error occurred retrieving your open games.")
+        return redirect(url_for("landing_page"))
     my_games = api.get_user_games(userid)
+    if isinstance(my_games, APIError):
+        flash("An unknown error occurred retrieving your running games.")
+        return redirect(url_for("landing_page"))
     my_open = [og for og in open_games
                if any([u.userid == userid for u in og.users])]
     others_open = [og for og in open_games
