@@ -9,6 +9,7 @@
 <tr><td><strong>Screenname</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td></tr>
 {% for rgp in game_details.rgp_details %}
 <tr>
+  <td>{{rgp.user.screenname}}</td>
   <td>{{rgp.stack}}</td>
   <td>{{rgp.contributed}}</td>
   <td>
