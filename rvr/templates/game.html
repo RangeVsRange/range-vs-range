@@ -33,12 +33,14 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 {% endfor %}
 </table></p>
 
+{% if is_me %}
 <p><strong>{{game_details.current_user.screenname}}</strong>'s options:<ul>
 {% if current_options.can_fold() %}<li>Fold</li>{% endif %}
 {% if current_options.can_check() %}<li>Check</li>
 {% else %}<li>Call <strong>{{current_options.call_cost}}</strong></li>{% endif %}
 {% if current_options.can_raise() %}<li>Raise to between <strong>{{current_options.min_raise}}</strong> and <strong>{{current_options.max_raise}}</strong></li>{% endif %}
 </ul></p>
+{% endif %}
 
 <p>The game so far:<ul>{% for item in history %}
   <li>{{item}}</li>

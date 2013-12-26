@@ -206,4 +206,5 @@ def game_page():
     # TODO: 1: if it's the user's turn, let them make those actions; otherwise, hide them.  pylint:disable=C0301
     return render_template('game.html', title=title,
         game_details=response.game_details, history=response.history,
-        current_options=response.current_options)
+        current_options=response.current_options,
+        is_me=(userid == response.game_details.current_user.userid))
