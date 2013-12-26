@@ -4,20 +4,27 @@
 
 <p>The game is: <strong>{{game_details.situation.description}}</strong>.</p>
 
-<p>The players are seated as follows:<ul>
+<p>The players are seated as follows:<br>
+<table>
+<tr><td><strong>Screenname</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td></tr>
 {% for rgp in game_details.rgp_details %}
-<li><strong>{{rgp.user.screenname}}</strong>, with a stack of <strong>{{rgp.stack}}</strong>, and <strong>{{rgp.contributed}}</strong> in the pot
-{% if rgp.user.screenname == game_details.current_user.screenname %}
-  <em>(acting now)</em>
-{% elif rgp.left_to_act %}
-  <em>(still to act)</em>
-{% elif rgp.folded %}
-  <em>(folded)</em>
-{% else %}
-  <em>(acted)</em>
-{% endif %}</li>
+<tr>
+  <td>{{rgp.stack}}</td>
+  <td>{{rgp.contributed}}</td>
+  <td>
+  {% if rgp.user.screenname == game_details.current_user.screenname %}
+    <em>(acting now)</em>
+  {% elif rgp.left_to_act %}
+    <em>(still to act)</em>
+  {% elif rgp.folded %}
+    <em>(folded)</em>
+  {% else %}
+    <em>(acted)</em>
+  {% endif %}
+  </td>
+</tr>
 {% endfor %}
-</ul></p>
+</table></p>
 
 <p><strong>{{game_details.current_user.screenname}}</strong>'s options:<ul>
 {% if current_options.can_fold() %}<li>Fold</li>{% endif %}
