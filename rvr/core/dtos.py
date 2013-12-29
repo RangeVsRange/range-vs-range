@@ -168,7 +168,7 @@ class SituationDetails(object):
             self.players[:self.current_player]
         return [p for p in potential if p.left_to_act]
 
-class RangeBasedActionDetails(object):
+class ActionDetails(object):
     """
     range-based action request object
     """
@@ -185,9 +185,47 @@ class RangeBasedActionDetails(object):
         self.raise_total = raise_total
     
     def __repr__(self):
-        return ("RangeBasedActionDetails(fold_range=%r, passive_range=%r, " +
+        return ("ActionDetails(fold_range=%r, passive_range=%r, " +
                 "aggressive_range=%r, raise_total=%r)") %  \
             (self.fold_range, self.passive_range, self.aggressive_range,
+             self.raise_total)
+
+class ActionResponse(object):
+    """
+    response to a range-based action request, tells the user what happened
+    """
+    def __init__(self, is_fold=False, is_passive=False, 
+                is_aggressive=False, raise_total=0):
+        self.is_fold = is_fold
+        self.is_passive = is_passive
+        self.is_aggressive = is_aggressive
+        self.raise_total = raise_total
+        
+    @classmethod
+    def fold(cls):
+        """
+        User folded
+        """
+        return ActionResponse(is_fold=True)
+    
+    @classmethod
+    def call(cls):
+        """
+        User checked or called
+        """
+        return ActionResponse(is_passive=True)
+    
+    @classmethod
+    def raise_(cls, raise_total):
+        """
+        User bet or raised
+        """
+        return ActionResponse(is_aggressive=True, raise_total=raise_total)
+    
+    def __repr__(self):
+        return ("ActionResponse(is_fold=%r, is_passive=%r, " +
+                "is_aggressive=%r, raise_total=%r)") %  \
+            (self.is_fold, self.is_passive, self.is_aggressive,
              self.raise_total)
 
 class OpenGameDetails(object):
@@ -394,7 +432,7 @@ class GameItemRangeAction(GameItem):
         Create from a GameHistoryRangeAction
         """        
         user_details = UserDetails.from_user(item.user)
-        range_action = RangeBasedActionDetails(item.fold_range,
+        range_action = ActionDetails(item.fold_range,
             item.passive_range, item.aggressive_range, item.raise_total)
         return cls(user_details, range_action)
     

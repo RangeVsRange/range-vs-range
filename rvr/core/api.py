@@ -457,8 +457,12 @@ class API(object):
          - game is not a running game with user in it
          - it's not user's turn
          - range_action does not sum to user's current range
+         - range_action raise_total isn't appropriate
         """
         # TODO: perform_action
+        return dtos.ActionResponse.call()
+        #return dtos.ActionResponse.fold()
+        #return dtos.ActionResponse.raise_(range_action.raise_total)
         
     def _get_history_items(self, game, userid=None):
         """

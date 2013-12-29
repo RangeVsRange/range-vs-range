@@ -5,6 +5,7 @@ from cmd import Cmd
 import logging
 from rvr.core.api import APIError, API
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
+from rvr.core import dtos
 #pylint:disable=R0201,R0904
 
 class AdminCmd(Cmd):
@@ -179,7 +180,34 @@ class AdminCmd(Cmd):
         print "Running games:"
         for game in result.running_details:
             print game
-
+            
+    def do_act(self, params):
+        """
+        act <gameid> <userid> <fold> <passive> <aggressive> <total>
+        perform an action in a game as a user
+        """
+        params = params.split()
+        gameid = int(params[0])
+        userid = int(params[1])
+        fold = params[2]
+        passive = params[3]
+        aggressive = params[4]
+        total = int(params[5])
+        range_action = dtos.ActionDetails(fold, passive, aggressive,
+                                                    total)
+        response = self.api.perform_action(gameid, userid, range_action)
+        if isinstance(response, APIError):
+            print "Error:", response.description  # pylint:disable=E1101
+            return
+        if response.is_fold:
+            print "You folded."
+        elif response.is_passive:
+            print "You called."
+        elif response.is_aggressive:
+            print "You raised to %d." % (response.raise_total,)
+        else:
+            print "Oops. This isn't right."
+            
     def do_update(self, _details):
         """
         The kind of updates a background process would normally do. Currently

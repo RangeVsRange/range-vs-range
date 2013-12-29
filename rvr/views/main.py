@@ -178,6 +178,37 @@ def leave_game():
     flash(msg)
     return redirect(url_for('home_page'))
 
+def _handle_action(gameid, userid, api, form):
+    """
+    Handle response from an action form
+    """
+    fold = form.fold.data
+    passive = form.passive.data
+    aggressive = form.aggressive.data
+    total = form.total.data
+    range_action = dtos.ActionDetails(fold, passive, aggressive, total)
+    result = api.perform_action(gameid, userid, range_action)
+    # why do validation twice...
+    if isinstance(result, APIError):
+        if result is api.ERR_INVALID_RAISE_TOTAL:
+            msg = "Invalid raise total."
+        elif result is api.ERR_INVALID_RANGES:
+            msg = "Invalid ranges for that action."
+        else:
+            msg = "An unknown error occurred."
+        flash(msg)
+    else:
+        if result.is_fold:
+            msg = "You folded."
+        elif result.is_passive:
+            msg = "You called."
+        elif result.is_aggressive:
+            msg = "You raised to %d." % (result.raise_total, )
+        else:
+            msg = "I can't figure out what happened, eh."
+        flash(msg)
+    return redirect(url_for('game_page', gameid=gameid))
+
 @APP.route('/game', methods=['GET', 'POST'])
 @AUTH.required
 def game_page():
@@ -211,26 +242,7 @@ def game_page():
         min_raise=response.current_options.min_raise,
         max_raise=response.current_options.max_raise)
     if form.validate_on_submit():
-        fold = form.fold.data
-        passive = form.passive.data
-        aggressive = form.aggressive.data
-        total = form.total.data
-        range_action = dtos.RangeBasedActionDetails(fold, passive, aggressive,
-                                                    total)
-        response = api.perform_action(gameid, userid, range_action)
-        # why do validation twice...
-        if isinstance(response, APIError):
-            if response is api.ERR_INVALID_RAISE_TOTAL:
-                msg = "Invalid raise total."
-            elif response is api.ERR_INVALID_RANGES:
-                msg = "Invalid ranges for that action."
-            else:
-                msg = "An unknown error occurred."
-            flash(msg)
-            return redirect(url_for('game_page', gameid=gameid))
-        else:
-            flash("Action performed!")
-        return redirect(url_for('game_page', gameid=gameid))
+        return _handle_action(gameid, userid, api, form)
     
     title = 'Game %d' % (gameid,)
     return render_template('game.html', title=title, form=form,
