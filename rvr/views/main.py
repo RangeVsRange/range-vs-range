@@ -11,6 +11,7 @@ from werkzeug.exceptions import abort  # @UnresolvedImport
 import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
+from rvr.forms.action import action_form
 
 @APP.before_request
 def ensure_user():
@@ -176,7 +177,7 @@ def leave_game():
     flash(msg)
     return redirect(url_for('home_page'))
 
-@APP.route('/game', methods=['GET'])
+@APP.route('/game', methods=['GET', 'POST'])
 @AUTH.required
 def game_page():
     """
@@ -192,6 +193,7 @@ def game_page():
         flash("Invalid game ID.")
         return redirect(url_for('home_page'))
     userid = session['userid']
+        
     api = API()
     response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
@@ -201,9 +203,22 @@ def game_page():
             msg = "An unknown error occurred."
         flash(msg)
         return redirect(url_for('home_page'))
+    
+    form = action_form(is_check=response.current_options.can_check(),
+        is_raise=response.current_options.is_raise,
+        can_raise=response.current_options.can_raise(),
+        min_raise=response.current_options.min_raise,
+        max_raise=response.current_options.max_raise)
+    if form.validate_on_submit():
+        fold = form.fold.data
+        passive = form.passive.data
+        aggressive = form.aggressive.data
+        # TODO: perform action via API, flash result, redirect back here!
+        flash("Action performed! (Not really.)")
+        return redirect(url_for('game_page', gameid=gameid))
+    
     title = 'Game %d' % (gameid,)
-    # TODO: 0: an action form, with a fold range, a passive range, an agg range
-    return render_template('game.html', title=title,
+    return render_template('game.html', title=title, form=form,
         game_details=response.game_details, history=response.history,
         current_options=response.current_options,
-        is_me=(userid == response.game_details.current_user.userid))
+        is_me=(userid == response.game_details.current_player.user.userid))

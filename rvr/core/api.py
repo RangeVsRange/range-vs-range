@@ -101,12 +101,12 @@ class API(object):
             stack=198,
             contributed=2,
             left_to_act=True,
-            range_='')
+            range_='anything')
         btn = dtos.SituationPlayerDetails(
             stack=199,
             contributed=1,
             left_to_act=True,
-            range_='')
+            range_='anything')
         situation = dtos.SituationDetails(
             description="Heads-up preflop, 100 BB",
             players=[bb, btn],  # bb acts first in future rounds
@@ -493,7 +493,10 @@ class API(object):
             game.bet_count >= 4)  # Not capped until 4 bets in
         can_raise = can_raise and not is_capped
         if can_raise:
-            return dtos.ActionOptions(call_amount, bet_lower, bet_higher)
+            return dtos.ActionOptions(call_cost=call_amount,
+                                      is_raise=raised_to != 0,
+                                      min_raise=bet_lower,
+                                      max_raise=bet_higher)
         else:
             return dtos.ActionOptions(call_amount)
     

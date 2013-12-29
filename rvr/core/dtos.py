@@ -263,11 +263,11 @@ class RunningGameDetails(object):
     """
     details of a game, including game state (more than RunningGameSummary)
     """
-    def __init__(self, gameid, situation, current_user, board, current_round,
+    def __init__(self, gameid, situation, current_player, board, current_round,
                  pot_pre, increment, bet_count, rgp_details):
         self.gameid = gameid
         self.situation = situation  # SituationDetails
-        self.current_user = current_user  # UserDetails
+        self.current_player = current_player # RGPDetails
         self.board = board
         self.current_round = current_round
         self.pot_pre = pot_pre
@@ -277,9 +277,9 @@ class RunningGameDetails(object):
     
     def __repr__(self):
         return ("RunningGameDetails(gameid=%r, situation=%r, " +
-                "current_user=%r, board=%r, current_round=%r, pot_pre=%r, " +
+                "current_player=%r, board=%r, current_round=%r, pot_pre=%r, " +
                 "increment=%r, bet_count=%r, rgp_details=%r") %  \
-            (self.gameid, self.situation, self.current_user, self.board,
+            (self.gameid, self.situation, self.current_player, self.board,
              self.current_round, self.pot_pre, self.increment, self.bet_count,
              self.rgp_details)
     
@@ -288,11 +288,12 @@ class RunningGameDetails(object):
         """
         Create object from tables.RunningGame
         """
-        situation = SituationDetails.from_situation(game.situation)
-        current_user = UserDetails.from_user(game.current_rgp.user)
+        situation = SituationDetails.from_situation(game.situation)        
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in game.rgps]
-        return cls(game.gameid, situation, current_user, game.board,
+        current_player = [r for r in rgp_details
+                          if r.user.userid == game.current_rgp.userid][0]
+        return cls(game.gameid, situation, current_player, game.board,
                    game.current_round, game.pot_pre, game.increment,
                    game.bet_count, rgp_details)
 
@@ -423,7 +424,8 @@ class ActionOptions(object):
     
     (Note that being allowed to fold is implied. You're always allowed to fold.)
     """
-    def __init__(self, call_cost, min_raise=None, max_raise=None):
+    def __init__(self, call_cost, is_raise=False,
+                 min_raise=None, max_raise=None):
         """
         User can check if call_cost is 0. Otherwise, cost to call is call_cost.
         User can raise if min_raise and max_raise aren't None. If so, user can
@@ -432,6 +434,7 @@ class ActionOptions(object):
         their raising.
         """
         self.call_cost = call_cost
+        self.is_raise = is_raise
         if (min_raise is None) != (max_raise is None):
             raise ArgumentError(
                 "specify both min_raise and max_raise, or neither")

@@ -19,7 +19,7 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
   <td>{{rgp.stack}}</td>
   <td>{{rgp.contributed}}</td>
   <td>
-  {% if rgp.user.screenname == game_details.current_user.screenname %}
+  {% if rgp.user.screenname == game_details.current_player.user.screenname %}
     <em>(acting now)</em>
   {% elif rgp.left_to_act %}
     <em>(still to act)</em>
@@ -34,12 +34,23 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 </table></p>
 
 {% if is_me %}
-<p><strong>{{game_details.current_user.screenname}}</strong>'s options:<ul>
-{% if current_options.can_fold() %}<li>Fold</li>{% endif %}
-{% if current_options.can_check() %}<li>Check</li>
-{% else %}<li>Call <strong>{{current_options.call_cost}}</strong></li>{% endif %}
-{% if current_options.can_raise() %}<li>Raise to between <strong>{{current_options.min_raise}}</strong> and <strong>{{current_options.max_raise}}</strong></li>{% endif %}
-</ul></p>
+<p>
+Your range: {{game_details.current_player.range}}<br>
+<form method="post" name="action">
+  {{form.hidden_tag()}}
+  {% for error in form.errors.fold %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
+  {{form.fold.label}} {{form.fold}}<br>
+  {% for error in form.errors.passive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
+  {{form.passive.label}} {{form.passive}} {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em><br>
+{% if current_options.can_raise() %}
+  {% for error in form.errors.aggressive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
+  {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
+  {{form.aggressive.label}} {{form.aggressive}}
+  {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em>{% endif %}<br>
+{% endif %}
+  <input type="submit" value="Go!" /><br>
+</form>
+</p>
 {% endif %}
 
 <p>The game so far:<ul>{% for item in history %}
