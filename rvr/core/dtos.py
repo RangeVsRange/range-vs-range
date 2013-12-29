@@ -172,7 +172,8 @@ class RangeBasedActionDetails(object):
     """
     range-based action request object
     """
-    def __init__(self, fold_range, passive_range, aggressive_range):
+    def __init__(self, fold_range, passive_range, aggressive_range,
+                 raise_total):
         """
         fold_range is the part of their range they fold here
         passive_range is the part of their range they check or call here
@@ -181,6 +182,13 @@ class RangeBasedActionDetails(object):
         self.fold_range = fold_range
         self.passive_range = passive_range
         self.aggressive_range = aggressive_range
+        self.raise_total = raise_total
+    
+    def __repr__(self):
+        return ("RangeBasedActionDetails(fold_range=%r, passive_range=%r, " +
+                "aggressive_range=%r, raise_total=%r)") %  \
+            (self.fold_range, self.passive_range, self.aggressive_range,
+             self.raise_total)
 
 class OpenGameDetails(object):
     """
@@ -387,7 +395,7 @@ class GameItemRangeAction(GameItem):
         """        
         user_details = UserDetails.from_user(item.user)
         range_action = RangeBasedActionDetails(item.fold_range,
-            item.passive_range, item.aggressive_range)
+            item.passive_range, item.aggressive_range, item.raise_total)
         return cls(user_details, range_action)
     
     def should_include_for(self, userid):

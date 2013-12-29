@@ -172,7 +172,7 @@ class GameHistoryUserRange(BASE):
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     # longest possible range = 6,629 chars
-    range = Column(String(), nullable=False)
+    range = Column(String, nullable=False)
 
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryUserRange.gameid," +  \
@@ -191,9 +191,10 @@ class GameHistoryRangeAction(BASE):
     order = Column(Integer, ForeignKey("game_history_base.order"),
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
-    fold_range = Column(String(), nullable=False)
-    passive_range = Column(String(), nullable=False)
-    aggressive_range = Column(String(), nullable=False)
+    fold_range = Column(String, nullable=False)
+    passive_range = Column(String, nullable=False)
+    aggressive_range = Column(String, nullable=False)
+    raise_total = Column(Integer, nullable=False)
     
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryRangeAction.gameid," +  \
