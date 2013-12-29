@@ -12,6 +12,7 @@ import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
 from rvr.forms.action import action_form
+from rvr.core import dtos
 
 @APP.before_request
 def ensure_user():
@@ -213,8 +214,22 @@ def game_page():
         fold = form.fold.data
         passive = form.passive.data
         aggressive = form.aggressive.data
-        # TODO: perform action via API, flash result, redirect back here!
-        flash("Action performed! (Not really.)")
+        total = form.total.data
+        range_action = dtos.RangeBasedActionDetails(fold, passive, aggressive,
+                                                    total)
+        response = api.perform_action(gameid, userid, range_action)
+        # why do validation twice...
+        if isinstance(response, APIError):
+            if response is api.ERR_INVALID_RAISE_TOTAL:
+                msg = "Invalid raise total."
+            elif response is api.ERR_INVALID_RANGES:
+                msg = "Invalid ranges for that action."
+            else:
+                msg = "An unknown error occurred."
+            flash(msg)
+            return redirect(url_for('game_page', gameid=gameid))
+        else:
+            flash("Action performed!")
         return redirect(url_for('game_page', gameid=gameid))
     
     title = 'Game %d' % (gameid,)

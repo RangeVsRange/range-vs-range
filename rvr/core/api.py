@@ -444,6 +444,9 @@ class API(object):
         self.session.commit()
         logging.debug("User %d left game %d", userid, gameid)
         self.ensure_open_games()        
+
+    ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
+    ERR_INVALID_RANGES = APIError("Invalid ranges.")
     
     @api
     def perform_action(self, gameid, userid, range_action):
