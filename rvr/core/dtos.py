@@ -168,66 +168,6 @@ class SituationDetails(object):
             self.players[:self.current_player]
         return [p for p in potential if p.left_to_act]
 
-class ActionDetails(object):
-    """
-    range-based action request object
-    """
-    def __init__(self, fold_range, passive_range, aggressive_range,
-                 raise_total):
-        """
-        fold_range is the part of their range they fold here
-        passive_range is the part of their range they check or call here
-        aggressive_range is the part of their range the bet or raise here
-        """
-        self.fold_range = fold_range
-        self.passive_range = passive_range
-        self.aggressive_range = aggressive_range
-        self.raise_total = raise_total
-    
-    def __repr__(self):
-        return ("ActionDetails(fold_range=%r, passive_range=%r, " +
-                "aggressive_range=%r, raise_total=%r)") %  \
-            (self.fold_range, self.passive_range, self.aggressive_range,
-             self.raise_total)
-
-class ActionResponse(object):
-    """
-    response to a range-based action request, tells the user what happened
-    """
-    def __init__(self, is_fold=False, is_passive=False, 
-                is_aggressive=False, raise_total=0):
-        self.is_fold = is_fold
-        self.is_passive = is_passive
-        self.is_aggressive = is_aggressive
-        self.raise_total = raise_total
-        
-    @classmethod
-    def fold(cls):
-        """
-        User folded
-        """
-        return ActionResponse(is_fold=True)
-    
-    @classmethod
-    def call(cls):
-        """
-        User checked or called
-        """
-        return ActionResponse(is_passive=True)
-    
-    @classmethod
-    def raise_(cls, raise_total):
-        """
-        User bet or raised
-        """
-        return ActionResponse(is_aggressive=True, raise_total=raise_total)
-    
-    def __repr__(self):
-        return ("ActionResponse(is_fold=%r, is_passive=%r, " +
-                "is_aggressive=%r, raise_total=%r)") %  \
-            (self.is_fold, self.is_passive, self.is_aggressive,
-             self.raise_total)
-
 class OpenGameDetails(object):
     """
     list of users in game, and details of situation
@@ -510,3 +450,63 @@ class ActionOptions(object):
         will be available to express how much the user can raise to.
         """
         return self.min_raise is not None
+    
+class ActionDetails(object):
+    """
+    range-based action request object
+    """
+    def __init__(self, fold_range, passive_range, aggressive_range,
+                 raise_total):
+        """
+        fold_range is the part of their range they fold here
+        passive_range is the part of their range they check or call here
+        aggressive_range is the part of their range the bet or raise here
+        """
+        self.fold_range = fold_range
+        self.passive_range = passive_range
+        self.aggressive_range = aggressive_range
+        self.raise_total = raise_total
+    
+    def __repr__(self):
+        return ("ActionDetails(fold_range=%r, passive_range=%r, " +
+                "aggressive_range=%r, raise_total=%r)") %  \
+            (self.fold_range, self.passive_range, self.aggressive_range,
+             self.raise_total)
+
+class ActionResponse(object):
+    """
+    response to a range-based action request, tells the user what happened
+    """
+    def __init__(self, is_fold=False, is_passive=False, 
+                is_aggressive=False, raise_total=0):
+        self.is_fold = is_fold
+        self.is_passive = is_passive
+        self.is_aggressive = is_aggressive
+        self.raise_total = raise_total
+        
+    @classmethod
+    def fold(cls):
+        """
+        User folded
+        """
+        return ActionResponse(is_fold=True)
+    
+    @classmethod
+    def call(cls):
+        """
+        User checked or called
+        """
+        return ActionResponse(is_passive=True)
+    
+    @classmethod
+    def raise_(cls, raise_total):
+        """
+        User bet or raised
+        """
+        return ActionResponse(is_aggressive=True, raise_total=raise_total)
+    
+    def __repr__(self):
+        return ("ActionResponse(is_fold=%r, is_passive=%r, " +
+                "is_aggressive=%r, raise_total=%r)") %  \
+            (self.is_fold, self.is_passive, self.is_aggressive,
+             self.raise_total)

@@ -1,6 +1,7 @@
 """
 FeatureBroker, a dependency injection container
 """
+# TODO: delete this
 #pylint:disable=R0903
 class FeatureBroker:  #IGNORE:R0924
     """

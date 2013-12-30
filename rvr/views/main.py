@@ -167,7 +167,7 @@ def leave_game():
         return redirect(url_for('home_page'))
     userid = session['userid']
     response = api.leave_game(userid, gameid)
-    if response is api.ERR_LEAVE_GAME_NOT_IN:
+    if response is api.ERR_USER_NOT_IN_GAME:
         msg = "You are not registered in game %s." % (gameid,)
     elif response is api.ERR_NO_SUCH_OPEN_GAME:
         msg = "Invalid game ID."

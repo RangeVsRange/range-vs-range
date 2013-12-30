@@ -123,7 +123,6 @@ class RunningGame(BASE):
         "and_(RunningGame.gameid==RunningGameParticipant.gameid," +  \
         " RunningGame.current_userid==RunningGameParticipant.userid)",
         foreign_keys=[gameid, current_userid])
-    
 
 class RunningGameParticipant(BASE):
     """

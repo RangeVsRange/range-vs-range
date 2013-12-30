@@ -8,6 +8,8 @@ from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
 import itertools
+from rvr.poker.handrange import HandRange
+from rvr.poker.range import range_sum_equal
 
 #pylint:disable=R0903
 
@@ -17,6 +19,51 @@ PREFLOP = "preflop"
 FLOP = "flop"
 TURN = "turn"
 RIVER = "river"
+
+def calculate_current_options(game, rgp):
+    """
+    Determines what options the current player has in a running game.
+    
+    Returns a dtos.ActionOptions instance.
+    """
+    raised_to = max([rgp.contributed for rgp in game.rgps])
+    call_amount = min(rgp.stack, raised_to - rgp.contributed)
+    bet_lower = raised_to + game.increment  # min-raise
+    bet_higher = rgp.stack + rgp.contributed  # shove
+    if bet_higher < bet_lower:  # i.e. all in
+        bet_lower = bet_higher
+    if game.situation.is_limit:
+        bet_higher = bet_lower  # minraise is only option for limit
+    can_raise = bet_lower > raised_to  # i.e. there is a valid bet
+    is_capped = (game.situation.is_limit and  # No limit is never capped
+        game.bet_count >= 4)  # Not capped until 4 bets in
+    can_raise = can_raise and not is_capped
+    if can_raise:
+        return dtos.ActionOptions(call_cost=call_amount,
+                                  is_raise=raised_to != 0,
+                                  min_raise=bet_lower,
+                                  max_raise=bet_higher)
+    else:
+        return dtos.ActionOptions(call_amount)
+
+def validate_action(action, options, range_):
+    """
+    Check that action is valid and return any error.
+    """
+    action.raise_total = int(action.raise_total)
+    if options.can_raise() and (action.raise_total < options.min_raise or
+                                action.raise_total > options.max_raise):
+        return API.ERR_INVALID_RAISE_TOTAL
+    fold_range = HandRange(action.fold_range)
+    passive_range = HandRange(action.passive_range)
+    aggressive_range = HandRange(action.aggressive_range)
+    original_range = HandRange(range_)
+    is_valid, _reason = range_sum_equal(fold_range, passive_range,
+                                        aggressive_range, original_range)
+    if is_valid:
+        return None
+    else:
+        return API.ERR_INVALID_RANGES
 
 def exception_mapper(fun):
     """
@@ -80,6 +127,7 @@ class API(object):
     ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
     ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
     ERR_DELETE_USER_PLAYING = APIError("User is playing")
+    ERR_USER_NOT_IN_GAME = APIError("User is not in the specified game")
     
     def __init__(self):
         self.session = None  # required for @create_session
@@ -412,9 +460,7 @@ class API(object):
         # it's committed, so we will have the id
         if running_game is not None:
             return running_game.gameid
-    
-    ERR_LEAVE_GAME_NOT_IN = APIError("User was not registered")
-    
+        
     @api
     def leave_game(self, userid, gameid):
         """
@@ -437,7 +483,7 @@ class API(object):
                 self.session.delete(ogp)
                 break
         else:
-            return self.ERR_LEAVE_GAME_NOT_IN
+            return self.ERR_USER_NOT_IN_GAME
         game.participants -= 1        
         # I don't know why, but flush here causes ensure_open_games to fail.
         # Failure to merge appropriately?
@@ -445,6 +491,7 @@ class API(object):
         logging.debug("User %d left game %d", userid, gameid)
         self.ensure_open_games()        
 
+    ERR_NOT_USERS_TURN = APIError("It's not that user's turn.")
     ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
     ERR_INVALID_RANGES = APIError("Invalid ranges.")
     
@@ -459,7 +506,25 @@ class API(object):
          - range_action does not sum to user's current range
          - range_action raise_total isn't appropriate
         """
+        # check that game exists
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.gameid == gameid).all()
+        if not games:
+            return self.ERR_NO_SUCH_RUNNING_GAME
+        game = games[0]
+        # check that they're in the game and it's their turn
+        rgp = game.current_rgp
+        if game.current_rgp.userid == userid:
+            rgp = game.current_rgp
+        else:
+            return self.ERR_NOT_USERS_TURN
+        current_options = calculate_current_options(game, rgp)
+        # check that their range action is valid for their options + range
+        err = validate_action(range_action, current_options, rgp.range)
+        if err:
+            return err
         # TODO: perform_action
+        # TODO: NOTE: it might not be their turn any more!
         return dtos.ActionResponse.call()
         #return dtos.ActionResponse.fold()
         #return dtos.ActionResponse.raise_(range_action.raise_total)
@@ -479,33 +544,6 @@ class API(object):
                       for child in itertools.chain(*child_items)]
         return [dto for dto in child_dtos
                 if is_finished or dto.should_include_for(userid)]
-    
-    def _calculate_current_options(self, game, rgp):
-        """
-        Determines what options the current player has in a running game.
-        
-        Returns a dtos.ActionOptions instance.
-        """
-        # pylint:disable=R0201
-        raised_to = max([rgp.contributed for rgp in game.rgps])
-        call_amount = min(rgp.stack, raised_to - rgp.contributed)
-        bet_lower = raised_to + game.increment  # min-raise
-        bet_higher = rgp.stack + rgp.contributed  # shove
-        if bet_higher < bet_lower:  # i.e. all in
-            bet_lower = bet_higher
-        if game.situation.is_limit:
-            bet_higher = bet_lower  # minraise is only option for limit
-        can_raise = bet_lower > raised_to  # i.e. there is a valid bet
-        is_capped = (game.situation.is_limit and  # No limit is never capped
-            game.bet_count >= 4)  # Not capped until 4 bets in
-        can_raise = can_raise and not is_capped
-        if can_raise:
-            return dtos.ActionOptions(call_cost=call_amount,
-                                      is_raise=raised_to != 0,
-                                      min_raise=bet_lower,
-                                      max_raise=bet_higher)
-        else:
-            return dtos.ActionOptions(call_amount)
     
     def _get_game(self, gameid, userid=None):
         """
@@ -529,8 +567,7 @@ class API(object):
         if game.current_rgp is None:
             current_options = None
         else:
-            current_options = self._calculate_current_options(game,
-                                                              game.current_rgp)
+            current_options = calculate_current_options(game, game.current_rgp)
         return dtos.RunningGameHistory(game_details, history_items,
                                        current_options)        
 
