@@ -9,7 +9,7 @@ import logging
 from sqlalchemy.exc import IntegrityError
 import itertools
 from rvr.poker.handrange import HandRange
-from rvr.poker.range import range_sum_equal
+from rvr.poker.action import range_sum_equal
 
 #pylint:disable=R0903
 
