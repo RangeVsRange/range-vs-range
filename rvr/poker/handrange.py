@@ -35,10 +35,14 @@ RE_CLOSED_UNPAIRED = re.compile(r"^([2-9TJQKA])([2-9TJQKA])(o|s|)-"
                                  + r"\1([2-9TJQKA])\3$")
 RE_OPEN_UNPAIRED = re.compile(r"^([2-9TJQKA])(?!\1)([2-9TJQKA])(o|s|)\+$")
 
-def between(card1, card2):
-    indeces = sorted([ALL_RANKS.find(card1), ALL_RANKS.find(card2)])
+def between(rank1, rank2):
+    """
+    Returns a list of all ranks between rank1 and rank2, inclusive.
+    rank2 can be higher or lower or the same as rank1.
+    """
+    indeces = sorted([ALL_RANKS.find(rank1), ALL_RANKS.find(rank2)])
     if -1 in indeces:
-        raise ValueError("Bad cards for between(): " + card1 + "," + card2)
+        raise ValueError("Bad cards for between(): " + rank1 + "," + rank2)
     return [ALL_RANKS[i] for i in range(indeces[0], indeces[1] + 1)]
 
 def weightedChoice(items):
@@ -58,6 +62,9 @@ def weightedChoice(items):
     return item
 
 def subrange(part):
+    """
+    Interprets a weighted subrange, e.g. 'AQo+(3)' -> ('AQo+', 3)
+    """
     match = RE_SUBRANGE.match(part)
     if not match:
         raise ValueError('Hand range part ' + part + ' is invalid')
@@ -77,6 +84,7 @@ def handsInSubrange(cards):
     Return a list of the specific hands in this subrange
     e.g. Kh7c - but not both Kh7c and 7cKh
     """
+    # pylint:disable=R0911
     if cards == NOTHING:
         return []
     if cards == ANYTHING:
@@ -181,8 +189,10 @@ def _odds_and_evens(mnemonics):
     mnemonics = set([tuple(o) for o in mnemonics])  # remove duplicates
     potential = {}
     for m1, m2 in mnemonics:
-        r1 = m1[0]; s1 = m1[1]
-        r2 = m2[0]; s2 = m2[1]
+        r1 = m1[0]
+        s1 = m1[1]
+        r2 = m2[0]
+        s2 = m2[1]
         if r1 == r2:  # pair
             key = r1 * 2
         else:  # non-pair
@@ -237,12 +247,14 @@ def _colate_group(g):
     may be pairs, suited, or offsuit
     returns a list of range parts, e.g. ["AA", "TT", "99"] -> ["AA", "TT-99"]
     """
+    # pylint:disable=R0912
     # I know this code reads weird
     if not g:
         return []
     is_pairs = (g[0][0] == g[0][1])
     prefix = g[0][0]  # only means anything for non-pair hands
-    primary = Rank.from_mnemonic(prefix)  # only means anything for non-pair hands
+    # only means anything for non-pair hands
+    primary = Rank.from_mnemonic(prefix)
     postfix = g[0][2:]  # only means anything for non-pair hands
     secondaries = [text[1] for text in g]
     ranks = [Rank.from_mnemonic(ch) for ch in secondaries]
@@ -280,18 +292,21 @@ def _colate_group(g):
             if is_pairs:
                 results.append(RANK_INVERT[group[0]] * 2)
             else:
-                results.append("%s%s%s" % (prefix, RANK_INVERT[group[0]], postfix))
+                results.append("%s%s%s" % (prefix, RANK_INVERT[group[0]],
+                                           postfix))
         else:
             if is_pairs:
                 if group[0] == ACE:
                     results.append("%s+" % (RANK_INVERT[group[-1]] * 2))
                 else:
-                    results.append("-".join([RANK_INVERT[group[0]] * 2, RANK_INVERT[group[-1]] * 2]))
+                    results.append("-".join([RANK_INVERT[group[0]] * 2,
+                                             RANK_INVERT[group[-1]] * 2]))
             else:
                 # this now may be a "AJs-ATs" type hand or "ATs+" type hand
                 # the condition is: the secondary of the second element is the
                 # next lowest rank than the secondary of the first.
-                if RANKS_LOW_TO_HIGH.index(primary) - RANKS_LOW_TO_HIGH.index(group[0]) == 1:
+                if RANKS_LOW_TO_HIGH.index(primary)  \
+                    - RANKS_LOW_TO_HIGH.index(group[0]) == 1:
                     results.append("%s%s%s+" %
                                    (prefix, RANK_INVERT[group[-1]], postfix))
                 else:
@@ -308,7 +323,9 @@ def _unweighted_mnemonics_to_parts(mnemonics):
     return value is a list of sub-part descriptions (strings)
     """
     mnemonics = [_order_option(o) for o in mnemonics]
-    results = []  # list of string, each is a subpart, e.g. "AhKh", "AKs", "AKs-AQs", "AQs+", etc.
+    # list of string, each is a subpart,
+    # e.g. "AhKh", "AKs", "AKs-AQs", "AQs+", etc.
+    results = []
     # step 1:
     # - group mnemonics that are the same preflop hand
     # - where the hand isn't full, move them to the result
@@ -359,6 +376,9 @@ def weighted_options_to_description(options):
                 parts.append(part)
     # sort them too, for standardisation
     def key_part(part):
+        """
+        returns a comparison key for a part
+        """
         if part[1] in SUIT_MAP.keys():
             # odds
             is_pair = part[0] == part[2]
@@ -388,9 +408,15 @@ def remove_board_from_range(hand_range, board):
     return HandRange(description)
 
 def _cmp_options(a, b):
+    """
+    compare unweighted options
+    """
     return cmp(sorted(a), sorted(b))
 
 def _cmp_weighted_options(a, b):
+    """
+    compare weighted options
+    """
     return _cmp_options(a[0], b[0]) or cmp(a[1], b[1])
 
 def reweight(new, old):
@@ -420,6 +446,9 @@ def reweight(new, old):
     return HandRange(description)
 
 class HandRange(pb.Copyable, pb.RemoteCopy):
+    """
+    Represents a hand range! (Texas Hold'em only.)
+    """
     def __init__(self, description):
         self.description = str(description)
         if description == NOTHING:
@@ -432,9 +461,16 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         return "HandRange(description=%r)" % self.description
     
     def isEmpty(self):
+        """
+        Is this hand range nothing? E.g. when facing an all in, your raising
+        range will be nothing.
+        """
         return not self.subranges
     
     def polarised(self, board = None):
+        """
+        Returns an unweighted equivalent of this hand range.
+        """
         original = self.generateOptions(board)
         maxweight = max([o[1] for o in original])
         results = []
@@ -505,6 +541,9 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         return pick
         
     def validate(self):
+        """
+        Check that this HandRange's description is valid.
+        """
         options = self.generateOptions()
         hands = [hand for hand, _weight in options]
         if len(hands) != len(set(hands)):
@@ -513,6 +552,10 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
 pb.setUnjellyableForClass(HandRange, HandRange)
 
 class IncompatibleRangesError(RuntimeError):
+    """
+    Occur when players in a game have incompatible ranges. E.g. my range is
+    'AhAs' and your range is 'AcAs'.
+    """
     pass
 
 def deal_from_ranges(range_map, board):
@@ -538,7 +581,12 @@ def deal_from_ranges(range_map, board):
                 (range_map, board))
 
 class Test(unittest.TestCase):
+    """
+    Unit test class
+    """
+    # pylint:disable = R0904
     def test_order_option(self):
+        """ Test _order_option """
         self.assertEqual(_order_option(["Ah", "Ad"]), ["Ah", "Ad"])
         self.assertEqual(_order_option(["Ad", "Ah"]), ["Ah", "Ad"])
         self.assertEqual(_order_option(["Ad", "Ks"]), ["Ad", "Ks"])
@@ -547,6 +595,7 @@ class Test(unittest.TestCase):
         self.assertEqual(_order_option(["As", "Ks"]), ["As", "Ks"])
         
     def test_create_group(self):
+        """ Test _colate_group """
         self.assertEqual(_colate_group(["88", "TT", "AA", "99"]),
                          ["AA", "TT-88"])
         self.assertEqual(_colate_group(["A8", "AT", "AK", "A9"]),
@@ -557,6 +606,7 @@ class Test(unittest.TestCase):
                          ["AKo", "ATo-A8o"])
         
     def test_unweighted_options_to_description(self):
+        """ Test _unweighted_mnemonics_to_parts """
         options = [["Ah","Kh"], ["Kd","Ad"], ["Ac","Kc"], ["Ks","As"],
                    ["As","Ad"],
                    ["Kh","Kc"], ["Kc","Ks"], ["Ks","Kd"], ["Kd","Kh"],
@@ -569,6 +619,7 @@ class Test(unittest.TestCase):
                          set(parts))
         
     def test_weighted_options_to_description(self):
+        """ Test _weighted_options_to_description """
         valid = ["KK+(2),99,5s5h,5s5c,5h5c,5d5c,44,22,A4s,KJs,K8s-K6s," +
                     "Ks4s,Kh4h,Q4s,J4s,T4s+,94s,84s,74s,64s,54s,Q9o,T7o,Ts6h," +
                     "Ts6d,Ts6c,Th6s,Th6d,Th6c,Td6s,Td6c,Tc6s,Tc6h,T5o-T2o," +
@@ -590,6 +641,7 @@ class Test(unittest.TestCase):
             self.assertEqual(v, final, "expected '%s', got '%s" % (v, final))
     
     def test_generateOptionsUnweighted(self):
+        """ Test HandRange.generateOptionsUnweighted """
         valid = HandRange("AA(3),AKo(3)")
         invalid = HandRange("AA(3),AKo(2)")
         options = valid.generateOptionsUnweighted()
@@ -601,6 +653,7 @@ class Test(unittest.TestCase):
             pass
     
     def test_reweight(self):
+        """ Test reweight """
         # tuples of old, new, result
         inputs = [("AA", "AA", "AA"),
                   ("AA,KK", "KK", "KK"),
