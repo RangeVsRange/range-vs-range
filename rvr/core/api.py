@@ -9,7 +9,7 @@ import logging
 from sqlalchemy.exc import IntegrityError
 import itertools
 from rvr.poker.handrange import HandRange
-from rvr.poker.action import range_sum_equal
+from rvr.poker.action import range_sum_equal, calculate_current_options
 
 #pylint:disable=R0903
 
@@ -19,32 +19,6 @@ PREFLOP = "preflop"
 FLOP = "flop"
 TURN = "turn"
 RIVER = "river"
-
-def calculate_current_options(game, rgp):
-    """
-    Determines what options the current player has in a running game.
-    
-    Returns a dtos.ActionOptions instance.
-    """
-    raised_to = max([rgp.contributed for rgp in game.rgps])
-    call_amount = min(rgp.stack, raised_to - rgp.contributed)
-    bet_lower = raised_to + game.increment  # min-raise
-    bet_higher = rgp.stack + rgp.contributed  # shove
-    if bet_higher < bet_lower:  # i.e. all in
-        bet_lower = bet_higher
-    if game.situation.is_limit:
-        bet_higher = bet_lower  # minraise is only option for limit
-    can_raise = bet_lower > raised_to  # i.e. there is a valid bet
-    is_capped = (game.situation.is_limit and  # No limit is never capped
-        game.bet_count >= 4)  # Not capped until 4 bets in
-    can_raise = can_raise and not is_capped
-    if can_raise:
-        return dtos.ActionOptions(call_cost=call_amount,
-                                  is_raise=raised_to != 0,
-                                  min_raise=bet_lower,
-                                  max_raise=bet_higher)
-    else:
-        return dtos.ActionOptions(call_amount)
 
 def validate_action(action, options, range_):
     """

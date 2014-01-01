@@ -45,14 +45,14 @@ def between(rank1, rank2):
         raise ValueError("Bad cards for between(): " + rank1 + "," + rank2)
     return [ALL_RANKS[i] for i in range(indeces[0], indeces[1] + 1)]
 
-def weightedChoice(items):
+def weighted_choice(items):
     """items is a list in the form [(option, weight), ...]"""
     weight_total = sum((item[1] for item in items))
     invalids = [item[1] for item in items if item[1] < 0]
     if invalids:
-        raise ValueError("weightedChoice() invalid weights: " + str(invalids))
+        raise ValueError("weighted_choice() invalid weights: " + str(invalids))
     if weight_total < 1:
-        raise ValueError("weightedChoice() needs at least"
+        raise ValueError("weighted_choice() needs at least"
                          "one positive weight")
     count = random.randint(0, weight_total - 1)
     for item, weight in items:
@@ -79,7 +79,7 @@ def subrange(part):
     cards = match.group(1)
     return (cards, weight)
 
-def handsInSubrange(cards):
+def hands_in_subrange(cards):
     """
     Return a list of the specific hands in this subrange
     e.g. Kh7c - but not both Kh7c and 7cKh
@@ -403,7 +403,7 @@ def remove_board_from_range(hand_range, board):
     """
     returns a new hand_range, with no options that contain any hand in board
     """
-    options = hand_range.generateOptions(board)
+    options = hand_range.generate_options(board)
     description = weighted_options_to_description(options)
     return HandRange(description)
 
@@ -427,8 +427,8 @@ def reweight(new, old):
     # do this based on options for both
     # iterate through all options of new and set the weight of each to the
     # weight of the corresponding option in old
-    options_new = new.generateOptions()
-    options_old = old.generateOptions()
+    options_new = new.generate_options()
+    options_old = old.generate_options()
     options_new.sort(cmp=_cmp_weighted_options)
     options_old.sort(cmp=_cmp_weighted_options)
     results = []
@@ -460,7 +460,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
     def __repr__(self):
         return "HandRange(description=%r)" % self.description
     
-    def isEmpty(self):
+    def is_empty(self):
         """
         Is this hand range nothing? E.g. when facing an all in, your raising
         range will be nothing.
@@ -471,7 +471,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         """
         Returns an unweighted equivalent of this hand range.
         """
-        original = self.generateOptions(board)
+        original = self.generate_options(board)
         maxweight = max([o[1] for o in original])
         results = []
         for o in original:
@@ -479,7 +479,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
                 results.append((o[0], 1))
         return HandRange(weighted_options_to_description(results))
 
-    def generateOptions(self, board = None):
+    def generate_options(self, board = None):
         """
         option is a list of (hand, weight)
         """
@@ -488,7 +488,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         # it's really nice for this to be a list, for self.polarise_weights
         options = []
         for part, weight in self.subranges:
-            option_mnemonics = handsInSubrange(part)  # list of e.g. "AhKh"
+            option_mnemonics = hands_in_subrange(part)  # list of e.g. "AhKh"
             not_excluded = lambda hand: (hand[0:2] not in excluded_mnemonics
                 and hand[2:4] not in excluded_mnemonics)
             option_mnemonics = [o for o in option_mnemonics if not_excluded(o)]
@@ -497,7 +497,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
             options.extend([(hand, weight) for hand in hands])
         return options
     
-    def generateOptionsUnweighted(self, board = None):
+    def generate_options_unweighted(self, board = None):
         """
         just hand, no weight
         error if weights are not all the same
@@ -512,7 +512,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
                 first_weight = weight
             elif weight != first_weight:
                 raise ValueError("range is not evenly weighted")
-            option_mnemonics = handsInSubrange(part)  # list of e.g. "AhKh"
+            option_mnemonics = hands_in_subrange(part)  # list of e.g. "AhKh"
             not_excluded = lambda hand: (hand[0:2] not in excluded_mnemonics
                 and hand[2:4] not in excluded_mnemonics)
             option_mnemonics = [o for o in option_mnemonics if not_excluded(o)]
@@ -522,7 +522,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         return options
         
     
-    def generateHand(self, board = None):
+    def generate_hand(self, board = None):
         """
         Generate a pair of pocket cards for Holdem, based on self.description
         and excluding board cards.
@@ -533,10 +533,10 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
          - ranges are defined without knowledge of board cards
          - we don't want to transmit options over the wire
         """
-        options = self.generateOptions(board)
+        options = self.generate_options(board)
         if not options:
             raise ValueError("No valid options to generate hand from")
-        pick = list(weightedChoice(options))
+        pick = list(weighted_choice(options))
         random.shuffle(pick)
         return pick
         
@@ -544,7 +544,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         """
         Check that this HandRange's description is valid.
         """
-        options = self.generateOptions()
+        options = self.generate_options()
         hands = [hand for hand, _weight in options]
         if len(hands) != len(set(hands)):
             raise ValueError("Duplicate hands in range: %s" % self.description)
@@ -565,7 +565,7 @@ def deal_from_ranges(range_map, board):
     """
     count = 0
     while True:
-        result = {k: r.generateHand(board) for k, r in range_map.iteritems()}
+        result = {k: r.generate_hand(board) for k, r in range_map.iteritems()}
         all_cards = [card for hand in result.values() for card in hand]
         all_cards.extend(board)
         if len(all_cards) == len(set(all_cards)):
@@ -627,7 +627,7 @@ class Test(unittest.TestCase):
                  "AsKs(2),AhKh(2),AdKd,AcKc(2)"]
         for v in valid:
             handrange = HandRange(v)
-            options = handrange.generateOptions()
+            options = handrange.generate_options()
             final = weighted_options_to_description(options)
             self.assertEqual(v, final)
         convert = {
@@ -636,18 +636,18 @@ class Test(unittest.TestCase):
             "AsKs(2),KcAc(2),KhAh(2),AdKd(1)": "AsKs(2),AhKh(2),AdKd,AcKc(2)"}
         for k, v in convert.iteritems():
             handrange = HandRange(k)
-            options = handrange.generateOptions()
+            options = handrange.generate_options()
             final = weighted_options_to_description(options)
             self.assertEqual(v, final, "expected '%s', got '%s" % (v, final))
     
-    def test_generateOptionsUnweighted(self):
-        """ Test HandRange.generateOptionsUnweighted """
+    def test_generate_options_unweighted(self):
+        """ Test HandRange.generate_options_unweighted """
         valid = HandRange("AA(3),AKo(3)")
         invalid = HandRange("AA(3),AKo(2)")
-        options = valid.generateOptionsUnweighted()
+        options = valid.generate_options_unweighted()
         self.assertEqual(len(options), 18)
         try:
-            options = invalid.generateOptionsUnweighted()
+            options = invalid.generate_options_unweighted()
             self.assert_(False, "should raise ValueError")
         except ValueError as _ex:
             pass

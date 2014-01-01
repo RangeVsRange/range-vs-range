@@ -2,6 +2,7 @@
 Range-oriented poker functionality
 """
 from rvr.infrastructure.util import concatenate
+from rvr.core import dtos
 
 def _cmp_options(first, second):
     """
@@ -32,8 +33,8 @@ def range_sum_equal(fold_range, passive_range, aggressive_range,
     Returns validity (boolean), and reason (string, or None if valid)
     """
     try:
-        original_hand_options = original_range.generateOptions()
-        all_ranges_hand_options = concatenate([r.generateOptions()
+        original_hand_options = original_range.generate_options()
+        all_ranges_hand_options = concatenate([r.generate_options()
             for r in [fold_range, passive_range, aggressive_range]])
     except ValueError:
         return False, "invalid range description"
@@ -82,3 +83,29 @@ def range_sum_equal(fold_range, passive_range, aggressive_range,
             return False, message
         prev = new
     return True, None
+
+def calculate_current_options(game, rgp):
+    """
+    Determines what options the current player has in a running game.
+    
+    Returns a dtos.ActionOptions instance.
+    """
+    raised_to = max([rgp.contributed for rgp in game.rgps])
+    call_amount = min(rgp.stack, raised_to - rgp.contributed)
+    bet_lower = raised_to + game.increment  # min-raise
+    bet_higher = rgp.stack + rgp.contributed  # shove
+    if bet_higher < bet_lower:  # i.e. all in
+        bet_lower = bet_higher
+    if game.situation.is_limit:
+        bet_higher = bet_lower  # minraise is only option for limit
+    can_raise = bet_lower > raised_to  # i.e. there is a valid bet
+    is_capped = (game.situation.is_limit and  # No limit is never capped
+        game.bet_count >= 4)  # Not capped until 4 bets in
+    can_raise = can_raise and not is_capped
+    if can_raise:
+        return dtos.ActionOptions(call_cost=call_amount,
+                                  is_raise=raised_to != 0,
+                                  min_raise=bet_lower,
+                                  max_raise=bet_higher)
+    else:
+        return dtos.ActionOptions(call_amount)
