@@ -15,7 +15,7 @@ from rvr.poker.action import range_sum_equal, calculate_current_options, PREFLOP
 
 GAME_HISTORY_TABLES = [tables.GameHistoryUserRange]
 
-def validate_action(action, options, range_):
+def validate_action(action, options, range_raw):
     """
     Check that action is valid and return any error.
     """
@@ -26,7 +26,7 @@ def validate_action(action, options, range_):
     fold_range = HandRange(action.fold_range)
     passive_range = HandRange(action.passive_range)
     aggressive_range = HandRange(action.aggressive_range)
-    original_range = HandRange(range_)
+    original_range = HandRange(range_raw)
     is_valid, _reason = range_sum_equal(fold_range, passive_range,
                                         aggressive_range, original_range)
     if is_valid:
@@ -118,12 +118,12 @@ class API(object):
             stack=198,
             contributed=2,
             left_to_act=True,
-            range_='anything')
+            range_raw='anything')
         btn = dtos.SituationPlayerDetails(
             stack=199,
             contributed=1,
             left_to_act=True,
-            range_='anything')
+            range_raw='anything')
         situation = dtos.SituationDetails(
             description="Heads-up preflop, 100 BB",
             players=[bb, btn],  # bb acts first in future rounds
@@ -250,7 +250,7 @@ class API(object):
             child.order = order
             child.stack = player.stack
             child.contributed = player.contributed
-            child.range = player.range
+            child.range_raw = player.range_raw
             child.left_to_act = player.left_to_act
             self.session.add(child)
     
@@ -330,7 +330,8 @@ class API(object):
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
-        # TODO: 0: deal_from_ranges(map_rgp_to_range, running_game.board)
+        map_to_range = {p: p.range for p in situation.players}
+        player_to_dealt = deal_from_ranges(map_to_range, running_game.board)
         for order, (ogp, s_p) in enumerate(zip(all_ogps, situation_players)):
             # create rgps in the order they will act in future rounds
             rgp = tables.RunningGameParticipant()
@@ -339,10 +340,10 @@ class API(object):
             rgp.order = order
             rgp.stack = s_p.stack
             rgp.contributed = s_p.contributed
-            rgp.range = s_p.range
+            rgp.range_raw = s_p.range_raw
             rgp.left_to_act = s_p.left_to_act
             rgp.folded = False
-            rgp.cards_dealt = "" # TODO: 0
+            rgp.cards_dealt = player_to_dealt[s_p]
             if situation.current_player_num == order:
                 assert running_game.current_userid == ogp.userid
             self.session.add(rgp)
@@ -354,7 +355,7 @@ class API(object):
         logging.debug("Started game %d", open_game.gameid)
         return running_game
     
-    def _set_rgp_range(self, rgp, range_):
+    def _set_rgp_range(self, rgp, range_raw):
         """
         Record that this user now has this range in this game, in the hand
         history.
@@ -366,7 +367,7 @@ class API(object):
         range_element.gameid = base.gameid
         range_element.order = base.order
         range_element.userid = rgp.userid
-        range_element.range = range_
+        range_element.range_raw = range_raw
         rgp.game.next_hh += 1
         self.session.add(base)
         self.session.add(range_element)
@@ -492,7 +493,7 @@ class API(object):
             return self.ERR_NOT_USERS_TURN
         current_options = calculate_current_options(game, rgp)
         # check that their range action is valid for their options + range
-        err = validate_action(range_action, current_options, rgp.range)
+        err = validate_action(range_action, current_options, rgp.range_raw)
         if err:
             return err
         # TODO: perform_action

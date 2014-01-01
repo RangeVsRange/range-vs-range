@@ -479,7 +479,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
                 results.append((o[0], 1))
         return HandRange(weighted_options_to_description(results))
 
-    def generate_options(self, board = None):
+    def generate_options(self, board=None):
         """
         option is a list of (hand, weight)
         """
@@ -497,7 +497,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
             options.extend([(hand, weight) for hand in hands])
         return options
     
-    def generate_options_unweighted(self, board = None):
+    def generate_options_unweighted(self, board=None):
         """
         just hand, no weight
         error if weights are not all the same

@@ -87,16 +87,16 @@ class SituationPlayerDetails(object):
     """
     Player-specific information for a situation.
     """
-    def __init__(self, stack, contributed, left_to_act, range_):
+    def __init__(self, stack, contributed, left_to_act, range_raw):
         self.stack = stack
         self.contributed = contributed
         self.left_to_act = left_to_act
-        self.range = range_
+        self.range_raw = range_raw
 
     def __repr__(self):
         return ("SituationPlayerDetails(stack=%r, contributed=%r, " +  \
             "left_to_act=%r, range=%r)") % (self.stack, self.contributed,
-            self.left_to_act, self.range)
+            self.left_to_act, self.range_raw)
 
 class SituationDetails(object):
     """
@@ -143,7 +143,7 @@ class SituationDetails(object):
         players = [SituationPlayerDetails(stack=player.stack,
                                           contributed=player.contributed,
                                           left_to_act=player.left_to_act,
-                                          range_=player.range)
+                                          range_raw=player.range_raw)
                    for player in ordered]
         return cls(description=situation.description,
                    players=players,
@@ -220,21 +220,21 @@ class RunningGameParticipantDetails(object):
     """
     details of a user and their participation in a game
     """
-    def __init__(self, user, order, stack, contributed, range_, left_to_act,
+    def __init__(self, user, order, stack, contributed, range_raw, left_to_act,
                  folded):
         self.user = user  # UserDetails
         self.order = order  # 0 is first to left of dealer
         self.stack = stack
         self.contributed = contributed
-        self.range = range_
+        self.range_raw = range_raw
         self.left_to_act = left_to_act
         self.folded = folded
     
     def __repr__(self):
         return ("RunningGameParticipantDetails(user=%r, order=%r, stack=%r, " +
                 "contributed=%r, range=%r, left_to_act=%r, folded=%r)") %  \
-            (self.user, self.order, self.stack, self.contributed, self.range,
-             self.left_to_act, self.folded)
+            (self.user, self.order, self.stack, self.contributed,
+             self.range_raw, self.left_to_act, self.folded)
     
     @classmethod
     def from_rgp(cls, rgp):
@@ -242,7 +242,7 @@ class RunningGameParticipantDetails(object):
         Create object from tables.RunningGameParticipant
         """
         user = UserDetails.from_user(rgp.user)
-        return cls(user, rgp.order, rgp.stack, rgp.contributed, rgp.range,
+        return cls(user, rgp.order, rgp.stack, rgp.contributed, rgp.range_raw,
                    rgp.left_to_act, rgp.folded)
 
 class RunningGameDetails(object):
@@ -317,24 +317,24 @@ class GameItemUserRange(GameItem):
     """
     user has range
     """
-    def __init__(self, user, range_):
+    def __init__(self, user, range_raw):
         """
         user is a UserDetails
         range is a string describing the range
         """
         self.user = user
-        self.range = range_
+        self.range_raw = range_raw
     
     def __repr__(self):
         return "GameItemUserRange(user=%r, range=%r)" %  \
-            (self.user, self.range)
+            (self.user, self.range_raw)
     
     def __str__(self):
-        if self.range:
-            range_ = self.range
+        if self.range_raw:
+            range_raw = self.range_raw
         else:
-            range_ = 'anything'
-        return "%s's range is: %s" % (self.user.screenname, range_)
+            range_raw = 'anything'
+        return "%s's range is: %s" % (self.user.screenname, range_raw)
 
     @classmethod
     def from_history_item(cls, item):
@@ -342,7 +342,7 @@ class GameItemUserRange(GameItem):
         Create from a GameHistoryUserRange
         """
         user_details = UserDetails.from_user(item.user)
-        return cls(user_details, item.range)
+        return cls(user_details, item.range_raw)
         
     def should_include_for(self, userid):
         """

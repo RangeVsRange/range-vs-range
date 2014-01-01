@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
 from sqlalchemy.types import Float
 from rvr.poker.cards import Card
+from rvr.poker.handrange import HandRange, weighted_options_to_description
 
 #pylint:disable=W0232,R0903
 
@@ -25,7 +26,7 @@ class User(BASE):
         return "User(userid='%s', screenname='%s', email='%s')" %  \
             (self.userid, self.screenname, self.email)
 
-class SituationPlayer(BASE):
+class SituationPlayer(BASE, object):
     """
     Details of a player in a situation
     """
@@ -35,12 +36,26 @@ class SituationPlayer(BASE):
     order = Column(Integer, primary_key=True)
     stack = Column(Integer, nullable=False)
     contributed = Column(Integer, nullable=False)
-    range = Column(String, nullable=False)
+    range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
 
     situation = relationship("Situation", primaryjoin=  \
         "Situation.situationid==SituationPlayer.situationid",
         backref="players")
+    
+    # attributes
+    def get_range(self):
+        """
+        Get range, as HandRange instance
+        """
+        return HandRange(self.range_raw)
+    def set_range(self, range_):
+        """
+        Set range, from HandRange instance
+        """
+        self.range_raw =  \
+            weighted_options_to_description(range_.generate_options())
+    range = property(get_range, set_range)    
 
 class Situation(BASE):
     """
@@ -140,7 +155,7 @@ class RunningGame(BASE, object):
         self.board_raw = ''.join([card.to_mnemonic() for card in cards])
     board = property(get_board, set_board)
 
-class RunningGameParticipant(BASE):
+class RunningGameParticipant(BASE, object):
     """
     Association object for the many-to-many relationship between users and
     running games.
@@ -153,16 +168,39 @@ class RunningGameParticipant(BASE):
     # game state
     stack = Column(Integer, nullable=False)
     contributed = Column(Integer, nullable=False)
-    range = Column(String, nullable=False)
+    range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     folded = Column(Boolean, nullable=False)
     # note importantly, this is a secret from the user!
-    cards_dealt = Column(String, nullable=False)
+    cards_dealt_raw = Column(String, nullable=False)
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"),
         primaryjoin="RunningGame.gameid==RunningGameParticipant.gameid")
     # attributes
+    def get_range(self):
+        """
+        Get range, as HandRange instance
+        """
+        return HandRange(self.range_raw)
+    def set_range(self, range_):
+        """
+        Set range, from HandRange instance
+        """
+        self.range_raw =  \
+            weighted_options_to_description(range_.generate_options())
+    range = property(get_range, set_range)
+    def get_cards_dealt(self):
+        """
+        Get cards dealt, as list of two Card
+        """
+        return Card.many_from_text(self.cards_dealt_raw)
+    def set_cards_dealt(self, cards):
+        """
+        Set cards dealt, from list of two Card
+        """
+        self.cards_dealt_raw = ''.join([card.to_mnemonic() for card in cards])
+    cards_dealt = property(get_cards_dealt, set_cards_dealt)
 
 class GameHistoryBase(BASE):
     """
@@ -190,7 +228,7 @@ class GameHistoryUserRange(BASE):
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     # longest possible range = 6,629 chars
-    range = Column(String, nullable=False)
+    range_raw = Column(String, nullable=False)
 
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryUserRange.gameid," +  \
