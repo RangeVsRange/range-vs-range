@@ -27,6 +27,10 @@ def validate_action(action, options, range_raw):
     passive_range = HandRange(action.passive_range)
     aggressive_range = HandRange(action.aggressive_range)
     original_range = HandRange(range_raw)
+    # TODO: 0: port the old range_action_fits, because this is not enough.
+    # E.g. we don't recognise that it's invalid to have a raising range when
+    # there's no option to raise.
+    # TODO: 0: also, port the unit tests!
     is_valid, _reason = range_sum_equal(fold_range, passive_range,
                                         aggressive_range, original_range)
     if is_valid:

@@ -113,4 +113,4 @@ def calculate_current_options(game, rgp):
                                   min_raise=bet_lower,
                                   max_raise=bet_higher)
     else:
-        return dtos.ActionOptions(call_amount)    
+        return dtos.ActionOptions(call_amount)
