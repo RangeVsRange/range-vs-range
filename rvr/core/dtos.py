@@ -104,10 +104,10 @@ class SituationDetails(object):
     enough to specify a new one.
     """
     def __init__(self, description, players, current_player, is_limit,
-                 big_blind, board, current_round, pot_pre, increment,
+                 big_blind, board_raw, current_round, pot_pre, increment,
                  bet_count):
         """
-        Note that board can contain fewer cards than current_round would
+        Note that board_raw can contain fewer cards than current_round would
         suggest (e.g. to allow flop situations with random flops), but it can't
         contain more.
         
@@ -120,7 +120,7 @@ class SituationDetails(object):
         self.current_player = current_player
         self.is_limit = is_limit
         self.big_blind = big_blind
-        self.board = board
+        self.board_raw = board_raw
         self.current_round = current_round
         self.pot_pre = pot_pre
         self.increment = increment
@@ -128,10 +128,10 @@ class SituationDetails(object):
     
     def __repr__(self):
         return ("SituationDetails(description=%r, players=%r, " +
-            "current_player=%r, is_limit=%r, big_blind=%r, board=%r, " + 
+            "current_player=%r, is_limit=%r, big_blind=%r, board_raw=%r, " + 
             "current_round=%r, pot_pre=%r, increment=%r, bet_count=%r)") %  \
             (self.description, self.players, self.current_player, self.is_limit,
-             self.big_blind, self.board, self.current_round, self.pot_pre,
+             self.big_blind, self.board_raw, self.current_round, self.pot_pre,
              self.increment, self.bet_count)
         
     @classmethod
@@ -150,7 +150,7 @@ class SituationDetails(object):
                    current_player=situation.current_player_num,
                    is_limit=situation.is_limit,
                    big_blind=situation.big_blind,
-                   board=situation.board,
+                   board_raw=situation.board_raw,
                    current_round=situation.current_round,
                    pot_pre=situation.pot_pre,
                    increment=situation.increment,
@@ -249,12 +249,12 @@ class RunningGameDetails(object):
     """
     details of a game, including game state (more than RunningGameSummary)
     """
-    def __init__(self, gameid, situation, current_player, board, current_round,
-                 pot_pre, increment, bet_count, rgp_details):
+    def __init__(self, gameid, situation, current_player, board_raw,
+                 current_round, pot_pre, increment, bet_count, rgp_details):
         self.gameid = gameid
         self.situation = situation  # SituationDetails
         self.current_player = current_player # RGPDetails
-        self.board = board
+        self.board_raw = board_raw
         self.current_round = current_round
         self.pot_pre = pot_pre
         self.increment = increment
@@ -263,9 +263,9 @@ class RunningGameDetails(object):
     
     def __repr__(self):
         return ("RunningGameDetails(gameid=%r, situation=%r, " +
-                "current_player=%r, board=%r, current_round=%r, pot_pre=%r, " +
-                "increment=%r, bet_count=%r, rgp_details=%r") %  \
-            (self.gameid, self.situation, self.current_player, self.board,
+                "current_player=%r, board_raw=%r, current_round=%r, " +  \
+                "pot_pre=%r, increment=%r, bet_count=%r, rgp_details=%r") %  \
+            (self.gameid, self.situation, self.current_player, self.board_raw,
              self.current_round, self.pot_pre, self.increment, self.bet_count,
              self.rgp_details)
     
@@ -279,7 +279,7 @@ class RunningGameDetails(object):
                        for rgp in game.rgps]
         current_player = [r for r in rgp_details
                           if r.user.userid == game.current_rgp.userid][0]
-        return cls(game.gameid, situation, current_player, game.board,
+        return cls(game.gameid, situation, current_player, game.board_raw,
                    game.current_round, game.pot_pre, game.increment,
                    game.bet_count, rgp_details)
 

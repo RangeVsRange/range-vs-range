@@ -4,6 +4,11 @@ Range-oriented poker functionality
 from rvr.infrastructure.util import concatenate
 from rvr.core import dtos
 
+PREFLOP = "preflop"
+FLOP = "flop"
+TURN = "turn"
+RIVER = "river"
+
 def _cmp_options(first, second):
     """
     Compare unweighted options
@@ -21,7 +26,7 @@ def _option_to_text(option):
     option is set of two Card
     return something like "AhAd" (highest card first)
     """
-    return "".join([o.ro_mnemonic() for o in sorted(option, reverse=True)])
+    return "".join([o.to_mnemonic() for o in sorted(option, reverse=True)])
 
 def range_sum_equal(fold_range, passive_range, aggressive_range,
                     original_range):
@@ -108,4 +113,4 @@ def calculate_current_options(game, rgp):
                                   min_raise=bet_lower,
                                   max_raise=bet_higher)
     else:
-        return dtos.ActionOptions(call_amount)
+        return dtos.ActionOptions(call_amount)    

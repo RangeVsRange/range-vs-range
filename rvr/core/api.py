@@ -8,17 +8,12 @@ from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
 import itertools
-from rvr.poker.handrange import HandRange
-from rvr.poker.action import range_sum_equal, calculate_current_options
+from rvr.poker.handrange import HandRange, deal_from_ranges
+from rvr.poker.action import range_sum_equal, calculate_current_options, PREFLOP
 
 #pylint:disable=R0903
 
 GAME_HISTORY_TABLES = [tables.GameHistoryUserRange]
-
-PREFLOP = "preflop"
-FLOP = "flop"
-TURN = "turn"
-RIVER = "river"
 
 def validate_action(action, options, range_):
     """
@@ -135,7 +130,7 @@ class API(object):
             current_player=1,  # btn acts next (this round)
             is_limit=False,
             big_blind=2,
-            board='',
+            board_raw='',
             current_round=PREFLOP,
             pot_pre=0,
             increment=2,
@@ -242,7 +237,7 @@ class API(object):
         situation.participants = len(dto.players)
         situation.is_limit = dto.is_limit
         situation.big_blind = dto.big_blind
-        situation.board = dto.board
+        situation.board_raw = dto.board_raw
         situation.current_round = dto.current_round
         situation.pot_pre = dto.pot_pre
         situation.increment = dto.increment
@@ -326,14 +321,16 @@ class API(object):
         # we have to calculate current userid in advance so we can flush
         running_game.current_userid =  \
             all_ogps[situation.current_player_num].userid
-        running_game.board = situation.board
+        running_game.board_raw = situation.board_raw
         running_game.current_round = situation.current_round
         running_game.pot_pre = situation.pot_pre
         running_game.increment = situation.increment
         running_game.bet_count = situation.bet_count
+        running_game.current_factor = 1.0
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
+        # TODO: 0: deal_from_ranges(map_rgp_to_range, running_game.board)
         for order, (ogp, s_p) in enumerate(zip(all_ogps, situation_players)):
             # create rgps in the order they will act in future rounds
             rgp = tables.RunningGameParticipant()
@@ -345,6 +342,7 @@ class API(object):
             rgp.range = s_p.range
             rgp.left_to_act = s_p.left_to_act
             rgp.folded = False
+            rgp.cards_dealt = "" # TODO: 0
             if situation.current_player_num == order:
                 assert running_game.current_userid == ogp.userid
             self.session.add(rgp)

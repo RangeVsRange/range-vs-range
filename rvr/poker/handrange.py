@@ -366,7 +366,7 @@ def weighted_options_to_description(options):
             cards = list(hand)  # was set of two Card, now list of two Card
         except TypeError:
             pass
-        groups[weight].append([cards[0].ro_mnemonic(), cards[1].ro_mnemonic()])
+        groups[weight].append([cards[0].to_mnemonic(), cards[1].to_mnemonic()])
     parts = []
     for weight, group in groups.iteritems():
         for part in _unweighted_mnemonics_to_parts(group):
@@ -484,7 +484,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         option is a list of (hand, weight)
         """
         excluded_cards = board or []
-        excluded_mnemonics = [card.ro_mnemonic() for card in excluded_cards]
+        excluded_mnemonics = [card.to_mnemonic() for card in excluded_cards]
         # it's really nice for this to be a list, for self.polarise_weights
         options = []
         for part, weight in self.subranges:
@@ -503,7 +503,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         error if weights are not all the same
         """
         excluded_cards = board or []
-        excluded_mnemonics = [card.ro_mnemonic() for card in excluded_cards]
+        excluded_mnemonics = [card.to_mnemonic() for card in excluded_cards]
         # it's really nice for this to be a list, for self.polarise_weights
         options = []
         first_weight = None

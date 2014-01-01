@@ -4,6 +4,8 @@ Declares database tables
 from sqlalchemy import Column, Integer, String, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
+from sqlalchemy.types import Float
+from rvr.poker.cards import Card
 
 #pylint:disable=W0232,R0903
 
@@ -52,7 +54,7 @@ class Situation(BASE):
     participants = Column(Integer, nullable=False)
     is_limit = Column(Boolean, nullable=False)
     big_blind = Column(Integer, nullable=False)
-    board = Column(String, nullable=False)
+    board_raw = Column(String, nullable=False)
     current_round = Column(String, nullable=False)
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
@@ -92,7 +94,7 @@ class OpenGameParticipant(BASE):
     user = relationship("User", backref="ogps")
     game = relationship("OpenGame", backref=backref("ogps", cascade="all"))
 
-class RunningGame(BASE):
+class RunningGame(BASE, object):
     """
     Details of an active running game.
     
@@ -113,16 +115,30 @@ class RunningGame(BASE):
     # if current_userid is None, game is finished
     current_userid = Column(Integer, nullable=True)
     # game state
-    board = Column(String, nullable=False)
+    board_raw = Column(String, nullable=False)
     current_round = Column(String, nullable=False)
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
+    # keeping track of how unlikely this line is
+    current_factor = Column(Float, nullable=False)
     # relationships
     current_rgp = relationship("RunningGameParticipant", primaryjoin=
         "and_(RunningGame.gameid==RunningGameParticipant.gameid," +  \
         " RunningGame.current_userid==RunningGameParticipant.userid)",
         foreign_keys=[gameid, current_userid])
+    # attributes
+    def get_board(self):
+        """
+        Get board, as list of Card
+        """
+        return Card.many_from_text(self.board_raw)
+    def set_board(self, cards):
+        """
+        Set board, from list of Card
+        """
+        self.board_raw = ''.join([card.to_mnemonic() for card in cards])
+    board = property(get_board, set_board)
 
 class RunningGameParticipant(BASE):
     """
@@ -140,10 +156,13 @@ class RunningGameParticipant(BASE):
     range = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     folded = Column(Boolean, nullable=False)
+    # note importantly, this is a secret from the user!
+    cards_dealt = Column(String, nullable=False)
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"),
         primaryjoin="RunningGame.gameid==RunningGameParticipant.gameid")
+    # attributes
 
 class GameHistoryBase(BASE):
     """

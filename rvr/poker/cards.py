@@ -175,7 +175,7 @@ class Card(object):
         return [cls.from_text(text[i * 2:i * 2 + 2])
                 for i in range(len(text) / 2)]
 
-    def ro_mnemonic(self):
+    def to_mnemonic(self):
         """
         Return a two-character representation of a card, e.g. "7c" for the Seven
         of Clubs.
@@ -265,7 +265,7 @@ def main():
             print "--> %r" % err
     card0 = 'Ah'
     print "%s --> %s --> %s" % (card0, Card.from_text(card0),
-                                Card.from_text(card0).ro_mnemonic())
+                                Card.from_text(card0).to_mnemonic())
 
 if __name__ == '__main__':
     main()
