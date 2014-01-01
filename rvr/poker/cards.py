@@ -1,7 +1,14 @@
-from twisted.spread import pb
+"""
+Rank, Suit, Card classes and associated functionality
+"""
 import random
 
-class Rank(pb.Copyable, pb.RemoteCopy):
+# pylint:disable=R0903
+
+class Rank(object):
+    """
+    Represents a card rank
+    """
     def __init__(self, singular, plural):
         self.singular = singular
         self.plural = plural
@@ -14,15 +21,21 @@ class Rank(pb.Copyable, pb.RemoteCopy):
     def __ne__(self, other):
         return not self.__eq__(other)
     def __cmp__(self, other):
-        return cmp(ranks_low_to_high.index(self), ranks_low_to_high.index(other))
+        return cmp(RANKS_LOW_TO_HIGH.index(self),
+                   RANKS_LOW_TO_HIGH.index(other))
     def __hash__(self):
         return hash(self.singular)
     @classmethod
     def from_mnemonic(cls, char):
-        return rank_map[char]
-pb.setUnjellyableForClass(Rank, Rank)
+        """
+        From the relevant rank character, e.g. 'K' -> King 
+        """
+        return RANK_MAP[char]
 
-class Suit(pb.Copyable, pb.RemoteCopy):
+class Suit(object):
+    """
+    Represents a card suit
+    """
     def __init__(self, singular, text):
         self.singular = singular
         self.text = text
@@ -35,13 +48,16 @@ class Suit(pb.Copyable, pb.RemoteCopy):
     def __ne__(self, other):
         return not self.__eq__(other)
     def __cmp__(self, other):
-        return cmp(suits_low_to_high.index(self), suits_low_to_high.index(other))
+        return cmp(SUITE_LOW_TO_HIGH.index(self),
+                   SUITE_LOW_TO_HIGH.index(other))
     def __hash__(self):
         return hash(self.text)
     @classmethod
     def from_mnemonic(cls, char):
-        return suit_map[char]
-pb.setUnjellyableForClass(Suit, Suit)
+        """
+        From the relevant suit character, e.g. 's' -> Spades
+        """
+        return SUIT_MAP[char]
 
 ACE = Rank("Ace", "Aces")
 KING = Rank("King", "Kings")
@@ -62,13 +78,14 @@ HEARTS = Suit("Heart", "Hearts")
 DIAMONDS = Suit("Diamond", "Diamonds")
 CLUBS = Suit("Club", "Clubs")
 
-ranks_high_to_low = [ACE, KING, QUEEN, JACK, TEN, NINE, EIGHT, SEVEN, SIX, FIVE, FOUR, TREY, DEUCE]
-ranks_low_to_high = list(reversed(ranks_high_to_low))
+RANKS_HIGH_TO_LOW = [ACE, KING, QUEEN, JACK, TEN, NINE, EIGHT, SEVEN, SIX,
+                     FIVE, FOUR, TREY, DEUCE]
+RANKS_LOW_TO_HIGH = list(reversed(RANKS_HIGH_TO_LOW))
 
-suits_high_to_low = [SPADES, HEARTS, DIAMONDS, CLUBS]
-suits_low_to_high = list(reversed(suits_high_to_low))
+SUITS_HIGH_TO_LOW = [SPADES, HEARTS, DIAMONDS, CLUBS]
+SUITE_LOW_TO_HIGH = list(reversed(SUITS_HIGH_TO_LOW))
 
-rank_map = {
+RANK_MAP = {
     "A": ACE,
     "K": KING,
     "Q": QUEEN,
@@ -84,21 +101,18 @@ rank_map = {
     "2": DEUCE
     }
 
-rank_invert = {v:k for k, v in rank_map.items()}
+RANK_INVERT = {v:k for k, v in RANK_MAP.items()}
 
-suit_map = {
+SUIT_MAP = {
     "s": SPADES,
     "h": HEARTS,
     "d": DIAMONDS,
     "c": CLUBS
     }
 
-suit_invert = {v:k for k, v in suit_map.items()}
+SUIT_INVERT = {v:k for k, v in SUIT_MAP.items()}
 
-def Deck():
-    return [Card(rank, suit) for rank in ranks_high_to_low for suit in suits_high_to_low]
-
-rank_for_mask = {
+RANK_FOR_MASK = {
     ACE: 12,
     KING: 11,
     QUEEN: 10,
@@ -114,14 +128,17 @@ rank_for_mask = {
     DEUCE: 0
     }
 
-suit_for_mask = {
+SUIT_FOR_MASK = {
     SPADES: 3,
     HEARTS: 2,
     DIAMONDS: 1,
     CLUBS: 0
     }
 
-class Card(pb.Copyable, pb.RemoteCopy):
+class Card(object):
+    """
+    Represents a card, i.e. a rank and a suit
+    """
     def __init__(self, rank, suit):
         if not isinstance(rank, Rank):
             raise TypeError("rank is not a Rank")
@@ -131,7 +148,7 @@ class Card(pb.Copyable, pb.RemoteCopy):
         self.suit = suit
 
     @classmethod
-    def fromText(cls, text):
+    def from_text(cls, text):
         """
         null-coalescing
         """
@@ -139,15 +156,15 @@ class Card(pb.Copyable, pb.RemoteCopy):
             return None
         if len(text) != 2:
             raise ValueError("Invalid card mnemonic: '%s'" % text)
-        r, s = text
-        if r not in rank_map:
-            raise ValueError("Invalid rank mnemonic: '%s'" % r)
-        if s not in suit_map:
-            raise ValueError("Invalid suit mnemonic: '%s'" % s)
-        return cls(rank_map[r], suit_map[s])
+        rank, suit = text
+        if rank not in RANK_MAP:
+            raise ValueError("Invalid rank mnemonic: '%s'" % rank)
+        if suit not in SUIT_MAP:
+            raise ValueError("Invalid suit mnemonic: '%s'" % suit)
+        return cls(RANK_MAP[rank], SUIT_MAP[suit])
 
     @classmethod
-    def manyFromText(cls, text):
+    def many_from_text(cls, text):
         """
         null-coalescing
         """
@@ -155,18 +172,24 @@ class Card(pb.Copyable, pb.RemoteCopy):
             return None
         if len(text) % 2 != 0:
             raise ValueError("Invalid card list: '%s'" % text)
-        return [cls.fromText(text[i*2:i*2+2]) for i in range(len(text) / 2)]
+        return [cls.from_text(text[i * 2:i * 2 + 2])
+                for i in range(len(text) / 2)]
 
-    def toMnemonic(self):
+    def ro_mnemonic(self):
         """
-        Return a two-character representation of a card, e.g. "7c" for the Seven of Clubs.
-        Note that HandRange relies on this format, so the return value of this method should not
-        be changed without considering the impact on HandRange.
+        Return a two-character representation of a card, e.g. "7c" for the Seven
+        of Clubs.
+        Note that HandRange relies on this format, so the return value of this
+        method should not be changed without considering the impact on
+        HandRange.
         """
-        return rank_invert[self.rank] + suit_invert[self.suit]
+        return RANK_INVERT[self.rank] + SUIT_INVERT[self.suit]
     
-    def toMask(self):
-        return 1 << (13 * suit_for_mask[self.suit] + rank_for_mask[self.rank])
+    def to_mask(self):
+        """
+        For calculations, convert to raw data mask
+        """
+        return 1 << (13 * SUIT_FOR_MASK[self.suit] + RANK_FOR_MASK[self.rank])
 
     def __str__(self):
         # Note: Suits are plurals, Ranks are singular.
@@ -190,22 +213,14 @@ class Card(pb.Copyable, pb.RemoteCopy):
     
     def __hash__(self):
         return hash(self.rank) ^ hash(self.suit)
-    
-    """
-    Suits and Ranks are singletons, so we temporarily create clones, then use them to assign the
-    appropriate singletons to self.suit and self.rank. This probably isn't the most pythonic way to
-    do this, but it's certainly the shortest.
-    """
-    def postUnjelly(self):
-        self.rank, = [rank for rank in ranks_high_to_low if rank.singular == self.rank.singular]
-        self.suit, = [suit for suit in suits_high_to_low if suit.text == self.suit.text]
-pb.setUnjellyableForClass(Card, Card)
 
 def deal_card(excluded):
     """
     Warning! Dealt cards will be appended to excluded list!
     """
-    deck = [Card(rank, suit) for rank in ranks_high_to_low for suit in suits_high_to_low]
+    deck = [Card(rank, suit)
+            for rank in RANKS_HIGH_TO_LOW
+            for suit in SUITS_HIGH_TO_LOW]
     for ex in excluded:
         deck.remove(ex)
     card = random.choice(deck)
@@ -213,9 +228,15 @@ def deal_card(excluded):
     return card
 
 def deal_cards(excluded, number):
+    """
+    Deal multiple cards and return as a list
+    """
     return [deal_card(excluded) for _ in range(number)]
 
-if __name__ == '__main__':
+def main():
+    """
+    Test script
+    """
     pairs = [
         ('Ah', 'Ac'),
         ('Ac', 'Ah'),
@@ -225,23 +246,26 @@ if __name__ == '__main__':
         ('Ah', 'Kc')
         ]
     for pair in pairs:
-        card1 = Card.fromText(pair[0])
-        card2 = Card.fromText(pair[1])
+        card1 = Card.from_text(pair[0])
+        card2 = Card.from_text(pair[1])
         result = cmp(card1, card2)
         if not result:
-            ch = '='
+            char = '='
         elif result < 0:
-            ch = '<'
+            char = '<'
         else:
-            ch = '>'
-        print "%s (%s) %s %s (%s)" % (card1, pair[0], ch, card2, pair[1])
+            char = '>'
+        print "%s (%s) %s %s (%s)" % (card1, pair[0], char, card2, pair[1])
     sets = ['AhKc', 'AcTcTc', '2c', 'Gc', '2f', '2h2']
-    for s in sets:
-        print "parsing %s" % s
+    for item in sets:
+        print "parsing %s" % item
         try:
-            print "--> %r" % Card.manyFromText(s)
-        except (ValueError, TypeError) as e:
-            print "--> %r" % e
+            print "--> %r" % Card.many_from_text(item)
+        except (ValueError, TypeError) as err:
+            print "--> %r" % err
     card0 = 'Ah'
-    print "%s --> %s --> %s" % (card0, Card.fromText(card0),
-                                Card.fromText(card0).toMnemonic())
+    print "%s --> %s --> %s" % (card0, Card.from_text(card0),
+                                Card.from_text(card0).ro_mnemonic())
+
+if __name__ == '__main__':
+    main()

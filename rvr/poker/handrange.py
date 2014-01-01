@@ -5,8 +5,8 @@ import re
 import random
 from twisted.spread import pb
 import logging
-from rvr.poker.cards import Card, rank_map, suit_map, Rank,  \
-    rank_invert, Suit, SPADES, ACE, ranks_high_to_low, ranks_low_to_high
+from rvr.poker.cards import Card, RANK_MAP, SUIT_MAP, Rank,  \
+    RANK_INVERT, Suit, SPADES, ACE, RANKS_HIGH_TO_LOW, RANKS_LOW_TO_HIGH
 import unittest
 
 # pylint:disable=C0103
@@ -156,15 +156,15 @@ def _order_option(o):
     returns something more like ["Ah","Ad"] or ["Ah","Ad"] or ["Ad","Ks"]
     """
     m1, m2 = o
-    r1 = rank_map[m1[0]]
-    r2 = rank_map[m2[0]]
+    r1 = RANK_MAP[m1[0]]
+    r2 = RANK_MAP[m2[0]]
     rc = cmp(r1, r2)
     if rc < 0:
         return [m2, m1]
     if rc > 0:
         return [m1, m2]
-    s1 = suit_map[m1[1]]
-    s2 = suit_map[m2[1]]
+    s1 = SUIT_MAP[m1[1]]
+    s2 = SUIT_MAP[m2[1]]
     sc = cmp(s1, s2)
     if sc < 0:
         return [m2, m1]
@@ -247,7 +247,7 @@ def _colate_group(g):
     secondaries = [text[1] for text in g]
     ranks = [Rank.from_mnemonic(ch) for ch in secondaries]
     ranks.sort(reverse=True)
-    all_ranks = ranks_high_to_low[:]
+    all_ranks = RANKS_HIGH_TO_LOW[:]
     # so we have:
     # ranks =     [A, T, 9]
     # all_ranks = [A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, 2] 
@@ -278,26 +278,26 @@ def _colate_group(g):
     for group in groups:
         if len(group) == 1:
             if is_pairs:
-                results.append(rank_invert[group[0]] * 2)
+                results.append(RANK_INVERT[group[0]] * 2)
             else:
-                results.append("%s%s%s" % (prefix, rank_invert[group[0]], postfix))
+                results.append("%s%s%s" % (prefix, RANK_INVERT[group[0]], postfix))
         else:
             if is_pairs:
                 if group[0] == ACE:
-                    results.append("%s+" % (rank_invert[group[-1]] * 2))
+                    results.append("%s+" % (RANK_INVERT[group[-1]] * 2))
                 else:
-                    results.append("-".join([rank_invert[group[0]] * 2, rank_invert[group[-1]] * 2]))
+                    results.append("-".join([RANK_INVERT[group[0]] * 2, RANK_INVERT[group[-1]] * 2]))
             else:
                 # this now may be a "AJs-ATs" type hand or "ATs+" type hand
                 # the condition is: the secondary of the second element is the
                 # next lowest rank than the secondary of the first.
-                if ranks_low_to_high.index(primary) - ranks_low_to_high.index(group[0]) == 1:
+                if RANKS_LOW_TO_HIGH.index(primary) - RANKS_LOW_TO_HIGH.index(group[0]) == 1:
                     results.append("%s%s%s+" %
-                                   (prefix, rank_invert[group[-1]], postfix))
+                                   (prefix, RANK_INVERT[group[-1]], postfix))
                 else:
                     results.append("%s%s%s-%s%s%s" %
-                                   (prefix, rank_invert[group[0]], postfix,
-                                    prefix, rank_invert[group[-1]], postfix))
+                                   (prefix, RANK_INVERT[group[0]], postfix,
+                                    prefix, RANK_INVERT[group[-1]], postfix))
     return results
 
 def _unweighted_mnemonics_to_parts(mnemonics):
@@ -349,7 +349,7 @@ def weighted_options_to_description(options):
             cards = list(hand)  # was set of two Card, now list of two Card
         except TypeError:
             pass
-        groups[weight].append([cards[0].toMnemonic(), cards[1].toMnemonic()])
+        groups[weight].append([cards[0].ro_mnemonic(), cards[1].ro_mnemonic()])
     parts = []
     for weight, group in groups.iteritems():
         for part in _unweighted_mnemonics_to_parts(group):
@@ -359,7 +359,7 @@ def weighted_options_to_description(options):
                 parts.append(part)
     # sort them too, for standardisation
     def key_part(part):
-        if part[1] in suit_map.keys():
+        if part[1] in SUIT_MAP.keys():
             # odds
             is_pair = part[0] == part[2]
             is_suited = part[1] == part[3]
@@ -448,7 +448,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         option is a list of (hand, weight)
         """
         excluded_cards = board or []
-        excluded_mnemonics = [card.toMnemonic() for card in excluded_cards]
+        excluded_mnemonics = [card.ro_mnemonic() for card in excluded_cards]
         # it's really nice for this to be a list, for self.polarise_weights
         options = []
         for part, weight in self.subranges:
@@ -456,7 +456,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
             not_excluded = lambda hand: (hand[0:2] not in excluded_mnemonics
                 and hand[2:4] not in excluded_mnemonics)
             option_mnemonics = [o for o in option_mnemonics if not_excluded(o)]
-            hands = [frozenset(Card.manyFromText(txt))
+            hands = [frozenset(Card.many_from_text(txt))
                      for txt in option_mnemonics]
             options.extend([(hand, weight) for hand in hands])
         return options
@@ -467,7 +467,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         error if weights are not all the same
         """
         excluded_cards = board or []
-        excluded_mnemonics = [card.toMnemonic() for card in excluded_cards]
+        excluded_mnemonics = [card.ro_mnemonic() for card in excluded_cards]
         # it's really nice for this to be a list, for self.polarise_weights
         options = []
         first_weight = None
@@ -480,7 +480,7 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
             not_excluded = lambda hand: (hand[0:2] not in excluded_mnemonics
                 and hand[2:4] not in excluded_mnemonics)
             option_mnemonics = [o for o in option_mnemonics if not_excluded(o)]
-            hands = [frozenset(Card.manyFromText(txt))
+            hands = [frozenset(Card.many_from_text(txt))
                      for txt in option_mnemonics]
             options.extend(hands)
         return options
