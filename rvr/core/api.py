@@ -9,7 +9,8 @@ import logging
 from sqlalchemy.exc import IntegrityError
 import itertools
 from rvr.poker.handrange import HandRange, deal_from_ranges
-from rvr.poker.action import range_sum_equal, calculate_current_options, PREFLOP
+from rvr.poker._action import range_sum_equal, calculate_current_options,  \
+    PREFLOP
 
 #pylint:disable=R0903
 
