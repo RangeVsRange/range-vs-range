@@ -521,7 +521,6 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
             options.extend(hands)
         return options
         
-    
     def generate_hand(self, board = None):
         """
         Generate a pair of pocket cards for Holdem, based on self.description
