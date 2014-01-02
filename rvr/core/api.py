@@ -8,36 +8,37 @@ from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
 import itertools
-from rvr.poker.handrange import HandRange, deal_from_ranges
-from rvr.poker._action import range_sum_equal, calculate_current_options,  \
+from rvr.poker.handrange import deal_from_ranges
+from rvr.poker._action import calculate_current_options,  \
     PREFLOP
+from rvr.poker.action import range_action_fits
 
 #pylint:disable=R0903
 
 GAME_HISTORY_TABLES = [tables.GameHistoryUserRange]
 
-def validate_action(action, options, range_raw):
-    """
-    Check that action is valid and return any error.
-    """
-    action.raise_total = int(action.raise_total)
-    if options.can_raise() and (action.raise_total < options.min_raise or
-                                action.raise_total > options.max_raise):
-        return API.ERR_INVALID_RAISE_TOTAL
-    fold_range = HandRange(action.fold_range)
-    passive_range = HandRange(action.passive_range)
-    aggressive_range = HandRange(action.aggressive_range)
-    original_range = HandRange(range_raw)
-    # TODO: 0: port the old range_action_fits, because this is not enough.
-    # E.g. we don't recognise that it's invalid to have a raising range when
-    # there's no option to raise.
-    # TODO: 0: also, port the unit tests!
-    is_valid, _reason = range_sum_equal(fold_range, passive_range,
-                                        aggressive_range, original_range)
-    if is_valid:
-        return None
-    else:
-        return API.ERR_INVALID_RANGES
+# def validate_action(action, options, range_raw):
+#     """
+#     Check that action is valid and return any error.
+#     """
+#     action.raise_total = int(action.raise_total)
+#     if options.can_raise() and (action.raise_total < options.min_raise or
+#                                 action.raise_total > options.max_raise):
+#         return API.ERR_INVALID_RAISE_TOTAL
+#     fold_range = HandRange(action.fold_range)
+#     passive_range = HandRange(action.passive_range)
+#     aggressive_range = HandRange(action.aggressive_range)
+#     original_range = HandRange(range_raw)
+#     # todo: port the old range_action_fits, because this is not enough.
+#     # E.g. we don't recognise that it's invalid to have a raising range when
+#     # there's no option to raise.
+#     # todo: also, port the unit tests!
+#     is_valid, _reason = range_sum_equal(fold_range, passive_range,
+#                                         aggressive_range, original_range)
+#     if is_valid:
+#         return None
+#     else:
+#         return API.ERR_INVALID_RANGES
 
 def exception_mapper(fun):
     """
@@ -498,9 +499,10 @@ class API(object):
             return self.ERR_NOT_USERS_TURN
         current_options = calculate_current_options(game, rgp)
         # check that their range action is valid for their options + range
-        err = validate_action(range_action, current_options, rgp.range_raw)
-        if err:
-            return err
+        is_valid, _err = range_action_fits(range_action, current_options,
+                                           rgp.range)
+        if not is_valid:
+            return API.ERR_INVALID_RANGES
         # TODO: perform_action
         # TODO: NOTE: it might not be their turn any more!
         return dtos.ActionResponse.call()

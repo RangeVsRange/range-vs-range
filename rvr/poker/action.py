@@ -9,7 +9,7 @@ import unittest
 from rvr.poker.handrange import HandRange,  \
     _cmp_weighted_options, _cmp_options, weighted_options_to_description
 from rvr.infrastructure.util import concatenate
-from rvr.core.dtos import ActionOptions, ActionResponse, ActionDetails
+from rvr.core.dtos import ActionOptions, ActionDetails
 
 # TODO: fix this lint, instead of ignoring
 # pylint:disable=R0903,C0111,R0201,W0141,C0301,W0110,C0103,W0201,R0914,W0703,R0913,W0613,R0904,C0324,R0915
@@ -353,26 +353,6 @@ def range_action_to_action(range_action, original, hand, current_options):
     if range_contains_hand(range_action.fold_range, hand):
         return range_action.fold_range, FoldAction()
     elif range_contains_hand(range_action.passive_range, hand):
-        if filter(lambda o: isinstance(o, CheckOption), current_options):
-            return range_action.passive_range, CheckAction()
-        else:
-            call_option, = filter(lambda o: isinstance(o, CallOption), current_options)
-            return range_action.passive_range, CallAction(call_option.cost)
-    elif range_contains_hand(range_action.aggressive_range, hand):
-        return range_action.aggressive_range, RaiseAction(range_action.raise_total)
-    else:
-        raise ValueError("hand is %s, range_action is invalid: %r" % (hand, range_action))
-
-def range_action_to_action2(range_action, original, hand, current_options):
-    """
-    range_action is a RangeAction, ranges have text descriptions
-    hand is a list of two Card
-    returns a new range, and an action
-    """
-    # Note that this gives incorrect results if an option is in two ranges
-    if range_contains_hand(range_action.fold_range, hand):
-        return range_action.fold_range, FoldAction()
-    elif range_contains_hand(range_action.passive_range, hand):
         if current_options.can_check():
             return range_action.passive_range, CheckAction()
         else:
@@ -457,8 +437,8 @@ def re_deal(range_action, cards_dealt, dealt_key, board, can_fold, can_call):
 class Test(unittest.TestCase):
     def do_test_re_deal(self, action, dealt, key, board, result, re_dealt, iterations=1, delta=0.0):
         action2 = ActionDetails(HandRange(action[0]),
-                              HandRange(action[1]),
-                              HandRange(action[2]), 2)
+                                HandRange(action[1]),
+                                HandRange(action[2]), 2)
         board2 = Card.many_from_text(board)
         re_dealt2 = [(HandRange(text).generate_options(board2), ratio) for text, ratio in re_dealt]
         counts = [0 for _ in re_dealt2]
@@ -701,69 +681,69 @@ class Test(unittest.TestCase):
 
         action_with_raise = ActionDetails(range_72o, range_22_weighted, range_AA, 40)
 
-        r, a = range_action_to_action2(action_with_raise, range_original, hand_72o, options_with_check)
+        r, a = range_action_to_action(action_with_raise, range_original, hand_72o, options_with_check)
         self.assertIsInstance(a, FoldAction)
         self.assertEqual("72o", r.description)
-        r, a = range_action_to_action2(action_with_raise, range_original, hand_22, options_with_check)
+        r, a = range_action_to_action(action_with_raise, range_original, hand_22, options_with_check)
         self.assertIsInstance(a, CheckAction)
-        r, a = range_action_to_action2(action_with_raise, range_original, hand_AA, options_with_check)
+        r, a = range_action_to_action(action_with_raise, range_original, hand_AA, options_with_check)
         self.assertIsInstance(a, RaiseAction)
         self.assertEqual(a.total, 40)
         try:
-            a = range_action_to_action2(action_with_raise, range_original, hand_72s, options_with_check)
+            a = range_action_to_action(action_with_raise, range_original, hand_72s, options_with_check)
             self.assertTrue(False)
         except ValueError:
             pass
 
-        r, a = range_action_to_action2(action_with_raise, range_original, hand_72o, options_with_call)
+        r, a = range_action_to_action(action_with_raise, range_original, hand_72o, options_with_call)
         self.assertIsInstance(a, FoldAction)
-        r, a = range_action_to_action2(action_with_raise, range_original, hand_22, options_with_call)
+        r, a = range_action_to_action(action_with_raise, range_original, hand_22, options_with_call)
         self.assertIsInstance(a, CallAction)
         self.assertEqual(a.cost, 10)
-        r, a = range_action_to_action2(action_with_raise, range_original, hand_AA, options_with_call)
+        r, a = range_action_to_action(action_with_raise, range_original, hand_AA, options_with_call)
         self.assertIsInstance(a, RaiseAction)
         self.assertEqual(a.total, 40)
         try:
-            a = range_action_to_action2(action_with_raise, range_original, hand_72s, options_with_call)
+            a = range_action_to_action(action_with_raise, range_original, hand_72s, options_with_call)
             self.assertTrue(False)
         except ValueError:
             pass
 
         action_without_raise = ActionDetails(range_22_72o, range_AA, range_empty, 0)
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_72o, options_with_check)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_72o, options_with_check)
         self.assertIsInstance(a, FoldAction)
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_22, options_with_check)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_22, options_with_check)
         self.assertIsInstance(a, FoldAction)
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_AA, options_with_check)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_AA, options_with_check)
         self.assertIsInstance(a, CheckAction)
         try:
-            a = range_action_to_action2(action_without_raise, range_original, hand_72s, options_with_check)
+            a = range_action_to_action(action_without_raise, range_original, hand_72s, options_with_check)
             self.assertTrue(False)
         except ValueError:
             pass
 
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_72o, options_with_call)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_72o, options_with_call)
         self.assertIsInstance(a, FoldAction)
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_22, options_with_call)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_22, options_with_call)
         self.assertIsInstance(a, FoldAction)
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_AA, options_with_call)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_AA, options_with_call)
         self.assertIsInstance(a, CallAction)
         self.assertEqual(a.cost, 10)
         try:
-            a = range_action_to_action2(action_without_raise, range_original, hand_72s, options_with_call)
+            a = range_action_to_action(action_without_raise, range_original, hand_72s, options_with_call)
             self.assertTrue(False)
         except ValueError:
             pass
 
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_72o, options_without_raise)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_72o, options_without_raise)
         self.assertIsInstance(a, FoldAction)
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_22, options_without_raise)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_22, options_without_raise)
         self.assertIsInstance(a, FoldAction)
-        r, a = range_action_to_action2(action_without_raise, range_original, hand_AA, options_without_raise)
+        r, a = range_action_to_action(action_without_raise, range_original, hand_AA, options_without_raise)
         self.assertIsInstance(a, CallAction)
         self.assertEqual(a.cost, 196)
         try:
-            r, a = range_action_to_action2(action_without_raise, range_original, hand_72s, options_without_raise)
+            r, a = range_action_to_action(action_without_raise, range_original, hand_72s, options_without_raise)
             self.assertTrue(False)
         except ValueError:
             pass

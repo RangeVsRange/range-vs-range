@@ -186,7 +186,9 @@ def _handle_action(gameid, userid, api, form):
     passive = form.passive.data
     aggressive = form.aggressive.data
     total = form.total.data
-    range_action = dtos.ActionDetails(fold, passive, aggressive, total)
+    range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
+                                      aggressive_raw=aggressive,
+                                      raise_total=total)
     result = api.perform_action(gameid, userid, range_action)
     # why do validation twice...
     if isinstance(result, APIError):

@@ -11,6 +11,7 @@ Data transfer objects:
 """
 from rvr.db import tables
 from argparse import ArgumentError
+from rvr.poker.handrange import HandRange
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -455,18 +456,39 @@ class ActionDetails(object):
     """
     range-based action request object
     """
-    def __init__(self, fold_range, passive_range, aggressive_range,
-                 raise_total):
+    def __init__(self, 
+                 fold_range=None, passive_range=None, aggressive_range=None,
+                 raise_total=None, 
+                 fold_raw=None, passive_raw=None, aggressive_raw=None):
         """
         fold_range is the part of their range they fold here
         passive_range is the part of their range they check or call here
         aggressive_range is the part of their range the bet or raise here
         """
-        self.fold_range = fold_range
-        self.passive_range = passive_range
-        self.aggressive_range = aggressive_range
-        self.raise_total = raise_total
-    
+        if (fold_range is not None and fold_raw is not None) or  \
+            (passive_range is not None and passive_raw is not None) or  \
+            (aggressive_range is not None and aggressive_raw is not None):
+            raise ValueError("Specified range and raw")
+        if (fold_range is None and fold_raw is None) or  \
+            (passive_range is None and passive_raw is None) or  \
+            (aggressive_range is None and aggressive_raw is None):
+            raise ValueError("Specified neither range or raw")
+        if raise_total is None:
+            if not aggressive_range.is_empty():
+                raise ValueError(
+                    "If aggressive_range is not nothing, must have raise_total")
+
+        self.fold_range = fold_range  \
+            if isinstance(fold_range, HandRange)  \
+            else HandRange(fold_raw)
+        self.passive_range = passive_range  \
+            if isinstance(passive_range, HandRange)  \
+            else HandRange(passive_raw)
+        self.aggressive_range = aggressive_range  \
+            if isinstance(aggressive_range, HandRange)  \
+            else HandRange(aggressive_raw)
+        self.raise_total = raise_total            
+
     def __repr__(self):
         return ("ActionDetails(fold_range=%r, passive_range=%r, " +
                 "aggressive_range=%r, raise_total=%r)") %  \

@@ -152,8 +152,6 @@ class Card(object):
         """
         null-coalescing
         """
-        if text is None:  # TODO: used to be if not text; confirm okay
-            return None
         if len(text) != 2:
             raise ValueError("Invalid card mnemonic: '%s'" % text)
         rank, suit = text
@@ -168,8 +166,6 @@ class Card(object):
         """
         null-coalescing
         """
-        if text is None:  # TODO: used to be if not text; confirm okay
-            return None
         if len(text) % 2 != 0:
             raise ValueError("Invalid card list: '%s'" % text)
         return [cls.from_text(text[i * 2:i * 2 + 2])

@@ -193,8 +193,11 @@ class AdminCmd(Cmd):
         passive = params[3]
         aggressive = params[4]
         total = int(params[5])
-        range_action = dtos.ActionDetails(fold, passive, aggressive,
-                                                    total)
+        range_action = dtos.ActionDetails(
+            fold_raw=fold,
+            passive_raw=passive,
+            aggressive_raw=aggressive,
+            raise_total=total)
         response = self.api.perform_action(gameid, userid, range_action)
         if isinstance(response, APIError):
             print "Error:", response.description  # pylint:disable=E1101
