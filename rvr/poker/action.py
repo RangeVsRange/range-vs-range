@@ -14,6 +14,11 @@ from rvr.core.dtos import ActionOptions, ActionDetails
 # TODO: fix this lint, instead of ignoring
 # pylint:disable=R0903,C0111,R0201,W0141,C0301,W0110,C0103,W0201,R0914,W0703,R0913,W0613,R0904,C0324,R0915
 
+PREFLOP = "preflop"
+FLOP = "flop"
+TURN = "turn"
+RIVER = "river"
+
 class Option:
     OPTION_FOLD = "fold"
     OPTION_CHECK = "check"
@@ -342,6 +347,32 @@ def range_contains_hand(range_, hand):
     options = range_.generate_options()  # of the form [(hand, weight)]
     unweighted = [weighted[0] for weighted in options]
     return set(hand) in unweighted
+
+def calculate_current_options(game, rgp):
+    """
+    Determines what options the current player has in a running game.
+    
+    Returns a dtos.ActionOptions instance.
+    """
+    raised_to = max([rgp.contributed for rgp in game.rgps])
+    call_amount = min(rgp.stack, raised_to - rgp.contributed)
+    bet_lower = raised_to + game.increment  # min-raise
+    bet_higher = rgp.stack + rgp.contributed  # shove
+    if bet_higher < bet_lower:  # i.e. all in
+        bet_lower = bet_higher
+    if game.situation.is_limit:
+        bet_higher = bet_lower  # minraise is only option for limit
+    can_raise = bet_lower > raised_to  # i.e. there is a valid bet
+    is_capped = (game.situation.is_limit and  # No limit is never capped
+        game.bet_count >= 4)  # Not capped until 4 bets in
+    can_raise = can_raise and not is_capped
+    if can_raise:
+        return ActionOptions(call_cost=call_amount,
+                             is_raise=raised_to != 0,
+                             min_raise=bet_lower,
+                             max_raise=bet_higher)
+    else:
+        return ActionOptions(call_amount)
 
 def range_action_to_action(range_action, original, hand, current_options):
     """
