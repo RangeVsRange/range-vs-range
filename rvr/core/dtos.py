@@ -500,10 +500,11 @@ class ActionResponse(object):
     response to a range-based action request, tells the user what happened
     """
     def __init__(self, is_fold=False, is_passive=False, 
-                is_aggressive=False, raise_total=0):
+                is_aggressive=False, call_cost=None, raise_total=None):
         self.is_fold = is_fold
         self.is_passive = is_passive
         self.is_aggressive = is_aggressive
+        self.call_cost = call_cost
         self.raise_total = raise_total
         
     @classmethod
@@ -514,14 +515,14 @@ class ActionResponse(object):
         return ActionResponse(is_fold=True)
     
     @classmethod
-    def call(cls):
+    def call(cls, call_cost):
         """
         User checked or called
         """
-        return ActionResponse(is_passive=True)
+        return ActionResponse(is_passive=True, call_cost=call_cost)
     
     @classmethod
-    def raise_(cls, raise_total):
+    def raise_to(cls, raise_total):
         """
         User bet or raised
         """
@@ -529,6 +530,6 @@ class ActionResponse(object):
     
     def __repr__(self):
         return ("ActionResponse(is_fold=%r, is_passive=%r, " +
-                "is_aggressive=%r, raise_total=%r)") %  \
+                "is_aggressive=%r, call_cost=%r, raise_total=%r)") %  \
             (self.is_fold, self.is_passive, self.is_aggressive,
-             self.raise_total)
+             self.call_cost, self.raise_total)

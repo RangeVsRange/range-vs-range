@@ -504,7 +504,7 @@ class API(object):
             return API.ERR_INVALID_RANGES
         # TODO: perform_action
         # TODO: NOTE: it might not be their turn any more!
-        return dtos.ActionResponse.call()
+        return dtos.ActionResponse.call(current_options.call_cost)
         #return dtos.ActionResponse.fold()
         #return dtos.ActionResponse.raise_(range_action.raise_total)
         

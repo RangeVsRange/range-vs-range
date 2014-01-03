@@ -203,9 +203,9 @@ def _handle_action(gameid, userid, api, form):
         if result.is_fold:
             msg = "You folded."
         elif result.is_passive:
-            msg = "You called."
+            msg = "You called for %d." % (result.call_cost,)
         elif result.is_aggressive:
-            msg = "You raised to %d." % (result.raise_total, )
+            msg = "You raised to %d." % (result.raise_total,)
         else:
             msg = "I can't figure out what happened, eh."
         flash(msg)
