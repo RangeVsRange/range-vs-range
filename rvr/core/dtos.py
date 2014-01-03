@@ -501,6 +501,12 @@ class ActionResponse(object):
     """
     def __init__(self, is_fold=False, is_passive=False, 
                 is_aggressive=False, call_cost=None, raise_total=None):
+        if len([b for b in [is_fold, is_passive, is_aggressive] if b]) != 1:
+            raise ValueError("Specify only one type of action for a response")
+        if is_passive and call_cost is None:
+            raise ValueError("Specify a call cost when is_passive")
+        if is_aggressive and raise_total is None:
+            raise ValueError("Specify a raise total when is_aggressive")
         self.is_fold = is_fold
         self.is_passive = is_passive
         self.is_aggressive = is_aggressive
