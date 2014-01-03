@@ -480,8 +480,9 @@ class API(object):
         
         Assumes validation is already done!
         """
-        self.session.commit() # because if we don't we get some weird circular
-        # ... dependency thing
+        self.session.commit() # because if we don't we get some ...
+        # ... weird circular dependency thing ...
+        # ... but hold on, we haven't done anything yet!?! TODO
         left_to_act = [rgp for rgp in game.rgps if rgp.left_to_act]
         remain = [rgp for rgp in game.rgps if not rgp.folded]
         # no play on when 3-handed
