@@ -480,9 +480,6 @@ class API(object):
         
         Assumes validation is already done!
         """
-        self.session.commit() # because if we don't we get some ...
-        # ... weird circular dependency thing ...
-        # ... but hold on, we haven't done anything yet!?! TODO
         left_to_act = [rgp for rgp in game.rgps if rgp.left_to_act]
         remain = [rgp for rgp in game.rgps if not rgp.folded]
         # no play on when 3-handed
@@ -551,18 +548,22 @@ class API(object):
          - range_action does not sum to user's current range
          - range_action raise_total isn't appropriate
         """
-        # check that game exists
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.gameid == gameid).all()
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
-        # check that they're in the game and it's their turn
-        rgp = game.current_rgp
+        # check that they're in the game and it's their turn        
         if game.current_rgp.userid == userid:
             rgp = game.current_rgp
         else:
             return self.ERR_NOT_USERS_TURN
+        self.session.commit() # because if we don't we get some ...
+        # ... weird circular dependency thing ...
+        # ... but hold on, we haven't done anything yet!?!
+        # ... TODO: Understand this!   
+        # ... and it seems to be the "game.current_rgp.userid" that needs to be
+        # ... committed     
         current_options = calculate_current_options(game, rgp)
         # check that their range action is valid for their options + range
         is_valid, _err = range_action_fits(range_action, current_options,
