@@ -358,6 +358,8 @@ def weighted_options_to_description(options):
     # then stripping weights and handling just the options for each group
     if not options:
         return NOTHING
+    if options == ANYTHING_OPTIONS:
+        return ANYTHING
     groups = {}
     for hand, weight in options:
         if not groups.has_key(weight):
@@ -578,6 +580,8 @@ def deal_from_ranges(range_map, board):
             raise IncompatibleRangesError(
                 "apparently incompatible set of ranges: %r (board is %r)" %
                 (range_map, board))
+
+ANYTHING_OPTIONS = HandRange(ANYTHING).generate_options()
 
 class Test(unittest.TestCase):
     """
