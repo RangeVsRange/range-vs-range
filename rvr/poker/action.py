@@ -297,10 +297,10 @@ def _apply_action_result(game, rgp, action_result):
     if len(left_to_act) == 1 and not remain:
         # BB got a walk, or everyone folded to the button postflop
         # TODO: finish game, left_to_act[0] is the winner
-        game.current_userid = None
+        game.is_finished = True
     elif not left_to_act:
         # TODO: if one remains, they win; otherwise, deal cards or show down
-        game.current_userid = None
+        game.is_finished = True
     else:
         # Who's up next? And not someone named Who, but the pronoun.
         later = [p for p in left_to_act if p.order > rgp.order]
@@ -343,7 +343,6 @@ def perform_action(game, rgp, range_action, current_options):
         rgp.cards_dealt, current_options)
     # TODO: need final showdown sometimes (rarely) ...
     # this equates to bettinground.complete in the old version
-    # TODO: 0: update game and current rgp
     _apply_action_result(game, rgp, action_result)
     # TODO: note, it might not be their turn at the point we commit, okay?
     return action_result    

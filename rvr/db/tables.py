@@ -154,6 +154,20 @@ class RunningGame(BASE, object):
         """
         self.board_raw = ''.join([card.to_mnemonic() for card in cards])
     board = property(get_board, set_board)
+    def get_is_finished(self):
+        """
+        Is the game finished
+        """
+        return self.current_userid == None
+    def set_is_finished(self, value):
+        """
+        Finish the game. Value must be True.
+        """
+        if not value:  # attempting to start a game
+            if self.get_is_finished():  # attempting to restart a finished game.
+                raise ValueError("Cannot restart a game")
+        self.current_userid = None
+    is_finished = property(get_is_finished, set_is_finished)
 
 class RunningGameParticipant(BASE, object):
     """

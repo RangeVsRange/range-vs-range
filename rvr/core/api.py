@@ -492,14 +492,13 @@ class API(object):
         <userid>, if specified.
         """
         # pylint:disable=W0142
-        is_finished = game.current_userid is None
         child_items = [self.session.query(table)
                        .filter(table.gameid == game.gameid).all()
                        for table in GAME_HISTORY_TABLES]
         child_dtos = [dtos.GameItem.from_game_history_child(child)
                       for child in itertools.chain(*child_items)]
         return [dto for dto in child_dtos
-                if is_finished or dto.should_include_for(userid)]
+                if game.is_finished or dto.should_include_for(userid)]
     
     def _get_game(self, gameid, userid=None):
         """
@@ -507,6 +506,8 @@ class API(object):
         the specified user. If the game is finished, return all private data.
         Analysis items are considered private data, because they include both
         players' ranges.
+        
+        Returns only running games.
         """
         if userid is not None:
             users = self.session.query(tables.User)  \
@@ -514,7 +515,8 @@ class API(object):
             if not users:
                 return self.ERR_NO_SUCH_USER
         games = self.session.query(tables.RunningGame)  \
-            .filter(tables.RunningGame.gameid == gameid).all()
+            .filter(tables.RunningGame.gameid == gameid)  \
+            .filter(not tables.RunningGame.is_finished).all()
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
