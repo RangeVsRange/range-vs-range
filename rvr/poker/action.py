@@ -7,6 +7,7 @@ from rvr.poker.handrange import HandRange,  \
     _cmp_weighted_options, _cmp_options, weighted_options_to_description
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
+import logging
 
 PREFLOP = "preflop"
 FLOP = "flop"
@@ -133,7 +134,7 @@ def calculate_current_options(game, rgp):
     
     Returns a dtos.ActionOptions instance.
     """
-    raised_to = max([rgp.contributed for rgp in game.rgps])
+    raised_to = max([p.contributed for p in game.rgps])
     call_amount = min(rgp.stack, raised_to - rgp.contributed)
     bet_lower = raised_to + game.increment  # min-raise
     bet_higher = rgp.stack + rgp.contributed  # shove
@@ -248,19 +249,71 @@ def re_deal(range_action, cards_dealt, dealt_key, board, can_fold, can_call):
         float(pas) / total,
         float(agg) / total)
 
-def apply_action_result(game, rgp, action_result, current_options,
-                         terminate):
+def _fold(rgp):
+    """
+    Fold rgp
+    """
+    rgp.folded = True
+    rgp.left_to_act = False
+    
+def _passive(rgp, call_cost):
+    """
+    Check or call rgp
+    """
+    rgp.stack -= call_cost
+    rgp.contributed += call_cost
+    rgp.left_to_act = False
+    
+def _aggressive(game, rgp, raise_total):
+    """
+    Bet or raise rgp
+    """
+    rgp.stack = rgp.stack - (raise_total - rgp.contributed)
+    raised_to = max(rgp.contributed for rgp in game.rgps)
+    game.increment = max(game.increment, raise_total - raised_to)
+    rgp.contributed = raise_total
+    game.bet_count += 1
+    rgp.left_to_act = False
+    # everyone who hasn't folded is now left to act again
+    for other in game.rgps:
+        if other is not rgp and not other.folded:
+            other.left_to_act = True
+
+def _apply_action_result(game, rgp, action_result):
     """
     Change game and rgp state. Add relevant hand history items. Possibly
     finish hand.
-    
-    Assumes validation is already done!
-    """        
+    """
+    if action_result.is_fold:
+        _fold(rgp)
+    elif action_result.is_passive:
+        _passive(rgp, action_result.call_cost)
+    elif action_result.is_aggressive:
+        _aggressive(game, rgp, action_result.raise_total)
+    else:
+        raise ValueError("Invalid action result")
+    left_to_act = [p for p in game.rgps if p.left_to_act]
+    remain = [p for p in game.rgps if not p.left_to_act and not p.folded]
+    if len(left_to_act) == 1 and not remain:
+        # BB got a walk, or everyone folded to the button postflop
+        # TODO: finish game, left_to_act[0] is the winner
+        game.current_userid = None
+    elif not left_to_act:
+        # TODO: if one remains, they win; otherwise, deal cards or show down
+        game.current_userid = None
+    else:
+        # Who's up next? And not someone named Who, but the pronoun.
+        later = [p for p in left_to_act if p.order > rgp.order]
+        earlier = [p for p in left_to_act if p.order < rgp.order]
+        chosen = later if later else earlier
+        next_rgp = min(chosen, key=lambda p: p.order)
+        game.current_rgp = next_rgp
+        logging.debug("Next to act in game %d: userid %d, order %d",
+                      game.gameid, next_rgp.userid, next_rgp.order)
 
 def perform_action(game, rgp, range_action, current_options):
     """
-    Change game and rgp state. Add relevant hand history items. Possibly
-    finish hand.
+    Determine result of range action, and apply it.
     
     Assumes validation is already done!
     """
@@ -288,10 +341,10 @@ def perform_action(game, rgp, range_action, current_options):
         game.current_factor *= a_ratio
     rgp.range, action_result = range_action_to_action(range_action,
         rgp.cards_dealt, current_options)
-    # TODO: need final showdown sometimes (rarely)
+    # TODO: need final showdown sometimes (rarely) ...
+    # this equates to bettinground.complete in the old version
     # TODO: 0: update game and current rgp
-    apply_action_result(game, rgp, action_result, current_options,
-                        terminate)
+    _apply_action_result(game, rgp, action_result)
     # TODO: note, it might not be their turn at the point we commit, okay?
     return action_result    
 

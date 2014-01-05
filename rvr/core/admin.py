@@ -173,7 +173,7 @@ class AdminCmd(Cmd):
         show details of all games associated with userid
         """
         userid = int(params)
-        result = self.api.get_user_games(userid)
+        result = self.api.get_user_running_games(userid)
         if isinstance(result, APIError):
             print "Error:", result.description  # pylint:disable=E1101
             return

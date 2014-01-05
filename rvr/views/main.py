@@ -13,6 +13,7 @@ from flask.helpers import flash
 from flask.globals import request, session, g
 from rvr.forms.action import action_form
 from rvr.core import dtos
+from rvr.poker.handrange import NOTHING
 
 @APP.before_request
 def ensure_user():
@@ -98,7 +99,7 @@ def home_page():
     if isinstance(open_games, APIError):
         flash("An unknown error occurred retrieving your open games.")
         return redirect(url_for("landing_page"))
-    my_games = api.get_user_games(userid)
+    my_games = api.get_user_running_games(userid)
     if isinstance(my_games, APIError):
         flash("An unknown error occurred retrieving your running games.")
         return redirect(url_for("landing_page"))
@@ -185,7 +186,7 @@ def _handle_action(gameid, userid, api, form):
     fold = form.fold.data
     passive = form.passive.data
     aggressive = form.aggressive.data
-    total = form.total.data
+    total = form.total.data if aggressive != NOTHING else 0
     range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
                                       aggressive_raw=aggressive,
                                       raise_total=total)

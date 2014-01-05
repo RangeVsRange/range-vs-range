@@ -214,7 +214,10 @@ class RunningGameSummary(object):
         rgps = sorted(running_game.rgps, key=lambda r:r.order)
         users = [UserDetails.from_user(r.user) for r in rgps]
         situation = SituationDetails.from_situation(running_game.situation)
-        user_details = UserDetails.from_user(running_game.current_rgp.user)
+        if running_game.current_rgp is not None:
+            user_details = UserDetails.from_user(running_game.current_rgp.user)
+        else:
+            user_details = None
         return cls(running_game.gameid, users, situation, user_details)
 
 class RunningGameParticipantDetails(object):
@@ -474,9 +477,7 @@ class ActionDetails(object):
             (aggressive_range is None and aggressive_raw is None):
             raise ValueError("Specified neither range or raw")
         if raise_total is None:
-            if not aggressive_range.is_empty():
-                raise ValueError(
-                    "If aggressive_range is not nothing, must have raise_total")
+            raise ValueError("No raise total")
 
         self.fold_range = fold_range  \
             if isinstance(fold_range, HandRange)  \

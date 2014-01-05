@@ -16,29 +16,6 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
 
 GAME_HISTORY_TABLES = [tables.GameHistoryUserRange]
 
-# def validate_action(action, options, range_raw):
-#     """
-#     Check that action is valid and return any error.
-#     """
-#     action.raise_total = int(action.raise_total)
-#     if options.can_raise() and (action.raise_total < options.min_raise or
-#                                 action.raise_total > options.max_raise):
-#         return API.ERR_INVALID_RAISE_TOTAL
-#     fold_range = HandRange(action.fold_range)
-#     passive_range = HandRange(action.passive_range)
-#     aggressive_range = HandRange(action.aggressive_range)
-#     original_range = HandRange(range_raw)
-#     # todo: port the old range_action_fits, because this is not enough.
-#     # E.g. we don't recognise that it's invalid to have a raising range when
-#     # there's no option to raise.
-#     # todo: also, port the unit tests!
-#     is_valid, _reason = range_sum_equal(fold_range, passive_range,
-#                                         aggressive_range, original_range)
-#     if is_valid:
-#         return None
-#     else:
-#         return API.ERR_INVALID_RANGES
-
 def exception_mapper(fun):
     """
     Converts database exceptions to APIError
@@ -286,7 +263,7 @@ class API(object):
         return results
     
     @api
-    def get_user_games(self, userid):
+    def get_user_running_games(self, userid):
         """
         3. Retrieve user's games and their statuses
         inputs: userid
@@ -298,7 +275,7 @@ class API(object):
         rgps = self.session.query(tables.RunningGameParticipant)  \
             .filter(tables.RunningGameParticipant.userid == userid).all()
         running_games = [dtos.RunningGameSummary.from_running_game(rgp.game)
-                         for rgp in rgps]
+                         for rgp in rgps if rgp.game.current_rgp is not None]
         return dtos.UsersGameDetails(userid, running_games)
     
     def _start_game(self, open_game, final_ogp):
