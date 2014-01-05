@@ -9,7 +9,7 @@ import unittest
 from rvr.poker.handrange import HandRange,  \
     _cmp_weighted_options, _cmp_options, weighted_options_to_description
 from rvr.infrastructure.util import concatenate
-from rvr.core.dtos import ActionOptions, ActionDetails, ActionResponse
+from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 
 # TODO: fix this lint, instead of ignoring
 # pylint:disable=R0903,C0111,R0201,W0141,C0301,W0110,C0103,W0201,R0914,W0703,R0913,W0613,R0904,C0324,R0915
@@ -401,13 +401,13 @@ def range_action_to_action(range_action, original, hand, current_options):
     """
     # Note that this gives incorrect results if an option is in two ranges
     if range_contains_hand(range_action.fold_range, hand):
-        return range_action.fold_range, ActionResponse.fold()
+        return range_action.fold_range, ActionResult.fold()
     elif range_contains_hand(range_action.passive_range, hand):
         return range_action.passive_range, \
-            ActionResponse.call(current_options.call_cost)
+            ActionResult.call(current_options.call_cost)
     elif range_contains_hand(range_action.aggressive_range, hand):
         return range_action.aggressive_range, \
-            ActionResponse.raise_to(range_action.raise_total)
+            ActionResult.raise_to(range_action.raise_total)
     else:
         raise ValueError("hand is %s, range_action is invalid: %r" % (hand, range_action))
 
@@ -482,6 +482,53 @@ def re_deal(range_action, cards_dealt, dealt_key, board, can_fold, can_call):
         float(f) / total,
         float(p) / total,
         float(a) / total)
+
+def apply_action_result(game, rgp, action_result, current_options,
+                         terminate):
+    """
+    Change game and rgp state. Add relevant hand history items. Possibly
+    finish hand.
+    
+    Assumes validation is already done!
+    """        
+
+def perform_action(game, rgp, range_action, current_options):
+    """
+    Change game and rgp state. Add relevant hand history items. Possibly
+    finish hand.
+    
+    Assumes validation is already done!
+    """
+    # pylint:disable=R0914
+    left_to_act = [r for r in game.rgps if r.left_to_act]
+    remain = [r for r in game.rgps if not r.folded]
+    # no play on when 3-handed
+    can_fold = len(remain) > 2
+    # same condition hold for calling of course, also:
+    # preflop, flop and turn, you can call
+    # if there's someone else who hasn't acted yet, you can check to them
+    can_call = can_fold or game.current_round != RIVER  \
+        or len(left_to_act) > 1
+    cards_dealt = {rgp: rgp.cards_dealt for rgp in game.rgps}
+    terminate, f_ratio, _p_ratio, a_ratio = re_deal(range_action,
+        cards_dealt, rgp, game.board, can_fold, can_call)
+    # this redeals rgp's cards in the dict, so we need to re-apply to rgp
+    rgp.cards_dealt = cards_dealt[rgp]
+    # TODO: record sizes of range_action (subjective, not actual)
+    # TODO: 1: add range action and result to hand history
+    # TODO: partial payments
+    if not can_fold and can_call:
+        game.current_factor *= 1 - f_ratio
+    elif not can_fold and not can_call:
+        game.current_factor *= a_ratio
+    rgp.range, action_result = range_action_to_action(range_action,
+        rgp.range, rgp.cards_dealt, current_options)
+    # TODO: need final showdown sometimes (rarely)
+    # TODO: 0: update game and current rgp
+    apply_action_result(game, rgp, action_result, current_options,
+                        terminate)
+    # TODO: note, it might not be their turn at the point we commit, okay?
+    return action_result    
 
 class Test(unittest.TestCase):
     def do_test_re_deal(self, action, dealt, key, board, result, re_dealt, iterations=1, delta=0.0):

@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 import itertools
 from rvr.poker.handrange import deal_from_ranges
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
-    PREFLOP, RIVER, re_deal, range_action_to_action
+    PREFLOP, perform_action
 
 #pylint:disable=R0903
 
@@ -472,79 +472,6 @@ class API(object):
     ERR_NOT_USERS_TURN = APIError("It's not that user's turn.")
     ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
     ERR_INVALID_RANGES = APIError("Invalid ranges.")
-
-    def _perform_action(self, game, rgp, range_action, current_options):
-        """
-        Change game and rgp state. Add relevant hand history items. Possibly
-        finish hand.
-        
-        Assumes validation is already done!
-        """
-        self.session.commit() # because if we don't we get some ...
-        # ... weird circular dependency thing ...
-        # ... but hold on, we haven't done anything yet!?!
-        # ... TODO: Understand this!   
-        # ... and it seems to be the "game.current_rgp.userid" that needs to be
-        # ... committed
-        left_to_act = [rgp for rgp in game.rgps if rgp.left_to_act]
-        remain = [rgp for rgp in game.rgps if not rgp.folded]
-        # no play on when 3-handed
-        can_fold = len(remain) > 2
-        # same condition hold for calling of course, also:
-        # preflop, flop and turn, you can call
-        # if there's someone else who hasn't acted yet, you can check to them
-        can_call = can_fold or game.current_round != RIVER  \
-            or len(left_to_act) > 1
-        cards_dealt = {rgp: rgp.cards_dealt for rgp in game.rgps}
-        terminate, f_ratio, p_ratio, a_ratio = re_deal(range_action,
-            cards_dealt, rgp, game.board, can_fold, can_call)
-        # TODO: record sizes of range_action (subjective, not actual)
-        # TODO: add range action and resultant action and current factor
-        # changes to hand history
-        # TODO: partial payments
-        if can_fold:
-            pass
-        elif can_call:
-            game.current_factor *= 1 - f_ratio
-        else:
-            game.current_factor *= a_ratio
-        rgp.range, action_result = range_action_to_action(range_action,
-            rgp.range, rgp.cards_dealt, current_options)
-        # TODO: need final showdown sometimes (rarely)
-        # TODO: update game and current rgp
-        # TODO: note, it might not be there turn at the point we commit, okay?
-        return action_result
-        
-# range_action.set_sizes(f_ratio, p_ratio, a_ratio)
-# self.hand_history.add_range_action(
-#     self.player_client_map[player].name, range_action)
-# self.do_partial_payments(range_action, player, can_fold, can_call, f_ratio,
-#                          p_ratio, a_ratio)
-# # change current factor before the call or raise goes in because we
-# # re-dealt
-# if can_fold:
-#     logging.debug("maintaining current_factor %0.4f", self.current_factor)
-# elif can_call:
-#     logging.debug("reducing current_factor for folds from %0.4f
-#                    by %0.4f to %0.4f", self.current_factor,
-#                   1 - f_ratio, self.current_factor * (1 - f_ratio))
-#     self.current_factor *= 1 - f_ratio
-# else:
-#     logging.debug("reducing current_factor for folds and calls from %0.4f
-#                    by %0.4f to %0.4f", self.current_factor, a_ratio,
-#                   self.current_factor * a_ratio)
-#     self.current_factor *= a_ratio
-# new_range, action = range_action_to_action(range_action, self.ranges[player],
-#     self.cards_dealt[player], self.current_options)
-# logging.debug("changing player '%s' range from '%r' to '%r'",
-#               player.name, self.ranges[player], new_range)
-# self.ranges[player] = new_range
-# if isinstance(action, CallAction) and \
-#         self.left_to_act and \
-#         self.already_acted and \
-#         self.round == RIVER:
-#     self.need_final_showdown = True
-# self.handleAction(action, terminate, player)
     
     @api
     def perform_action(self, gameid, userid, range_action):
@@ -573,7 +500,13 @@ class API(object):
                                            rgp.range)
         if not is_valid:
             return API.ERR_INVALID_RANGES
-        return self._perform_action(game, rgp, range_action, current_options)
+        self.session.commit() # because if we don't we get some ...    
+        # ... weird circular dependency thing ...
+        # ... but hold on, we haven't done anything yet!?!
+        # ... TODO: Understand this!   
+        # ... and it seems to be the "game.current_rgp.userid" that needs to be
+        # ... committed        
+        return perform_action(game, rgp, range_action, current_options)
         
     def _get_history_items(self, game, userid=None):
         """
