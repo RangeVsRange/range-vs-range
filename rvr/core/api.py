@@ -504,8 +504,8 @@ class API(object):
         # ... weird circular dependency thing ...
         # ... but hold on, we haven't done anything yet!?!
         # ... TODO: Understand this!   
-        # ... and it seems to be the "game.current_rgp.userid" that needs to be
-        # ... committed        
+        # ... and it seems to be that evaluating "game.current_rgp.userid"
+        # ... is what needs to be committed. Yes, just evaluating it!
         return perform_action(game, rgp, range_action, current_options)
         
     def _get_history_items(self, game, userid=None):
