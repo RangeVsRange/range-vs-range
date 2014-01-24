@@ -220,6 +220,11 @@ def re_deal(range_action, cards_dealt, dealt_key, board, can_fold, can_call):
                 # already handled as a partial showdown payment
                 # They cannot necessarily fold, because they might not have a
                 # fold range.
+                # Example: on the river, heads-up, they call their whole range.
+                # In fact, that's more than an example, it happens all the time.
+                # In this case, we don't have a showdown, or even complete an
+                # action for this range_action. In fact, whether we record a
+                # call action or not is perhaps irrelevant.
                 terminate = True
         # Edge case: It's just possible that there will be no options here. This
         # can happen when the player's current hand is in their fold range, and
@@ -279,17 +284,33 @@ def _aggressive(game, rgp, raise_total):
         if other is not rgp and not other.folded:
             other.left_to_act = True
 
+def _terminate(game, rgp):
+    """
+    Handle game termination when a range action results in termination.
+    """
+    rgp.left_to_act = False
+    game.is_finished = True
+
 def _apply_action_result(game, rgp, action_result):
     """
     Change game and rgp state. Add relevant hand history items. Possibly
     finish hand.
     """
+    # TODO: 0: handle action_result.is_terminate; check how old version did.
+    # If terminate:
+    #  - don't perform an action
+    #  - don't record an action in the hand history (except the range action)
+    #  - signal that the game is over
+    # performing the action may also signal that the game is over (e.g. when
+    # someone folds 100% on the turn). 
     if action_result.is_fold:
         _fold(rgp)
     elif action_result.is_passive:
         _passive(rgp, action_result.call_cost)
     elif action_result.is_aggressive:
         _aggressive(game, rgp, action_result.raise_total)
+    elif action_result.is_terminate:
+        _terminate(game, rgp)
     else:
         raise ValueError("Invalid action result")
     left_to_act = [p for p in game.rgps if p.left_to_act]
@@ -300,7 +321,10 @@ def _apply_action_result(game, rgp, action_result):
         game.is_finished = True
     elif not left_to_act:
         # TODO: if one remains, they win; otherwise, deal cards or show down
-        game.is_finished = True
+        if len(remain) == 1:
+            game.is_finished = True
+        else:
+            _finish_betting_round(game, remain)
     else:
         # Who's up next? And not someone named Who, but the pronoun.
         later = [p for p in left_to_act if p.order > rgp.order]
@@ -330,7 +354,8 @@ def perform_action(game, rgp, range_action, current_options):
     cards_dealt = {rgp: rgp.cards_dealt for rgp in game.rgps}
     terminate, f_ratio, _p_ratio, a_ratio = re_deal(range_action,
         cards_dealt, rgp, game.board, can_fold, can_call)
-    # this redeals rgp's cards in the dict, so we need to re-apply to rgp
+    # terminate means the hand is over, and also means no action is needed
+    # The above redeals rgp's cards in the dict, so we need to re-apply to rgp
     rgp.cards_dealt = cards_dealt[rgp]
     # TODO: record sizes of range_action (subjective, not actual)
     # TODO: 1: add range action and result to hand history
@@ -339,13 +364,32 @@ def perform_action(game, rgp, range_action, current_options):
         game.current_factor *= 1 - f_ratio
     elif not can_fold and not can_call:
         game.current_factor *= a_ratio
-    rgp.range, action_result = range_action_to_action(range_action,
-        rgp.cards_dealt, current_options)
+    if not terminate:
+        rgp.range, action_result = range_action_to_action(range_action,
+            rgp.cards_dealt, current_options)
+    else:
+        action_result = ActionResult.terminate()
     # TODO: need final showdown sometimes (rarely) ...
     # this equates to bettinground.complete in the old version
     _apply_action_result(game, rgp, action_result)
+    if game.is_finished:
+        _finish_game(game)
     # TODO: note, it might not be their turn at the point we commit, okay?
     return action_result    
+
+def _finish_betting_round(game, remain):
+    """
+    Betting round is finished. Start a new one, or flag game as finished.
+    """
+    # TODO: finish betting round (maybe flag game as finished, but don't do it)
+    pass
+
+def _finish_game(game):
+    """
+    Game is finished. Do finishey things.
+    """
+    # TODO: finish game
+    pass
 
 class Test(unittest.TestCase):
     """

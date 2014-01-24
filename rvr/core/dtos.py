@@ -501,18 +501,24 @@ class ActionResult(object):
     response to a range-based action request, tells the user what happened
     """
     def __init__(self, is_fold=False, is_passive=False, 
-                is_aggressive=False, call_cost=None, raise_total=None):
-        if len([b for b in [is_fold, is_passive, is_aggressive] if b]) != 1:
+                 is_aggressive=False, call_cost=None, raise_total=None,
+                 is_terminate=False):
+        if len([b for b in [is_fold, is_passive, is_aggressive] if b]) != 1  \
+            and not is_terminate:
             raise ValueError("Specify only one type of action for a response")
         if is_passive and call_cost is None:
             raise ValueError("Specify a call cost when is_passive")
         if is_aggressive and raise_total is None:
             raise ValueError("Specify a raise total when is_aggressive")
+        if is_terminate and (is_fold or is_passive or is_aggressive or
+                             call_cost is not None or raise_total is not None):
+            raise ValueError("is_terminate only, or not at all")
         self.is_fold = is_fold
         self.is_passive = is_passive
         self.is_aggressive = is_aggressive
         self.call_cost = call_cost
         self.raise_total = raise_total
+        self.is_terminate = is_terminate
         
     @classmethod
     def fold(cls):
@@ -535,8 +541,16 @@ class ActionResult(object):
         """
         return ActionResult(is_aggressive=True, raise_total=raise_total)
     
+    @classmethod
+    def terminate(cls):
+        """
+        This action terminates the hand. No fold, passive or aggressive is
+        recorded.
+        """
+    
     def __repr__(self):
         return ("ActionResult(is_fold=%r, is_passive=%r, " +
-                "is_aggressive=%r, call_cost=%r, raise_total=%r)") %  \
+                "is_aggressive=%r, call_cost=%r, raise_total=%r, " +
+                "is_terminate=%r)") %  \
             (self.is_fold, self.is_passive, self.is_aggressive,
-             self.call_cost, self.raise_total)
+             self.call_cost, self.raise_total, self.is_terminate)
