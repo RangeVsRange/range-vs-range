@@ -200,6 +200,7 @@ def _handle_action(gameid, userid, api, form):
         else:
             msg = "An unknown error occurred."
         flash(msg)
+        return redirect(url_for('game_page', gameid=gameid))
     else:
         if result.is_fold:
             msg = "You folded."
@@ -210,7 +211,11 @@ def _handle_action(gameid, userid, api, form):
         else:
             msg = "I can't figure out what happened, eh."
         flash(msg)
-    return redirect(url_for('game_page', gameid=gameid))
+        if result.game_over:
+            flash("The game is finished.")
+            return redirect(url_for('home_page'))
+        else:   
+            return redirect(url_for('game_page', gameid=gameid))
 
 @APP.route('/game', methods=['GET', 'POST'])
 @AUTH.required

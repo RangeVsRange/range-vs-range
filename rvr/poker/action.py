@@ -296,13 +296,6 @@ def _apply_action_result(game, rgp, action_result):
     Change game and rgp state. Add relevant hand history items. Possibly
     finish hand.
     """
-    # TODO: 0: handle action_result.is_terminate; check how old version did.
-    # If terminate:
-    #  - don't perform an action
-    #  - don't record an action in the hand history (except the range action)
-    #  - signal that the game is over
-    # performing the action may also signal that the game is over (e.g. when
-    # someone folds 100% on the turn). 
     if action_result.is_fold:
         _fold(rgp)
     elif action_result.is_passive:
@@ -358,8 +351,8 @@ def perform_action(game, rgp, range_action, current_options):
     # The above redeals rgp's cards in the dict, so we need to re-apply to rgp
     rgp.cards_dealt = cards_dealt[rgp]
     # TODO: record sizes of range_action (subjective, not actual)
-    # TODO: 1: add range action and result to hand history
-    # TODO: partial payments
+    # TODO: add range action and result to hand history
+    # TODO: partial payments (including when dealing board cards!)
     if not can_fold and can_call:
         game.current_factor *= 1 - f_ratio
     elif not can_fold and not can_call:
@@ -375,7 +368,8 @@ def perform_action(game, rgp, range_action, current_options):
     if game.is_finished:
         _finish_game(game)
     # TODO: note, it might not be their turn at the point we commit, okay?
-    return action_result    
+    action_result.game_over = game.is_finished
+    return action_result
 
 def _finish_betting_round(game, remain):
     """

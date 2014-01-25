@@ -519,6 +519,7 @@ class ActionResult(object):
         self.call_cost = call_cost
         self.raise_total = raise_total
         self.is_terminate = is_terminate
+        self.game_over = False
         
     @classmethod
     def fold(cls):
