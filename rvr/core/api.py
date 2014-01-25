@@ -516,7 +516,7 @@ class API(object):
                 return self.ERR_NO_SUCH_USER
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.gameid == gameid)  \
-            .filter(not tables.RunningGame.is_finished).all()
+            .filter(tables.RunningGame.current_userid).all()
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
