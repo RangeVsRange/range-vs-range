@@ -41,12 +41,12 @@ Your range: {{game_details.current_player.range_raw}}<br>
   {% for error in form.errors.fold %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.fold.label}} {{form.fold}}<br>
   {% for error in form.errors.passive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.passive.label}} {{form.passive}} {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em><br>
+  {{form.passive.label}} {{form.passive}} {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
 {% if current_options.can_raise() %}
   {% for error in form.errors.aggressive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.aggressive.label}} {{form.aggressive}}
-  {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em>{% endif %}<br>
+  {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>
 {% endif %}
   <input type="submit" value="Go!" /><br>
 </form>
