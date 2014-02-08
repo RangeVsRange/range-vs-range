@@ -14,6 +14,8 @@ FLOP = "flop"
 TURN = "turn"
 RIVER = "river"
 
+NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
+
 def _option_to_text(option):
     """
     option is set of two Card
@@ -314,9 +316,10 @@ def _apply_action_result(game, rgp, action_result):
         game.is_finished = True
     elif not left_to_act:
         # TODO: if one remains, they win; otherwise, deal cards or show down
-        if len(remain) == 1:
+        if len(remain) == 1 or game.current_round == RIVER:
             game.is_finished = True
         else:
+            # deal, change round, set new game state
             _finish_betting_round(game, remain)
     else:
         # Who's up next? And not someone named Who, but the pronoun.
@@ -373,10 +376,26 @@ def perform_action(game, rgp, range_action, current_options):
 
 def _finish_betting_round(game, remain):
     """
-    Betting round is finished. Start a new one, or flag game as finished.
+    Deal and such
     """
-    # TODO: finish betting round (maybe flag game as finished, but don't do it)
-    pass
+    # Note that the original setting of game state is not here, it's directly
+    # in API. Perhaps it should be here. Perhaps it will...
+    current_user = min(remain, key=lambda r: r.order)
+    game.current_userid = current_user.userid
+    # TODO: deal to board
+    # TODO: make an equity payment due to how these cards change equity
+    # TODO: hand history item
+    game.current_round = NEXT_ROUND[game.current_round]
+    game.increment = game.situation.big_blind
+    game.bet_count = 0
+    for rgp in game.rgps:
+        # We move the contributed money into the pot
+        # Note: from everyone, not just from those who remain
+        game.pot_pre += rgp.contributed
+        rgp.contributed = 0
+        if rgp.folded:
+            continue
+        rgp.left_to_act = True
 
 def _finish_game(game):
     """
