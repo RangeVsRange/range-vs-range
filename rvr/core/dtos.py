@@ -77,6 +77,9 @@ class UserDetails(object):
     def __repr__(self):
         return "UserDetails(%r, id=%r)" % (self.screenname, self.userid)
         
+    def __str__(self):
+        return self.screenname
+    
     @classmethod
     def from_user(cls, user):
         """
@@ -298,17 +301,17 @@ class UsersGameDetails(object):
 class GameItem(object):
     """
     base class for hand history item DTOs
-    """
+    """    
     @classmethod
     def from_game_history_child(cls, child):
         """
         Child is a GameHistoryUserRange, etc.
         Construct a GameItemUserRange, etc. 
         """
-        if isinstance(child, tables.GameHistoryUserRange):
-            return GameItemUserRange.from_history_item(child)
-        else:
-            raise TypeError("Object is not a GameHistoryItem associated object")
+        class_ = child.__class__
+        if class_ in MAP_TABLE_DTO:
+            return MAP_TABLE_DTO[class_].from_history_item(child)
+        raise TypeError("Object is not a GameHistoryItem associated object")
     
     def should_include_for(self, _userid):
         """
@@ -334,11 +337,7 @@ class GameItemUserRange(GameItem):
             (self.user, self.range_raw)
     
     def __str__(self):
-        if self.range_raw:
-            range_raw = self.range_raw
-        else:
-            range_raw = 'anything'
-        return "%s's range is: %s" % (self.user.screenname, range_raw)
+        return "%s's range is: %s" % (self.user.screenname, self.range_raw)
 
     @classmethod
     def from_history_item(cls, item):
@@ -370,14 +369,20 @@ class GameItemRangeAction(GameItem):
         return ("GameItemRangeAction(user=%r, range_action=%r)") %  \
             (self.user, self.range_action)
     
+    def __str__(self):
+        return "%s performs range-based action: %s" % (self.user,
+                                                       self.range_action)
+    
     @classmethod
     def from_history_item(cls, item):
         """
         Create from a GameHistoryRangeAction
         """        
         user_details = UserDetails.from_user(item.user)
-        range_action = ActionDetails(item.fold_range,
-            item.passive_range, item.aggressive_range, item.raise_total)
+        range_action = ActionDetails(fold_raw=item.fold_range,
+            passive_raw=item.passive_range,
+            aggressive_raw=item.aggressive_range,
+            raise_total=item.raise_total)
         return cls(user_details, range_action)
     
     def should_include_for(self, userid):
@@ -386,6 +391,9 @@ class GameItemRangeAction(GameItem):
         (while the game is running)
         """
         return self.user.userid == userid
+
+MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
+                 tables.GameHistoryRangeAction: GameItemRangeAction}
 
 class RunningGameHistory(object):
     """
@@ -495,6 +503,12 @@ class ActionDetails(object):
                 "aggressive_range=%r, raise_total=%r)") %  \
             (self.fold_range, self.passive_range, self.aggressive_range,
              self.raise_total)
+            
+    def __str__(self):
+        return ("folding %s, checking or calling %s, " +
+                "betting or raising (to %d) %s") %  \
+            (self.fold_range.description, self.passive_range.description,
+             self.raise_total, self.aggressive_range.description)
 
 class ActionResult(object):
     """

@@ -10,11 +10,14 @@ from sqlalchemy.exc import IntegrityError
 import itertools
 from rvr.poker.handrange import deal_from_ranges
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
-    PREFLOP, perform_action
+    PREFLOP, RIVER, re_deal, range_action_to_action,\
+    apply_action_result, finish_game
+from rvr.core.dtos import ActionResult
 
 #pylint:disable=R0903
 
-GAME_HISTORY_TABLES = [tables.GameHistoryUserRange]
+GAME_HISTORY_TABLES = [tables.GameHistoryUserRange,
+                       tables.GameHistoryRangeAction]
 
 def exception_mapper(fun):
     """
@@ -331,28 +334,45 @@ class API(object):
             self.session.add(rgp)
             self.session.flush()  # populate game
             # Note that we do NOT create a range history item for them,
-            # it is implied. But if we did, it would look like this:
-            # self._set_rgp_range(rgp, "")
+            # it is implied.
         self.session.delete(open_game)  # cascades to ogps
         logging.debug("Started game %d", open_game.gameid)
         return running_game
     
-    def _set_rgp_range(self, rgp, range_raw):
+    def _record_hand_history_item(self, game, item):
+        """
+        Create a GameHistoryBase, and add it and item to the session.
+        """
+        base = tables.GameHistoryBase()
+        base.gameid = game.gameid
+        base.order = game.next_hh
+        game.next_hh += 1
+        item.gameid = base.gameid
+        item.order = base.order
+        self.session.add(base)
+        self.session.add(item)
+    
+    def _record_rgp_range(self, rgp, range_raw):
         """
         Record that this user now has this range in this game, in the hand
         history.
         """
-        base = tables.GameHistoryBase()
-        base.gameid = rgp.gameid
-        base.order = rgp.game.next_hh
-        range_element = tables.GameHistoryUserRange()
-        range_element.gameid = base.gameid
-        range_element.order = base.order
-        range_element.userid = rgp.userid
-        range_element.range_raw = range_raw
-        rgp.game.next_hh += 1
-        self.session.add(base)
-        self.session.add(range_element)
+        element = tables.GameHistoryUserRange()
+        element.userid = rgp.userid
+        element.range_raw = range_raw
+        self._record_hand_history_item(rgp.game, element)
+        
+    def _record_range_action(self, rgp, range_action):
+        """
+        Record that this user has made this range-based action.
+        """
+        element = tables.GameHistoryRangeAction()
+        element.userid = rgp.userid
+        element.fold_range = range_action.fold_range.description
+        element.passive_range = range_action.passive_range.description
+        element.aggressive_range = range_action.aggressive_range.description
+        element.raise_total = range_action.raise_total
+        self._record_hand_history_item(rgp.game, element)
 
     @api
     def join_game(self, userid, gameid):
@@ -449,6 +469,57 @@ class API(object):
     ERR_NOT_USERS_TURN = APIError("It's not that user's turn.")
     ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
     ERR_INVALID_RANGES = APIError("Invalid ranges.")
+
+    def _perform_action(self, game, rgp, range_action, current_options):
+        """
+        Determine result of range action, and apply it.
+        
+        Assumes validation is already done.
+        """
+        # pylint:disable=R0914
+        self._record_range_action(rgp, range_action)
+        left_to_act = [r for r in game.rgps if r.left_to_act]
+        remain = [r for r in game.rgps if not r.folded]
+        # no play on when 3-handed
+        can_fold = len(remain) > 2
+        # same condition hold for calling of course, also:
+        # preflop, flop and turn, you can call
+        # if there's someone else who hasn't acted yet, you can check to them
+        can_call = can_fold or game.current_round != RIVER  \
+            or len(left_to_act) > 1
+        cards_dealt = {rgp: rgp.cards_dealt for rgp in game.rgps}
+        terminate, f_ratio, _p_ratio, a_ratio = re_deal(range_action,
+            cards_dealt, rgp, game.board, can_fold, can_call)
+        # terminate means the hand is over, and also means no action is needed.
+        # The above redeals rgp's cards in the dict, so we need to re-apply to
+        # rgp.
+        rgp.cards_dealt = cards_dealt[rgp]
+        # TODO: HAND HISTORY: record (subjective) sizes of range_action
+        # TODO: HAND HISTORY: range action
+        # TODO: HAND HISTORY: action in the game (if not terminate)
+        # TODO: EQUITY PAYMENT: fold equity
+        if not can_fold and can_call:
+            game.current_factor *= 1 - f_ratio
+        elif not can_fold and not can_call:
+            game.current_factor *= a_ratio
+        if not terminate:
+            rgp.range, action_result = range_action_to_action(range_action,
+                rgp.cards_dealt, current_options)
+            self._record_rgp_range(rgp, rgp.range_raw)
+        else:
+            action_result = ActionResult.terminate()
+        # TODO: RESULTS: need final showdown sometimes (rarely) ...
+        # This equates to bettinground.complete in the old version
+        # It happens when:
+        #  - All in before the river; or,
+        #  - A call doesn't create a showdown payment on the river because there
+        #    are people left to act, but then no one raises.
+        apply_action_result(game, rgp, action_result)
+        if game.is_finished:
+            finish_game(game)
+        action_result.game_over = game.is_finished
+        return action_result
+        # TODO: REVISIT: it might not be their turn at the point we commit, ok?
     
     @api
     def perform_action(self, gameid, userid, range_action):
@@ -480,10 +551,10 @@ class API(object):
         self.session.commit() # because if we don't we get some ...    
         # ... weird circular dependency thing ...
         # ... but hold on, we haven't done anything yet!?!
-        # ... TODO: Understand this!   
+        # ... TODO: REVISIT: understand this part of SqlAlchemy!   
         # ... and it seems to be that evaluating "game.current_rgp.userid"
         # ... is what needs to be committed. Yes, just evaluating it!
-        return perform_action(game, rgp, range_action, current_options)
+        return self._perform_action(game, rgp, range_action, current_options)
         
     def _get_history_items(self, game, userid=None):
         """

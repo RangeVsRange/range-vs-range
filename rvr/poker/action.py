@@ -9,10 +9,10 @@ from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import logging
 
-PREFLOP = "preflop"
-FLOP = "flop"
-TURN = "turn"
-RIVER = "river"
+PREFLOP = "Preflop"
+FLOP = "Flop"
+TURN = "Turn"
+RIVER = "River"
 
 NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
 TOTAL_COMMUNITY_CARDS = {PREFLOP: 0, FLOP: 3, TURN: 4, RIVER: 5}
@@ -294,7 +294,7 @@ def _terminate(game, rgp):
     rgp.left_to_act = False
     game.is_finished = True
 
-def _apply_action_result(game, rgp, action_result):
+def apply_action_result(game, rgp, action_result):
     """
     Change game and rgp state. Add relevant hand history items. Possibly
     finish hand.
@@ -313,14 +313,14 @@ def _apply_action_result(game, rgp, action_result):
     remain = [p for p in game.rgps if not p.left_to_act and not p.folded]
     if len(left_to_act) == 1 and not remain:
         # BB got a walk, or everyone folded to the button postflop
-        # TODO: finish game, left_to_act[0] is the winner
         game.is_finished = True
     elif not left_to_act:
-        # TODO: if one remains, they win; otherwise, deal cards or show down
         if len(remain) == 1 or game.current_round == RIVER:
+            # The last person in folded their entire range, or
+            # We have a range-based showdown on the river.
             game.is_finished = True
         else:
-            # deal, change round, set new game state
+            # Deal, change round, set new game state.
             _finish_betting_round(game, remain)
     else:
         # Who's up next? And not someone named Who, but the pronoun.
@@ -332,49 +332,6 @@ def _apply_action_result(game, rgp, action_result):
         logging.debug("Next to act in game %d: userid %d, order %d",
                       game.gameid, next_rgp.userid, next_rgp.order)
 
-def perform_action(game, rgp, range_action, current_options):
-    """
-    Determine result of range action, and apply it.
-    
-    Assumes validation is already done!
-    """
-    # pylint:disable=R0914
-    left_to_act = [r for r in game.rgps if r.left_to_act]
-    remain = [r for r in game.rgps if not r.folded]
-    # no play on when 3-handed
-    can_fold = len(remain) > 2
-    # same condition hold for calling of course, also:
-    # preflop, flop and turn, you can call
-    # if there's someone else who hasn't acted yet, you can check to them
-    can_call = can_fold or game.current_round != RIVER  \
-        or len(left_to_act) > 1
-    cards_dealt = {rgp: rgp.cards_dealt for rgp in game.rgps}
-    terminate, f_ratio, _p_ratio, a_ratio = re_deal(range_action,
-        cards_dealt, rgp, game.board, can_fold, can_call)
-    # terminate means the hand is over, and also means no action is needed
-    # The above redeals rgp's cards in the dict, so we need to re-apply to rgp
-    rgp.cards_dealt = cards_dealt[rgp]
-    # TODO: record sizes of range_action (subjective, not actual)
-    # TODO: add range action and result to hand history
-    # TODO: partial payments (including when dealing board cards!)
-    if not can_fold and can_call:
-        game.current_factor *= 1 - f_ratio
-    elif not can_fold and not can_call:
-        game.current_factor *= a_ratio
-    if not terminate:
-        rgp.range, action_result = range_action_to_action(range_action,
-            rgp.cards_dealt, current_options)
-    else:
-        action_result = ActionResult.terminate()
-    # TODO: need final showdown sometimes (rarely) ...
-    # this equates to bettinground.complete in the old version
-    _apply_action_result(game, rgp, action_result)
-    if game.is_finished:
-        _finish_game(game)
-    # TODO: note, it might not be their turn at the point we commit, okay?
-    action_result.game_over = game.is_finished
-    return action_result
-
 def _deal_to_board(game):
     """
     Deal as many cards as are needed to bring the board up to the current round
@@ -385,8 +342,8 @@ def _deal_to_board(game):
     excluded_cards.extend(game.board)
     new_board = game.board + deal_cards(excluded_cards, total - current)
     game.board = new_board
-    # TODO: make an equity payment due to how these cards change equity
-    # TODO: hand history item
+    # TODO: EQUITY PAYMENT: cards dealt to board
+    # TODO: HAND HISTORY: dealt to board
 
 def _finish_betting_round(game, remain):
     """
@@ -409,12 +366,15 @@ def _finish_betting_round(game, remain):
             continue
         rgp.left_to_act = True
 
-def _finish_game(game):
+def finish_game(game):
     """
-    Game is finished. Do finishey things.
+    Game is finished. Calculate results, record in hand history,
+    perform analysis.
     """
-    # TODO: finish game
-    pass
+    # TODO: RESULTS: finish game
+    # There may be a winner: one person with left_to_act True. Or there may be a
+    # range-based showdown.
+    return game
 
 class Test(unittest.TestCase):
     """

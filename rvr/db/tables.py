@@ -116,13 +116,13 @@ class RunningGame(BASE, object):
     Has a many-to-many relationship with User, via RunningGameParticipant.
     """
     __tablename__ = 'running_game'
-    # TODO: ForeignKey("running_game_participant.gameid")
+    # TODO: REVISIT: ForeignKey("running_game_participant.gameid")
     gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          nullable=False)
     next_hh = Column(Integer, default=0, nullable=False)
     situation = relationship("Situation", backref="running_games")
-    # TODO: ForeignKey("running_game_participant.userid")
+    # TODO: REVISIT: ForeignKey("running_game_participant.userid")
     # This should be a foreign key, but then SQLAlchemy thinks there's a
     # circular dependency, and won't create the database. Even with
     # post_update=True :(
@@ -271,7 +271,7 @@ class GameHistoryRangeAction(BASE):
         " GameHistoryBase.order==GameHistoryRangeAction.order)")
     user = relationship("User")
 
-# TODO: the following hand history items:
+# TODO: HAND HISTORY: the following hand history items:
 #  - (done) user has range
 #  - player makes a range-based action
 #  - player bets / raises
