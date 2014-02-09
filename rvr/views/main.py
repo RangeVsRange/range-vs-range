@@ -208,6 +208,8 @@ def _handle_action(gameid, userid, api, form):
             msg = "You called for %d." % (result.call_cost,)
         elif result.is_aggressive:
             msg = "You raised to %d." % (result.raise_total,)
+        elif result.is_terminate:
+            msg = "The hand is over."
         else:
             msg = "I can't figure out what happened, eh."
         flash(msg)
