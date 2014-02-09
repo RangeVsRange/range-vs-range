@@ -548,6 +548,7 @@ class ActionResult(object):
         This action terminates the hand. No fold, passive or aggressive is
         recorded.
         """
+        return ActionResult(is_terminate=True)
     
     def __repr__(self):
         return ("ActionResult(is_fold=%r, is_passive=%r, " +

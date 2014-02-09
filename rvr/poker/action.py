@@ -1,7 +1,7 @@
 """
 action functionality, imported from the previous versions
 """
-from rvr.poker.cards import Card
+from rvr.poker.cards import Card, deal_cards
 import unittest
 from rvr.poker.handrange import HandRange,  \
     _cmp_weighted_options, _cmp_options, weighted_options_to_description
@@ -15,6 +15,7 @@ TURN = "turn"
 RIVER = "river"
 
 NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
+TOTAL_COMMUNITY_CARDS = {PREFLOP: 0, FLOP: 3, TURN: 4, RIVER: 5}
 
 def _option_to_text(option):
     """
@@ -374,6 +375,19 @@ def perform_action(game, rgp, range_action, current_options):
     action_result.game_over = game.is_finished
     return action_result
 
+def _deal_to_board(game):
+    """
+    Deal as many cards as are needed to bring the board up to the current round
+    """
+    total = TOTAL_COMMUNITY_CARDS[game.current_round]
+    current = len(game.board)
+    excluded_cards = concatenate(rgp.cards_dealt for rgp in game.rgps)
+    excluded_cards.extend(game.board)
+    new_board = game.board + deal_cards(excluded_cards, total - current)
+    game.board = new_board
+    # TODO: make an equity payment due to how these cards change equity
+    # TODO: hand history item
+
 def _finish_betting_round(game, remain):
     """
     Deal and such
@@ -382,10 +396,8 @@ def _finish_betting_round(game, remain):
     # in API. Perhaps it should be here. Perhaps it will...
     current_user = min(remain, key=lambda r: r.order)
     game.current_userid = current_user.userid
-    # TODO: deal to board
-    # TODO: make an equity payment due to how these cards change equity
-    # TODO: hand history item
     game.current_round = NEXT_ROUND[game.current_round]
+    _deal_to_board(game)
     game.increment = game.situation.big_blind
     game.bet_count = 0
     for rgp in game.rgps:
