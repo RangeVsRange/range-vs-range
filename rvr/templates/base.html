@@ -9,6 +9,10 @@
     {% else %}
     <title>Range vs. Range</title>
     {% endif %}
+    <script type=text/javascript>
+      $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   </head>
   <body>
     <div><h1><a href="{{ url_for('landing_page') }}">Range vs. Range (Prototype)</a></h1></div>

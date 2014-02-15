@@ -1,5 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
+<script type=text/javascript>
+  $(function() {
+    $('a#fold_the_rest').bind('click', function() {
+      $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
+        original: $('#original').text(),
+        subtract_1: $('input[name="passive"]').val(),
+        subtract_2: $('input[name="aggressive"]').val()
+      }, function(data) {
+        $("#fold").val(data.difference);
+      });
+      return false;
+    });
+    $('a#call_the_rest').bind('click', function() {
+      $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
+        original: $('#original').text(),
+        subtract_1: $('input[name="fold"]').val(),
+        subtract_2: $('input[name="aggressive"]').val()
+      }, function(data) {
+        $("#passive").val(data.difference);
+      });
+      return false;
+    });
+    $('a#raise_the_rest').bind('click', function() {
+      $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
+        original: $('#original').text(),
+        subtract_1: $('input[name="fold"]').val(),
+        subtract_2: $('input[name="passive"]').val()
+      }, function(data) {
+        $("#aggressive").val(data.difference);
+      });
+      return false;
+    });
+  });
+</script>
+
 <h2>{{title}}</h2>
 
 <p>The game is: <strong>{{game_details.situation.description}}</strong>.</p>
@@ -35,17 +70,17 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 
 {% if is_me %}
 <p>
-Your range: {{game_details.current_player.range_raw}}<br>
+Your range: <span id=original>{{game_details.current_player.range_raw}}</span><br>
 <form method="post" name="action">
   {{form.hidden_tag()}}
   {% for error in form.errors.fold %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.fold.label}} {{form.fold}}<br>
+  {{form.fold.label}} {{form.fold}} <a href="#" id="fold_the_rest">(fold the rest)</a><br>
   {% for error in form.errors.passive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.passive.label}} {{form.passive}} {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
+  {{form.passive.label}} {{form.passive}} <a href="#" id="call_the_rest">(call the rest)</a> {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
 {% if current_options.can_raise() %}
   {% for error in form.errors.aggressive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.aggressive.label}} {{form.aggressive}}
+  {{form.aggressive.label}} {{form.aggressive}} <a href="#" id="raise_the_rest">(raise the rest)</a>
   {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>
 {% endif %}
   <input type="submit" value="Go!" /><br>

@@ -19,7 +19,7 @@ def _safe_hand_range(arg_name, fallback):
         hand_range = HandRange(fallback)
     return hand_range
 
-@APP.route('/json/range_subtract')
+@APP.route('/ajax/range_subtract')
 def range_subtract():
     """
     usage:
