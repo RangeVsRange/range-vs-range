@@ -540,16 +540,46 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         pick = list(weighted_choice(options))
         random.shuffle(pick)
         return pick
+    
+    def subtract(self, other):
+        """
+        Return a HandRange with all options from self that are not options in
+        other.
+        
+        other should also be a HandRange. 
+        """
+        mine = self.generate_options()
+        other = other.generate_options()
+        # TODO: REVISIT: there's probably a more efficient way to do this.
+        # Also note that this will only remove options with the same weight.
+        for option in other:
+            if option in mine:
+                mine.remove(option)
+        return HandRange(weighted_options_to_description(mine))
         
     def validate(self):
         """
         Check that this HandRange's description is valid.
+        
+        Throw ValueError if not.
         """
         options = self.generate_options()
         hands = [hand for hand, _weight in options]
         if len(hands) != len(set(hands)):
             raise ValueError("Duplicate hands in range: %s" % self.description)
+    
+    def is_valid(self):
+        """
+        Check that this HandRange's description is valid.
         
+        Return True or False. Call validate() for more detailed error.
+        """
+        try:
+            self.validate()
+        except ValueError:
+            return False
+        return True
+    
 pb.setUnjellyableForClass(HandRange, HandRange)
 
 class IncompatibleRangesError(RuntimeError):
@@ -668,6 +698,18 @@ class Test(unittest.TestCase):
         for old, new, result in inputs:
             self.assertEqual(reweight(HandRange(new),
                                       HandRange(old)).description, result)
+    
+    def test_subtract(self):
+        """ Test subtract """
+        data = [("anything", "nothing", "anything"),
+                ("nothing", "nothing", "nothing"),
+                ("anything", "anything", "nothing"),
+                ("nothing", "anything", "nothing"),
+                ("22+", "33", "44+,22"),
+                ("33+", "33-22", "44+")]
+        for minuend, subtrahend, difference in data:
+            result = HandRange(minuend).subtract(HandRange(subtrahend))
+            self.assertEqual(result.description, difference)
 
 if __name__ == '__main__':
     # 0.035s in 20130205 (Eclipse 3.6.1)

@@ -15,6 +15,9 @@ from rvr.forms.action import action_form
 from rvr.core import dtos
 from rvr.poker.handrange import NOTHING
 
+# TODO: 0: add an "everything else" button to calculate your last range
+# TODO: 1: when we deal board cards, we should modify players ranges accordingly
+
 @APP.before_request
 def ensure_user():
     """
