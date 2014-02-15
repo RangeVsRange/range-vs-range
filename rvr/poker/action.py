@@ -4,7 +4,8 @@ action functionality, imported from the previous versions
 from rvr.poker.cards import Card, deal_cards
 import unittest
 from rvr.poker.handrange import HandRange,  \
-    _cmp_weighted_options, _cmp_options, weighted_options_to_description
+    _cmp_weighted_options, _cmp_options, weighted_options_to_description,\
+    remove_board_from_range
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import logging
@@ -364,6 +365,7 @@ def _finish_betting_round(game, remain):
         rgp.contributed = 0
         if rgp.folded:
             continue
+        rgp.range = remove_board_from_range(rgp.range, game.board)
         rgp.left_to_act = True
 
 def finish_game(game):

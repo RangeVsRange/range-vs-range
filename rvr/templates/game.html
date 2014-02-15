@@ -2,6 +2,7 @@
 {% block content %}
 <script type=text/javascript>
   $(function() {
+    // Callback to calculate "folding the rest"
     $('a#fold_the_rest').bind('click', function() {
       $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
         original: $('#original').text(),
@@ -12,6 +13,7 @@
       });
       return false;
     });
+    // Callback to calculate "calling the rest"
     $('a#call_the_rest').bind('click', function() {
       $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
         original: $('#original').text(),
@@ -22,6 +24,7 @@
       });
       return false;
     });
+    // Callback to calculate "raising the rest"
     $('a#raise_the_rest').bind('click', function() {
       $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
         original: $('#original').text(),
