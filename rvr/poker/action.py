@@ -338,7 +338,7 @@ def _deal_to_board(api, game):
     excluded_cards.extend(game.board)
     new_board = game.board + deal_cards(excluded_cards, total - current)
     game.board = new_board
-    api._record_board(game)
+    api._record_board(game)  # TODO: 0: restructure this shit.
     # TODO: EQUITY PAYMENT: cards dealt to board
 
 def _finish_betting_round(api, game, remain):
