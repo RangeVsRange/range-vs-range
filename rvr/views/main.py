@@ -232,7 +232,7 @@ def _running_game(game, gameid, userid, api):
         return _handle_action(gameid, userid, api, form)
     
     title = 'Game %d (running)' % (gameid,)
-    return render_template('game.html', title=title, form=form,
+    return render_template('running_game.html', title=title, form=form,
         game_details=game.game_details, history=game.history,
         current_options=game.current_options,
         is_me=(userid == game.game_details.current_player.user.userid))
@@ -245,7 +245,6 @@ def _finished_game(game, gameid):
     return render_template('finished_game.html', title=title,
         game_details=game.game_details, history=game.history)
 
-# TODO: 0: rename game template to running_game
 # TODO: 0: rename "RunningGame" classes to something running/finished agnostic
 
 @APP.route('/game', methods=['GET', 'POST'])
