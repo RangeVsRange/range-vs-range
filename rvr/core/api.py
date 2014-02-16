@@ -11,13 +11,10 @@ from rvr.poker.handrange import deal_from_ranges
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, re_deal, range_action_to_action,\
     apply_action_result, finish_game
-from rvr.core.dtos import ActionResult
+from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 
 #pylint:disable=R0903
-
-GAME_HISTORY_TABLES = [tables.GameHistoryUserRange,
-                       tables.GameHistoryRangeAction]
 
 def exception_mapper(fun):
     """
@@ -352,6 +349,21 @@ class API(object):
         self.session.add(base)
         self.session.add(item)
     
+    def _record_action_result(self, rgp, action_result):
+        """
+        Record that this user's range action resulted in this actual action.
+        """
+        if action_result.is_terminate:
+            raise ValueError("Only real actions are supported.")
+        element = tables.GameHistoryActionResult()
+        element.userid = rgp.userid
+        element.is_fold = action_result.is_fold
+        element.is_passive = action_result.is_passive
+        element.is_aggressive = action_result.is_aggressive
+        element.call_cost = action_result.call_cost
+        element.raise_total = action_result.raise_total
+        self._record_hand_history_item(rgp.game, element)
+    
     def _record_rgp_range(self, rgp, range_raw):
         """
         Record that this user now has this range in this game, in the hand
@@ -495,8 +507,6 @@ class API(object):
         # rgp.
         rgp.cards_dealt = cards_dealt[rgp]
         # TODO: HAND HISTORY: record (subjective) sizes of range_action
-        # TODO: HAND HISTORY: range action
-        # TODO: HAND HISTORY: action in the game (if not terminate)
         # TODO: EQUITY PAYMENT: fold equity
         if not can_fold and can_call:
             game.current_factor *= 1 - f_ratio
@@ -505,6 +515,7 @@ class API(object):
         if not terminate:
             rgp.range, action_result = range_action_to_action(range_action,
                 rgp.cards_dealt, current_options)
+            self._record_action_result(rgp, action_result)
             self._record_rgp_range(rgp, rgp.range_raw)
         else:
             action_result = ActionResult.terminate()
@@ -565,7 +576,7 @@ class API(object):
         # pylint:disable=W0142
         child_items = [self.session.query(table)
                        .filter(table.gameid == game.gameid).all()
-                       for table in GAME_HISTORY_TABLES]
+                       for table in MAP_TABLE_DTO.keys()]
         all_child_items = sorted(concatenate(child_items),
                                  key=lambda c: c.order)
         child_dtos = [dtos.GameItem.from_game_history_child(child)

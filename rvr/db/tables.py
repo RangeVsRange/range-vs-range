@@ -249,6 +249,28 @@ class GameHistoryUserRange(BASE):
         " GameHistoryBase.order==GameHistoryUserRange.order)")
     user = relationship("User")
     
+class GameHistoryActionResult(BASE):
+    """
+    User's range action results in this action result (fold, call, etc.)
+    """
+    __tablename__ = "game_history_action_result"
+    
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_base.order"),
+                   primary_key=True)
+    userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
+    is_fold = Column(Boolean, nullable=False)
+    is_passive = Column(Boolean, nullable=False)
+    is_aggressive = Column(Boolean, nullable=False)
+    call_cost = Column(Integer, nullable=True)
+    raise_total = Column(Integer, nullable=True)
+
+    hh_base = relationship("GameHistoryBase", primaryjoin=  \
+        "and_(GameHistoryBase.gameid==GameHistoryActionResult.gameid," +  \
+        " GameHistoryBase.order==GameHistoryActionResult.order)")
+    user = relationship("User")
+    
 class GameHistoryRangeAction(BASE):
     """
     User folds part of range, checks or calls part of range, and bets or raises

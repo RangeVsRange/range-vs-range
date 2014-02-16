@@ -398,9 +398,42 @@ class GameItemRangeAction(GameItem):
         (while the game is running)
         """
         return self.user.userid == userid
+    
+class GameItemActionResult(GameItem):
+    """
+    User's range action results in an action
+    """
+    def __init__(self, user, action_result):
+        """
+        user is a UserDetails
+        """
+        self.user = user
+        self.action_result = action_result
+    
+    def __repr__(self):
+        return ("GameItemActionResult(user=%r, action_result=%r)") %  \
+            (self.user, self.action_result)
+    
+    def __str__(self):
+        return "%s performs action: %s" % (self.user,
+                                           self.action_result)
+    
+    @classmethod
+    def from_history_item(cls, item):
+        """
+        Create from a GameHistoryActionResult
+        """
+        user_details = UserDetails.from_user(item.user)
+        action_result = ActionResult(is_fold=item.is_fold,
+                                     is_passive=item.is_passive,
+                                     is_aggressive=item.is_aggressive,
+                                     call_cost=item.call_cost,
+                                     raise_total=item.raise_total)
+        return cls(user_details, action_result)
 
 MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
-                 tables.GameHistoryRangeAction: GameItemRangeAction}
+                 tables.GameHistoryRangeAction: GameItemRangeAction,
+                 tables.GameHistoryActionResult: GameItemActionResult}
 
 class RunningGameHistory(object):
     """
@@ -576,6 +609,20 @@ class ActionResult(object):
         recorded.
         """
         return ActionResult(is_terminate=True)
+    
+    def __str__(self):
+        if self.is_fold:
+            return "fold"
+        if self.is_passive:
+            if self.call_cost:
+                return "call %d" % (self.call_cost,)
+            else:
+                return "check"
+        if self.is_aggressive:
+            return "bet or raise (to %d)" % (self.raise_total,)
+        if self.is_terminate:
+            return "(terminate)"
+        return "(inexplicable)"
     
     def __repr__(self):
         return ("ActionResult(is_fold=%r, is_passive=%r, " +
