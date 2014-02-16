@@ -11,7 +11,7 @@ from rvr.poker.handrange import deal_from_ranges, remove_board_from_range
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, re_deal, range_action_to_action,\
     finish_game, NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
-    terminate, aggressive, passive, fold
+    act_passive, act_fold, act_aggressive, act_terminate
 from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
@@ -499,13 +499,13 @@ class API(object):
         finish hand.
         """
         if action_result.is_fold:
-            fold(rgp)
+            act_fold(rgp)
         elif action_result.is_passive:
-            passive(rgp, action_result.call_cost)
+            act_passive(rgp, action_result.call_cost)
         elif action_result.is_aggressive:
-            aggressive(game, rgp, action_result.raise_total)
+            act_aggressive(game, rgp, action_result.raise_total)
         elif action_result.is_terminate:
-            terminate(game, rgp)
+            act_terminate(game, rgp)
         else:
             raise ValueError("Invalid action result")
         left_to_act = [p for p in game.rgps if p.left_to_act]
@@ -541,15 +541,15 @@ class API(object):
         excluded_cards.extend(game.board)
         new_board = game.board + deal_cards(excluded_cards, total - current)
         game.board = new_board
-        self._record_board(game)  # TODO: 0: restructure this shit.
+        self._record_board(game)
         # TODO: EQUITY PAYMENT: cards dealt to board
     
     def _finish_betting_round(self, game, remain):
         """
         Deal and such
         """
-        # Note that the original setting of game state is not here, it's directly
-        # in API. Perhaps it should be here. Perhaps it will...
+        # Note that the original setting of game state is not here,
+        # it's directly in API. Perhaps it should be here. Perhaps it will...
         current_user = min(remain, key=lambda r: r.order)
         game.current_userid = current_user.userid
         game.current_round = NEXT_ROUND[game.current_round]

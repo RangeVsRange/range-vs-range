@@ -1,14 +1,12 @@
 """
 action functionality, imported from the previous versions
 """
-from rvr.poker.cards import Card, deal_cards, FLOP, PREFLOP, RIVER, TURN
+from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN
 import unittest
 from rvr.poker.handrange import HandRange,  \
-    _cmp_weighted_options, _cmp_options, weighted_options_to_description,\
-    remove_board_from_range
+    _cmp_weighted_options, _cmp_options, weighted_options_to_description
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
-import logging
 
 NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
 TOTAL_COMMUNITY_CARDS = {PREFLOP: 0, FLOP: 3, TURN: 4, RIVER: 5}
@@ -253,14 +251,14 @@ def re_deal(range_action, cards_dealt, dealt_key, board, can_fold, can_call):
         float(pas) / total,
         float(agg) / total)
 
-def fold(rgp):
+def act_fold(rgp):
     """
     Fold rgp
     """
     rgp.folded = True
     rgp.left_to_act = False
     
-def passive(rgp, call_cost):
+def act_passive(rgp, call_cost):
     """
     Check or call rgp
     """
@@ -268,7 +266,7 @@ def passive(rgp, call_cost):
     rgp.contributed += call_cost
     rgp.left_to_act = False
     
-def aggressive(game, rgp, raise_total):
+def act_aggressive(game, rgp, raise_total):
     """
     Bet or raise rgp
     """
@@ -283,7 +281,7 @@ def aggressive(game, rgp, raise_total):
         if other is not rgp and not other.folded:
             other.left_to_act = True
 
-def terminate(game, rgp):
+def act_terminate(game, rgp):
     """
     Handle game termination when a range action results in termination.
     """
