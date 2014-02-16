@@ -9,12 +9,12 @@
 {% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %} (BTN)
 </p>
 
-<p>Hand history:<ul>{% for item in history %}
+Hand history:<ul>{% for item in history %}
   <li>{{item}}</li>
 {% endfor %}
 {% if not history %}
   <li>Nothing, yet.</li>
 {% endif %}
-</ul></p>
+</ul>
 
 {% endblock %}

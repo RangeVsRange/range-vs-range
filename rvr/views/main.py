@@ -245,8 +245,6 @@ def _finished_game(game, gameid):
     return render_template('finished_game.html', title=title,
         game_details=game.game_details, history=game.history)
 
-# TODO: 0: rename "RunningGame" classes to something running/finished agnostic
-
 @APP.route('/game', methods=['GET', 'POST'])
 @AUTH.required
 def game_page():

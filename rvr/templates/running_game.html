@@ -91,12 +91,12 @@ Your range: <span id=original>{{game_details.current_player.range_raw}}</span><b
 </p>
 {% endif %}
 
-<p>The game so far:<ul>{% for item in history %}
+The game so far:<ul>{% for item in history %}
   <li>{{item}}</li>
 {% endfor %}
 {% if not history %}
   <li>Nothing, yet.</li>
 {% endif %}
-</ul></p>
+</ul>
 
 {% endblock %}
