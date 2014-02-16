@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{title}}</h2>
+
+<p>The game was: <strong>{{game_details.situation.description}}</strong>.</p>
+
+<p>The players were seated as follows:
+{% set pipe = joiner() %}
+{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %} (BTN)
+</p>
+
+<p>Hand history:<ul>{% for item in history %}
+  <li>{{item}}</li>
+{% endfor %}
+{% if not history %}
+  <li>Nothing, yet.</li>
+{% endif %}
+</ul></p>
+
+{% endblock %}

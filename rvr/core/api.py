@@ -579,8 +579,6 @@ class API(object):
         the specified user. If the game is finished, return all private data.
         Analysis items are considered private data, because they include both
         players' ranges.
-        
-        Returns only running games.
         """
         if userid is not None:
             users = self.session.query(tables.User)  \
@@ -588,8 +586,8 @@ class API(object):
             if not users:
                 return self.ERR_NO_SUCH_USER
         games = self.session.query(tables.RunningGame)  \
-            .filter(tables.RunningGame.gameid == gameid)  \
-            .filter(tables.RunningGame.current_userid != None).all()
+            .filter(tables.RunningGame.gameid == gameid).all()
+        #    .filter(tables.RunningGame.current_userid != None)
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]

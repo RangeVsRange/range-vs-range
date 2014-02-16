@@ -284,11 +284,18 @@ class RunningGameDetails(object):
         situation = SituationDetails.from_situation(game.situation)        
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in game.rgps]
-        current_player = [r for r in rgp_details
-                          if r.user.userid == game.current_rgp.userid][0]
+        current_players = [r for r in rgp_details
+                           if r.user.userid == game.current_userid]
+        current_player = current_players[0] if current_players else None
         return cls(game.gameid, situation, current_player, game.board_raw,
                    game.current_round, game.pot_pre, game.increment,
                    game.bet_count, rgp_details)
+        
+    def is_finished(self):
+        """
+        True when the game is finished.
+        """
+        return self.current_player is None
 
 class UsersGameDetails(object):
     """
@@ -414,6 +421,12 @@ class RunningGameHistory(object):
         return ("RunningGameHistory(game_details=%r, history=%r, " +  \
                 "current_options=%r)") %  \
             (self.game_details, self.history, self.current_options)
+        
+    def is_finished(self):
+        """
+        True when the game is finished.
+        """
+        return self.game_details.is_finished()
             
 class ActionOptions(object):
     """

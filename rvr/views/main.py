@@ -15,8 +15,6 @@ from rvr.forms.action import action_form
 from rvr.core import dtos
 from rvr.poker.handrange import NOTHING
 
-# TODO: 2: test. hypothesis: HH is displayed in random order (confirmed)
-
 @APP.before_request
 def ensure_user():
     """
@@ -221,6 +219,35 @@ def _handle_action(gameid, userid, api, form):
         else:   
             return redirect(url_for('game_page', gameid=gameid))
 
+def _running_game(game, gameid, userid, api):
+    """
+    Response from game page when the requested game is still running.
+    """
+    form = action_form(is_check=game.current_options.can_check(),
+        is_raise=game.current_options.is_raise,
+        can_raise=game.current_options.can_raise(),
+        min_raise=game.current_options.min_raise,
+        max_raise=game.current_options.max_raise)
+    if form.validate_on_submit():
+        return _handle_action(gameid, userid, api, form)
+    
+    title = 'Game %d (running)' % (gameid,)
+    return render_template('game.html', title=title, form=form,
+        game_details=game.game_details, history=game.history,
+        current_options=game.current_options,
+        is_me=(userid == game.game_details.current_player.user.userid))
+
+def _finished_game(game, gameid):
+    """
+    Response from game page when the requested game is finished.
+    """
+    title = 'Game %d (finished)' % (gameid,)
+    return render_template('finished_game.html', title=title,
+        game_details=game.game_details, history=game.history)
+
+# TODO: 0: rename game template to running_game
+# TODO: 0: rename "RunningGame" classes to something running/finished agnostic
+
 @APP.route('/game', methods=['GET', 'POST'])
 @AUTH.required
 def game_page():
@@ -248,16 +275,7 @@ def game_page():
         flash(msg)
         return redirect(url_for('home_page'))
     
-    form = action_form(is_check=response.current_options.can_check(),
-        is_raise=response.current_options.is_raise,
-        can_raise=response.current_options.can_raise(),
-        min_raise=response.current_options.min_raise,
-        max_raise=response.current_options.max_raise)
-    if form.validate_on_submit():
-        return _handle_action(gameid, userid, api, form)
-    
-    title = 'Game %d' % (gameid,)
-    return render_template('game.html', title=title, form=form,
-        game_details=response.game_details, history=response.history,
-        current_options=response.current_options,
-        is_me=(userid == response.game_details.current_player.user.userid))
+    if response.is_finished():
+        return _finished_game(response, gameid)
+    else:
+        return _running_game(response, gameid, userid, api)
