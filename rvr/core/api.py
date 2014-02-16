@@ -7,12 +7,14 @@ from rvr.core import dtos
 from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
-from rvr.poker.handrange import deal_from_ranges
+from rvr.poker.handrange import deal_from_ranges, remove_board_from_range
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, re_deal, range_action_to_action,\
-    apply_action_result, finish_game
+    finish_game, NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
+    terminate, aggressive, passive, fold
 from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
+from rvr.poker.cards import deal_cards
 
 #pylint:disable=R0903
 
@@ -491,6 +493,79 @@ class API(object):
     ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
     ERR_INVALID_RANGES = APIError("Invalid ranges.")
 
+    def apply_action_result(self, game, rgp, action_result):
+        """
+        Change game and rgp state. Add relevant hand history items. Possibly
+        finish hand.
+        """
+        if action_result.is_fold:
+            fold(rgp)
+        elif action_result.is_passive:
+            passive(rgp, action_result.call_cost)
+        elif action_result.is_aggressive:
+            aggressive(game, rgp, action_result.raise_total)
+        elif action_result.is_terminate:
+            terminate(game, rgp)
+        else:
+            raise ValueError("Invalid action result")
+        left_to_act = [p for p in game.rgps if p.left_to_act]
+        remain = [p for p in game.rgps if not p.left_to_act and not p.folded]
+        if len(left_to_act) == 1 and not remain:
+            # BB got a walk, or everyone folded to the button postflop
+            game.is_finished = True
+        elif not left_to_act:
+            if len(remain) == 1 or game.current_round == RIVER:
+                # The last person in folded their entire range, or
+                # We have a range-based showdown on the river.
+                game.is_finished = True
+            else:
+                # Deal, change round, set new game state.
+                self._finish_betting_round(game, remain)
+        else:
+            # Who's up next? And not someone named Who, but the pronoun.
+            later = [p for p in left_to_act if p.order > rgp.order]
+            earlier = [p for p in left_to_act if p.order < rgp.order]
+            chosen = later if later else earlier
+            next_rgp = min(chosen, key=lambda p: p.order)
+            game.current_rgp = next_rgp
+            logging.debug("Next to act in game %d: userid %d, order %d",
+                          game.gameid, next_rgp.userid, next_rgp.order)
+    
+    def _deal_to_board(self, game):
+        """
+        Deal as many cards as are needed to bring the board up to the current round
+        """
+        total = TOTAL_COMMUNITY_CARDS[game.current_round]
+        current = len(game.board)
+        excluded_cards = concatenate(rgp.cards_dealt for rgp in game.rgps)
+        excluded_cards.extend(game.board)
+        new_board = game.board + deal_cards(excluded_cards, total - current)
+        game.board = new_board
+        self._record_board(game)  # TODO: 0: restructure this shit.
+        # TODO: EQUITY PAYMENT: cards dealt to board
+    
+    def _finish_betting_round(self, game, remain):
+        """
+        Deal and such
+        """
+        # Note that the original setting of game state is not here, it's directly
+        # in API. Perhaps it should be here. Perhaps it will...
+        current_user = min(remain, key=lambda r: r.order)
+        game.current_userid = current_user.userid
+        game.current_round = NEXT_ROUND[game.current_round]
+        self._deal_to_board(game)
+        game.increment = game.situation.big_blind
+        game.bet_count = 0
+        for rgp in game.rgps:
+            # We move the contributed money into the pot
+            # Note: from everyone, not just from those who remain
+            game.pot_pre += rgp.contributed
+            rgp.contributed = 0
+            if rgp.folded:
+                continue
+            rgp.range = remove_board_from_range(rgp.range, game.board)
+            rgp.left_to_act = True
+
     def _perform_action(self, game, rgp, range_action, current_options):
         """
         Determine result of range action, and apply it.
@@ -534,7 +609,7 @@ class API(object):
         #  - All in before the river; or,
         #  - A call doesn't create a showdown payment on the river because there
         #    are people left to act, but then no one raises.
-        apply_action_result(self, game, rgp, action_result)
+        self.apply_action_result(game, rgp, action_result)
         if game.is_finished:
             finish_game(game)
         action_result.game_over = game.is_finished
