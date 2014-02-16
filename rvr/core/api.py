@@ -7,12 +7,12 @@ from rvr.core import dtos
 from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
-import itertools
 from rvr.poker.handrange import deal_from_ranges
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, re_deal, range_action_to_action,\
     apply_action_result, finish_game
 from rvr.core.dtos import ActionResult
+from rvr.infrastructure.util import concatenate
 
 #pylint:disable=R0903
 
@@ -566,8 +566,10 @@ class API(object):
         child_items = [self.session.query(table)
                        .filter(table.gameid == game.gameid).all()
                        for table in GAME_HISTORY_TABLES]
+        all_child_items = sorted(concatenate(child_items),
+                                 key=lambda c: c.order)
         child_dtos = [dtos.GameItem.from_game_history_child(child)
-                      for child in itertools.chain(*child_items)]
+                      for child in all_child_items]
         return [dto for dto in child_dtos
                 if game.is_finished or dto.should_include_for(userid)]
     

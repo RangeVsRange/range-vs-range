@@ -202,6 +202,7 @@ class AdminCmd(Cmd):
         if isinstance(response, APIError):
             print "Error:", response.description  # pylint:disable=E1101
             return
+        # pylint:disable=E1103
         if response.is_fold:
             print "You folded."
         elif response.is_passive:

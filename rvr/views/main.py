@@ -15,7 +15,7 @@ from rvr.forms.action import action_form
 from rvr.core import dtos
 from rvr.poker.handrange import NOTHING
 
-# TODO: 2: test. hypothesis: HH is displayed in random order
+# TODO: 2: test. hypothesis: HH is displayed in random order (confirmed)
 
 @APP.before_request
 def ensure_user():
