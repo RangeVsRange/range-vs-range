@@ -1,7 +1,7 @@
 """
 action functionality, imported from the previous versions
 """
-from rvr.poker.cards import Card, deal_cards
+from rvr.poker.cards import Card, deal_cards, FLOP, PREFLOP, RIVER, TURN
 import unittest
 from rvr.poker.handrange import HandRange,  \
     _cmp_weighted_options, _cmp_options, weighted_options_to_description,\
@@ -9,11 +9,6 @@ from rvr.poker.handrange import HandRange,  \
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import logging
-
-PREFLOP = "Preflop"
-FLOP = "Flop"
-TURN = "Turn"
-RIVER = "River"
 
 NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
 TOTAL_COMMUNITY_CARDS = {PREFLOP: 0, FLOP: 3, TURN: 4, RIVER: 5}
@@ -295,7 +290,7 @@ def _terminate(game, rgp):
     rgp.left_to_act = False
     game.is_finished = True
 
-def apply_action_result(game, rgp, action_result):
+def apply_action_result(api, game, rgp, action_result):
     """
     Change game and rgp state. Add relevant hand history items. Possibly
     finish hand.
@@ -322,7 +317,7 @@ def apply_action_result(game, rgp, action_result):
             game.is_finished = True
         else:
             # Deal, change round, set new game state.
-            _finish_betting_round(game, remain)
+            _finish_betting_round(api, game, remain)
     else:
         # Who's up next? And not someone named Who, but the pronoun.
         later = [p for p in left_to_act if p.order > rgp.order]
@@ -333,7 +328,7 @@ def apply_action_result(game, rgp, action_result):
         logging.debug("Next to act in game %d: userid %d, order %d",
                       game.gameid, next_rgp.userid, next_rgp.order)
 
-def _deal_to_board(game):
+def _deal_to_board(api, game):
     """
     Deal as many cards as are needed to bring the board up to the current round
     """
@@ -343,10 +338,10 @@ def _deal_to_board(game):
     excluded_cards.extend(game.board)
     new_board = game.board + deal_cards(excluded_cards, total - current)
     game.board = new_board
+    api._record_board(game)
     # TODO: EQUITY PAYMENT: cards dealt to board
-    # TODO: HAND HISTORY: dealt to board
 
-def _finish_betting_round(game, remain):
+def _finish_betting_round(api, game, remain):
     """
     Deal and such
     """
@@ -355,7 +350,7 @@ def _finish_betting_round(game, remain):
     current_user = min(remain, key=lambda r: r.order)
     game.current_userid = current_user.userid
     game.current_round = NEXT_ROUND[game.current_round]
-    _deal_to_board(game)
+    _deal_to_board(api, game)
     game.increment = game.situation.big_blind
     game.bet_count = 0
     for rgp in game.rgps:

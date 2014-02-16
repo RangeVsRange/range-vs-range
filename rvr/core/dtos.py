@@ -12,6 +12,7 @@ Data transfer objects:
 from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange
+from rvr.poker.cards import FLOP, TURN, RIVER
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -431,9 +432,43 @@ class GameItemActionResult(GameItem):
                                      raise_total=item.raise_total)
         return cls(user_details, action_result)
 
+class GameItemBoard(GameItem):
+    """
+    The board at street is cards
+    """
+    def __init__(self, street, cards):
+        """
+        they're both strings
+        """
+        self.street = street
+        self.cards = cards
+    
+    def __repr__(self):
+        return "GameItemBoard(street=%r, cards=%r)" %  \
+            (self.street, self.cards)
+    
+    def __str__(self):
+        if self.street == FLOP:
+            return "%s: %s" % (self.street, self.cards)
+        elif self.street == TURN:
+            return "%s: %s %s" % (self.street, self.cards[0:6], self.cards[6:])
+        elif self.street == RIVER:
+            return "%s: %s %s %s" % (self.street, self.cards[0:6],
+                                     self.cards[6:8], self.cards[8:10])
+        else:
+            return "(unknown street) %s: %s" % (self.street, self.cards)
+    
+    @classmethod
+    def from_history_item(cls, item):
+        """
+        Create from a GameHistoryBoard
+        """
+        return cls(item.street, item.cards)
+
 MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryRangeAction: GameItemRangeAction,
-                 tables.GameHistoryActionResult: GameItemActionResult}
+                 tables.GameHistoryActionResult: GameItemActionResult,
+                 tables.GameHistoryBoard: GameItemBoard}
 
 class RunningGameHistory(object):
     """

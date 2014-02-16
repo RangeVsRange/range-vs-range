@@ -376,7 +376,7 @@ class API(object):
         
     def _record_range_action(self, rgp, range_action):
         """
-        Record that this user has made this range-based action.
+        Record that this user has made this range-based action
         """
         element = tables.GameHistoryRangeAction()
         element.userid = rgp.userid
@@ -385,6 +385,15 @@ class API(object):
         element.aggressive_range = range_action.aggressive_range.description
         element.raise_total = range_action.raise_total
         self._record_hand_history_item(rgp.game, element)
+        
+    def _record_board(self, game):
+        """
+        Record board at street
+        """
+        element = tables.GameHistoryBoard()
+        element.street = game.current_round
+        element.cards = game.board_raw
+        self._record_hand_history_item(game, element)
 
     @api
     def join_game(self, userid, gameid):
@@ -525,7 +534,7 @@ class API(object):
         #  - All in before the river; or,
         #  - A call doesn't create a showdown payment on the river because there
         #    are people left to act, but then no one raises.
-        apply_action_result(game, rgp, action_result)
+        apply_action_result(self, game, rgp, action_result)
         if game.is_finished:
             finish_game(game)
         action_result.game_over = game.is_finished

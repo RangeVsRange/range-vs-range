@@ -5,6 +5,11 @@ import random
 
 # pylint:disable=R0903
 
+PREFLOP = "Preflop"
+FLOP = "Flop"
+TURN = "Turn"
+RIVER = "River"
+
 class Rank(object):
     """
     Represents a card rank

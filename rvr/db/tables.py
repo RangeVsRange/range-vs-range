@@ -293,12 +293,24 @@ class GameHistoryRangeAction(BASE):
         " GameHistoryBase.order==GameHistoryRangeAction.order)")
     user = relationship("User")
 
+class GameHistoryBoard(BASE):
+    """
+    The board at <street> is <cards>.
+    """
+    __tablename__ = "game_history_board"
+    
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_base.order"),
+                   primary_key=True)
+    street = Column(String, nullable=False)
+    cards = Column(String, nullable=False)
+    
+    hh_base = relationship("GameHistoryBase", primaryjoin=  \
+        "and_(GameHistoryBase.gameid==GameHistoryBoard.gameid," +  \
+        " GameHistoryBase.order==GameHistoryBoard.order)")
+
 # TODO: HAND HISTORY: the following hand history items:
-#  - (done) user has range
-#  - player makes a range-based action
-#  - player bets / raises
-#  - player calls / checks
-#  - player folds
 #  - card dealt to the board
 # (that's enough to play; then...)
 #  - analysis of a fold, bet, call
