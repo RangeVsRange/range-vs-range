@@ -36,7 +36,7 @@ def _safe_board(arg_name):
 def range_subtract():
     """
     usage:
-    ?original=x&subtract_1=y&subtract_2=z&subtract_3=w&board=cards
+    ?original=o&subtract_1=s1&subtract_2=s2&subtract_3=s3&board=cards
     
     original is a string, interpreted as a range description 
     
