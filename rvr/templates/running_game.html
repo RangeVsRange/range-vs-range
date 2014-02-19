@@ -7,9 +7,11 @@
       $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
         original: $('#original').text(),
         subtract_1: $('input[name="passive"]').val(),
-        subtract_2: $('input[name="aggressive"]').val()
+        subtract_2: $('input[name="aggressive"]').val(),
+        board: $('#board').text()
       }, function(data) {
         $("#fold").val(data.difference);
+        $("#fold_size").text((100.0*data.size).toFixed(2));
       });
       return false;
     });
@@ -18,9 +20,11 @@
       $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
         original: $('#original').text(),
         subtract_1: $('input[name="fold"]').val(),
-        subtract_2: $('input[name="aggressive"]').val()
+        subtract_2: $('input[name="aggressive"]').val(),
+        board: $('#board').text()
       }, function(data) {
         $("#passive").val(data.difference);
+        $("#passive_size").text((100.0*data.size).toFixed(2));
       });
       return false;
     });
@@ -29,9 +33,11 @@
       $.getJSON($SCRIPT_ROOT + '/ajax/range_subtract', {
         original: $('#original').text(),
         subtract_1: $('input[name="fold"]').val(),
-        subtract_2: $('input[name="passive"]').val()
+        subtract_2: $('input[name="passive"]').val(),
+        board: $('#board').text()
       }, function(data) {
         $("#aggressive").val(data.difference);
+        $("#aggressive_size").text((100.0*data.size).toFixed(2));
       });
       return false;
     });
@@ -44,7 +50,7 @@
 
 <p>The current betting round is: <strong>{{game_details.current_round}}</strong>.<br>
 {% if game_details.current_round != "preflop" %}
-The board is: <strong>{{game_details.board_raw}}</strong><br>
+The board is: <strong><span id=board>{{game_details.board_raw}}</span></strong><br>
 The pot at that start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
 {% endif %}
 
@@ -77,13 +83,13 @@ Your range: <span id=original>{{game_details.current_player.range_raw}}</span><b
 <form method="post" name="action">
   {{form.hidden_tag()}}
   {% for error in form.errors.fold %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.fold.label}} {{form.fold}} <a href="#" id="fold_the_rest">(fold the rest)</a><br>
+  {{form.fold.label}} {{form.fold}} (<span id="fold_size"> </span>%) <a href="#" id="fold_the_rest">(fold the rest)</a><br>
   {% for error in form.errors.passive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.passive.label}} {{form.passive}} <a href="#" id="call_the_rest">(call the rest)</a> {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
+  {{form.passive.label}} {{form.passive}} (<span id="passive_size"> </span>%) <a href="#" id="call_the_rest">(call the rest)</a> {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
 {% if current_options.can_raise() %}
   {% for error in form.errors.aggressive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.aggressive.label}} {{form.aggressive}} <a href="#" id="raise_the_rest">(raise the rest)</a>
+  {{form.aggressive.label}} {{form.aggressive}} (<span id="aggressive_size"> </span>%) <a href="#" id="raise_the_rest">(raise the rest)</a>
   {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>
 {% endif %}
   <input type="submit" value="Go!" /><br>

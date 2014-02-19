@@ -451,8 +451,9 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
     """
     Represents a hand range! (Texas Hold'em only.)
     """
-    def __init__(self, description):
+    def __init__(self, description, is_strict=True):
         self.description = str(description)
+        self.is_strict = is_strict
         if description == NOTHING:
             self.subranges = []
         else:
@@ -497,7 +498,10 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
             hands = [frozenset(Card.many_from_text(txt))
                      for txt in option_mnemonics]
             options.extend([(hand, weight) for hand in hands])
-        return options
+        if self.is_strict:
+            return options
+        else:
+            return list(set(options))
     
     def generate_options_unweighted(self, board=None):
         """
@@ -521,7 +525,10 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
             hands = [frozenset(Card.many_from_text(txt))
                      for txt in option_mnemonics]
             options.extend(hands)
-        return options
+        if self.is_strict:
+            return options
+        else:
+            return list(set(options))
         
     def generate_hand(self, board = None):
         """
