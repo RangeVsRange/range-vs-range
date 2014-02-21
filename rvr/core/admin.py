@@ -2,7 +2,6 @@
 Admin Cmd class for interacting with API
 """
 from cmd import Cmd
-import logging
 from rvr.core.api import APIError, API
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
 from rvr.core import dtos
@@ -249,10 +248,3 @@ class AdminCmd(Cmd):
         """
         print "Goodbye."
         return True
-
-logging.basicConfig()
-logging.root.setLevel(logging.DEBUG)
-
-CMD = AdminCmd()
-CMD.prompt = "> "
-CMD.cmdloop("Range vs. Range admin tool. Type ? for help.")
