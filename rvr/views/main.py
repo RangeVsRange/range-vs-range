@@ -2,7 +2,7 @@
 The main pages for the site
 """
 from flask import render_template, redirect, url_for
-from rvr import APP
+from rvr.app import APP
 from rvr.forms.change import ChangeForm
 from rvr.core.api import API, APIError
 from rvr.app import AUTH

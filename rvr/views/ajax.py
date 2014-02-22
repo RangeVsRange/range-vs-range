@@ -2,7 +2,7 @@
 Helpful functions to be called by JavaScript
 """
 
-from rvr import APP
+from rvr.app import APP
 from flask.helpers import jsonify
 from flask.globals import request
 from rvr.poker.handrange import HandRange

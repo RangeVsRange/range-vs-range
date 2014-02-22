@@ -84,5 +84,3 @@ In summary:
 - retrieve game history without current player's ranges
 - retrieve game history with current player's ranges
 """
-from rvr.app import APP
-from rvr import views
