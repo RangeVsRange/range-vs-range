@@ -3,7 +3,6 @@ range-specific functionality
 """
 import re
 import random
-from twisted.spread import pb
 import logging
 from rvr.poker.cards import Card, RANK_MAP, SUIT_MAP, Rank,  \
     RANK_INVERT, Suit, SPADES, ACE, RANKS_HIGH_TO_LOW, RANKS_LOW_TO_HIGH
@@ -447,7 +446,7 @@ def reweight(new, old):
     description = weighted_options_to_description(results)
     return HandRange(description)
 
-class HandRange(pb.Copyable, pb.RemoteCopy):
+class HandRange(object):
     """
     Represents a hand range! (Texas Hold'em only.)
     """
@@ -586,8 +585,6 @@ class HandRange(pb.Copyable, pb.RemoteCopy):
         except ValueError:
             return False
         return True
-    
-pb.setUnjellyableForClass(HandRange, HandRange)
 
 class IncompatibleRangesError(RuntimeError):
     """
