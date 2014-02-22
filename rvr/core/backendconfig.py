@@ -16,11 +16,13 @@ import ConfigParser
 # [debug]
 # level=10
 
-PARSER = ConfigParser.SafeConfigParser({
-    "path": "server.db",
-    "level": "10"})
+PARSER = ConfigParser.SafeConfigParser()
 PARSER.read("server.cfg")
 
-DB_PATH = PARSER.get("sqlite", "path")
+DB_PATH = PARSER.get("sqlite", "path")  \
+    if PARSER.has_section("sqlite")  \
+    else "rvr.db"
 
-DEBUG_LEVEL = PARSER.getint("debug", "level")
+DEBUG_LEVEL = PARSER.getint("debug", "level")  \
+    if PARSER.has_section("debug")  \
+    else 10
