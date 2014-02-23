@@ -27,6 +27,23 @@ def auth_required(fun):
             return fun()
     return inner
 
+# I'm getting 403 errors on PAW. I'd at least like to see what is in the
+# session.
+@APP.errorhandler(403)
+def not_authorised(e):
+    return """
+        You are not authorised.
+        identity=%r;
+        email=%r;
+        name=%r;
+        screenname=%r;
+        userid=%s.
+        """ % (session.get('identity'),
+               session.get('email'),
+               session.get('name'),
+               session.get('screenname'),
+               "exists" if session.get('userid') else None)
+
 @APP.route('/login.html', methods=['GET', 'POST'])
 @OID.loginhandler
 def login():
