@@ -46,8 +46,9 @@ def ensure_user():
         if request.endpoint != 'change_screenname':
             return redirect(url_for('change_screenname'))
     elif isinstance(result, APIError):
+        flash("Error registering user details.")
         logging.debug("login error: %s", result)
-        abort(403)
+        return redirect(url_for('home_page'))
     else:
         session['screenname'] = result.screenname
         session['userid'] = result.userid
