@@ -31,23 +31,14 @@ def ensure_user():
         screenname = session['screenname']
     else:
         # regular login
-        if 'name' in g.user:
-            screenname = g.user.name
-        # TODO: remove this diagnostic stuff. The above should always be true.
-        else:
-            class CustomAttributeError(AttributeError):
-                def __init__(self, *args, **kwargs):
-                    AttributeError.__init__(self, *args, **kwargs)
-                def __str__(self):
-                    return "CustomAttributeError(%r)" % (g.user,)
-            raise CustomAttributeError()
+        screenname = g.user['name']
     api = API()
-    req = LoginRequest(identity=g.user.identity,  # @UndefinedVariable
-                       email=g.user.email,  # @UndefinedVariable
+    req = LoginRequest(identity=g.user['identity'],  # @UndefinedVariable
+                       email=g.user['email'],  # @UndefinedVariable
                        screenname=screenname)  # @UndefinedVariable
     result = api.login(req)
     if result == API.ERR_LOGIN_DUPLICATE_SCREENNAME:
-        session['screenname'] = g.user.name
+        session['screenname'] = g.user['name']
         # User is authenticated with OpenID, but not yet authorised (logged
         # in). We redirect them to a page that allows them to choose a
         # different screenname.
@@ -84,7 +75,7 @@ def change_screenname():
                       (new_screenname, ))
         return redirect(url_for('home_page'))
     screenname = session['screenname'] if 'screenname' in session  \
-        else g.user.name
+        else g.user['name']
     return render_template('change.html', title='Change Your Screenname',
                            current=screenname, form=form)
 
