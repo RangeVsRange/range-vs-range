@@ -31,7 +31,16 @@ def ensure_user():
         screenname = session['screenname']
     else:
         # regular login
-        screenname = g.user.name
+        if 'name' in g.user:
+            screenname = g.user.name
+        # TODO: remove this diagnostic stuff. The above should always be true.
+        else:
+            class CustomAttributeError(AttributeError):
+                def __init__(self, *args, **kwargs):
+                    AttributeError.__init__(self, *args, **kwargs)
+                def __str__(self):
+                    return "CustomAttributeError(%r)" % (g.user,)
+            raise CustomAttributeError()
     api = API()
     req = LoginRequest(identity=g.user.identity,  # @UndefinedVariable
                        email=g.user.email,  # @UndefinedVariable
