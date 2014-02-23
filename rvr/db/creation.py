@@ -4,11 +4,11 @@ Creation of database, connection to database, sessions for use of database
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from rvr.core import backendconfig
 from contextlib import contextmanager
 from functools import wraps
+from rvr.local_settings import SQLALCHEMY_DATABASE_URI
 
-ENGINE = create_engine('sqlite:///%s' % backendconfig.DB_PATH, echo=False)
+ENGINE = create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
 SESSION = sessionmaker(bind=ENGINE)
 BASE = declarative_base()
 

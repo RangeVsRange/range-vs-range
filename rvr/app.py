@@ -10,7 +10,7 @@ from flask_googleauth import GoogleAuth
 
 APP = Flask(__name__)
 APP.config.from_object('rvr.config')
-APP.config.from_pyfile('local-settings.py', silent=True)
+APP.config.from_pyfile('local_settings.py', silent=True)
 APP.wsgi_app = SharedDataMiddleware(APP.wsgi_app,
     {'/':os.path.join(os.path.dirname(__file__), 'static')})
 
@@ -29,6 +29,3 @@ AUTH = GoogleAuth(APP)
 
 # Flask-OpenID
 # OID = OpenID(APP)
-
-logging.basicConfig()
-logging.root.setLevel(logging.DEBUG)

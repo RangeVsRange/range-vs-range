@@ -8,6 +8,7 @@ from rvr.app import APP
 from rvr.views import main  # registers main pages @UnusedImport
 from rvr.views import ajax  # registers ajax functions @UnusedImport
 from rvr.core.api import API
+import logging
 
 def _main():
     """
@@ -23,4 +24,6 @@ def _main():
             use_reloader=APP.config.get('RELOADER', False))
 
 if  __name__ == '__main__':
+    logging.basicConfig()
+    logging.root.setLevel(logging.DEBUG)
     _main()
