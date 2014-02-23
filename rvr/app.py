@@ -5,8 +5,8 @@ from flask import Flask
 from werkzeug import SharedDataMiddleware  #IGNORE:E0611 @UnresolvedImport
 import os
 import logging
-from flask_googleauth import GoogleAuth
-# from flask_openid import OpenID
+# from flask_googleauth import GoogleAuth
+from flask_openid import OpenID
 
 APP = Flask(__name__)
 APP.config.from_object('rvr.config')
@@ -25,7 +25,7 @@ APP.wsgi_app = SharedDataMiddleware(APP.wsgi_app,
 # see if that makes PythonAnywhere happier.
 
 # Flask-GoogleAuth
-AUTH = GoogleAuth(APP)
+# AUTH = GoogleAuth(APP)
 
 # Flask-OpenID
-# OID = OpenID(APP)
+OID = OpenID(APP)
