@@ -7,7 +7,6 @@ from rvr.forms.change import ChangeForm
 from rvr.core.api import API, APIError
 from rvr.app import AUTH
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
-from werkzeug.exceptions import abort  # @UnresolvedImport
 import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
@@ -20,6 +19,8 @@ def ensure_user():
     """
     Commit user to database and determine userid
     """
+    if request.endpoint == 'landing_page':
+        return
     if not g.user or 'identity' not in g.user:
         # user is not authenticated yet
         return
@@ -48,7 +49,7 @@ def ensure_user():
     elif isinstance(result, APIError):
         flash("Error registering user details.")
         logging.debug("login error: %s", result)
-        return redirect(url_for('home_page'))
+        return redirect(url_for('landing_page'))
     else:
         session['screenname'] = result.screenname
         session['userid'] = result.userid

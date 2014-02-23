@@ -24,6 +24,7 @@ def auth_required(fun):
                                     next=url_for(request.endpoint,
                                                  **request.args)))
         else:
+            ensure_user()
             return fun()
     return inner
 
@@ -65,7 +66,6 @@ def create_or_login(resp):
     session['name'] = resp.nickname or resp.fullname
     return redirect(OID.get_next_url())
 
-@APP.before_request
 def ensure_user():
     """
     Commit user to database and determine userid
@@ -98,7 +98,7 @@ def ensure_user():
     elif isinstance(result, APIError):
         flash("Error registering user details.")
         logging.debug("login error: %s", result)
-        return redirect(url_for('home_page'))
+        return redirect(url_for('landing_page'))
     else:
         session['screenname'] = result.screenname
         session['userid'] = result.userid
