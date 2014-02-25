@@ -7,6 +7,8 @@ from flask import jsonify
 from flask.globals import request
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card
+import json
+import urllib2
 
 def _safe_hand_range(arg_name, fallback):
     """
@@ -73,3 +75,14 @@ def range_subtract():
     result_size = len(result.generate_options(board))
     return jsonify(difference=result.description,
                    size=1.0 * result_size / original_size)
+
+@APP.route('/ajax/total_donated')
+def total_donated():
+    """
+    Total BTC (denoted in satoshis) donated to the donation account.
+    
+    Calls blockchain.info.
+    """
+    url = "http://blockchain.info/rawaddr/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf?limit=0"  # pylint:disable=C0301
+    response = json.load(urllib2.urlopen(url))
+    return jsonify(total_received=response['total_received'])

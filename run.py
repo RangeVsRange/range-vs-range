@@ -28,3 +28,5 @@ if  __name__ == '__main__':
     logging.basicConfig()
     logging.root.setLevel(logging.DEBUG)
     _main()
+    
+# TODO: 0: logout link (/logout)

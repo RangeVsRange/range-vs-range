@@ -13,6 +13,17 @@
       $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type=text/javascript>
+  $(function() {
+    // Call blockchain.info for total donated.
+    $.getJSON($SCRIPT_ROOT + '/ajax/total_donated',
+              {},
+              function(response) {
+                $('#donated').text((response.total_received / 100000000.0).toFixed(8));
+              });
+  });
+
+    </script>
   </head>
   <body>
     <div><h1><a href="{{ url_for('landing_page') }}">Range vs. Range (Prototype)</a></h1></div>
@@ -35,6 +46,7 @@
       <td><a href="https://github.com/RangeVsRange/range-vs-range/">Range vs. Range on GitHub</a></td>
       <td><a href="http://rangevsrange.wordpress.com/">The website for the existing client/server version</a></td>
     </tr>
+    <tr><td colspan=3>Show your support? 1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf (<span id=donated>loading</span> donated so far)</td></tr>
     </table>
   </body>
 </html>
