@@ -7,7 +7,6 @@ from rvr.forms.change import ChangeForm
 from rvr.core.api import API, APIError
 from rvr.app import OID
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
-from werkzeug.exceptions import abort  # @UnresolvedImport
 import logging
 from flask.helpers import flash
 from flask.globals import request, session
@@ -17,8 +16,14 @@ from rvr.poker.handrange import NOTHING
 from functools import wraps
 
 def auth_required(fun):
+    """
+    Wrapper to redirect user to login if not authenticated.
+    """
     @wraps(fun)
     def inner():
+        """
+        Wrapper function
+        """
         if 'identity' not in session:
             return redirect(url_for('login',
                                     next=url_for(request.endpoint,
@@ -28,10 +33,12 @@ def auth_required(fun):
             return fun()
     return inner
 
-# I'm getting 403 errors on PAW. I'd at least like to see what is in the
-# session.
 @APP.errorhandler(403)
-def not_authorised(e):
+def not_authorised(_err):
+    """
+    I'm getting 403 errors on PAW. I'd at least like to see what is in the
+    session.
+    """
     return """
         You are not authorised.
         identity=%r;
@@ -48,6 +55,10 @@ def not_authorised(e):
 @APP.route('/login.html', methods=['GET', 'POST'])
 @OID.loginhandler
 def login():
+    """
+    OpenID login handler. If we keep using this, we could remove it / replace
+    it with a redirect instead. (As long as they're happy with just Google!)
+    """
     if 'identity' in session:
         # already authenticated
         return redirect(OID.get_next_url())
@@ -61,6 +72,9 @@ def login():
 
 @OID.after_login
 def create_or_login(resp):
+    """
+    Establish session, having authenticated
+    """
     session['identity'] = resp.identity_url
     session['email'] = resp.email
     session['name'] = resp.nickname or resp.fullname
