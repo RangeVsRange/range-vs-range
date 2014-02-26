@@ -311,11 +311,11 @@ class GameHistoryBoard(BASE):
         " GameHistoryBase.order==GameHistoryBoard.order)")
 
 # TODO: HAND HISTORY: the following hand history items:
-#  - card dealt to the board
-# (that's enough to play; then...)
 #  - analysis of a fold, bet, call
 #  - fold equity payment
 #  - board card equity payment
 #  - showdown equities
 #  - showdown payment
 #  - chat
+# Record analysis against specific hand history (range action) items.
+# Record equity payments against hand history items - deals, range actions, etc.

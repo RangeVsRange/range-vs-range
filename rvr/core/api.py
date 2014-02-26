@@ -18,8 +18,6 @@ from rvr.poker.cards import deal_cards
 
 #pylint:disable=R0903
 
-# TODO: 0: try a complete game!
-
 def exception_mapper(fun):
     """
     Converts database exceptions to APIError
