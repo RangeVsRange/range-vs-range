@@ -13,13 +13,14 @@ from flask.globals import request, session, g
 from rvr.forms.action import action_form
 from rvr.core import dtos
 from rvr.poker.handrange import NOTHING
+from flask_googleauth import logout
 
 @APP.before_request
 def ensure_user():
     """
     Commit user to database and determine userid
     """
-    if request.endpoint == 'landing_page':
+    if request.endpoint == 'landing_page' or request.path.startswith('/ajax'):
         return
     if not g.user or 'identity' not in g.user:
         # user is not authenticated yet
@@ -38,13 +39,13 @@ def ensure_user():
                        email=g.user['email'],  # @UndefinedVariable
                        screenname=screenname)  # @UndefinedVariable
     result = api.login(req)
-    if result == API.ERR_LOGIN_DUPLICATE_SCREENNAME:
+    if result == API.ERR_DUPLICATE_SCREENNAME:
         session['screenname'] = g.user['name']
         # User is authenticated with OpenID, but not yet authorised (logged
         # in). We redirect them to a page that allows them to choose a
         # different screenname.
-        flash("The screenname '%s' is already taken." % screenname)
         if request.endpoint != 'change_screenname':
+            flash("The screenname '%s' is already taken." % screenname)
             return redirect(url_for('change_screenname'))
     elif isinstance(result, APIError):
         flash("Error registering user details.")
@@ -53,6 +54,9 @@ def ensure_user():
     else:
         session['screenname'] = result.screenname
         session['userid'] = result.userid
+        flash("You have logged in as '%s'." %
+              (result.screenname, ))
+        
 
 @APP.route('/change', methods=['GET','POST'])
 @AUTH.required
@@ -61,25 +65,45 @@ def change_screenname():
     Without the user being logged in, give the user the option to change their
     screenname from what Google OpenID gave us.
     """
+    # TODO: 0: test change_screenname() as follows:
+    # - duplicate screenname for new user
+    # - change screenname to something that's already taken
+    # - regular change screenname
     form = ChangeForm()
     if form.validate_on_submit():
         new_screenname = form.change.data
-        session['screenname'] = new_screenname
         if 'userid' in session:
             req = ChangeScreennameRequest(session['userid'],
-                                          session['screenname'])
+                                          new_screenname)
             resp = API().change_screenname(req)
-            if isinstance(resp, APIError):
+            if resp == API.ERR_DUPLICATE_SCREENNAME:
+                flash("That screenname is already taken.")
+            elif isinstance(resp, APIError):
                 logging.debug("change_screenname error: %s", resp)
                 flash("An error occurred.")
             else:
+                session['screenname'] = new_screenname
                 flash("Your screenname has been changed to '%s'." %
                       (new_screenname, ))
-        return redirect(url_for('home_page'))
-    screenname = session['screenname'] if 'screenname' in session  \
+                return redirect(url_for('home_page'))
+        else:
+            # User is not logged in. Changing screenname in session is enough.
+            # Now when they go to the home page, ensure_user() will create their
+            # account.
+            session['screenname'] = new_screenname
+            return redirect(url_for('home_page'))
+    current = session['screenname'] if 'screenname' in session  \
         else g.user['name']
     return render_template('change.html', title='Change Your Screenname',
-                           current=screenname, form=form)
+                           current=current, form=form)
+
+@logout.connect_via(APP)
+def on_logout(app, user, **kwargs):
+    """
+    I prefer to be explicit about what we remove on logout. 
+    """
+    session.pop('userid', None)
+    session.pop('screenname', None)
 
 @APP.route('/', methods=['GET'])
 def landing_page():

@@ -101,7 +101,7 @@ def ensure_user():
                        email=session['email'],  # @UndefinedVariable
                        screenname=screenname)  # @UndefinedVariable
     result = api.login(req)
-    if result == API.ERR_LOGIN_DUPLICATE_SCREENNAME:
+    if result == API.ERR_DUPLICATE_SCREENNAME:
         session['screenname'] = session['name']
         # User is authenticated with OpenID, but not yet authorised (logged
         # in). We redirect them to a page that allows them to choose a

@@ -15,6 +15,7 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
 from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
+from sqlalchemy.orm.exc import NoResultFound
 
 #pylint:disable=R0903
 
@@ -76,7 +77,7 @@ class API(object):
     ERR_NO_SUCH_USER = APIError("No such user")
     ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
     ERR_NO_SUCH_RUNNING_GAME = APIError("No such running game")
-    ERR_LOGIN_DUPLICATE_SCREENNAME = APIError("Duplicate screenname")
+    ERR_DUPLICATE_SCREENNAME = APIError("Duplicate screenname")
     ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
     ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
     ERR_DELETE_USER_PLAYING = APIError("User is playing")
@@ -150,7 +151,7 @@ class API(object):
                 matches = self.session.query(tables.User)  \
                     .filter(tables.User.screenname == request.screenname).all()
                 if matches:
-                    return self.ERR_LOGIN_DUPLICATE_SCREENNAME
+                    return self.ERR_DUPLICATE_SCREENNAME
                 else:
                     raise
             logging.debug("Created user %d with screenname '%s'",
@@ -162,9 +163,17 @@ class API(object):
         """
         Change user's screenname
         """
-        self.session.query(tables.User)  \
-            .filter(tables.User.userid == request.userid)  \
-            .one().screenname = request.screenname
+        # Check for existing user with this screenname
+        matches = self.session.query(tables.User)  \
+            .filter(tables.User.screenname == request.screenname).all()
+        if matches:
+            return self.ERR_DUPLICATE_SCREENNAME
+        try:
+            self.session.query(tables.User)  \
+                .filter(tables.User.userid == request.userid)  \
+                .one().screenname = request.screenname
+        except NoResultFound:
+            return self.ERR_NO_SUCH_USER
     
     @api
     def get_user(self, userid):
@@ -650,6 +659,8 @@ class API(object):
         # ... and it seems to be that evaluating "game.current_rgp.userid"
         # ... is what needs to be committed. Yes, just evaluating it!
         return self._perform_action(game, rgp, range_action, current_options)
+        # Is it someone else's turn now?
+        # TODO: 1: send the new current player an email
         
     def _get_history_items(self, game, userid=None):
         """
