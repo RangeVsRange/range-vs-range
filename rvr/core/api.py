@@ -660,7 +660,7 @@ class API(object):
         # ... is what needs to be committed. Yes, just evaluating it!
         return self._perform_action(game, rgp, range_action, current_options)
         # Is it someone else's turn now?
-        # TODO: 1: send the new current player an email
+        # TODO: 0: email notificaiton here. Use SendGrid.
         
     def _get_history_items(self, game, userid=None):
         """

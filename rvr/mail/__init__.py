@@ -1,0 +1,1 @@
+""" Functionality for sending email to users. """

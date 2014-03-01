@@ -37,7 +37,7 @@ def ensure_user():
     api = API()
     req = LoginRequest(identity=g.user['identity'],  # @UndefinedVariable
                        email=g.user['email'],  # @UndefinedVariable
-                       screenname=screenname)  # @UndefinedVariable
+                       screenname=screenname)
     result = api.login(req)
     if result == API.ERR_DUPLICATE_SCREENNAME:
         session['screenname'] = g.user['name']
@@ -65,10 +65,6 @@ def change_screenname():
     Without the user being logged in, give the user the option to change their
     screenname from what Google OpenID gave us.
     """
-    # TODO: 0: test change_screenname() as follows:
-    # - duplicate screenname for new user
-    # - change screenname to something that's already taken
-    # - regular change screenname
     form = ChangeForm()
     if form.validate_on_submit():
         new_screenname = form.change.data
