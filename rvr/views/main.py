@@ -98,7 +98,7 @@ def change_screenname():
                            current=current, form=form)
 
 @logout.connect_via(APP)
-def on_logout(app, user, **kwargs):
+def on_logout(_source, **_kwargs):
     """
     I prefer to be explicit about what we remove on logout. 
     """
