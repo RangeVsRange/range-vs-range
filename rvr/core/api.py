@@ -501,7 +501,7 @@ class API(object):
 
     ERR_NOT_USERS_TURN = APIError("It's not that user's turn.")
     ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
-    ERR_INVALID_RANGES = APIError("Invalid ranges.")
+    ERR_INVALID_RANGES = APIError("Invalid ranges or raise size.")
 
     def apply_action_result(self, game, rgp, action_result):
         """
