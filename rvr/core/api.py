@@ -16,7 +16,7 @@ from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
-from rvr.mail.notifications import notify_current_player
+from rvr.mail.notifications import notify_current_player, notify_first_player
 
 #pylint:disable=R0903
 
@@ -345,6 +345,7 @@ class API(object):
             # Note that we do NOT create a range history item for them,
             # it is implied.
         self.session.delete(open_game)  # cascades to ogps
+        notify_first_player(running_game, starter_id=final_ogp.userid)
         logging.debug("Started game %d", open_game.gameid)
         return running_game
     
@@ -653,8 +654,6 @@ class API(object):
                                            rgp.range)
         if not is_valid:
             return API.ERR_INVALID_RANGES
-        # TODO: 0: send email to first player on game start
-        # (if they're not the one starting it).
         notify_current_player(game)
         self.session.commit() # because if we don't we get some ...    
         # ... weird circular dependency thing ...

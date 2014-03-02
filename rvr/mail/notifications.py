@@ -8,6 +8,9 @@ from rvr.app import MAIL, make_unsubscribe_url
 from threading import Thread
 from flask.globals import _app_ctx_stack
 
+# TODO: 0: strip out a base template with unsubscribe fore these two functions
+# TODO: 0: consolidate common functionality (e.g. use of _app_ctx_stack)
+
 def send_email_async(msg):
     """
     Send email on a different thread.
@@ -25,9 +28,13 @@ def send_email_async(msg):
     thr = Thread(target=with_context)
     thr.start()
 
-def _your_turn(recipient, name, identity):
+def _your_turn(recipient, screenname, identity):
     """
     Lets recipient know it's their turn in a game.
+
+    The identity is used to create the unsubscribe link. We can safely use
+    that to identify the user in plain text, because they get to see it
+    anyway during authentication.
     
     Uses Flask-Mail; sends asynchronously.
     """
@@ -38,10 +45,25 @@ def _your_turn(recipient, name, identity):
         return
     msg = Message("It's your turn on Range vs. Range")
     msg.add_recipient(recipient)
-    msg.html = render_template('your_turn.html', recipient=recipient, name=name,
+    msg.html = render_template('your_turn.html', recipient=recipient,
+                               screenname=screenname,
                                unsubscribe=make_unsubscribe_url(identity))
     send_email_async(msg)
     
+def _game_started(recipient, screenname, identity, is_starter, is_acting):
+    """
+    Lets recipient know their game has started.
+    """
+    if not _app_ctx_stack.top:
+        return
+    msg = Message("A game has started on Range vs. Range")
+    msg.add_recipient(recipient)
+    msg.html = render_template('game_started.html', recipient=recipient,
+                               screenname=screenname, is_starter=is_starter,
+                               is_acting=is_acting,
+                               unsubscribe=make_unsubscribe_url(identity))
+    send_email_async(msg)
+
 def notify_current_player(game):
     """
     If the game is not finished, notify the current player that it's their
@@ -49,8 +71,19 @@ def notify_current_player(game):
     """
     if game.current_rgp == None:
         return
-    # The identity is used to create the unsubscribe link. We can safely use
-    # that to identify the user in plain text, because they get to see it
-    # anyway during authentication.
     user = game.current_rgp.user
-    _your_turn(user.email, user.screenname, user.identity)
+    _your_turn(recipient=user.email,
+               screenname=user.screenname,
+               identity=user.identity)
+
+def notify_first_player(game, starter_id):
+    """
+    If the game is not finished, notify the current player that it's their
+    turn to act (i.e. via email).
+    """
+    for rgp in game.rgps:
+        _game_started(recipient=rgp.user.email,
+                      screenname=rgp.user.screenname,
+                      identity=rgp.user.identity,
+                      is_starter=(rgp.userid==starter_id),
+                      is_acting=(rgp.userid==game.current_userid))
