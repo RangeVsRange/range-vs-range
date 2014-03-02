@@ -97,7 +97,11 @@ def change_screenname():
 
 @APP.route('/unsubscribe', methods=['GET'])
 def unsubscribe():
-    # TODO: record that the user does not want to receive any more emails
+    """
+    Record that the user does not want to receive any more emails, at least
+    until they log in again and in so doing clear that flag.
+    """
+    # TODO: 0: record that the user does not want to receive any more emails
     # (until the log in again and clear that flag)
     pass
 

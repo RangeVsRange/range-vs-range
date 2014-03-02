@@ -7,9 +7,9 @@ from flask import copy_current_request_context
 from rvr.app import MAIL, make_unsubscribe_url
 from threading import Thread
 from flask.globals import _app_ctx_stack
+from functools import wraps
 
-# TODO: 0: strip out a base template with unsubscribe fore these two functions
-# TODO: 0: consolidate common functionality (e.g. use of _app_ctx_stack)
+# TODO: 0: strip out a base template with unsubscribe for these two functions
 
 def send_email_async(msg):
     """
@@ -28,6 +28,24 @@ def send_email_async(msg):
     thr = Thread(target=with_context)
     thr.start()
 
+def web_only(fun):
+    """
+    Decorator to ensure something only happens when in a web context.
+    """
+    @wraps(fun)
+    def inner(*args, **kwargs):
+        """
+        Check that there is a Flask app before continuing
+        """
+        if not _app_ctx_stack.top:
+            # Short-circuit. Don't try to send email when not run in a Flask app
+            # context.
+            # TODO: REVISIT: Find a way to send an email from console.py
+            return
+        return fun(*args, **kwargs)
+    return inner
+
+@web_only
 def _your_turn(recipient, screenname, identity):
     """
     Lets recipient know it's their turn in a game.
@@ -38,24 +56,18 @@ def _your_turn(recipient, screenname, identity):
     
     Uses Flask-Mail; sends asynchronously.
     """
-    if not _app_ctx_stack.top:
-        # Short-circuit. Don't try to send email when not run in a Flask app
-        # context.
-        # TODO: REVISIT: Find a way to send an email from console.py
-        return
     msg = Message("It's your turn on Range vs. Range")
     msg.add_recipient(recipient)
     msg.html = render_template('your_turn.html', recipient=recipient,
                                screenname=screenname,
                                unsubscribe=make_unsubscribe_url(identity))
     send_email_async(msg)
-    
+
+@web_only
 def _game_started(recipient, screenname, identity, is_starter, is_acting):
     """
     Lets recipient know their game has started.
     """
-    if not _app_ctx_stack.top:
-        return
     msg = Message("A game has started on Range vs. Range")
     msg.add_recipient(recipient)
     msg.html = render_template('game_started.html', recipient=recipient,

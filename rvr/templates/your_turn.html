@@ -1,11 +1,6 @@
-<html>
-<body>
+{% extends "email.html" %}
+{% block content %}
 <p>
 It's your turn.
 </p>
-<p>
-Click <a href="{{unsubscribe}}">here</a> to unsubscribe.
-(This will stop you from receiving emails until you log in again.)
-</p>
-</body>
-</html>
+{% endblock %}
