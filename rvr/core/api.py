@@ -136,6 +136,7 @@ class API(object):
         if matches:
             # return user from database
             user = matches[0]
+            user.unsubscribed = False
             return dtos.UserDetails.from_user(user)
         else:
             # create user in database
@@ -143,6 +144,7 @@ class API(object):
             user.identity = request.identity
             user.email = request.email
             user.screenname = request.screenname
+            user.unsubscribed = False
             self.session.add(user)
             try:
                 self.session.flush()
@@ -158,6 +160,18 @@ class API(object):
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
             return dtos.UserDetails.from_user(user)
+            
+    @api
+    def unsubscribe(self, identity):
+        """
+        Unsubscribe the user from further emails (until the log in again).
+        """
+        matches = self.session.query(tables.User)  \
+            .filter(tables.User.identity == identity).all()
+        if not matches:
+            return self.ERR_NO_SUCH_USER
+        user = matches[0]
+        user.unsubscribed = True
             
     @api
     def change_screenname(self, request):

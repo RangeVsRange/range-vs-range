@@ -100,10 +100,23 @@ def unsubscribe():
     """
     Record that the user does not want to receive any more emails, at least
     until they log in again and in so doing clear that flag.
+    
+    Note that authentication is not required.
     """
-    # TODO: 0: record that the user does not want to receive any more emails
-    # (until the log in again and clear that flag)
-    pass
+    api = API()
+    identity = request.args.get('identity', None)
+    if identity is None:
+        msg = "Invalid request, sorry."
+    else:
+        response = api.unsubscribe(identity)
+        if response is api.ERR_NO_SUCH_USER:
+            msg = "No record of you on Range vs. Range, sorry."
+        elif isinstance(response, APIError):
+            msg = "An unknown error occurred."
+        else:
+            msg = "You have been unsubscribed. If you log in again, you will start receiving emails again."  # pylint:disable=C0301
+    flash(msg)
+    return render_template('base.html', title='Unsubscribe')
 
 @logout.connect_via(APP)
 def on_logout(_source, **_kwargs):

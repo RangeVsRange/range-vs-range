@@ -21,10 +21,13 @@ class User(BASE):
     identity = Column(String(120), nullable=False)
     screenname = Column(String(20), nullable=False, unique=True)
     email = Column(String(256), nullable=False, unique=True)
+    unsubscribed = Column(Boolean, nullable=False)
     
     def __repr__(self):
-        return "User(userid='%s', screenname='%s', email='%s')" %  \
-            (self.userid, self.screenname, self.email)
+        return ("User(userid='%r', screenname='%r', email='%r', " +  \
+            "identity='%r', unsubscribed='%r')") %  \
+            (self.userid, self.screenname, self.email, self.identity,
+             self.unsubscribed)
 
 class SituationPlayer(BASE, object):
     """

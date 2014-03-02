@@ -9,8 +9,6 @@ from threading import Thread
 from flask.globals import _app_ctx_stack
 from functools import wraps
 
-# TODO: 0: strip out a base template with unsubscribe for these two functions
-
 def send_email_async(msg):
     """
     Send email on a different thread.
