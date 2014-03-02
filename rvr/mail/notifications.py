@@ -7,6 +7,7 @@ from mailer import Message
 from rvr.local_settings import SMTP_SERVER, SMTP_PORT, SMTP_PASSWORD, \
     SMTP_USERNAME, SMTP_FROM
 from smtplib import SMTPException
+from rvr.mail.templates import TEMPLATES
 
 def notify(recipient, unsubscribe):
     """
@@ -18,9 +19,8 @@ def notify(recipient, unsubscribe):
                       To=[recipient],
                       charset="utf-8")
     message.Subject = "It's your turn."
-    message.Html = """It's your turn.
-Click <a href="%s">here</a> to unsubscribe.
-(You won't receive any move emails unless you log on again.)""" % (unsubscribe,)
+    template = TEMPLATES.get_template('your_turn.html')
+    message.Html = template.render(recipient=recipient, unsubscribe=unsubscribe)
     sender = Mailer(host=SMTP_SERVER, port=SMTP_PORT, use_tls=True)
     sender.login(SMTP_USERNAME, SMTP_PASSWORD)
     try:
