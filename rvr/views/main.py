@@ -20,7 +20,9 @@ def ensure_user():
     """
     Commit user to database and determine userid
     """
-    if request.endpoint == 'landing_page' or request.path.startswith('/ajax'):
+    if request.endpoint == 'landing_page' or  \
+        request.endpoint == 'unsubscribe' or  \
+        request.path.startswith('/ajax'):
         return
     if not g.user or 'identity' not in g.user:
         # user is not authenticated yet
@@ -92,6 +94,10 @@ def change_screenname():
         else g.user['name']
     return render_template('change.html', title='Change Your Screenname',
                            current=current, form=form)
+
+@APP.route('/unsubscribe', methods=['GET'])
+def unsubscribe():
+    pass
 
 @logout.connect_via(APP)
 def on_logout(_source, **_kwargs):

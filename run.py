@@ -10,6 +10,8 @@ from rvr.views import main  # registers main pages @UnusedImport
 from rvr.views import ajax  # registers ajax functions @UnusedImport
 from rvr.core.api import API
 import logging
+from flask.helpers import url_for
+from rvr import local_settings
 
 def _main():
     """
@@ -24,7 +26,14 @@ def _main():
             debug=APP.config['DEBUG'],
             use_reloader=APP.config.get('RELOADER', False))
 
+def make_unsubscribe_url(identity):
+    """
+    Make a proper Flask-smart URL for unsubscribing.
+    """
+    return url_for('unsubscribe', _external=True, identity=identity)
+
 if  __name__ == '__main__':
+    local_settings.MAKE_UNSUBSCRIBE_URL.fun = make_unsubscribe_url
     logging.basicConfig()
     logging.root.setLevel(logging.DEBUG)
     _main()
