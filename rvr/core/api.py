@@ -16,7 +16,7 @@ from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
-from rvr.mail import notifications
+from rvr.mail.notifications import notify_current_player
 
 #pylint:disable=R0903
 
@@ -653,7 +653,9 @@ class API(object):
                                            rgp.range)
         if not is_valid:
             return API.ERR_INVALID_RANGES
-        self._notify_current_player(game)
+        # TODO: 0: send email to first player on game start
+        # (if they're not the one starting it).
+        notify_current_player(game)
         self.session.commit() # because if we don't we get some ...    
         # ... weird circular dependency thing ...
         # ... but hold on, we haven't done anything yet!?!
@@ -661,21 +663,6 @@ class API(object):
         # ... and it seems to be that evaluating "game.current_rgp.userid"
         # ... is what needs to be committed. Yes, just evaluating it!
         return self._perform_action(game, rgp, range_action, current_options)
-        
-    def _notify_current_player(self, game):
-        """
-        If the game is not finished, notify the current player that it's their
-        turn to act (i.e. via email).
-        """
-        # TODO: send email to first player on game start (if they're not the one
-        # starting it).
-        if game.current_rgp == None:
-            return
-        # The identity is used to create the unsubscribe link. We can safely use
-        # that to identify the user in plain text, because they get to see it
-        # anyway during authentication.
-        user = game.current_rgp.user
-        notifications.your_turn(user.email, user.screenname, user.identity)
         
     def _get_history_items(self, game, userid=None):
         """

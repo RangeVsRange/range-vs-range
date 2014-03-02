@@ -25,7 +25,7 @@ def send_email_async(msg):
     thr = Thread(target=with_context)
     thr.start()
 
-def your_turn(recipient, name, identity):
+def _your_turn(recipient, name, identity):
     """
     Lets recipient know it's their turn in a game.
     
@@ -42,3 +42,15 @@ def your_turn(recipient, name, identity):
                                unsubscribe=make_unsubscribe_url(identity))
     send_email_async(msg)
     
+def notify_current_player(game):
+    """
+    If the game is not finished, notify the current player that it's their
+    turn to act (i.e. via email).
+    """
+    if game.current_rgp == None:
+        return
+    # The identity is used to create the unsubscribe link. We can safely use
+    # that to identify the user in plain text, because they get to see it
+    # anyway during authentication.
+    user = game.current_rgp.user
+    _your_turn(user.email, user.screenname, user.identity)
