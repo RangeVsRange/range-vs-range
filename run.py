@@ -20,8 +20,6 @@ def _main():
     api.create_db()
     api.initialise_db()
     api.ensure_open_games()
-    # Connect mail
-    MAIL.init_app(APP)
     # Run the app locally
     APP.run(host=APP.config.get('HOST', '0.0.0.0'),
             port=APP.config.get('PORT', 80),

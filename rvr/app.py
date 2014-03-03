@@ -15,7 +15,7 @@ APP.config.from_pyfile('local_settings.py', silent=True)
 APP.wsgi_app = SharedDataMiddleware(APP.wsgi_app,
     {'/':os.path.join(os.path.dirname(__file__), 'static')})
 
-MAIL = Mail()
+MAIL = Mail(APP)
 
 # Flask-GoogleAuth, used by main.py
 AUTH = GoogleAuth(APP)
