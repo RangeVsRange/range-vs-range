@@ -254,7 +254,7 @@ def _handle_action(gameid, userid, api, form):
             msg = "Invalid ranges for that action."
         else:
             msg = "An unknown error occurred."
-            logging.info('Unknown error from api.perform_action: %r', result)
+            logging.info('Unknown error from api.perform_action: %s', result)
         flash(msg)
         return redirect(url_for('game_page', gameid=gameid))
     else:
