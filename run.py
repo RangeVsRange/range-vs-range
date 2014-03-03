@@ -3,7 +3,7 @@ Runs the Flask application 'APP' locally on port 8080.
 
 Note: when running on pythonanywhere.com, this script is not used.
 """
-from rvr.app import APP, MAIL
+from rvr.app import APP
 # pylint:disable=W0611
 from rvr.views import main  # registers main pages @UnusedImport
 #from rvr.views import main_openid  # registers main pages @UnusedImport
