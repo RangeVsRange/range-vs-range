@@ -11,7 +11,7 @@ from flask.helpers import url_for
 
 APP = Flask(__name__)
 APP.config.from_object('rvr.config')
-APP.config.from_pyfile('local_settings.py', silent=True)
+APP.config.from_object('rvr.local_settings')
 APP.wsgi_app = SharedDataMiddleware(APP.wsgi_app,
     {'/':os.path.join(os.path.dirname(__file__), 'static')})
 
