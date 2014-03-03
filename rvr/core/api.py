@@ -668,7 +668,6 @@ class API(object):
                                            rgp.range)
         if not is_valid:
             return API.ERR_INVALID_RANGES
-        self.session.commit() # TODO: remove this, it's purely experimental
         notify_current_player(game)
         self.session.commit() # because if we don't we get some ...    
         # ... weird circular dependency thing ...
@@ -676,6 +675,7 @@ class API(object):
         # ... TODO: REVISIT: understand this part of SqlAlchemy!   
         # ... and it seems to be that evaluating "game.current_rgp.userid"
         # ... is what needs to be committed. Yes, just evaluating it!
+        # TODO: 0: we still get a circular dependency error on PAW, somehow.
         return self._perform_action(game, rgp, range_action, current_options)
         
     def _get_history_items(self, game, userid=None):
