@@ -33,7 +33,7 @@ def exception_mapper(fun):
         try:
             return fun(*args, **kwargs)
         except Exception as ex:
-            logging.debug(ex)
+            logging.info("Unhandled exception in API function: %r", ex)
             return API.ERR_UNKNOWN
     return inner
 
