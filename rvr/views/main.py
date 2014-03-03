@@ -15,15 +15,11 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING
 from flask_googleauth import logout
 
-@APP.before_request
 def ensure_user():
     """
     Commit user to database and determine userid
     """
-    if request.endpoint == 'landing_page' or  \
-        request.endpoint == 'unsubscribe' or  \
-        request.path.startswith('/ajax'):
-        return
+    # TODO: REVISIT: automagically hook this into AUTH.required 
     if not g.user or 'identity' not in g.user:
         # user is not authenticated yet
         return
@@ -58,7 +54,6 @@ def ensure_user():
         session['userid'] = result.userid
         flash("You have logged in as '%s'." %
               (result.screenname, ))
-        
 
 @APP.route('/change', methods=['GET','POST'])
 @AUTH.required
@@ -67,10 +62,14 @@ def change_screenname():
     Without the user being logged in, give the user the option to change their
     screenname from what Google OpenID gave us.
     """
+    alt = ensure_user()
+    if alt:
+        return alt
     form = ChangeForm()
     if form.validate_on_submit():
         new_screenname = form.change.data
         if 'userid' in session:
+            # Having a userid means they're in the database.
             req = ChangeScreennameRequest(session['userid'],
                                           new_screenname)
             resp = API().change_screenname(req)
@@ -139,6 +138,9 @@ def home_page():
     """
     Authenticated landing page. User is taken here when logged in.
     """
+    alt = ensure_user()
+    if alt:
+        return alt
     api = API()
     userid = session['userid']
     screenname = session['screenname']
@@ -172,6 +174,9 @@ def join_game():
     """
     Join game, flash status, redirect back to /home
     """
+    alt = ensure_user()
+    if alt:
+        return alt
     api = API()
     gameid = request.args.get('gameid', None)
     if gameid is None:
@@ -203,6 +208,9 @@ def leave_game():
     """
     Leave game, flash status, redirect back to /home
     """
+    alt = ensure_user()
+    if alt:
+        return alt
     api = API()
     gameid = request.args.get('gameid', None)
     if gameid is None:
@@ -298,6 +306,9 @@ def game_page():
     """
     User's view of the specified game
     """
+    alt = ensure_user()
+    if alt:
+        return alt
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
