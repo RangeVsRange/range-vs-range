@@ -668,6 +668,7 @@ class API(object):
                                            rgp.range)
         if not is_valid:
             return API.ERR_INVALID_RANGES
+        self.session.commit() # TODO: remove this, it's purely experimental
         notify_current_player(game)
         self.session.commit() # because if we don't we get some ...    
         # ... weird circular dependency thing ...
