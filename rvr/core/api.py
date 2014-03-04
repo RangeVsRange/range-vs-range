@@ -668,8 +668,8 @@ class API(object):
                                            rgp.range)
         if not is_valid:
             return API.ERR_INVALID_RANGES
-        # TODO: 0: put this back in, after dealing with the circular dependency.
-        # notify_current_player(game)  # Still causing c.d. on PAW.
+        notify_current_player(game)
+        # TODO: 0: we're still getting circular dependencies on PAW. 
         self.session.commit() # because if we don't we get some ...    
         # ... weird circular dependency thing ...
         # ... but hold on, we haven't done anything yet!?!
