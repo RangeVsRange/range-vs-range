@@ -218,7 +218,7 @@ class RunningGameSummary(object):
         rgps = sorted(running_game.rgps, key=lambda r:r.order)
         users = [UserDetails.from_user(r.user) for r in rgps]
         situation = SituationDetails.from_situation(running_game.situation)
-        if running_game.current_rgp is not None:
+        if running_game.current_userid is not None:
             user_details = UserDetails.from_user(running_game.current_rgp.user)
         else:
             user_details = None

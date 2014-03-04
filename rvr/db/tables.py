@@ -7,6 +7,7 @@ from rvr.db.creation import BASE
 from sqlalchemy.types import Float
 from rvr.poker.cards import Card
 from rvr.poker.handrange import HandRange, weighted_options_to_description
+from sqlalchemy.orm.session import object_session
 
 #pylint:disable=W0232,R0903
 
@@ -140,11 +141,24 @@ class RunningGame(BASE, object):
     bet_count = Column(Integer, nullable=False)
     # keeping track of how unlikely this line is
     current_factor = Column(Float, nullable=False)
-    # relationships
-    current_rgp = relationship("RunningGameParticipant", primaryjoin=
-        "and_(RunningGame.gameid==RunningGameParticipant.gameid," +  \
-        " RunningGame.current_userid==RunningGameParticipant.userid)",
-        foreign_keys=[gameid, current_userid])
+    # in lieu of a relationship...
+    # TODO: REVISIT: can we do this with a one-to-one relationship?
+    # ... and not cause circular reference issues?!
+    def get_current_rgp(self):
+        """
+        Get current RunningGameParticipant, from current_userid
+        """
+        if self.current_userid is None:
+            return None
+        session = object_session(self)
+        return session.query(RunningGameParticipant)  \
+            .filter(RunningGameParticipant.userid == self.current_userid).one()
+    def set_current_rgp(self, rgp):
+        """
+        Set current_userid, from RunningGameParticipant 
+        """
+        self.current_userid = rgp.userid
+    current_rgp = property(get_current_rgp, set_current_rgp)
     # attributes
     def get_board(self):
         """

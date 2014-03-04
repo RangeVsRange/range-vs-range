@@ -79,7 +79,7 @@ def notify_current_player(game):
     If the game is not finished, notify the current player that it's their
     turn to act (i.e. via email).
     """
-    if game.current_rgp == None:
+    if game.current_userid == None:
         return
     user = game.current_rgp.user
     _your_turn(recipient=user.email,

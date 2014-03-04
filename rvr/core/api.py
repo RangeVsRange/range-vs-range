@@ -17,6 +17,7 @@ from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
+import traceback
 
 #pylint:disable=R0903
 
@@ -34,6 +35,7 @@ def exception_mapper(fun):
             return fun(*args, **kwargs)
         except Exception as ex:
             logging.info("Unhandled exception in API function: %r", ex)
+            logging.info("Exception traceback: %r", traceback.format_exc())
             return API.ERR_UNKNOWN
     return inner
 
@@ -301,7 +303,7 @@ class API(object):
         rgps = self.session.query(tables.RunningGameParticipant)  \
             .filter(tables.RunningGameParticipant.userid == userid).all()
         running_games = [dtos.RunningGameSummary.from_running_game(rgp.game)
-                         for rgp in rgps if rgp.game.current_rgp is not None]
+                         for rgp in rgps if rgp.game.current_userid is not None]
         return dtos.UsersGameDetails(userid, running_games)
     
     def _start_game(self, open_game, final_ogp):
@@ -552,7 +554,7 @@ class API(object):
             earlier = [p for p in left_to_act if p.order < rgp.order]
             chosen = later if later else earlier
             next_rgp = min(chosen, key=lambda p: p.order)
-            game.current_rgp = next_rgp
+            game.current_userid = next_rgp.userid
             logging.debug("Next to act in game %d: userid %d, order %d",
                           game.gameid, next_rgp.userid, next_rgp.order)
     
@@ -658,7 +660,7 @@ class API(object):
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
         # check that they're in the game and it's their turn        
-        if game.current_rgp.userid == userid:
+        if game.current_userid == userid:
             rgp = game.current_rgp
         else:
             return self.ERR_NOT_USERS_TURN
@@ -715,7 +717,7 @@ class API(object):
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items = self._get_history_items(game, userid)
-        if game.current_rgp is None:
+        if game.current_userid is None:
             current_options = None
         else:
             current_options = calculate_current_options(game, game.current_rgp)
