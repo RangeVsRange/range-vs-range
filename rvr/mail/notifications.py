@@ -39,6 +39,7 @@ def web_only(fun):
             # Short-circuit. Don't try to send email when not run in a Flask app
             # context.
             # TODO: REVISIT: Find a way to send an email from console.py
+            # Perhaps use a wsgi / script setting instead!
             return
         return fun(*args, **kwargs)
     return inner
