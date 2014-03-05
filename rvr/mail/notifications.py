@@ -6,8 +6,13 @@ from flask.templating import render_template
 from flask import copy_current_request_context
 from rvr.app import MAIL, make_unsubscribe_url
 from threading import Thread
-from flask.globals import _app_ctx_stack
 from functools import wraps
+
+class NotificationSettings(object):
+    def __init__(self):
+        self.suppress_email = False
+        
+NOTIFICATION_SETTINGS = NotificationSettings()
 
 def send_email_async(msg):
     """
@@ -33,13 +38,11 @@ def web_only(fun):
     @wraps(fun)
     def inner(*args, **kwargs):
         """
-        Check that there is a Flask app before continuing
+        Do it only if emails are not suppressed.
         """
-        if not _app_ctx_stack.top:
+        if not NOTIFICATION_SETTINGS.suppress_email:
             # Short-circuit. Don't try to send email when not run in a Flask app
             # context.
-            # TODO: REVISIT: Find a way to send an email from console.py
-            # Perhaps use a wsgi / script setting instead!
             return
         return fun(*args, **kwargs)
     return inner

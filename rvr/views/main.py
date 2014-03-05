@@ -335,3 +335,29 @@ def game_page():
         return _finished_game(response, gameid)
     else:
         return _running_game(response, gameid, userid, api)
+
+@APP.route('/range-editor', methods=['GET', 'POST'])
+def range_editor():
+    """
+    An HTML range editor!
+    
+    (Mostly a playground for experimentation right now.)
+    """
+    # TODO: 0: range editor, firstly as a stand-alone webpage
+    # The display should include:
+    #  - a 13 x 13 grid of basic combos (T6o, etc.)
+    #  - 22 suit combo buttons (4 x pair, 6 x suited, 12 x offsuited)
+    #  - select all and select none buttons for these suit combos
+    #  - 4 "lock range" buttons (reset / fold / call / raise)
+    #  - 4 "move hands" buttons (reset / fold / call / raise)
+    # The 13 x 13 grid has the following states (colours):
+    #  - unallocated
+    #  - fold
+    #  - call / check
+    #  - raise / bet
+    #  - a combo of the previous three
+    #  - selected (displayed as a depressed and/or greyed button)
+    # To start with, the "move hands" buttons can reload the page.
+    # Exact colours can be retrieved from (e.g.)
+    #   http://rangevsrange.wordpress.com/introduction/
+    return render_template('range_editor.html', title="Range Editor")
