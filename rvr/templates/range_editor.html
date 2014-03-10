@@ -1,31 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Range Editor</h2>
-<style>
-g {
-    background: #ccc;
-    cursor: pointer;
-    border-top: solid 2px #eaeaea;
-    border-left: solid 2px #eaeaea;
-    border-bottom: solid 2px #777;
-    border-right: solid 2px #777;
-    padding: 5px 5px;       
-    }
-
-g.down {
-    background: #bbb;
-    border-top: solid 2px #777;
-    border-left: solid 2px #777;
-    border-bottom:solid 2px  #eaeaea;
-    border-right: solid 2px #eaeaea;
-    }
-</style>
-<g id="button" title="button">Press Me</g>
-<script>
-$(document).ready(function(){
-    $('g#button').click(function(){
-        $(this).toggleClass("down");
-    });
-});
-</script>
+<form>
+<table>
+<tr>
+<td><!-- First row: board; 4 x range; bet/raise total -->
+ <table>
+ <tr>
+ <td>
+  board
+ </td>
+ <td>
+  4 x range
+ </td>
+ <td>
+  bet/raise total
+ </td>
+ </tr>
+ </table>
+</td>
+</tr>
+<tr><!-- Second row: selected hands; rank combos; suit combos -->
+<td>
+ <table>
+ <tr>
+ <td>
+  selected hands
+ </td>
+ <td>
+  rank combos
+ </td>
+ <td>
+  suit combos
+ </td>
+ </tr>
+ </table>
+</td>
+</tr>
+<tr><!-- Third row: Go! button (submit form) -->
+<td>
+<input type=submit name=complete value="Done" />
+</td>
+</tr>
+</table>
+</form>
 {% endblock %}
