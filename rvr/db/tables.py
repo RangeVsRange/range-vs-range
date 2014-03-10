@@ -152,7 +152,8 @@ class RunningGame(BASE, object):
             return None
         session = object_session(self)
         return session.query(RunningGameParticipant)  \
-            .filter(RunningGameParticipant.userid == self.current_userid).one()
+            .filter(RunningGameParticipant.userid == self.current_userid)  \
+            .filter(RunningGameParticipant.gameid == self.gameid).one()
     def set_current_rgp(self, rgp):
         """
         Set current_userid, from RunningGameParticipant 
