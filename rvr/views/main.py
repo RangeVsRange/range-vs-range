@@ -360,4 +360,5 @@ def range_editor():
     # To start with, the "move hands" buttons can reload the page.
     # Exact colours can be retrieved from (e.g.)
     #   http://rangevsrange.wordpress.com/introduction/
+    # TODO: 1: move all <tag style="details"> to (external?) CSS  
     return render_template('range_editor.html', title="Range Editor")
