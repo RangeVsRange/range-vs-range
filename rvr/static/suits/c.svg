@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="240"
+   height="260"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.45.1"
+   version="1.0"
+   sodipodi:docbase="C:\Documents and Settings\Flanker\Desktop\Temporanei\SVG\Piacentine SVG"
+   sodipodi:docname="Fiori.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="306.75062"
+     inkscape:cy="135.80548"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:showpageshadow="false"
+     width="240px"
+     height="260px"
+     inkscape:window-width="1280"
+     inkscape:window-height="1003"
+     inkscape:window-x="-4"
+     inkscape:window-y="-4" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Livello 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-288.15635,-348.0625)">
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Lello"
+       x="105.71429"
+       y="423.79074"
+       id="text2160"><tspan
+         sodipodi:role="line"
+         id="tspan2162"
+         x="105.71429"
+         y="423.79074">♠</tspan></text>
+    <path
+       style="opacity:1;fill:#00d400;fill-opacity:1;stroke:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 408.15635,351.67188 C 376.96835,351.67188 351.65636,376.98388 351.65635,408.17188 C 351.65635,426.00261 360.03156,441.82157 372.8751,452.26563 C 377.21128,455.7917 375.35432,459.61991 370.9376,457.23438 C 362.91058,452.89886 353.84404,450.14063 344.0626,450.14063 C 313.9786,450.14063 289.5626,474.55663 289.5626,504.64063 C 289.5626,534.72462 313.9786,559.14062 344.0626,559.14063 C 364.11537,559.14063 381.66708,548.30569 391.09385,532.14063 C 392.01488,530.56124 392.75588,528.39063 394.0626,528.39063 C 395.84997,528.39063 396.6876,530.99116 396.6876,535.85938 C 396.6876,555.39769 388.23902,578.22438 375.7501,604.45313 C 381.14343,603.31669 397.48251,600.42188 408.15635,600.42188 C 418.83019,600.42188 435.16927,603.31669 440.5626,604.45313 C 428.07368,578.22438 419.6251,555.39769 419.6251,535.85938 C 419.6251,530.99116 420.46273,528.39063 422.2501,528.39063 C 423.55682,528.39063 424.29782,530.56124 425.21885,532.14063 C 434.64562,548.30569 452.19733,559.14063 472.2501,559.14063 C 502.3341,559.14062 526.7501,534.72462 526.7501,504.64063 C 526.7501,474.55663 502.3341,450.14063 472.2501,450.14063 C 462.46866,450.14063 453.40212,452.89886 445.3751,457.23438 C 440.95838,459.61991 439.10142,455.7917 443.4376,452.26563 C 456.28114,441.82157 464.65635,426.00261 464.65635,408.17188 C 464.65634,376.98388 439.34435,351.67188 408.15635,351.67188 z "
+       id="path2210" />
+  </g>
+</svg>

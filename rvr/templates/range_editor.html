@@ -5,7 +5,7 @@
 <table style="white-space:nowrap">
 <tr>
 <td><!-- First row: board; 4 x range; bet/raise total -->
- <table>
+ <table border=1>
  <tr>
  <td>
 <!-- Start Board -->
@@ -18,10 +18,42 @@
  </td>
  <td>
 <!-- Start 4 x Range -->
-  4 x range
+  <table>
+   <tr><td>Unassigned</td></tr>
+   <tr><td>100%</td></tr>
+   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><button>(Reset)</button></td></tr>
+  </table>
+ </td>
+ <td>
+  <table>
+   <tr><td>Fold range</td></tr>
+   <tr><td>0.00%</td></tr>
+   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><button>Fold</button></td></tr>
+  </table>
+ </td>
+ <td>
+  <table>
+   <tr><td>Check/call range</td></tr>
+   <tr><td>0.00%</td></tr>
+   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><button>Check/call</button></td></tr>
+  </table>
+ </td>
+ <td>
+  <table>
+   <tr><td>Bet/raise range</td></tr>
+   <tr><td>0.00%</td></tr>
+   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><button>Bet/raise</button></td></tr>
+  </table>
 <!-- End 4 x Range -->
+ </td>
+ <td>
 <!-- Start Raise Total -->
-  bet/raise total
+  <label for=raise_total>Bet/raise total:</label><br />
+  <input id=raise_total type=text />
 <!-- End Raise Total -->
  </td>
  </tr>
@@ -30,14 +62,22 @@
 </tr>
 <tr><!-- Second row: selected hands; rank combos; suit combos -->
 <td>
- <table>
+ <table border=1>
  <tr>
- <td>
+ <td style="vertical-align:top">
 <!-- Start Selected Hands -->
-  selected hands
+  Selected hands:<br />
+  <table>
+   <tr><td>AQo</td></tr>
+   <tr><td>AQo</td></tr>
+   <tr><td>AQo</td></tr>
+   <tr><td>AQo</td></tr>
+   <tr><td>AQo</td></tr>
+  </table>
 <!-- End Selected Hands -->
  </td>
- <td>
+ <td style="vertical-align:top">
+  Select rank combos:<br />
 <!-- Start Rank Combos -->
   <table border="1px">
    <tr>

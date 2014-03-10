@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="240"
+   height="260"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.45.1"
+   version="1.0"
+   sodipodi:docbase="C:\Documents and Settings\Flanker\Desktop\Temporanei\SVG\Piacentine SVG"
+   sodipodi:docname="Cuori.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.7"
+     inkscape:cx="198.77419"
+     inkscape:cy="102.87489"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:showpageshadow="false"
+     width="240px"
+     height="260px"
+     inkscape:window-width="1280"
+     inkscape:window-height="1003"
+     inkscape:window-x="-4"
+     inkscape:window-y="-4" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Livello 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-288.15635,-348.0625)">
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Lello"
+       x="105.71429"
+       y="423.79074"
+       id="text2160"><tspan
+         sodipodi:role="line"
+         id="tspan2162"
+         x="105.71429"
+         y="423.79074">♠</tspan></text>
+    <path
+       style="font-size:732.08221436px;font-style:normal;font-weight:normal;fill:#d40000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Lello"
+       d="M 407.99992,606.58127 C 359.30689,554.26555 300.9848,491.57031 300.98478,417.2381 C 300.98478,394.67352 306.01529,377.74995 316.07638,366.46733 C 326.1374,355.18518 338.89059,349.54399 354.33598,349.54373 C 367.5471,349.54399 379.03056,354.77931 388.78642,365.24972 C 398.54202,375.72061 404.94652,387.15193 407.99992,399.54373 C 411.24682,387.15193 417.74812,375.72061 427.50402,365.24972 C 437.25962,354.77931 448.64622,349.54399 461.66392,349.54373 C 477.10912,349.54399 489.91442,355.18518 500.07992,366.46733 C 510.24502,377.74995 515.32787,394.67352 515.32792,417.2381 C 515.32807,491.56766 457.59088,554.48558 407.99992,606.58127 L 407.99992,606.58127 z "
+       id="path2206"
+       sodipodi:nodetypes="csssscsssscc" />
+  </g>
+</svg>

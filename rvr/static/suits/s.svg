@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="240"
+   height="260"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.45.1"
+   version="1.0"
+   sodipodi:docbase="C:\Documents and Settings\Flanker\Desktop\Temporanei\SVG\Piacentine SVG"
+   sodipodi:docname="Picche.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="497.81561"
+     inkscape:cy="272.68242"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:showpageshadow="false"
+     width="240px"
+     height="260px"
+     inkscape:window-width="1280"
+     inkscape:window-height="1003"
+     inkscape:window-x="0"
+     inkscape:window-y="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Livello 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-300.375,-343.5)">
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Lello"
+       x="105.71429"
+       y="423.79074"
+       id="text2160"><tspan
+         sodipodi:role="line"
+         id="tspan2162"
+         x="105.71429"
+         y="423.79074">♠</tspan></text>
+    <path
+       style="font-size:732.08221436px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Lello"
+       d="M 420.375,346.67188 C 365.31327,379.99696 320.375,451.12579 320.375,514.73438 C 320.37501,543.52463 339.98691,560.98438 364.875,560.98438 C 386.15677,560.98438 402.51629,548.21002 408.15625,528.07813 C 408.89007,525.45876 409.29444,524.26563 410.28125,524.26563 C 411.5602,524.26563 412.15625,526.86616 412.15625,531.73438 C 412.15626,551.27269 406.12395,574.09938 397.1875,600.32813 C 401.04671,599.19169 412.73733,596.29688 420.375,596.29688 C 428.01267,596.29688 439.70331,599.19169 443.5625,600.32813 C 434.62605,574.09938 428.59376,551.27269 428.59375,531.73438 C 428.59375,526.86616 429.15856,524.26563 430.4375,524.26563 C 431.42431,524.26563 431.85995,525.45876 432.59375,528.07813 C 438.23371,548.21002 454.59325,560.98438 475.875,560.98438 C 500.76309,560.98438 520.37501,543.52463 520.375,514.73438 C 520.375,451.12579 475.43675,379.99696 420.375,346.67188 z "
+       id="path2169" />
+  </g>
+</svg>
