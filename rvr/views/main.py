@@ -138,6 +138,11 @@ def home_page():
     """
     Authenticated landing page. User is taken here when logged in.
     """
+    # TODO: 0: merge the current /home (authenticated) with / (unauth'd).
+    # When authenticated, show home_page(). When unauth'd, show landing_page().
+    # On error, redirect to a new page just to show the error, from where the
+    # user can choose to go back to the home page. (This is to ensure minimal
+    # chance of an error when showing the error page.)
     alt = ensure_user()
     if alt:
         return alt
