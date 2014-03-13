@@ -55,14 +55,14 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 {% endif %}
 
 <p>The players are seated as follows:
-<table>
-<tr><td></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td><td></td></tr>
+<table border=1>
+<tr><td class=wide></td><td class=wide><strong>Stack</strong></td><td class=wide><strong>In the pot</strong></td><td class=wide></td></tr>
 {% for rgp in game_details.rgp_details %}
 <tr>
-  <td><strong>{{rgp.user.screenname}}</strong></td>
-  <td>{{rgp.stack}}</td>
-  <td>{{rgp.contributed}}</td>
-  <td>
+  <td class=wide><strong>{{rgp.user.screenname}}</strong></td>
+  <td class=wide>{{rgp.stack}}</td>
+  <td class=wide>{{rgp.contributed}}</td>
+  <td class=wide>
   {% if rgp.user.screenname == game_details.current_player.user.screenname %}
     <em>(acting now)</em>
   {% elif rgp.left_to_act %}

@@ -15,6 +15,12 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING
 from flask_googleauth import logout
 
+def is_authenticated():
+    """
+    Is the user authenticated with OpenID?
+    """
+    return g.user and 'identity' in g.user
+
 def ensure_user():
     """
     Commit user to database and determine userid
@@ -48,7 +54,7 @@ def ensure_user():
     elif isinstance(result, APIError):
         flash("Error registering user details.")
         logging.debug("login error: %s", result)
-        return redirect(url_for('landing_page'))
+        return redirect(url_for('error_page'))
     else:
         session['screenname'] = result.screenname
         session['userid'] = result.userid
@@ -125,24 +131,29 @@ def on_logout(_source, **_kwargs):
     session.pop('userid', None)
     session.pop('screenname', None)
 
+@APP.route('/log-in', methods=['GET'])
+@AUTH.required
+def log_in():
+    """
+    Does what /login does, but in a way that I can get a URL for with url_for!
+    """
+    # TODO: REVISIT: get a relative URL for /login, instead of this.
+    return redirect(url_for('home_page'))
+
+@APP.route('/error', methods=['GET'])
+def error_page():
+    """
+    Unauthenticated page for showing errors to user.
+    """
+    return render_template('base.html', title='Sorry')
+
 @APP.route('/', methods=['GET'])
-def landing_page():
+def home_page():
     """
     Generates the unauthenticated landing page. AKA the main or home page.
     """
-    return render_template('landing.html', title='Welcome')
-
-@APP.route('/home', methods=['GET'])
-@AUTH.required
-def home_page():
-    """
-    Authenticated landing page. User is taken here when logged in.
-    """
-    # TODO: 0: merge the current /home (authenticated) with / (unauth'd).
-    # When authenticated, show home_page(). When unauth'd, show landing_page().
-    # On error, redirect to a new page just to show the error, from where the
-    # user can choose to go back to the home page. (This is to ensure minimal
-    # chance of an error when showing the error page.)
+    if not is_authenticated():
+        return render_template('landing.html', title='Welcome')
     alt = ensure_user()
     if alt:
         return alt
@@ -152,11 +163,11 @@ def home_page():
     open_games = api.get_open_games()
     if isinstance(open_games, APIError):
         flash("An unknown error occurred retrieving your open games.")
-        return redirect(url_for("landing_page"))
+        return redirect(url_for("error_page"))
     my_games = api.get_user_running_games(userid)
     if isinstance(my_games, APIError):
         flash("An unknown error occurred retrieving your running games.")
-        return redirect(url_for("landing_page"))
+        return redirect(url_for("error_page"))
     my_open = [og for og in open_games
                if any([u.userid == userid for u in og.users])]
     others_open = [og for og in open_games
@@ -186,12 +197,12 @@ def join_game():
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
-        return redirect(url_for('home_page'))
+        return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
         flash("Invalid game ID.")
-        return redirect(url_for('home_page'))
+        return redirect(url_for('error_page'))
     userid = session['userid']
     response = api.join_game(userid, gameid)
     if response is api.ERR_JOIN_GAME_ALREADY_IN:
@@ -204,8 +215,10 @@ def join_game():
         msg = "An unknown error occurred."
     else:
         msg = "You have joined game %s." % (gameid,)
+        flash(msg)
+        return redirect(url_for('home_page'))
     flash(msg)
-    return redirect(url_for('home_page'))
+    return redirect(url_for('error_page'))
 
 @APP.route('/leave', methods=['GET'])
 @AUTH.required
@@ -220,12 +233,12 @@ def leave_game():
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
-        return redirect(url_for('home_page'))
+        return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
         flash("Invalid game ID.")
-        return redirect(url_for('home_page'))
+        return redirect(url_for('error_page'))
     userid = session['userid']
     response = api.leave_game(userid, gameid)
     if response is api.ERR_USER_NOT_IN_GAME:
@@ -236,8 +249,10 @@ def leave_game():
         msg = "An unknown error occurred."
     else:
         msg = "You have left game %s." % (gameid,)
+        flash(msg)
+        return redirect(url_for('home_page'))
     flash(msg)
-    return redirect(url_for('home_page'))
+    return redirect(url_for('error_page'))
 
 def _handle_action(gameid, userid, api, form):
     """
@@ -318,14 +333,14 @@ def game_page():
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
-        return redirect(url_for('home_page'))
+        return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
         flash("Invalid game ID.")
-        return redirect(url_for('home_page'))
+        return redirect(url_for('error_page'))
     userid = session['userid']
-        
+
     api = API()
     response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
@@ -334,7 +349,7 @@ def game_page():
         else:
             msg = "An unknown error occurred."
         flash(msg)
-        return redirect(url_for('home_page'))
+        return redirect(url_for('error_page'))
     
     if response.is_finished():
         return _finished_game(response, gameid)
@@ -365,5 +380,5 @@ def range_editor():
     # To start with, the "move hands" buttons can reload the page.
     # Exact colours can be retrieved from (e.g.)
     #   http://rangevsrange.wordpress.com/introduction/
-    # TODO: 1: move all <tag style="details"> to (external?) CSS  
+    # TODO: 1: move all (most) <tag style="details"> to (external?) CSS  
     return render_template('range_editor.html', title="Range Editor")
