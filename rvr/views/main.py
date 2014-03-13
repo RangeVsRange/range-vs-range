@@ -26,7 +26,7 @@ def ensure_user():
     Commit user to database and determine userid
     """
     # TODO: REVISIT: automagically hook this into AUTH.required 
-    if not g.user or 'identity' not in g.user:
+    if not is_authenticated():
         # user is not authenticated yet
         return
     if 'userid' in session and 'screenname' in session:
