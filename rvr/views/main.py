@@ -356,6 +356,61 @@ def game_page():
     else:
         return _running_game(response, gameid, userid, api)
 
+RANKS_HIDDEN = 'r_hdn'
+RANKS_SELECTED = 'r_sel'
+RANKS_UNASSIGNED = 'r_una'
+RANKS_FOLD = 'r_fol'
+RANKS_PASSIVE = 'r_pas'
+RANKS_AGGRESSIVE = 'r_agg'
+
+POS_TO_RANK = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
+
+SUITED = 0
+PAIR = 1
+OFFSUIT = 2
+
+SUITS_HIDDEN = 's_hdn'
+SUITS_SELECTED = 's_sel'
+SUITS_DESELECTED = 's_des'
+
+POS_TO_SUIT = ['s', 'h', 'd', 'c']  # i.e. s.svg, h.svg, etc.
+
+def rank_text(row, col):
+    if row < col:
+        # suited
+        return "%s%ss" % (POS_TO_RANK[row], POS_TO_RANK[col])
+    elif row > col:
+        # offsuit
+        return "%s%so" % (POS_TO_RANK[col], POS_TO_RANK[row])
+    else:
+        # pair
+        return "%s%s" % (POS_TO_RANK[row], POS_TO_RANK[col])
+
+def rank_id(row, col):
+    return rank_text(row, col)
+
+def rank_class(row, col):
+    return RANKS_HIDDEN if row == 3 or col == 7 else RANKS_UNASSIGNED
+
+def suit_text(row, col, is_left):
+    return POS_TO_SUIT[row] if is_left else POS_TO_SUIT[col]
+
+def suit_id(row, col, table):
+    if table == SUITED:
+        return "s_%s" % (POS_TO_SUIT[row])
+    elif table == PAIR:
+        return "p_%s%s" % (POS_TO_SUIT[row], POS_TO_SUIT[col])
+    elif table == OFFSUIT:
+        return "o_%s%s" % (POS_TO_SUIT[row], POS_TO_SUIT[col])
+
+def suit_class(row, col, table):
+    if table == SUITED:
+        return SUITS_SELECTED if row == col else SUITS_HIDDEN
+    elif table == PAIR:
+        return SUITS_SELECTED if row < col else SUITS_HIDDEN
+    elif table == OFFSUIT:
+        return SUITS_SELECTED if row != col else SUITS_HIDDEN
+
 @APP.route('/range-editor', methods=['GET', 'POST'])
 def range_editor():
     """
@@ -380,5 +435,27 @@ def range_editor():
     # To start with, the "move hands" buttons can reload the page.
     # Exact colours can be retrieved from (e.g.)
     #   http://rangevsrange.wordpress.com/introduction/
-    # TODO: 1: move all (most) <tag style="details"> to (external?) CSS  
-    return render_template('range_editor.html', title="Range Editor")
+    # TODO: 0: should create the four tables programmatically
+    # TODO: 0: move all (most) <tag style="details"> to (external?) CSS
+    rank_table = [[{'text': rank_text(row, col),
+                    'id': rank_id(row, col),
+                    'class': rank_class(row, col)}
+                   for col in range(13)] for row in range(13)]
+    suited_table = [[{'left': suit_text(row, col, True),
+                      'right': suit_text(row, col, False),
+                      'id': suit_id(row, col, SUITED),
+                      'class': suit_class(row, col, SUITED)}
+                     for col in range(4)] for row in range(4)] 
+    pair_table = [[{'left': suit_text(row, col, True),
+                    'right': suit_text(row, col, False),
+                    'id': suit_id(row, col, PAIR),
+                    'class': suit_class(row, col, PAIR)}
+                   for col in range(4)] for row in range(4)]
+    offsuit_table = [[{'left': suit_text(row, col, True),
+                       'right': suit_text(row, col, False),
+                       'id': suit_id(row, col, OFFSUIT),
+                       'class': suit_class(row, col, OFFSUIT)}
+                      for col in range(4)] for row in range(4)]
+    return render_template('range_editor.html', title="Range Editor",
+        rank_table=rank_table, suited_table=suited_table,
+        pair_table=pair_table, offsuit_table=offsuit_table)

@@ -68,57 +68,24 @@
 <!-- Start Selected Hands -->
   Selected hands:<br />
   <table>
-   <tr><td>AQo</td></tr>
-   <tr><td>AQo</td></tr>
-   <tr><td>AQo</td></tr>
-   <tr><td>AQo</td></tr>
-   <tr><td>AQo</td></tr>
+   <tr><td><!--AQo--></td></tr>
+   <tr><td><!--AQs--></td></tr>
+   <tr><td><!--87o-84o--></td></tr>
+   <tr><td><!--AA-22--></td></tr>
   </table>
 <!-- End Selected Hands -->
  </td>
  <td style="vertical-align:top">
   Select rank combos:<br />
 <!-- Start Rank Combos -->
-  <table border="1px">
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
+  <table border=1>
+   {% for row in rank_table %}
+   <tr style="height:35px">
+    {% for details in row %}
+    <td style="width:35px"><div style="text-align:center" class="{{details.class}}" id="{{details.id}}">{% if details.class != "r_hdn" %}{{details.text}}{% endif %}</div></td>
+    {% endfor %}
    </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
-   <tr>
-    <td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td><td>AQs</td>
-   </tr>
+   {% endfor %}
   </table>
 <!-- End Rank Combos -->
  </td>
@@ -128,45 +95,33 @@
    <tr>
     <td colspan=4>Select suited combos:</td>
    </tr>
+   {% for row in suited_table %}
    <tr style="height:30px">
-    <td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20></td><td style="width:25%"></td><td style="width:25%"></td><td style="width:25%"></td>
+    {% for details in row %}
+    <td style="width:25%"><div class="{{details.class}}" id="{{details.id}}">{% if details.class != "s_hdn" %}<img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20>{% endif %}</div></td>
+    {% endfor %}
    </tr>
-   <tr style="height:30px">
-    <td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20></td><td style="width:25%"></td><td style="width:25%"></td>
-   </tr>
-   <tr style="height:30px">
-    <td style="width:25%"></td><td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20></td><td style="width:25%"></td>
-   </tr>
-   <tr style="height:30px">
-    <td style="width:25%"></td><td style="width:25%"></td><td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20></td>
-   </tr>
+   {% endfor %}
    <tr>
-    <td colspan=4>Select pairs combos:</td>
+    <td colspan=4>Select pair combos:</td>
    </tr>
+   {% for row in pair_table %}
    <tr style="height:30px">
-    <td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20></td>
+    {% for details in row %}
+    <td style="width:25%"><div class="{{details.class}}" id="{{details.id}}">{% if details.class != "s_hdn" %}<img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20>{% endif %}</div></td>
+    {% endfor %}
    </tr>
-   <tr style="height:30px">
-    <td style="width:25%"></td><td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20></td>
-   </tr>
-   <tr style="height:30px">
-    <td style="width:25%"></td><td style="width:25%"></td><td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20></td>
-   </tr>
+   {% endfor %}
    <tr>
     <td colspan=4>Select offsuit combos:</td>
    </tr>
+   {% for row in offsuit_table %}
    <tr style="height:30px">
-    <td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20></td>
+    {% for details in row %}
+    <td style="width:25%"><div class="{{details.class}}" id="{{details.id}}">{% if details.class != "s_hdn" %}<img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20>{% endif %}</div></td>
+    {% endfor %}
    </tr>
-   <tr style="height:30px">
-    <td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20></td><td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20></td>
-   </tr>
-   <tr style="height:30px">
-    <td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20></td><td style="width:25%"></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20></td>
-   </tr>
-   <tr style="height:30px">
-    <td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/s.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/h.svg" width=20 height=20></td><td style="width:25%"><img alt="" style="vertical-align:middle" src="/static/suits/c.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/d.svg" width=20 height=20></td><td style="width:25%"></td>
-   </tr>
+   {% endfor %}
    <tr>
     <td colspan=2><button style="width:100%">None</button></td><td colspan=2><button style="width:100%">All</button></td>
    </tr>
