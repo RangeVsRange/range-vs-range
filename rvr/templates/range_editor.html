@@ -5,7 +5,7 @@
 <table style="white-space:nowrap">
 <tr>
 <td><!-- First row: board; 4 x range; bet/raise total -->
- <table border=1>
+ <table style="border:1px solid gray">
  <tr>
  <td>
 <!-- Start Board -->
@@ -21,7 +21,7 @@
   <table>
    <tr><td>Unassigned</td></tr>
    <tr><td>100%</td></tr>
-   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><input type=checkbox id=l_una><label for=l_una>Lock</label></td></tr>
    <tr><td><button>(Reset)</button></td></tr>
   </table>
  </td>
@@ -29,7 +29,7 @@
   <table>
    <tr><td>Fold range</td></tr>
    <tr><td>0.00%</td></tr>
-   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><input type=checkbox id=l_fol><label for=l_fol>Lock</label></td></tr>
    <tr><td><button>Fold</button></td></tr>
   </table>
  </td>
@@ -37,7 +37,7 @@
   <table>
    <tr><td>Check/call range</td></tr>
    <tr><td>0.00%</td></tr>
-   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><input type=checkbox id=l_pas><label for=l_pas>Lock</label></td></tr>
    <tr><td><button>Check/call</button></td></tr>
   </table>
  </td>
@@ -45,14 +45,14 @@
   <table>
    <tr><td>Bet/raise range</td></tr>
    <tr><td>0.00%</td></tr>
-   <tr><td><input type=checkbox>Lock</input></td></tr>
+   <tr><td><input type=checkbox id=l_agg><label for=l_agg>Lock</label></td></tr>
    <tr><td><button>Bet/raise</button></td></tr>
   </table>
 <!-- End 4 x Range -->
  </td>
  <td>
 <!-- Start Raise Total -->
-  <label for=raise_total>Bet/raise total:</label><br />
+  <label for=raise_total>Bet/raise total:</label><br>
   <input id=raise_total type=text />
 <!-- End Raise Total -->
  </td>
@@ -62,11 +62,11 @@
 </tr>
 <tr><!-- Second row: selected hands; rank combos; suit combos -->
 <td>
- <table border=1>
+ <table style="border:1px solid gray">
  <tr>
  <td style="vertical-align:top">
 <!-- Start Selected Hands -->
-  Selected hands:<br />
+  Selected hands:<br>
   <table>
    <tr><td><!--AQo--></td></tr>
    <tr><td><!--AQs--></td></tr>
@@ -76,13 +76,13 @@
 <!-- End Selected Hands -->
  </td>
  <td style="vertical-align:top">
-  Select rank combos:<br />
+  Select rank combos:<br>
 <!-- Start Rank Combos -->
-  <table border=1>
+  <table style="border:1px solid gray">
    {% for row in rank_table %}
    <tr style="height:35px">
     {% for details in row %}
-    <td style="width:35px"><div style="text-align:center" class="{{details.class}}" id="{{details.id}}">{% if details.class != "r_hdn" %}{{details.text}}{% endif %}</div></td>
+    <td style="width:35px">{% if details.class != "r_hdn" %}<div style="text-align:center" class="{{details.class}}" id="{{details.id}}">{{details.text}}</div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -91,14 +91,14 @@
  </td>
  <td>
 <!-- Start Suit Combos -->
-  <table style="white-space:nowrap" border="1px">
+  <table style="white-space:nowrap">
    <tr>
     <td colspan=4>Select suited combos:</td>
    </tr>
    {% for row in suited_table %}
    <tr style="height:30px">
     {% for details in row %}
-    <td style="width:25%"><div class="{{details.class}}" id="{{details.id}}">{% if details.class != "s_hdn" %}<img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20>{% endif %}</div></td>
+    <td style="width:25%">{% if details.class != "s_hdn" %}<div class="{{details.class}}" id="{{details.id}}"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -108,7 +108,7 @@
    {% for row in pair_table %}
    <tr style="height:30px">
     {% for details in row %}
-    <td style="width:25%"><div class="{{details.class}}" id="{{details.id}}">{% if details.class != "s_hdn" %}<img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20>{% endif %}</div></td>
+    <td style="width:25%">{% if details.class != "s_hdn" %}<div class="{{details.class}}" id="{{details.id}}"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -118,7 +118,7 @@
    {% for row in offsuit_table %}
    <tr style="height:30px">
     {% for details in row %}
-    <td style="width:25%"><div class="{{details.class}}" id="{{details.id}}">{% if details.class != "s_hdn" %}<img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20>{% endif %}</div></td>
+    <td style="width:25%">{% if details.class != "s_hdn" %}<div class="{{details.class}}" id="{{details.id}}"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
