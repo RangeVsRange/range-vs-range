@@ -5,7 +5,7 @@
 <table style="white-space:nowrap">
 <tr>
 <td><!-- First row: board; 4 x range; bet/raise total -->
- <table style="border:1px solid gray">
+ <table>
  <tr>
  <td>
 <!-- Start Board -->
@@ -20,7 +20,7 @@
 <!-- Start 4 x Range -->
   <table>
    <tr><td>Unassigned</td></tr>
-   <tr><td>100%</td></tr>
+   <tr><td>{{ '%0.2f' % pct_unassigned }}%</td></tr>
    <tr><td><input type=checkbox id=l_una><label for=l_una>Lock</label></td></tr>
    <tr><td><button>(Reset)</button></td></tr>
   </table>
@@ -28,7 +28,7 @@
  <td>
   <table>
    <tr><td>Fold range</td></tr>
-   <tr><td>0.00%</td></tr>
+   <tr><td>{{ '%0.2f' % pct_fold }}%</td></tr>
    <tr><td><input type=checkbox id=l_fol><label for=l_fol>Lock</label></td></tr>
    <tr><td><button>Fold</button></td></tr>
   </table>
@@ -36,7 +36,7 @@
  <td>
   <table>
    <tr><td>Check/call range</td></tr>
-   <tr><td>0.00%</td></tr>
+   <tr><td>{{ '%0.2f' % pct_passive }}%</td></tr>
    <tr><td><input type=checkbox id=l_pas><label for=l_pas>Lock</label></td></tr>
    <tr><td><button>Check/call</button></td></tr>
   </table>
@@ -44,7 +44,7 @@
  <td>
   <table>
    <tr><td>Bet/raise range</td></tr>
-   <tr><td>0.00%</td></tr>
+   <tr><td>{{ '%0.2f' % pct_aggressive }}%</td></tr>
    <tr><td><input type=checkbox id=l_agg><label for=l_agg>Lock</label></td></tr>
    <tr><td><button>Bet/raise</button></td></tr>
   </table>
@@ -62,7 +62,7 @@
 </tr>
 <tr><!-- Second row: selected hands; rank combos; suit combos -->
 <td>
- <table style="border:1px solid gray">
+ <table>
  <tr>
  <td style="vertical-align:top">
 <!-- Start Selected Hands -->
@@ -78,11 +78,11 @@
  <td style="vertical-align:top">
   Select rank combos:<br>
 <!-- Start Rank Combos -->
-  <table style="border:1px solid gray">
+  <table>
    {% for row in rank_table %}
    <tr style="height:35px">
     {% for details in row %}
-    <td style="width:35px">{% if details.class != "r_hdn" %}<div style="text-align:center" class="{{details.class}}" id="{{details.id}}">{{details.text}}</div>{% endif %}</td>
+    <td style="width:30px">{% if details.class != "r_hdn" %}<div style="text-align:center" class="{{details.class}}" id="{{details.id}}"><button style="height:35px; width:100%">{{details.text}}</button></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}

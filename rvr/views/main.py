@@ -390,7 +390,16 @@ def rank_id(row, col):
     return rank_text(row, col)
 
 def rank_class(row, col):
-    return RANKS_HIDDEN if row == 3 or col == 7 else RANKS_UNASSIGNED
+    # Just a bit of mock data for now
+    if row == 3:
+        return RANKS_HIDDEN
+    if row == 6:
+        return RANKS_FOLD
+    if col == 5:
+        return RANKS_PASSIVE
+    if row == 7:
+        return RANKS_AGGRESSIVE
+    return RANKS_UNASSIGNED
 
 def suit_text(row, col, is_left):
     return POS_TO_SUIT[row] if is_left else POS_TO_SUIT[col]
@@ -450,7 +459,7 @@ def range_editor():
                     'right': suit_text(row, col, False),
                     'id': suit_id(row, col, PAIR),
                     'class': suit_class(row, col, PAIR)}
-                   for col in range(4)] for row in range(4)]
+                   for col in range(4)] for row in range(3)]
     offsuit_table = [[{'left': suit_text(row, col, True),
                        'right': suit_text(row, col, False),
                        'id': suit_id(row, col, OFFSUIT),
@@ -458,4 +467,5 @@ def range_editor():
                       for col in range(4)] for row in range(4)]
     return render_template('range_editor.html', title="Range Editor",
         rank_table=rank_table, suited_table=suited_table,
-        pair_table=pair_table, offsuit_table=offsuit_table)
+        pair_table=pair_table, offsuit_table=offsuit_table,
+        pct_unassigned=100.0, pct_fold=0.0, pct_passive=0.0, pct_aggressive=0.0)
