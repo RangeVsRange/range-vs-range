@@ -362,6 +362,7 @@ RANKS_UNASSIGNED = 'r_una'
 RANKS_FOLD = 'r_fol'
 RANKS_PASSIVE = 'r_pas'
 RANKS_AGGRESSIVE = 'r_agg'
+RANKS_MIXED = 'r_mix'
 
 POS_TO_RANK = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
 
@@ -376,6 +377,9 @@ SUITS_DESELECTED = 's_des'
 POS_TO_SUIT = ['s', 'h', 'd', 'c']  # i.e. s.svg, h.svg, etc.
 
 def rank_text(row, col):
+    """
+    Give the text for this rank combo (e.g. 0, 0 -> 'AA')
+    """
     if row < col:
         # suited
         return "%s%ss" % (POS_TO_RANK[row], POS_TO_RANK[col])
@@ -387,9 +391,15 @@ def rank_text(row, col):
         return "%s%s" % (POS_TO_RANK[row], POS_TO_RANK[col])
 
 def rank_id(row, col):
+    """
+    Give the appropriate id for this rank combo
+    """
     return rank_text(row, col)
 
 def rank_class(row, col):
+    """
+    Give the appropriate class for this rank combo
+    """
     # Just a bit of mock data for now
     if row == 3:
         return RANKS_HIDDEN
@@ -399,12 +409,20 @@ def rank_class(row, col):
         return RANKS_PASSIVE
     if row == 7:
         return RANKS_AGGRESSIVE
+    if col == 8:
+        return RANKS_MIXED
     return RANKS_UNASSIGNED
 
 def suit_text(row, col, is_left):
+    """
+    Give the appropriate text for this suit combo (e.g. 0, 0 -> 's')
+    """
     return POS_TO_SUIT[row] if is_left else POS_TO_SUIT[col]
 
 def suit_id(row, col, table):
+    """
+    Give the appropriate id for this suit combo 
+    """
     if table == SUITED:
         return "s_%s" % (POS_TO_SUIT[row])
     elif table == PAIR:
@@ -413,6 +431,9 @@ def suit_id(row, col, table):
         return "o_%s%s" % (POS_TO_SUIT[row], POS_TO_SUIT[col])
 
 def suit_class(row, col, table):
+    """
+    Give the appropriate class for this suit combo
+    """
     if table == SUITED:
         return SUITS_SELECTED if row == col else SUITS_HIDDEN
     elif table == PAIR:
@@ -444,8 +465,8 @@ def range_editor():
     # To start with, the "move hands" buttons can reload the page.
     # Exact colours can be retrieved from (e.g.)
     #   http://rangevsrange.wordpress.com/introduction/
-    # TODO: 0: should create the four tables programmatically
     # TODO: 0: move all (most) <tag style="details"> to (external?) CSS
+    # TODO: 0: make the bottom table work again, with 15x padding
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
                     'class': rank_class(row, col)}

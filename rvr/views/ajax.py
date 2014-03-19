@@ -9,6 +9,7 @@ from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card
 import json
 import urllib2
+from werkzeug.exceptions import abort
 
 def _safe_hand_range(arg_name, fallback):
     """
@@ -84,5 +85,8 @@ def total_donated():
     Calls blockchain.info.
     """
     url = "http://blockchain.info/rawaddr/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf?limit=0"  # pylint:disable=C0301
-    response = json.load(urllib2.urlopen(url))
+    try:
+        response = json.load(urllib2.urlopen(url))
+    except urllib2.HTTPError:
+        return abort(500)
     return jsonify(total_received=response['total_received'])
