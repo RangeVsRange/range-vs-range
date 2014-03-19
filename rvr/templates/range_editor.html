@@ -2,6 +2,10 @@
 {% block content %}
 <h2>Range Editor</h2>
 <form>
+<input type=hidden name=rng_unassigned value="{{rng_unassigned}}">
+<input type=hidden name=rng_fold value="{{rng_fold}}">
+<input type=hidden name=rng_passive value="{{rng_passive}}">
+<input type=hidden name=rng_aggressive value="{{rng_aggressive}}">
 <table>
 <tr>
 <td><!-- First row: board; 4 x range; bet/raise total -->
@@ -21,7 +25,7 @@
   <table>
    <tr><td>Unassigned</td></tr>
    <tr><td>{{ '%0.2f' % pct_unassigned }}%</td></tr>
-   <tr><td><input type=checkbox id=l_una><label for=l_una>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_una name=l_una><label for=l_una>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="reset">(Reset)</button></td></tr>
   </table>
  </td>
@@ -29,7 +33,7 @@
   <table>
    <tr><td>Fold range</td></tr>
    <tr><td>{{ '%0.2f' % pct_fold }}%</td></tr>
-   <tr><td><input type=checkbox id=l_fol><label for=l_fol>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_fol name=l_fol><label for=l_fol>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="fold">Fold</button></td></tr>
   </table>
  </td>
@@ -37,7 +41,7 @@
   <table>
    <tr><td>Check/call range</td></tr>
    <tr><td>{{ '%0.2f' % pct_passive }}%</td></tr>
-   <tr><td><input type=checkbox id=l_pas><label for=l_pas>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_pas name=l_pas><label for=l_pas>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="passive">Check/call</button></td></tr>
   </table>
  </td>
@@ -45,7 +49,7 @@
   <table>
    <tr><td>Bet/raise range</td></tr>
    <tr><td>{{ '%0.2f' % pct_aggressive }}%</td></tr>
-   <tr><td><input type=checkbox id=l_agg><label for=l_agg>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_agg name=l_agg><label for=l_agg>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="aggressive">Bet/raise</button></td></tr>
   </table>
 <!-- End 4 x Range -->
@@ -82,7 +86,7 @@
    {% for row in rank_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button formaction="#" id="{{details.id}}" class="{{details.class}} pure-button" style="width:100%" onclick="$('#{{details.id}}').toggleClass('r_sel');$('#{{details.id}}').toggleClass('{{details.class}}');">{{details.text}}</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:100%" onclick="$('#{{details.id}}').toggleClass('r_sel');$('#{{details.id}}').toggleClass('{{details.class}}');">{{details.text}}</button>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -134,7 +138,7 @@
 </tr>
 <tr><!-- Third row: Go! button (submit form) -->
  <td style="text-align:center;">
- <input type=submit name=submit value="Done" />
+ <button type=submit name=submit value="done">Done</button>
  </td>
 </tr>
 </table>

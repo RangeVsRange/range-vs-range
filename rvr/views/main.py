@@ -489,4 +489,5 @@ def range_editor():
     return render_template('range_editor.html', title="Range Editor",
         rank_table=rank_table, suited_table=suited_table,
         pair_table=pair_table, offsuit_table=offsuit_table,
+        rng_unassigned="", rng_fold="", rng_passive="", rng_aggressive="",
         pct_unassigned=100.0, pct_fold=0.0, pct_passive=0.0, pct_aggressive=0.0)
