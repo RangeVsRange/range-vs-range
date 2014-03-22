@@ -15,10 +15,19 @@ suit_click = function(_id) {
 {% block content %}
 <h2>Range Editor</h2>
 <form method=post>
+<input type=hidden name=rng_original value="{{rng_original}}">
 <input type=hidden name=rng_unassigned value="{{rng_unassigned}}">
 <input type=hidden name=rng_fold value="{{rng_fold}}">
 <input type=hidden name=rng_passive value="{{rng_passive}}">
 <input type=hidden name=rng_aggressive value="{{rng_aggressive}}">
+{% if rng_unassigned == 'nothing' %}
+<p>You've assigned your whole range. Here's the result:</p>
+<p>Original: {{rng_original}}</p>
+<p>Fold: {{rng_fold}}</p>
+<p>Passive: {{rng_passive}}</p>
+<p>Aggressive: {{rng_aggressive}}</p>
+<p><label for=raise_total>Bet/raise total:&nbsp;</label><input id=raise_total name=raise_total type=text />&nbsp;<button type=submit name=submit value="done">Done</button></p>
+{% endif %}
 <table>
 <tr>
 <td><!-- First row: board; 4 x range; bet/raise total -->
@@ -38,7 +47,7 @@ suit_click = function(_id) {
   <table>
    <tr><td>Unassigned</td></tr>
    <tr><td>{{ '%0.2f' % pct_unassigned }}%</td></tr>
-   <tr><td><input type=checkbox id=l_una name=l_una><label for=l_una>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_una name=l_una {% if l_una %}checked=checked{% endif %}><label for=l_una>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="reset">(Reset)</button></td></tr>
   </table>
  </td>
@@ -46,7 +55,7 @@ suit_click = function(_id) {
   <table>
    <tr><td>Fold range</td></tr>
    <tr><td>{{ '%0.2f' % pct_fold }}%</td></tr>
-   <tr><td><input type=checkbox id=l_fol name=l_fol><label for=l_fol>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_fol name=l_fol {% if l_fol %}checked=checked{% endif %}><label for=l_fol>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="fold">Fold</button></td></tr>
   </table>
  </td>
@@ -54,7 +63,7 @@ suit_click = function(_id) {
   <table>
    <tr><td>Check/call range</td></tr>
    <tr><td>{{ '%0.2f' % pct_passive }}%</td></tr>
-   <tr><td><input type=checkbox id=l_pas name=l_pas><label for=l_pas>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_pas name=l_pas {% if l_pas %}checked=checked{% endif %}><label for=l_pas>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="passive">Check/call</button></td></tr>
   </table>
  </td>
@@ -62,16 +71,10 @@ suit_click = function(_id) {
   <table>
    <tr><td>Bet/raise range</td></tr>
    <tr><td>{{ '%0.2f' % pct_aggressive }}%</td></tr>
-   <tr><td><input type=checkbox id=l_agg name=l_agg><label for=l_agg>Lock</label></td></tr>
+   <tr><td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="aggressive">Bet/raise</button></td></tr>
   </table>
 <!-- End 4 x Range -->
- </td>
- <td class=wide>
-<!-- Start Raise Total -->
-  <label for=raise_total>Bet/raise total:</label><br>
-  <input id=raise_total name=raise_total type=text />
-<!-- End Raise Total -->
  </td>
  </tr>
  </table>
@@ -98,7 +101,7 @@ End Selected Hands -->
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:100%" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:100%" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:40px; height:40px; text-align:center; padding-left:0; padding-right:0" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:40px; height:40px" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>
@@ -147,11 +150,6 @@ End Selected Hands -->
  </table>
 </td>
 </tr>
-{% if rng_unassigned == 'nothing' %}
-<tr><!-- Third row: Go! button (submit form) -->
- <td style="text-align:center;"><button type=submit name=submit value="done">Done</button></td>
-</tr>
-{% endif %}
 </table>
 </form>
 {% endblock %}

@@ -400,6 +400,12 @@ def weighted_options_to_description(options):
     parts.sort(key=key_part, reverse=True)
     return ",".join(parts)
 
+def unweighted_options_to_description(options):
+    """
+    Per weighted_options_to_description, except unweighted.
+    """
+    return weighted_options_to_description([(o, 1) for o in options])
+
 def remove_board_from_range(hand_range, board):
     """
     returns a new hand_range, with no options that contain any hand in board

@@ -3,8 +3,14 @@ The main pages for the site
 """
 from flask import render_template
 from rvr.app import APP
+from werkzeug.utils import redirect
+from flask.helpers import url_for
+from flask.globals import request
+from rvr.poker.handrange import NOTHING, ANYTHING, HandRange,  \
+    unweighted_options_to_description
+from rvr.poker.cards import Card, SUIT_INVERT
 
-# TODO: include in WSGI file on PAW
+# pylint:disable=R0903,R0913,R0914
 
 RANKS_HIDDEN = 'r_hdn'
 RANKS_SELECTED = 'r_sel'
@@ -26,6 +32,152 @@ SUITS_DESELECTED = 's_des'
 
 POS_TO_SUIT = ['s', 'h', 'd', 'c']  # i.e. s.svg, h.svg, etc.
 
+class ColorMaker(object):  
+    """
+    Chooses a class for a cell of the range chooser
+    """
+    def __init__(self, opt_ori, opt_una, opt_fol, opt_pas, opt_agg):
+        """
+        Args are lists of options: original, unassigned, fold, passive,
+        aggressive.
+        """
+        self.opt_ori = set(opt_ori)
+        self.opt_una = set(opt_una)
+        self.opt_fol = set(opt_fol)
+        self.opt_pas = set(opt_pas)
+        self.opt_agg = set(opt_agg)
+    
+    def get_color(self, options):
+        """
+        Hidden when no options in original
+        Unassigned when options wholly in unassigned
+        Ditto for fold, passive, aggressive
+        Mixed when options in two or more of unassigned, fold, passive,
+            aggressive
+        """
+        options = set(options)
+        options = options.intersection(self.opt_ori)
+        if not options:
+            return RANKS_HIDDEN
+        if options.issubset(self.opt_una):
+            return RANKS_UNASSIGNED
+        if options.issubset(self.opt_fol):
+            return RANKS_FOLD
+        if options.issubset(self.opt_pas):
+            return RANKS_PASSIVE
+        if options.issubset(self.opt_agg):
+            return RANKS_AGGRESSIVE
+        return RANKS_MIXED
+
+class OptionMover(object):
+    """
+    Calculates which options to move where
+    """
+    def __init__(self, opt_ori, opt_una, opt_fol, opt_pas, opt_agg,
+                 l_una, l_fol, l_pas, l_agg, options_selected, action):
+        """
+        opt_* = original, unassigned, fold, passive, aggressive options
+        l_* = locked ranges
+        options_selected = options selected
+        action = reset, fold, passive, aggressive
+        """
+        opt_ori = set(opt_ori)
+        opt_una = set(opt_una)
+        opt_fol = set(opt_fol)
+        opt_pas = set(opt_pas)
+        opt_agg = set(opt_agg)
+        # hands that are selected, are in original
+        moving = set(options_selected).intersection(opt_ori)
+        # remove locked hands
+        if l_una:
+            moving.difference_update(opt_una)
+        if l_fol:
+            moving.difference_update(opt_fol)
+        if l_pas:
+            moving.difference_update(opt_pas)
+        if l_agg:
+            moving.difference_update(opt_agg)
+        # now move moving to target, remove from the others
+        if action == 'reset':
+            target = opt_una
+        elif action == 'fold':
+            target = opt_fol
+        elif action == 'passive':
+            target = opt_pas
+        elif action == 'aggressive':
+            target = opt_agg
+        else:
+            # garbage in, garbage out
+            target = opt_una
+        target.update(moving)
+        for other in [opt_una, opt_fol, opt_pas, opt_agg]:
+            if other is not target:
+                other.difference_update(moving)
+        self.rng_unassigned = unweighted_options_to_description(opt_una)
+        self.rng_fold = unweighted_options_to_description(opt_fol)
+        self.rng_passive = unweighted_options_to_description(opt_pas)
+        self.rng_aggressive = unweighted_options_to_description(opt_agg)        
+
+def is_suit_selected(option):
+    """
+    option is a rank combo. Returns True if the corresponding suit combo is
+    selected.
+    """
+    lower, higher = sorted(option)
+    if lower.rank == higher.rank:
+        # pair
+        field = "sel_p_%s%s" % (SUIT_INVERT[higher.suit],
+                                SUIT_INVERT[lower.suit])
+    elif lower.suit == higher.suit:
+        # suited
+        field = "sel_s_%s" % (SUIT_INVERT[higher.suit],)
+    else:
+        # offsuit
+        field = "sel_o_%s%s" % (SUIT_INVERT[higher.suit],
+                                SUIT_INVERT[lower.suit])
+    return request.form.get(field, "false") == "true"
+
+def get_selected_options(original, board):
+    """
+    Get a list of options selected in the current range editor submission
+    """
+    options = set()
+    for row in range(13):
+        for col in range(13):
+            desc = rank_text(row, col)
+            field = "sel_" + desc
+            is_sel = request.form.get(field, "false") == "true"
+            if is_sel:
+                new = set(HandRange(desc).generate_options_unweighted(board))
+                new.intersection(original)
+                options.update([option for option in new
+                                if is_suit_selected(option)])
+    return options
+
+def safe_hand_range(arg_name, fallback):
+    """
+    Pull a HandRange object from request arg <arg_name>.
+    
+    If there is a problem, return HandRange(fallback).
+    """
+    value = request.args.get(arg_name, fallback, type=str)
+    hand_range = HandRange(value, is_strict=False)
+    if not hand_range.is_valid():
+        hand_range = HandRange(fallback)
+    return hand_range
+
+def safe_board(arg_name):
+    """
+    Pull a board (list of Card) from request arg <arg_name>.
+    
+    If there is a problem, return an empty list.
+    """
+    value = request.args.get(arg_name, '', type=str)
+    try:
+        return Card.many_from_text(value)
+    except ValueError:
+        return []
+
 def rank_text(row, col):
     """
     Give the text for this rank combo (e.g. 0, 0 -> 'AA')
@@ -46,22 +198,13 @@ def rank_id(row, col):
     """
     return rank_text(row, col)
 
-def rank_class(row, col):
+def rank_class(row, col, color_maker, board):
     """
     Give the appropriate class for this rank combo
     """
-    # Just a bit of mock data for now
-    if row == 3:
-        return RANKS_HIDDEN
-    if row == 6:
-        return RANKS_FOLD
-    if col == 5:
-        return RANKS_PASSIVE
-    if row == 7:
-        return RANKS_AGGRESSIVE
-    if col == 8:
-        return RANKS_MIXED
-    return RANKS_UNASSIGNED
+    txt = rank_text(row, col)
+    options = HandRange(txt).generate_options_unweighted(board)
+    return color_maker.get_color(options)
 
 def suit_text(row, col, is_left):
     """
@@ -91,40 +234,46 @@ def suit_class(row, col, table):
     elif table == OFFSUIT:
         return SUITS_SELECTED if row != col else SUITS_HIDDEN
 
-@APP.route('/range-editor', methods=['GET', 'POST'])
-def range_editor():
+@APP.route('/range-editor', methods=['GET'])
+def range_editor_get():
     """
     An HTML range editor!
     
     (Mostly a playground for experimentation right now.)
     """
-    # TODO: 0: range editor, firstly as a stand-alone webpage
-    # The display should include:
-    #  - a 13 x 13 grid of basic combos (T6o, etc.)
-    #  - 22 suit combo buttons (4 x pair, 6 x suited, 12 x offsuited)
-    #  - select all and select none buttons for these suit combos
-    #  - 4 "lock range" buttons (reset / fold / call / raise)
-    #  - 4 "move hands" buttons (reset / fold / call / raise)
-    # The 13 x 13 grid has the following states (colours):
-    #  - unallocated
-    #  - fold
-    #  - call / check
-    #  - raise / bet
-    #  - a combo of the previous three
-    #  - selected (displayed as a depressed and/or greyed button)
-    # To start with, the "move hands" buttons can reload the page.
-    # Exact colours can be retrieved from (e.g.)
-    #   http://rangevsrange.wordpress.com/introduction/
-    # TODO: 0: move all (most) <tag style="details"> to (external?) CSS
-    # TODO: 0: post-redirect-get
-    # State we need to maintain:
-    #  - original range
-    #  - unassigned, fold, passive, raise
-    #  - bet/raise total
-    #  - lock status
+    rng_original = request.args.get('rng_original', ANYTHING)
+    rng_unassigned = request.args.get('rng_unassigned', ANYTHING)
+    rng_fold = request.args.get('rng_fold', NOTHING)
+    rng_passive = request.args.get('rng_passive', NOTHING)
+    rng_aggressive = request.args.get('rng_aggressive', NOTHING)
+    l_una = request.args.get('l_una', '') == 'checked'
+    l_fol = request.args.get('l_fol', '') == 'checked'
+    l_pas = request.args.get('l_pas', '') == 'checked'
+    l_agg = request.args.get('l_agg', '') == 'checked'
+    board = safe_board('board')
+    opt_ori = safe_hand_range('rng_original', ANYTHING)  \
+        .generate_options_unweighted(board)
+    opt_una = safe_hand_range('rng_unassigned', ANYTHING)  \
+        .generate_options_unweighted(board)
+    opt_fol = safe_hand_range('rng_fold', NOTHING)  \
+        .generate_options_unweighted(board)
+    opt_pas = safe_hand_range('rng_passive', NOTHING)  \
+        .generate_options_unweighted(board)
+    opt_agg = safe_hand_range('rng_aggressive', NOTHING)  \
+        .generate_options_unweighted(board)
+    color_maker = ColorMaker(opt_ori=opt_ori, opt_una=opt_una, opt_fol=opt_fol,
+                             opt_pas=opt_pas, opt_agg=opt_agg)
+    pct_unassigned = 100.0 * len(opt_una) / len(opt_ori)
+    pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
+    pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
+    pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
+    # TODO: 0: populate board card images based on board variable
+    # TODO: 1: all and none buttons for the rank combos
+    # TODO: 2: all and none buttons for the suit combos
+    # TODO: 3: hover text for rank combos
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
-                    'class': rank_class(row, col)}
+                    'class': rank_class(row, col, color_maker, board)}
                    for col in range(13)] for row in range(13)]
     suited_table = [[{'left': suit_text(row, col, True),
                       'right': suit_text(row, col, False),
@@ -144,6 +293,48 @@ def range_editor():
     return render_template('range_editor.html', title="Range Editor",
         rank_table=rank_table, suited_table=suited_table,
         pair_table=pair_table, offsuit_table=offsuit_table,
-        rng_unassigned="anything", rng_fold="nothing", rng_passive="nothing",
-            rng_aggressive="nothing",
-        pct_unassigned=100.0, pct_fold=0.0, pct_passive=0.0, pct_aggressive=0.0)
+        rng_original=rng_original, rng_unassigned=rng_unassigned,
+        rng_fold=rng_fold, rng_passive=rng_passive,
+        rng_aggressive=rng_aggressive,
+        l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
+        pct_unassigned=pct_unassigned, pct_fold=pct_fold,
+        pct_passive=pct_passive, pct_aggressive=pct_aggressive)
+
+@APP.route('/range-editor', methods=['POST'])
+def range_editor_post():
+    """
+    Range editor uses Post-Redirect-Get
+    """
+    rng_original = request.form.get('rng_original', ANYTHING)
+    board = request.form.get('board', '')
+    opt_ori = safe_hand_range('rng_original', ANYTHING)  \
+        .generate_options_unweighted(board)
+    opt_una = safe_hand_range('rng_unassigned', ANYTHING)  \
+        .generate_options_unweighted(board)
+    opt_fol = safe_hand_range('rng_fold', NOTHING)  \
+        .generate_options_unweighted(board)
+    opt_pas = safe_hand_range('rng_passive', NOTHING)  \
+        .generate_options_unweighted(board)
+    opt_agg = safe_hand_range('rng_aggressive', NOTHING)  \
+        .generate_options_unweighted(board)
+    l_una = 'l_una' in request.form
+    l_fol = 'l_fol' in request.form
+    l_pas = 'l_pas' in request.form
+    l_agg = 'l_agg' in request.form
+    options_selected = get_selected_options(opt_ori, board)
+    option_mover = OptionMover(opt_ori=opt_ori, opt_una=opt_una,
+        opt_fol=opt_fol, opt_pas=opt_pas, opt_agg=opt_agg,
+        l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
+        options_selected=options_selected,
+        action=request.form.get('submit', ''))
+    return redirect(url_for('range_editor_get',
+        rng_original=rng_original,
+        rng_unassigned=option_mover.rng_unassigned,
+        rng_fold=option_mover.rng_fold,
+        rng_passive=option_mover.rng_passive,
+        rng_aggressive=option_mover.rng_aggressive,
+        board=board,
+        l_una='checked' if l_una else '',
+        l_fol='checked' if l_fol else '',
+        l_pas='checked' if l_pas else '',
+        l_agg='checked' if l_agg else ''))

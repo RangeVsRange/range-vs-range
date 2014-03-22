@@ -7,7 +7,8 @@ from rvr.core import dtos
 from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
-from rvr.poker.handrange import deal_from_ranges, remove_board_from_range
+from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
+    ANYTHING
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, re_deal, range_action_to_action,\
     finish_game, NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
@@ -106,12 +107,12 @@ class API(object):
             stack=198,
             contributed=2,
             left_to_act=True,
-            range_raw='anything')
+            range_raw=ANYTHING)
         btn = dtos.SituationPlayerDetails(
             stack=199,
             contributed=1,
             left_to_act=True,
-            range_raw='anything')
+            range_raw=ANYTHING)
         situation = dtos.SituationDetails(
             description="Heads-up preflop, 100 BB",
             players=[bb, btn],  # bb acts first in future rounds

@@ -4,36 +4,11 @@ Helpful functions to be called by JavaScript
 
 from rvr.app import APP
 from flask import jsonify
-from flask.globals import request
-from rvr.poker.handrange import HandRange
-from rvr.poker.cards import Card
+from rvr.poker.handrange import NOTHING, ANYTHING
 import json
 import urllib2
 from werkzeug.exceptions import abort
-
-def _safe_hand_range(arg_name, fallback):
-    """
-    Pull a HandRange object from request arg <arg_name>.
-    
-    If there is a problem, return HandRange(fallback).
-    """
-    value = request.args.get(arg_name, fallback, type=str)
-    hand_range = HandRange(value, is_strict=False)
-    if not hand_range.is_valid():
-        hand_range = HandRange(fallback)
-    return hand_range
-
-def _safe_board(arg_name):
-    """
-    Pull a board (list of Card) from request arg <arg_name>.
-    
-    If there is a problem, return an empty list.
-    """
-    value = request.args.get(arg_name, '', type=str)
-    try:
-        return Card.many_from_text(value)
-    except ValueError:
-        return []
+from rvr.views.range_editor import safe_hand_range, safe_board
 
 @APP.route('/ajax/range_subtract')
 def range_subtract():
@@ -64,11 +39,11 @@ def range_subtract():
     """
     # Actually, board is not needed, because we already subtract board from
     # range before sending to the client.
-    original = _safe_hand_range('original', 'anything')
-    subtract_1 = _safe_hand_range('subtract_1', 'nothing')
-    subtract_2 = _safe_hand_range('subtract_2', 'nothing')
-    subtract_3 = _safe_hand_range('subtract_3', 'nothing')
-    board = _safe_board('board')
+    original = safe_hand_range('original', ANYTHING)
+    subtract_1 = safe_hand_range('subtract_1', NOTHING)
+    subtract_2 = safe_hand_range('subtract_2', NOTHING)
+    subtract_3 = safe_hand_range('subtract_3', NOTHING)
+    board = safe_board('board')
     result = original.subtract(subtract_1)
     result = result.subtract(subtract_2)
     result = result.subtract(subtract_3)
