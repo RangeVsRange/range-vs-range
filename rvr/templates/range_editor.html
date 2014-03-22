@@ -1,7 +1,20 @@
 {% extends "base.html" %}
+{% block scripts %}
+<script type=text/javascript>
+rank_click = function(_id, _class) {
+  $('#' + _id).toggleClass('r_sel');
+  $('#' + _id).toggleClass(_class);
+  $('#sel_' + _id).val($('#' + _id).hasClass('r_sel'));
+};
+suit_click = function(_id) {
+  $('#' + _id).toggleClass('s_sel');
+  $('#sel_' + _id).val($('#' + _id).hasClass('s_sel'));
+};
+</script>
+{% endblock %}
 {% block content %}
 <h2>Range Editor</h2>
-<form>
+<form method=post>
 <input type=hidden name=rng_unassigned value="{{rng_unassigned}}">
 <input type=hidden name=rng_fold value="{{rng_fold}}">
 <input type=hidden name=rng_passive value="{{rng_passive}}">
@@ -11,7 +24,7 @@
 <td><!-- First row: board; 4 x range; bet/raise total -->
  <table>
  <tr>
- <td>
+ <td class=wide>
 <!-- Start Board -->
   <img alt="" style="vertical-align:middle" src="/static/cards/Js.png">
   <img alt="" style="vertical-align:middle" src="/static/cards/Ac.png">
@@ -20,7 +33,7 @@
   <img alt="" style="vertical-align:middle" src="/static/cards/Kh.png">
 <!-- End Board -->
  </td>
- <td>
+ <td class=wide>
 <!-- Start 4 x Range -->
   <table>
    <tr><td>Unassigned</td></tr>
@@ -29,7 +42,7 @@
    <tr><td><button type=submit name=submit value="reset">(Reset)</button></td></tr>
   </table>
  </td>
- <td>
+ <td class=wide>
   <table>
    <tr><td>Fold range</td></tr>
    <tr><td>{{ '%0.2f' % pct_fold }}%</td></tr>
@@ -37,7 +50,7 @@
    <tr><td><button type=submit name=submit value="fold">Fold</button></td></tr>
   </table>
  </td>
- <td>
+ <td class=wide>
   <table>
    <tr><td>Check/call range</td></tr>
    <tr><td>{{ '%0.2f' % pct_passive }}%</td></tr>
@@ -45,7 +58,7 @@
    <tr><td><button type=submit name=submit value="passive">Check/call</button></td></tr>
   </table>
  </td>
- <td>
+ <td class=wide>
   <table>
    <tr><td>Bet/raise range</td></tr>
    <tr><td>{{ '%0.2f' % pct_aggressive }}%</td></tr>
@@ -54,10 +67,10 @@
   </table>
 <!-- End 4 x Range -->
  </td>
- <td>
+ <td class=wide>
 <!-- Start Raise Total -->
   <label for=raise_total>Bet/raise total:</label><br>
-  <input id=raise_total type=text />
+  <input id=raise_total name=raise_total type=text />
 <!-- End Raise Total -->
  </td>
  </tr>
@@ -68,32 +81,30 @@
 <td>
  <table>
  <tr>
- <td>
-<!-- Start Selected Hands -->
+<!-- Start Selected Hands
+ <td class=wide>
   Selected hands:<br>
   <table>
-   <tr><td><!--AQo--></td></tr>
-   <tr><td><!--AQs--></td></tr>
-   <tr><td><!--87o-84o--></td></tr>
-   <tr><td><!--AA-22--></td></tr>
+   <tr><td>AQo</td></tr>
+   <tr><td>AQs</td></tr>
+   <tr><td>87o-84o</td></tr>
+   <tr><td>AA-22</td></tr>
   </table>
-<!-- End Selected Hands -->
  </td>
- <td>
+End Selected Hands -->
+ <td class=wide>
   Select rank combos:<br>
 <!-- Start Rank Combos -->
   <table>
-   {% for row in rank_table %}
-   <tr>
+   {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:100%" onclick="$('#{{details.id}}').toggleClass('r_sel');$('#{{details.id}}').toggleClass('{{details.class}}');">{{details.text}}</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:100%" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} pure-button" style="width:100%" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
-   </tr>
-   {% endfor %}
+   </tr>{% endfor %}
   </table>
 <!-- End Rank Combos -->
  </td>
- <td>
+ <td class=wide>
 <!-- Start Suit Combos -->
   <table>
    <tr>
@@ -102,7 +113,7 @@
    {% for row in suited_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div class="{{details.class}} pure-button" id="{{details.id}}"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></div>{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -112,7 +123,7 @@
    {% for row in pair_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div class="{{details.class}} pure-button" id="{{details.id}}"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></div>{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -122,12 +133,12 @@
    {% for row in offsuit_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div class="{{details.class}} pure-button" id="{{details.id}}"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></div>{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
    <tr>
-    <td colspan=2><button style="width:100%">None</button></td><td colspan=2><button style="width:100%">All</button></td>
+    <td colspan=2><button type=button style="width:100%">None</button></td><td colspan=2><button type=button style="width:100%">All</button></td>
    </tr>
   </table>
 <!-- End Suit Combos -->
@@ -138,7 +149,7 @@
 </tr>
 <tr><!-- Third row: Go! button (submit form) -->
  <td style="text-align:center;">
- <button type=submit name=submit value="done">Done</button>
+ <button type=submit name=submit value="done"{% if rng_unassigned != 'nothing' %} disabled=disabled{% endif %}>Done</button>
  </td>
 </tr>
 </table>
