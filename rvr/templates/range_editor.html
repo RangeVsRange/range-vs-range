@@ -147,11 +147,11 @@ End Selected Hands -->
  </table>
 </td>
 </tr>
+{% if rng_unassigned == 'nothing' %}
 <tr><!-- Third row: Go! button (submit form) -->
- <td style="text-align:center;">
- <button type=submit name=submit value="done"{% if rng_unassigned != 'nothing' %} disabled=disabled{% endif %}>Done</button>
- </td>
+ <td style="text-align:center;"><button type=submit name=submit value="done">Done</button></td>
 </tr>
+{% endif %}
 </table>
 </form>
 {% endblock %}
