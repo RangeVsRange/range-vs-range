@@ -123,6 +123,9 @@ End Selected Hands -->
    <tr>
     <td colspan=4>Select suited combos:</td>
    </tr>
+   <tr>
+    <td colspan=2><button type=button class="pure-button" style="width:100%" onclick="select_all_suit(false)">None</button></td><td colspan=2><button type=button class="pure-button" style="width:100%" onclick="select_all_suit(true)">All</button></td>
+   </tr>
    {% for row in suited_table %}
    <tr>
     {% for details in row %}
@@ -150,9 +153,6 @@ End Selected Hands -->
     {% endfor %}
    </tr>
    {% endfor %}
-   <tr>
-    <td colspan=2><button type=button style="width:100%" onclick="select_all_suit(false)">None</button></td><td colspan=2><button type=button style="width:100%" onclick="select_all_suit(true)">All</button></td>
-   </tr>
   </table>
 <!-- End Suit Combos -->
  </td>
