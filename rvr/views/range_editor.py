@@ -269,8 +269,9 @@ def range_editor_get():
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
     # TODO: 0: populate board card images based on board variable
     # TODO: 1: all and none buttons for the rank combos
-    # TODO: 2: all and none buttons for the suit combos
-    # TODO: 3: hover text for rank combos
+    # TODO: 1: all and none buttons for the suit combos
+    # TODO: 2: hover text for rank combos
+    # TODO: 2: hover text for suit combos
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
                     'class': rank_class(row, col, color_maker, board)}
