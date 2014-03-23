@@ -98,13 +98,13 @@ class OptionMover(object):
         # remove locked hands
         self.did_lock = False
         if l_una:
-            self.did_lock = self.did_lock or remove_moving(moving, opt_una)
+            self.did_lock = remove_moving(moving, opt_una) or self.did_lock
         if l_fol:
-            self.did_lock = self.did_lock or remove_moving(moving, opt_fol)
+            self.did_lock = remove_moving(moving, opt_fol) or self.did_lock
         if l_pas:
-            self.did_lock = self.did_lock or remove_moving(moving, opt_pas)
+            self.did_lock = remove_moving(moving, opt_pas) or self.did_lock
         if l_agg:
-            self.did_lock = self.did_lock or remove_moving(moving, opt_agg)
+            self.did_lock = remove_moving(moving, opt_agg) or self.did_lock
         # now move moving to target, remove from the others
         if action == 'reset':
             target = opt_una
@@ -283,9 +283,9 @@ def range_editor_get():
     rng_passive = request.args.get('rng_passive', NOTHING)
     rng_aggressive = request.args.get('rng_aggressive', NOTHING)
     l_una = request.args.get('l_una', '') == 'checked'
-    l_fol = request.args.get('l_fol', '') == 'checked'
-    l_pas = request.args.get('l_pas', '') == 'checked'
-    l_agg = request.args.get('l_agg', '') == 'checked'
+    l_fol = request.args.get('l_fol', 'checked') == 'checked'
+    l_pas = request.args.get('l_pas', 'checked') == 'checked'
+    l_agg = request.args.get('l_agg', 'checked') == 'checked'
     board_raw = request.args.get('board', '')
     images = card_names(board_raw)
     board = safe_board_form('board')
@@ -305,7 +305,9 @@ def range_editor_get():
     pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
-    # TODO: 0: link from running game page, with board and original
+    # TODO: 0: direct entry
+    # TODO: 0: lock fol, pas, agg by default
+    # TODO: 0: shortcuts like ctrl+click
     # TODO: 2: hover text for rank combos
     # TODO: 2: hover text for suit combos
     rank_table = [[{'text': rank_text(row, col),
