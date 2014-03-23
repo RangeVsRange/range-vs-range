@@ -4,7 +4,7 @@ The main pages for the site
 from flask import render_template
 from rvr.app import APP
 from werkzeug.utils import redirect
-from flask.helpers import url_for
+from flask.helpers import url_for, flash
 from flask.globals import request
 from rvr.poker.handrange import NOTHING, ANYTHING, HandRange,  \
     unweighted_options_to_description
@@ -28,7 +28,6 @@ OFFSUIT = 2
 
 SUITS_HIDDEN = 's_hdn'
 SUITS_SELECTED = 's_sel'
-SUITS_DESELECTED = 's_des'
 
 POS_TO_SUIT = ['s', 'h', 'd', 'c']  # i.e. s.svg, h.svg, etc.
 
@@ -69,6 +68,14 @@ class ColorMaker(object):
             return RANKS_AGGRESSIVE
         return RANKS_MIXED
 
+def remove_moving(moving, options):
+    """
+    Remove options from moving, and return True if anything removed
+    """
+    pre = len(moving)
+    moving.difference_update(options)
+    return len(moving) < pre
+
 class OptionMover(object):
     """
     Calculates which options to move where
@@ -89,14 +96,15 @@ class OptionMover(object):
         # hands that are selected, are in original
         moving = set(options_selected).intersection(opt_ori)
         # remove locked hands
+        self.did_lock = False
         if l_una:
-            moving.difference_update(opt_una)
+            self.did_lock = self.did_lock or remove_moving(moving, opt_una)
         if l_fol:
-            moving.difference_update(opt_fol)
+            self.did_lock = self.did_lock or remove_moving(moving, opt_fol)
         if l_pas:
-            moving.difference_update(opt_pas)
+            self.did_lock = self.did_lock or remove_moving(moving, opt_pas)
         if l_agg:
-            moving.difference_update(opt_agg)
+            self.did_lock = self.did_lock or remove_moving(moving, opt_agg)
         # now move moving to target, remove from the others
         if action == 'reset':
             target = opt_una
@@ -109,14 +117,17 @@ class OptionMover(object):
         else:
             # garbage in, garbage out
             target = opt_una
+        pre = len(target)
         target.update(moving)
         for other in [opt_una, opt_fol, opt_pas, opt_agg]:
             if other is not target:
                 other.difference_update(moving)
+        self.did_move = len(target) != pre
+        self.did_select = bool(options_selected)
         self.rng_unassigned = unweighted_options_to_description(opt_una)
         self.rng_fold = unweighted_options_to_description(opt_fol)
         self.rng_passive = unweighted_options_to_description(opt_pas)
-        self.rng_aggressive = unweighted_options_to_description(opt_agg)        
+        self.rng_aggressive = unweighted_options_to_description(opt_agg)
 
 def is_suit_selected(option):
     """
@@ -277,7 +288,6 @@ def range_editor_get():
     l_agg = request.args.get('l_agg', '') == 'checked'
     board_raw = request.args.get('board', '')
     images = card_names(board_raw)
-    board_pieces = [board_raw[i*2:i*2+2] for i in range(len(board_raw) / 2)]
     board = safe_board_form('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
@@ -295,10 +305,7 @@ def range_editor_get():
     pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
-    # TODO: 0: populate board card images based on board variable
     # TODO: 0: link from running game page, with board and original
-    # TODO: 1: all and none buttons for the rank combos
-    # TODO: 1: all and none buttons for the suit combos
     # TODO: 2: hover text for rank combos
     # TODO: 2: hover text for suit combos
     rank_table = [[{'text': rank_text(row, col),
@@ -360,6 +367,12 @@ def range_editor_post():
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         options_selected=options_selected,
         action=request.form.get('submit', ''))
+    if not option_mover.did_select:
+        flash("Nothing was moved, because nothing was selected.")
+    elif not option_mover.did_move and option_mover.did_lock:
+        flash("Nothing was moved, because the selected hands were locked.")
+    elif not option_mover.did_move:
+        flash("Nothing was moved, because the selected hands were already in the target range.")
     return redirect(url_for('range_editor_get',
         rng_original=rng_original,
         rng_unassigned=option_mover.rng_unassigned,

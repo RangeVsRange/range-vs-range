@@ -3,7 +3,6 @@
 <script type=text/javascript>
 rank_click = function(_id, _class) {
   $('#' + _id).toggleClass('r_sel');
-  $('#' + _id).toggleClass(_class);
   $('#sel_' + _id).val($('#' + _id).hasClass('r_sel'));
 };
 suit_click = function(_id) {
@@ -11,12 +10,17 @@ suit_click = function(_id) {
   $('#sel_' + _id).val($('#' + _id).hasClass('s_sel'));
 };
 select_all_rank = function(select) {
-  
+  $('.rank-button').toggleClass('r_sel', select);
+  $('.r_h').val(select);
+}
+select_all_suit = function(select) {
+  $('.suit-button').toggleClass('s_sel', select);
+  $('.s_h').val(select);
 }
 </script>
 <style>
 button.rank-button { width:40px; height:40px; text-align:center; padding-left:0; padding-right:0 } 
-a.suit-button { width:40px; padding-left:5px; padding-right:5px; padding-top:10px; padding-bottom:10px }
+a.suit-button { background-color: #FFFFFF; width:40px; padding-left:5px; padding-right:5px; padding-top:10px; padding-bottom:10px }
 </style>
 {% endblock %}
 {% block content %}
@@ -107,7 +111,7 @@ End Selected Hands -->
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden class="h_r" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>
@@ -122,7 +126,7 @@ End Selected Hands -->
    {% for row in suited_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -132,7 +136,7 @@ End Selected Hands -->
    {% for row in pair_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -142,12 +146,12 @@ End Selected Hands -->
    {% for row in offsuit_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
    <tr>
-    <td colspan=2><button type=button style="width:100%">None</button></td><td colspan=2><button type=button style="width:100%">All</button></td>
+    <td colspan=2><button type=button style="width:100%" onclick="select_all_suit(false)">None</button></td><td colspan=2><button type=button style="width:100%" onclick="select_all_suit(true)">All</button></td>
    </tr>
   </table>
 <!-- End Suit Combos -->
