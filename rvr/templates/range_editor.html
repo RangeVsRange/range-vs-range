@@ -15,6 +15,7 @@ suit_click = function(_id) {
 {% block content %}
 <h2>Range Editor</h2>
 <form method=post>
+<input type=hidden name=board value="{{board}}">
 <input type=hidden name=rng_original value="{{rng_original}}">
 <input type=hidden name=rng_unassigned value="{{rng_unassigned}}">
 <input type=hidden name=rng_fold value="{{rng_fold}}">

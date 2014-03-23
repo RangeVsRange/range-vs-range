@@ -178,6 +178,18 @@ def safe_board(arg_name):
     except ValueError:
         return []
 
+def safe_board_form(field_name):
+    """
+    Pull a board (list of Card) from request form field <field_name>.
+    
+    If there is a problem, return an empty list.
+    """
+    value = request.form.get(field_name, '', type=str)
+    try:
+        return Card.many_from_text(value)
+    except ValueError:
+        return []
+
 def rank_text(row, col):
     """
     Give the text for this rank combo (e.g. 0, 0 -> 'AA')
@@ -250,7 +262,8 @@ def range_editor_get():
     l_fol = request.args.get('l_fol', '') == 'checked'
     l_pas = request.args.get('l_pas', '') == 'checked'
     l_agg = request.args.get('l_agg', '') == 'checked'
-    board = safe_board('board')
+    board_txt = request.args.get('board', '')
+    board = safe_board_form('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
     opt_una = safe_hand_range('rng_unassigned', ANYTHING)  \
@@ -297,6 +310,7 @@ def range_editor_get():
         rng_original=rng_original, rng_unassigned=rng_unassigned,
         rng_fold=rng_fold, rng_passive=rng_passive,
         rng_aggressive=rng_aggressive,
+        board=board_txt,
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive)
@@ -307,7 +321,8 @@ def range_editor_post():
     Range editor uses Post-Redirect-Get
     """
     rng_original = request.form.get('rng_original', ANYTHING)
-    board = request.form.get('board', '')
+    board_txt = request.args.get('board', '')
+    board = safe_board('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
     opt_una = safe_hand_range('rng_unassigned', ANYTHING)  \
@@ -334,7 +349,7 @@ def range_editor_post():
         rng_fold=option_mover.rng_fold,
         rng_passive=option_mover.rng_passive,
         rng_aggressive=option_mover.rng_aggressive,
-        board=board,
+        board=board_txt,
         l_una='checked' if l_una else '',
         l_fol='checked' if l_fol else '',
         l_pas='checked' if l_pas else '',
