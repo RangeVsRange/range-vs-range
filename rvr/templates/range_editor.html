@@ -111,7 +111,7 @@ End Selected Hands -->
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden class="h_r" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>
