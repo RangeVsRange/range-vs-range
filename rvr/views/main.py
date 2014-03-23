@@ -308,7 +308,7 @@ def _running_game(game, gameid, userid, api):
         return _handle_action(gameid, userid, api, form)
     
     range_editor_url = url_for('range_editor_get',
-        original=game.game_details.current_player.range_raw,
+        rng_original=game.game_details.current_player.range_raw,
         board=game.game_details.board_raw)   
     title = 'Game %d (running)' % (gameid,)
     return render_template('running_game.html', title=title, form=form,

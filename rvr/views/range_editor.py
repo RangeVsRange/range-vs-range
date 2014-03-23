@@ -278,7 +278,7 @@ def range_editor_get():
     (Mostly a playground for experimentation right now.)
     """
     rng_original = request.args.get('rng_original', ANYTHING)
-    rng_unassigned = request.args.get('rng_unassigned', ANYTHING)
+    rng_unassigned = request.args.get('rng_unassigned', rng_original)
     rng_fold = request.args.get('rng_fold', NOTHING)
     rng_passive = request.args.get('rng_passive', NOTHING)
     rng_aggressive = request.args.get('rng_aggressive', NOTHING)
@@ -291,7 +291,7 @@ def range_editor_get():
     board = safe_board_form('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
-    opt_una = safe_hand_range('rng_unassigned', ANYTHING)  \
+    opt_una = safe_hand_range('rng_unassigned', rng_original)  \
         .generate_options_unweighted(board)
     opt_fol = safe_hand_range('rng_fold', NOTHING)  \
         .generate_options_unweighted(board)
@@ -306,8 +306,7 @@ def range_editor_get():
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
     # TODO: 0: direct entry
-    # TODO: 0: lock fol, pas, agg by default
-    # TODO: 0: shortcuts like ctrl+click
+    # TODO: 1: shortcuts like ctrl+click
     # TODO: 2: hover text for rank combos
     # TODO: 2: hover text for suit combos
     rank_table = [[{'text': rank_text(row, col),
