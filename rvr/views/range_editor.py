@@ -246,6 +246,19 @@ def suit_class(row, col, table):
     elif table == OFFSUIT:
         return SUITS_SELECTED if row != col else SUITS_HIDDEN
 
+def card_names(board_raw):
+    """
+    Converts, e.g. "AhKhQc" -> ["Ah", "Kh", "Qc", "back", "back"]
+    """
+    result = []
+    for _index in range(5):
+        if len(board_raw) < 2:
+            result.append("back")
+        else:
+            result.append(board_raw[:2])
+            board_raw = board_raw[2:]
+    return result
+
 @APP.route('/range-editor', methods=['GET'])
 def range_editor_get():
     """
@@ -262,7 +275,9 @@ def range_editor_get():
     l_fol = request.args.get('l_fol', '') == 'checked'
     l_pas = request.args.get('l_pas', '') == 'checked'
     l_agg = request.args.get('l_agg', '') == 'checked'
-    board_txt = request.args.get('board', '')
+    board_raw = request.args.get('board', '')
+    images = card_names(board_raw)
+    board_pieces = [board_raw[i*2:i*2+2] for i in range(len(board_raw) / 2)]
     board = safe_board_form('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
@@ -281,6 +296,7 @@ def range_editor_get():
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
     # TODO: 0: populate board card images based on board variable
+    # TODO: 0: link from running game page, with board and original
     # TODO: 1: all and none buttons for the rank combos
     # TODO: 1: all and none buttons for the suit combos
     # TODO: 2: hover text for rank combos
@@ -310,7 +326,8 @@ def range_editor_get():
         rng_original=rng_original, rng_unassigned=rng_unassigned,
         rng_fold=rng_fold, rng_passive=rng_passive,
         rng_aggressive=rng_aggressive,
-        board=board_txt,
+        board_raw=board_raw,
+        card_names=images,
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive)
@@ -321,7 +338,7 @@ def range_editor_post():
     Range editor uses Post-Redirect-Get
     """
     rng_original = request.form.get('rng_original', ANYTHING)
-    board_txt = request.args.get('board', '')
+    board_raw = request.args.get('board', '')
     board = safe_board('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
@@ -349,7 +366,7 @@ def range_editor_post():
         rng_fold=option_mover.rng_fold,
         rng_passive=option_mover.rng_passive,
         rng_aggressive=option_mover.rng_aggressive,
-        board=board_txt,
+        board=board_raw,
         l_una='checked' if l_una else '',
         l_fol='checked' if l_fol else '',
         l_pas='checked' if l_pas else '',
