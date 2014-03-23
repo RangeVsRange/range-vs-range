@@ -307,11 +307,15 @@ def _running_game(game, gameid, userid, api):
     if form.validate_on_submit():
         return _handle_action(gameid, userid, api, form)
     
+    range_editor_url = url_for('range_editor_get',
+        original=game.game_details.current_player.range_raw,
+        board=game.game_details.board_raw)   
     title = 'Game %d (running)' % (gameid,)
     return render_template('running_game.html', title=title, form=form,
         game_details=game.game_details, history=game.history,
         current_options=game.current_options,
-        is_me=(userid == game.game_details.current_player.user.userid))
+        is_me=(userid == game.game_details.current_player.user.userid),
+        range_editor_url=range_editor_url)
 
 def _finished_game(game, gameid):
     """

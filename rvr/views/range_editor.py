@@ -372,7 +372,7 @@ def range_editor_post():
     elif not option_mover.did_move and option_mover.did_lock:
         flash("Nothing was moved, because the selected hands were locked.")
     elif not option_mover.did_move:
-        flash("Nothing was moved, because the selected hands were already in the target range.")
+        flash("Nothing was moved, because the selected hands were already in the target range.")  # pylint:disable=C0301
     return redirect(url_for('range_editor_get',
         rng_original=rng_original,
         rng_unassigned=option_mover.rng_unassigned,

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block content %}
+{% block scripts %}
 <script type=text/javascript>
   $(function() {
     // Callback to calculate "folding the rest"
@@ -43,6 +43,8 @@
     });
   });
 </script>
+{% endblock %}
+{% block content %}
 
 <h2>{{title}}</h2>
 
@@ -78,21 +80,30 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 </table></p>
 
 {% if is_me %}
-<p>
-Your range: <span id=original>{{game_details.current_player.range_raw}}</span><br>
+<p>Your range: <span id=original>{{game_details.current_player.range_raw}}</span></p>
 <form method="post" name="action">
+<p>
   {{form.hidden_tag()}}
   {% for error in form.errors.fold %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.fold.label}} {{form.fold}} (<span id="fold_size">0.00</span>%) <a href="#" id="fold_the_rest">(fold the rest)</a><br>
+</p>
+<p>
   {% for error in form.errors.passive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.passive.label}} {{form.passive}} (<span id="passive_size">0.00</span>%) <a href="#" id="call_the_rest">(call the rest)</a> {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
+</p>
 {% if current_options.can_raise() %}
+<p>
   {% for error in form.errors.aggressive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.aggressive.label}} {{form.aggressive}} (<span id="aggressive_size">0.00</span>%) <a href="#" id="raise_the_rest">(raise the rest)</a>
+</p>
+<p>
   {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>
+</p>
 {% endif %}
-  <input type="submit" value="Go!" /><br>
+<p>
+  <a class="pure-button" target="_blank" href="{{range_editor_url}}">Range editor</a> <input type="submit" value="Done" class="pure-button"/><br>
+</p>
 </form>
 </p>
 {% endif %}
