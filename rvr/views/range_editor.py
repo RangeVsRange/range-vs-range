@@ -350,7 +350,7 @@ def range_editor_post():
     board = safe_board('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
-    opt_una = safe_hand_range('rng_unassigned', ANYTHING)  \
+    opt_una = safe_hand_range('rng_unassigned', rng_original)  \
         .generate_options_unweighted(board)
     opt_fol = safe_hand_range('rng_fold', NOTHING)  \
         .generate_options_unweighted(board)

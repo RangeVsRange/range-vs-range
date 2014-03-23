@@ -19,8 +19,9 @@ select_all_suit = function(select) {
 }
 </script>
 <style>
-button.rank-button { width:40px; height:40px; text-align:center; padding-left:0; padding-right:0 } 
-a.suit-button { background-color: #FFFFFF; width:40px; padding-left:5px; padding-right:5px; padding-top:10px; padding-bottom:10px }
+    button.rank-button { width:40px; height:40px; text-align:center; padding-left:0; padding-right:0 } 
+    button.hidden-button { background-color: #FFFFFF; width:40px; height:40px; text-align:center; padding-left:0; padding-right:0 }
+    a.suit-button { background-color: #FFFFFF; width:40px; padding-left:5px; padding-right:5px; padding-top:10px; padding-bottom:10px }
 </style>
 {% endblock %}
 {% block content %}
@@ -111,7 +112,7 @@ End Selected Hands -->
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} hidden-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>
