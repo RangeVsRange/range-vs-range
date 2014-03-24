@@ -42,4 +42,12 @@
   {% endfor %}</ul>
 {% endif %}
 
+{% if my_finished_games %}
+  <p>Your finished games:</p>
+  <ul>{% for game in my_finished_games %}{% set pipe = joiner() %}
+    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.situation.description}}"</em> with players:
+    {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
+  {% endfor %}</ul>
+{% endif %}
+
 {% endblock %}

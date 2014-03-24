@@ -179,6 +179,9 @@ class AdminCmd(Cmd):
         print "Running games:"
         for game in result.running_details:
             print game
+        print "Finished games:"
+        for game in result.finished_details:
+            print game
             
     def do_act(self, params):
         """

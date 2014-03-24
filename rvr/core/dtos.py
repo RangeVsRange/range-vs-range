@@ -204,6 +204,7 @@ class RunningGameSummary(object):
         self.users = users
         self.situation = situation
         self.current_user_details = current_user_details
+        self.is_finished = current_user_details is not None
 
     def __repr__(self):
         return ("RunningGameSummary(gameid=%r, users=%r, situation=%r, " +
@@ -302,9 +303,10 @@ class UsersGameDetails(object):
     """
     lists of open game details, running game details, for a specific user
     """
-    def __init__(self, userid, running_details):
+    def __init__(self, userid, running_details, finished_details):
         self.userid = userid
         self.running_details = running_details
+        self.finished_details = finished_details
 
 class GameItem(object):
     """
