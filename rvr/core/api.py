@@ -620,6 +620,7 @@ class API(object):
         rgp.cards_dealt = cards_dealt[rgp]
         # TODO: HAND HISTORY: record (subjective) sizes of range_action
         # TODO: EQUITY PAYMENT: fold equity
+        # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
         if not can_fold and can_call:
             game.current_factor *= 1 - f_ratio
         elif not can_fold and not can_call:

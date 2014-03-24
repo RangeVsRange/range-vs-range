@@ -176,6 +176,7 @@ def home_page():
                      if mg.current_user_details.userid == userid]
     others_turn_games = [mg for mg in my_games.running_details
                          if mg.current_user_details.userid != userid]
+    # TODO: 0: my_finished_games
     return render_template('home.html', title='Home',
         screenname=screenname,
         my_open=my_open,
@@ -291,9 +292,7 @@ def _handle_action(gameid, userid, api, form):
         flash(msg)
         if result.game_over:
             flash("The game is finished.")
-            return redirect(url_for('home_page'))
-        else:   
-            return redirect(url_for('game_page', gameid=gameid))
+        return redirect(url_for('game_page', gameid=gameid))
 
 def _running_game(game, gameid, userid, api):
     """
