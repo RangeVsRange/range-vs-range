@@ -1,4 +1,4 @@
-# pylint:disable=C0103,C0111,C0301
+# pylint:disable=C0103,C0111,C0301,W0611
 
 """
 PythonAnywhere WSGI file. To host in PythonAnywhere:

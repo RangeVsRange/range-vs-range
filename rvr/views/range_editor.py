@@ -229,14 +229,21 @@ def rank_class(row, col, color_maker, board):
     options = HandRange(txt).generate_options_unweighted(board)
     return color_maker.get_color(options)
 
+def options_to_mnemonics(options):
+    """
+    Convert options to text, return sorted high-to-low
+    """
+    # convert from set of sets to sorted list of sorted lists
+    options = sorted([[card for card in sorted(list(option), reverse=True)]
+               for option in options], reverse=True)
+    return ["".join([c.to_mnemonic() for c in opt])
+                                   for opt in options]
+
 def rank_hover_part(name, options):
     """
     "folding", [AhAs, AsAd] -> "folding AhAs, AsAd"
     """
-    # TODO: 0: display options in sorted order
-    return name + " " + ", ".join(["".join([c.to_mnemonic()
-                                            for c in sorted(opt, reverse=True)])
-                                  for opt in options])
+    return name + " " + ", ".join(options_to_mnemonics(options))
 
 def rank_hover(row, col, color_maker, board):
     """
@@ -244,15 +251,14 @@ def rank_hover(row, col, color_maker, board):
     
     Something like "calling As8s, Ah8h; folding Ad8d".
     """
-    # TODO: REVISIT: this would be better multi-line
     txt = rank_text(row, col)
     options = HandRange(txt).generate_options_unweighted(board)
     inputs = [("unassigned", color_maker.opt_una),
               ("folding", color_maker.opt_fol),
               ("passive", color_maker.opt_pas),
               ("aggressive", color_maker.opt_agg)]
-    return "; ".join([rank_hover_part(item[0], item[1].intersection(options))
-                      for item in inputs if item[1].intersection(options)])
+    return " -- ".join([rank_hover_part(item[0], item[1].intersection(options))
+                        for item in inputs if item[1].intersection(options)])
 
 def suit_text(row, col, is_left):
     """
@@ -368,6 +374,7 @@ def range_editor_get():
     pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
+    # TODO: 0: a context flag to determine check vs call, bet vs raise
     # TODO: 2: direct entry
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
