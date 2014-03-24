@@ -1,9 +1,26 @@
 {% extends "base.html" %}
 {% block scripts %}
 <script type=text/javascript>
-rank_click = function(_id, _class) {
+next_map = {{ next_map|safe }};
+rank_select = function(_id) {
   $('#' + _id).toggleClass('r_sel');
   $('#sel_' + _id).val($('#' + _id).hasClass('r_sel'));
+}
+rank_set = function(_id, _val) {
+  $('#' + _id).toggleClass('r_sel', _val);
+  $('#sel_' + _id).val(_val);
+}
+rank_click = function(_id) {
+  if (window.event.ctrlKey) {
+    rank_select(_id);
+    var _val = $('#' + _id).hasClass('r_sel')
+    while (_id in next_map) {
+      _id = next_map[_id]
+      rank_set(_id, _val);
+    }
+  } else {
+    rank_select(_id);
+  }
 };
 suit_click = function(_id) {
   $('#' + _id).toggleClass('s_sel');
@@ -112,7 +129,7 @@ End Selected Hands -->
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}', '{{details.class}}');">{{details.text}}</button><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} hidden-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}');">{{details.text}}</button><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} hidden-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>

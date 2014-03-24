@@ -642,6 +642,17 @@ class API(object):
         #    are people left to act, but then no one raises.
         self.apply_action_result(game, rgp, action_result)
         if game.is_finished:
+            # TODO: STRATEGY: profitable float
+            # - hero bets one flop (etc.), villain calls
+            # - hero checks turn (etc.), villain bets
+            # - if hero doesn't bet enough on the flop (etc.), checks too much
+            #   on the turn (etc.), and folds too much to the bet, villain has
+            #   a profitable float
+            # (villain will often have a profitable float anyway due to equity,
+            #  i.e. a semi-float, but that's impossible to quantify.) 
+            # (it's also okay to be profitably floated sometimes, e.g. when a
+            #  flush draw comes off, because that doesn't happen 100% of the
+            #  time.)
             finish_game(game)
         action_result.game_over = game.is_finished
         return action_result

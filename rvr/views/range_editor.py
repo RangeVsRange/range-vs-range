@@ -270,6 +270,27 @@ def card_names(board_raw):
             board_raw = board_raw[2:]
     return result
 
+def next_map():
+    """
+    Returns the JS object literal that allows the page to know which combos to
+    select when the user ctrl-clicks a combo.
+    """
+    items = []  # list of key,value tuples
+    for i in range(12):
+        # offsuit
+        row = i
+        items.extend([(rank_id(row, col + 1), rank_id(row, col))
+                      for col in range(i + 1, 12)])
+        # suited
+        col = i
+        items.extend([(rank_id(row + 1, col), rank_id(row, col))
+                      for row in range(i + 1, 12)])
+    # pairs:
+    items.extend([(rank_id(i + 1, i + 1), rank_id(i, i)) for i in range(12)])
+    return '{' + ','.join(["'%s':'%s'" % (item) for item in items]) + '}'
+
+NEXT_MAP = next_map()
+
 @APP.route('/range-editor', methods=['GET'])
 def range_editor_get():
     """
@@ -307,7 +328,6 @@ def range_editor_get():
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
     # TODO: 0: hover text for rank combos
     # TODO: 0: hover text for suit combos
-    # TODO: 1: shortcuts like ctrl+click
     # TODO: 2: direct entry
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
@@ -329,6 +349,7 @@ def range_editor_get():
                        'class': suit_class(row, col, OFFSUIT)}
                       for col in range(4)] for row in range(4)]
     return render_template('range_editor.html', title="Range Editor",
+        next_map=NEXT_MAP,
         rank_table=rank_table, suited_table=suited_table,
         pair_table=pair_table, offsuit_table=offsuit_table,
         rng_original=rng_original, rng_unassigned=rng_unassigned,
