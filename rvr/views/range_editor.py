@@ -8,7 +8,7 @@ from flask.helpers import url_for, flash
 from flask.globals import request
 from rvr.poker.handrange import NOTHING, ANYTHING, HandRange,  \
     unweighted_options_to_description
-from rvr.poker.cards import Card, SUIT_INVERT
+from rvr.poker.cards import Card, SUIT_INVERT, SUITS_HIGH_TO_LOW
 
 # pylint:disable=R0903,R0913,R0914
 
@@ -229,6 +229,31 @@ def rank_class(row, col, color_maker, board):
     options = HandRange(txt).generate_options_unweighted(board)
     return color_maker.get_color(options)
 
+def rank_hover_part(name, options):
+    """
+    "folding", [AhAs, AsAd] -> "folding AhAs, AsAd"
+    """
+    # TODO: 0: display options in sorted order
+    return name + " " + ", ".join(["".join([c.to_mnemonic()
+                                            for c in sorted(opt, reverse=True)])
+                                  for opt in options])
+
+def rank_hover(row, col, color_maker, board):
+    """
+    Hover text for this rank combo.
+    
+    Something like "calling As8s, Ah8h; folding Ad8d".
+    """
+    # TODO: REVISIT: this would be better multi-line
+    txt = rank_text(row, col)
+    options = HandRange(txt).generate_options_unweighted(board)
+    inputs = [("unassigned", color_maker.opt_una),
+              ("folding", color_maker.opt_fol),
+              ("passive", color_maker.opt_pas),
+              ("aggressive", color_maker.opt_agg)]
+    return "; ".join([rank_hover_part(item[0], item[1].intersection(options))
+                      for item in inputs if item[1].intersection(options)])
+
 def suit_text(row, col, is_left):
     """
     Give the appropriate text for this suit combo (e.g. 0, 0 -> 's')
@@ -256,6 +281,23 @@ def suit_class(row, col, table):
         return SUITS_SELECTED if row < col else SUITS_HIDDEN
     elif table == OFFSUIT:
         return SUITS_SELECTED if row != col else SUITS_HIDDEN
+    return "oops"
+
+def suit_hover(row, col, table):
+    """
+    Explain what this button means. Because, you know, it's not really obvious.
+    """
+    if table == SUITED:
+        return "suited, %s" % (SUITS_HIGH_TO_LOW[row].text.lower(),)
+    elif table == PAIR:
+        return "pair, %s and %s" %  \
+            (SUITS_HIGH_TO_LOW[row].singular.lower(),
+             SUITS_HIGH_TO_LOW[col].singular.lower())
+    elif table == OFFSUIT:
+        return "offsuit, higher card %s, lower card %s" %  \
+            (SUITS_HIGH_TO_LOW[row].singular.lower(),
+             SUITS_HIGH_TO_LOW[col].singular.lower())
+    return "oops"
 
 def card_names(board_raw):
     """
@@ -326,27 +368,29 @@ def range_editor_get():
     pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
-    # TODO: 0: hover text for rank combos
-    # TODO: 0: hover text for suit combos
     # TODO: 2: direct entry
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
-                    'class': rank_class(row, col, color_maker, board)}
+                    'class': rank_class(row, col, color_maker, board),
+                    'hover': rank_hover(row, col, color_maker, board)}
                    for col in range(13)] for row in range(13)]
     suited_table = [[{'left': suit_text(row, col, True),
                       'right': suit_text(row, col, False),
                       'id': suit_id(row, col, SUITED),
-                      'class': suit_class(row, col, SUITED)}
+                      'class': suit_class(row, col, SUITED),
+                      'hover': suit_hover(row, col, SUITED)}
                      for col in range(4)] for row in range(4)] 
     pair_table = [[{'left': suit_text(row, col, True),
                     'right': suit_text(row, col, False),
                     'id': suit_id(row, col, PAIR),
-                    'class': suit_class(row, col, PAIR)}
+                    'class': suit_class(row, col, PAIR),
+                    'hover': suit_hover(row, col, PAIR)}
                    for col in range(4)] for row in range(3)]
     offsuit_table = [[{'left': suit_text(row, col, True),
                        'right': suit_text(row, col, False),
                        'id': suit_id(row, col, OFFSUIT),
-                       'class': suit_class(row, col, OFFSUIT)}
+                       'class': suit_class(row, col, OFFSUIT),
+                       'hover': suit_hover(row, col, OFFSUIT)}
                       for col in range(4)] for row in range(4)]
     return render_template('range_editor.html', title="Range Editor",
         next_map=NEXT_MAP,

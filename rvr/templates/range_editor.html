@@ -124,12 +124,12 @@ select_all_suit = function(select) {
  </td>
 End Selected Hands -->
  <td class=wide>
-  Select rank combos: <a class="pure-button" onclick="select_all_rank(false)">None</a> <a class="pure-button" onclick="select_all_rank(true)">All</a><br>
+  Select rank combos: <a class="pure-button" onclick="select_all_rank(false)">None</a> <a class="pure-button" onclick="select_all_rank(true)">All</a> <em>tip: try right-click, or hover</em><br>
 <!-- Start Rank Combos -->
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}');">{{details.text}}</button><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} hidden-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<div title="{{details.hover}}"><button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}');">{{details.text}}</button></div><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} hidden-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>
@@ -147,7 +147,7 @@ End Selected Hands -->
    {% for row in suited_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -157,7 +157,7 @@ End Selected Hands -->
    {% for row in pair_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -167,7 +167,7 @@ End Selected Hands -->
    {% for row in offsuit_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
