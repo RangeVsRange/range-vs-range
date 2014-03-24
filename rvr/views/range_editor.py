@@ -305,10 +305,10 @@ def range_editor_get():
     pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
-    # TODO: 0: direct entry
+    # TODO: 0: hover text for rank combos
+    # TODO: 0: hover text for suit combos
     # TODO: 1: shortcuts like ctrl+click
-    # TODO: 2: hover text for rank combos
-    # TODO: 2: hover text for suit combos
+    # TODO: 2: direct entry
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
                     'class': rank_class(row, col, color_maker, board)}

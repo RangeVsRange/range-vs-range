@@ -305,7 +305,9 @@ class API(object):
             .filter(tables.RunningGameParticipant.userid == userid).all()
         running_games = [dtos.RunningGameSummary.from_running_game(rgp.game)
                          for rgp in rgps if rgp.game.current_userid is not None]
-        return dtos.UsersGameDetails(userid, running_games)
+        finished_games = [dtos.RunningGameSummary.from_running_game(rgp.game)
+                          for rgp in rgps if rgp.game.current_userid is None]
+        return dtos.UsersGameDetails(userid, running_games, finished_games)
     
     def _start_game(self, open_game, final_ogp):
         """
