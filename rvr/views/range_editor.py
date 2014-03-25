@@ -245,7 +245,7 @@ def rank_hover_part(name, options):
     """
     return name + " " + ", ".join(options_to_mnemonics(options))
 
-def rank_hover(row, col, color_maker, board):
+def rank_hover(row, col, color_maker, board, is_raised):
     """
     Hover text for this rank combo.
     
@@ -255,8 +255,8 @@ def rank_hover(row, col, color_maker, board):
     options = HandRange(txt).generate_options_unweighted(board)
     inputs = [("unassigned", color_maker.opt_una),
               ("folding", color_maker.opt_fol),
-              ("passive", color_maker.opt_pas),
-              ("aggressive", color_maker.opt_agg)]
+              ("calling" if is_raised else "checking", color_maker.opt_pas),
+              ("raising" if is_raised else "betting", color_maker.opt_agg)]
     return " -- ".join([rank_hover_part(item[0], item[1].intersection(options))
                         for item in inputs if item[1].intersection(options)])
 
@@ -346,6 +346,8 @@ def range_editor_get():
     
     (Mostly a playground for experimentation right now.)
     """
+    raised = request.args.get('raised', '')
+    is_raised = raised == "true"
     rng_original = request.args.get('rng_original', ANYTHING)
     rng_unassigned = request.args.get('rng_unassigned', rng_original)
     rng_fold = request.args.get('rng_fold', NOTHING)
@@ -374,12 +376,11 @@ def range_editor_get():
     pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
     pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
     pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
-    # TODO: 0: a context flag to determine check vs call, bet vs raise
-    # TODO: 2: direct entry
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
                     'class': rank_class(row, col, color_maker, board),
-                    'hover': rank_hover(row, col, color_maker, board)}
+                    'hover': rank_hover(row, col, color_maker, board,
+                                        is_raised)}
                    for col in range(13)] for row in range(13)]
     suited_table = [[{'left': suit_text(row, col, True),
                       'right': suit_text(row, col, False),
@@ -399,27 +400,32 @@ def range_editor_get():
                        'class': suit_class(row, col, OFFSUIT),
                        'hover': suit_hover(row, col, OFFSUIT)}
                       for col in range(4)] for row in range(4)]
+    hidden_fields = [("raised", raised),
+                     ("board", board_raw),
+                     ("rng_original", rng_original),
+                     ("rng_unassigned", rng_unassigned),
+                     ("rng_fold", rng_fold),
+                     ("rng_passive", rng_passive),
+                     ("rng_aggressive", rng_aggressive)]
     return render_template('range_editor.html', title="Range Editor",
-        next_map=NEXT_MAP,
+        next_map=NEXT_MAP, hidden_fields=hidden_fields,
         rank_table=rank_table, suited_table=suited_table,
         pair_table=pair_table, offsuit_table=offsuit_table,
-        rng_original=rng_original, rng_unassigned=rng_unassigned,
-        rng_fold=rng_fold, rng_passive=rng_passive,
-        rng_aggressive=rng_aggressive,
-        board_raw=board_raw,
         card_names=images,
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
-        pct_passive=pct_passive, pct_aggressive=pct_aggressive)
+        pct_passive=pct_passive, pct_aggressive=pct_aggressive,
+        raised=raised)
 
 @APP.route('/range-editor', methods=['POST'])
 def range_editor_post():
     """
     Range editor uses Post-Redirect-Get
     """
+    raised = request.form.get('raised', '')
     rng_original = request.form.get('rng_original', ANYTHING)
-    board_raw = request.args.get('board', '')
-    board = safe_board('board')
+    board_raw = request.form.get('board', '')
+    board = safe_board_form('board')
     opt_ori = safe_hand_range('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
     opt_una = safe_hand_range('rng_unassigned', rng_original)  \
@@ -447,12 +453,13 @@ def range_editor_post():
     elif not option_mover.did_move:
         flash("Nothing was moved, because the selected hands were already in the target range.")  # pylint:disable=C0301
     return redirect(url_for('range_editor_get',
+        raised=raised,
+        board=board_raw,
         rng_original=rng_original,
         rng_unassigned=option_mover.rng_unassigned,
         rng_fold=option_mover.rng_fold,
         rng_passive=option_mover.rng_passive,
         rng_aggressive=option_mover.rng_aggressive,
-        board=board_raw,
         l_una='checked' if l_una else '',
         l_fol='checked' if l_fol else '',
         l_pas='checked' if l_pas else '',

@@ -44,18 +44,14 @@ select_all_suit = function(select) {
 {% block content %}
 <h2>Range Editor</h2>
 <form method=post>
-<input type=hidden name=board value="{{board_raw}}">
-<input type=hidden name=rng_original value="{{rng_original}}">
-<input type=hidden name=rng_unassigned value="{{rng_unassigned}}">
-<input type=hidden name=rng_fold value="{{rng_fold}}">
-<input type=hidden name=rng_passive value="{{rng_passive}}">
-<input type=hidden name=rng_aggressive value="{{rng_aggressive}}">
+{% for item in hidden_fields %}<input type=hidden name="{{item[0]}}" value="{{item[1]}}">
+{% endfor %}
 {% if rng_unassigned == 'nothing' %}
 <p>You've assigned your whole range. Here's the result:</p>
 <p>Original: {{rng_original}}</p>
 <p>Fold: {{rng_fold}}</p>
-<p>Passive: {{rng_passive}}</p>
-<p>Aggressive: {{rng_aggressive}}</p>
+<p>{% if raised == "true" %}Call{% else %}Check{% endif %}: {{rng_passive}}</p>
+<p>{% if raised == "true" %}Raise{% else %}Bet{% endif %}: {{rng_aggressive}}</p>
 <p><label for=raise_total>Bet/raise total:&nbsp;</label><input id=raise_total name=raise_total type=text />&nbsp;<button type=submit name=submit value="done">Done</button></p>
 {% endif %}
 <table>
@@ -89,18 +85,18 @@ select_all_suit = function(select) {
  </td>
  <td class=wide>
   <table>
-   <tr><td>Check/call range</td></tr>
+   <tr><td>{% if raised == "true" %}Call range{% else %}Check range{% endif %}</td></tr>
    <tr><td>{{ '%0.2f' % pct_passive }}%</td></tr>
    <tr><td><input type=checkbox id=l_pas name=l_pas {% if l_pas %}checked=checked{% endif %}><label for=l_pas>Lock</label></td></tr>
-   <tr><td><button type=submit name=submit value="passive">Check/call</button></td></tr>
+   <tr><td><button type=submit name=submit value="passive">{% if raised == "true" %}Call{% else %}Check{% endif %}</button></td></tr>
   </table>
  </td>
  <td class=wide>
   <table>
-   <tr><td>Bet/raise range</td></tr>
+   <tr><td>{% if raised == "true" %}Raise range{% else %}Bet range{% endif %}</td></tr>
    <tr><td>{{ '%0.2f' % pct_aggressive }}%</td></tr>
    <tr><td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Lock</label></td></tr>
-   <tr><td><button type=submit name=submit value="aggressive">Bet/raise</button></td></tr>
+   <tr><td><button type=submit name=submit value="aggressive">{% if raised == "true" %}Raise{% else %}Bet{% endif %}</button></td></tr>
   </table>
 <!-- End 4 x Range -->
  </td>
