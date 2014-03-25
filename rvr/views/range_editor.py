@@ -245,7 +245,7 @@ def rank_hover_part(name, options):
     """
     return name + " " + ", ".join(options_to_mnemonics(options))
 
-def rank_hover(row, col, color_maker, board, is_raised):
+def rank_hover(row, col, color_maker, board, is_raised, is_can_check):
     """
     Hover text for this rank combo.
     
@@ -255,7 +255,7 @@ def rank_hover(row, col, color_maker, board, is_raised):
     options = HandRange(txt).generate_options_unweighted(board)
     inputs = [("unassigned", color_maker.opt_una),
               ("folding", color_maker.opt_fol),
-              ("calling" if is_raised else "checking", color_maker.opt_pas),
+              ("checking" if is_can_check else "calling", color_maker.opt_pas),
               ("raising" if is_raised else "betting", color_maker.opt_agg)]
     return " -- ".join([rank_hover_part(item[0], item[1].intersection(options))
                         for item in inputs if item[1].intersection(options)])
@@ -347,7 +347,7 @@ def range_editor_get():
     (Mostly a playground for experimentation right now.)
     """
     raised = request.args.get('raised', '')
-    is_raised = raised == "true"
+    can_check = request.args.get('can_check', '')
     rng_original = request.args.get('rng_original', ANYTHING)
     rng_unassigned = request.args.get('rng_unassigned', rng_original)
     rng_fold = request.args.get('rng_fold', NOTHING)
@@ -380,7 +380,8 @@ def range_editor_get():
                     'id': rank_id(row, col),
                     'class': rank_class(row, col, color_maker, board),
                     'hover': rank_hover(row, col, color_maker, board,
-                                        is_raised)}
+                                        is_raised=raised == "true",
+                                        is_can_check=can_check == "true")}
                    for col in range(13)] for row in range(13)]
     suited_table = [[{'left': suit_text(row, col, True),
                       'right': suit_text(row, col, False),
@@ -401,6 +402,7 @@ def range_editor_get():
                        'hover': suit_hover(row, col, OFFSUIT)}
                       for col in range(4)] for row in range(4)]
     hidden_fields = [("raised", raised),
+                     ("can_check", can_check),
                      ("board", board_raw),
                      ("rng_original", rng_original),
                      ("rng_unassigned", rng_unassigned),
@@ -415,7 +417,7 @@ def range_editor_get():
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
-        raised=raised)
+        raised=raised, can_check=can_check)
 
 @APP.route('/range-editor', methods=['POST'])
 def range_editor_post():
@@ -423,6 +425,7 @@ def range_editor_post():
     Range editor uses Post-Redirect-Get
     """
     raised = request.form.get('raised', '')
+    can_check = request.form.get('can_check', '')
     rng_original = request.form.get('rng_original', ANYTHING)
     board_raw = request.form.get('board', '')
     board = safe_board_form('board')
@@ -453,7 +456,7 @@ def range_editor_post():
     elif not option_mover.did_move:
         flash("Nothing was moved, because the selected hands were already in the target range.")  # pylint:disable=C0301
     return redirect(url_for('range_editor_get',
-        raised=raised,
+        raised=raised, can_check=can_check,
         board=board_raw,
         rng_original=rng_original,
         rng_unassigned=option_mover.rng_unassigned,

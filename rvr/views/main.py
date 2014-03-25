@@ -309,9 +309,9 @@ def _running_game(game, gameid, userid, api):
     range_editor_url = url_for('range_editor_get',
         rng_original=game.game_details.current_player.range_raw,
         board=game.game_details.board_raw,
-        raised="true" if game.current_options.is_raise else "false")
+        raised="true" if game.current_options.is_raise else "false",
+        can_check="true" if game.current_options.can_check() else "false")
     title = 'Game %d (running)' % (gameid,)
-    # TODO: pass is_raise and can_check. also can_check to renge editor.
     return render_template('running_game.html', title=title, form=form,
         game_details=game.game_details, history=game.history,
         current_options=game.current_options,

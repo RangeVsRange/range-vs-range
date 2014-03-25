@@ -88,13 +88,13 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 </p>
 <p>
   {% for error in form.errors.passive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.passive.label}} {{form.passive}} (<span id="passive_size">0.00</span>%) <a href="#" id="call_the_rest">(call the rest)</a> {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
+  {{form.passive.label}} {{form.passive}} (<span id="passive_size">0.00</span>%) <a href="#" id="call_the_rest">({% if current_options.can_check() %}check{% else %}call{% endif %} the rest)</a> {% if current_options.call_cost != 0 %} <em>(cost to call: {{current_options.call_cost}})</em> {% endif %} <br>
 </p>
 {% if current_options.can_raise() %}
 <p>
   {% for error in form.errors.aggressive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.aggressive.label}} {{form.aggressive}} (<span id="aggressive_size">0.00</span>%) <a href="#" id="raise_the_rest">(raise the rest)</a>
+  {{form.aggressive.label}} {{form.aggressive}} (<span id="aggressive_size">0.00</span>%) <a href="#" id="raise_the_rest">({% if current_options.is_raise %}raise{% else %}bet{% endif %} the rest)</a>
 </p>
 <p>
   {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>

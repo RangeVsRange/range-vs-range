@@ -50,7 +50,7 @@ select_all_suit = function(select) {
 <p>You've assigned your whole range. Here's the result:</p>
 <p>Original: {{rng_original}}</p>
 <p>Fold: {{rng_fold}}</p>
-<p>{% if raised == "true" %}Call{% else %}Check{% endif %}: {{rng_passive}}</p>
+<p>{% if can_check == "true" %}Check{% else %}Call{% endif %}: {{rng_passive}}</p>
 <p>{% if raised == "true" %}Raise{% else %}Bet{% endif %}: {{rng_aggressive}}</p>
 <p><label for=raise_total>Bet/raise total:&nbsp;</label><input id=raise_total name=raise_total type=text />&nbsp;<button type=submit name=submit value="done">Done</button></p>
 {% endif %}
@@ -85,10 +85,10 @@ select_all_suit = function(select) {
  </td>
  <td class=wide>
   <table>
-   <tr><td>{% if raised == "true" %}Call range{% else %}Check range{% endif %}</td></tr>
+   <tr><td>{% if can_check == "true" %}Check range{% else %}Call range{% endif %}</td></tr>
    <tr><td>{{ '%0.2f' % pct_passive }}%</td></tr>
    <tr><td><input type=checkbox id=l_pas name=l_pas {% if l_pas %}checked=checked{% endif %}><label for=l_pas>Lock</label></td></tr>
-   <tr><td><button type=submit name=submit value="passive">{% if raised == "true" %}Call{% else %}Check{% endif %}</button></td></tr>
+   <tr><td><button type=submit name=submit value="passive">{% if can_check == "true" %}Check{% else %}Call{% endif %}</button></td></tr>
   </table>
  </td>
  <td class=wide>
