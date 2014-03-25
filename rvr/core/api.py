@@ -634,6 +634,7 @@ class API(object):
             self._record_rgp_range(rgp, rgp.range_raw)
         else:
             action_result = ActionResult.terminate()
+        # TODO: 0: notice when they get all in
         # TODO: RESULTS: need final showdown sometimes (rarely) ...
         # This equates to bettinground.complete in the old version
         # It happens when:

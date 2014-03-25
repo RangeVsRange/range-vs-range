@@ -560,13 +560,10 @@ class HandRange(object):
         
         other should also be a HandRange. 
         """
-        mine = self.generate_options()
-        other = other.generate_options()
-        # TODO: REVISIT: there's probably a more efficient way to do this.
-        # Also note that this will only remove options with the same weight.
-        for option in other:
-            if option in mine:
-                mine.remove(option)
+        mine = set(self.generate_options())
+        other = set(other.generate_options())
+        mine.difference_update(other)
+        # Note that this will only remove options with the same weight.
         return HandRange(weighted_options_to_description(mine))
         
     def validate(self):
