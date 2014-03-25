@@ -606,6 +606,33 @@ class API(object):
         self._record_range_action(rgp, range_action)
         left_to_act = [r for r in game.rgps if r.left_to_act]
         remain = [r for r in game.rgps if not r.folded]
+        # TODO: 0: can_call and can_fold?!
+        # So we pre-compute whether or not we think the hand will end?
+        # Why not:
+        #  - perform each possible action,
+        #  - see if the hand ends,
+        #  - record results if it does (and determine the appropriate factor)
+        #  - if there are both terminal and non-terminal options, re-deal
+        #  - if there are no terminal options, use current hand (could re-deal, but as an efficiency
+        #  - if there are only terminal options, they all play, but the hand is finished
+        # In summary:
+        #  - the terminal options play, with appropriate weight
+        #  - current factor is reduced by the ratio of non-terminal-to-terminal options (between 0 to 1)
+        #  - the hand either:
+        #    - terminates, because all options are terminal
+        #    - continues with one of the non-terminal options
+        # So in terms of domain model, we need:
+        #  - a basic poker hand class that:
+        #    - generates options
+        #    - applies actions
+        #    - knows if the hand has ended
+        #  - and a play-on class that:
+        #    - maintains a current hand
+        #    - copies current hand and applies all options
+        #    - determines which options terminate and which don't
+        #    - re-deals if there is a terminal option and multiple non-terminal options
+        #    - records results of terminal options
+        #    - tracks current factor
         # no play on when 3-handed
         can_fold = len(remain) > 2
         # same condition hold for calling of course, also:
@@ -634,7 +661,7 @@ class API(object):
             self._record_rgp_range(rgp, rgp.range_raw)
         else:
             action_result = ActionResult.terminate()
-        # TODO: 0: notice when they get all in
+        # TODO: 1: notice when they get all in
         # TODO: RESULTS: need final showdown sometimes (rarely) ...
         # This equates to bettinground.complete in the old version
         # It happens when:
