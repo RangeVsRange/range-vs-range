@@ -34,6 +34,16 @@ select_all_suit = function(select) {
   $('.suit-button').toggleClass('s_sel', select);
   $('.s_h').val(select);
 }
+populate_parent = function() {
+  var doc = window.opener.document;
+  var fold = doc.getElementById("fold");
+  var passive = doc.getElementById("passive");
+  var aggressive = doc.getElementById("aggressive");
+  fold.value = "{{ rng_fold }}";
+  passive.value = "{{ rng_passive }}";
+  aggressive.value = "{{ rng_aggressive }}";
+  window.close();
+}
 </script>
 <style>
     button.rank-button { width:40px; height:40px; text-align:center; padding-left:0; padding-right:0 } 
@@ -48,11 +58,10 @@ select_all_suit = function(select) {
 {% endfor %}
 {% if rng_unassigned == 'nothing' %}
 <p>You've assigned your whole range. Here's the result:</p>
-<p>Original: {{rng_original}}</p>
 <p>Fold: {{rng_fold}}</p>
 <p>{% if can_check == "true" %}Check{% else %}Call{% endif %}: {{rng_passive}}</p>
 <p>{% if raised == "true" %}Raise{% else %}Bet{% endif %}: {{rng_aggressive}}</p>
-<p><label for=raise_total>Bet/raise total:&nbsp;</label><input id=raise_total name=raise_total type=text />&nbsp;<button type=submit name=submit value="done">Done</button></p>
+<p><button type=button onclick="populate_parent();">Done</button></p>
 {% endif %}
 <table>
 <tr>
