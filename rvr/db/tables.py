@@ -69,7 +69,7 @@ class Situation(BASE):
     """
     __tablename__ = 'situation'
     situationid = Column(Integer, primary_key=True)
-    description = Column(String, nullable=False)
+    description = Column(String, unique=True, nullable=False)
     participants = Column(Integer, nullable=False)
     is_limit = Column(Boolean, nullable=False)
     big_blind = Column(Integer, nullable=False)

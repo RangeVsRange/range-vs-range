@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
     ANYTHING
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
-    PREFLOP, RIVER, re_deal, range_action_to_action,\
+    PREFLOP, RIVER, FLOP, re_deal, range_action_to_action,\
     finish_game, NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, act_terminate
 from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
@@ -86,6 +86,7 @@ class API(object):
     ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
     ERR_DELETE_USER_PLAYING = APIError("User is playing")
     ERR_USER_NOT_IN_GAME = APIError("User is not in the specified game")
+    ERR_DUPLICATE_SITUATION = APIError("Duplicate situation")
     
     def __init__(self):
         self.session = None  # required for @create_session
@@ -103,20 +104,22 @@ class API(object):
         """
         Create initial data for database
         """
-        bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+        self.session.commit()  # any errors are our own
+        
+        hu_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
             stack=198,
             contributed=2,
             left_to_act=True,
             range_raw=ANYTHING)
-        btn = dtos.SituationPlayerDetails(
+        hu_btn = dtos.SituationPlayerDetails(
             stack=199,
             contributed=1,
             left_to_act=True,
             range_raw=ANYTHING)
-        situation = dtos.SituationDetails(
+        hu_situation = dtos.SituationDetails(
             description="Heads-up preflop, 100 BB",
-            players=[bb, btn],  # bb acts first in future rounds
-            current_player=1,  # btn acts next (this round)
+            players=[hu_bb, hu_btn],  # BB acts first in future rounds
+            current_player=1,  # BTN acts next (this round)
             is_limit=False,
             big_blind=2,
             board_raw='',
@@ -124,7 +127,39 @@ class API(object):
             pot_pre=0,
             increment=2,
             bet_count=1)
-        return self._add_situation(situation)
+        
+        # pylint:disable=C0301
+        three_co = dtos.SituationPlayerDetails(
+            stack=195,
+            contributed=0,
+            left_to_act=True,
+            range_raw="22+,A2s+,K7s+,Q9s+,J8s+,T8s+,97s+,87s,76s,65s,A8o+,KTo+,QTo+,JTo,T9o")
+        three_btn = dtos.SituationPlayerDetails(
+            stack=195,
+            contributed=0,
+            left_to_act=True,
+            range_raw="88-22,AJs-A2s,KTs-K7s,Q9s,J9s,T8s+,97s+,86s+,75s+,64s+,54s,A8o+,KTo+,QJo")
+        three_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+            stack=195,
+            contributed=0,
+            left_to_act=True,
+            range_raw="88-22,AJs-A2s,K7s+,Q9s+,J8s+,T7s+,96s+,86s+,75s+,64s+,54s,A8o+,KTo+,QTo+,J9o+,T9o,98o,87o")
+        three_situation = dtos.SituationDetails(
+            description="3-way flop: CO, BTN, BB",
+            players=[three_bb, three_co, three_btn],  # BB is first to act
+            current_player=0,  # BB is next to act
+            is_limit=False,
+            big_blind=2,
+            board_raw='',
+            current_round=FLOP,
+            pot_pre=16,
+            increment=2,
+            bet_count=0)
+        
+        # Each of these also commits.
+        err = self._add_situation(hu_situation)
+        err = err or self._add_situation(three_situation)
+        return err
     
     @api
     def login(self, request):
@@ -264,6 +299,12 @@ class API(object):
             child.range_raw = player.range_raw
             child.left_to_act = player.left_to_act
             self.session.add(child)
+        try:
+            self.session.commit()
+            logging.debug("Added situation: %s", dto.description)
+        except IntegrityError:
+            self.session.rollback()
+            return self.ERR_DUPLICATE_SITUATION            
     
     @api
     def get_open_games(self):
@@ -363,7 +404,9 @@ class API(object):
             self.session.flush()  # populate game
             # Note that we do NOT create a range history item for them,
             # it is implied.
-        self.session.delete(open_game)  # cascades to ogps
+        # TODO: REVISIT: check that this cascades to ogps
+        self.session.delete(open_game)
+        self._deal_to_board(running_game)
         notify_first_player(running_game, starter_id=final_ogp.userid)
         logging.debug("Started game %d", open_game.gameid)
         return running_game
@@ -606,6 +649,7 @@ class API(object):
         self._record_range_action(rgp, range_action)
         left_to_act = [r for r in game.rgps if r.left_to_act]
         remain = [r for r in game.rgps if not r.folded]
+        # pylint:disable=C0301
         # TODO: 0: can_call and can_fold?!
         # So we pre-compute whether or not we think the hand will end?
         # Why not:
@@ -787,7 +831,7 @@ class API(object):
         """
         for situation in self.session.query(tables.Situation).all():
             empty_open = self.session.query(tables.OpenGame)  \
-                .filter(tables.Situation.situationid ==
+                .filter(tables.OpenGame.situationid ==
                         situation.situationid)  \
                 .filter(tables.OpenGame.participants == 0).all()
             if len(empty_open) > 1:
