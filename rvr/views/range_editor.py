@@ -339,7 +339,6 @@ def next_map():
 
 NEXT_MAP = next_map()
 
-@APP.route('/range-editor', methods=['GET'])
 def range_editor_get():
     """
     An HTML range editor!
@@ -423,7 +422,6 @@ def range_editor_get():
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
         raised=raised, can_check=can_check)
 
-@APP.route('/range-editor', methods=['POST'])
 def range_editor_post():
     """
     Range editor uses Post-Redirect-Get
@@ -459,7 +457,7 @@ def range_editor_post():
         flash("Nothing was moved, because the selected hands were locked.")
     elif not option_mover.did_move:
         flash("Nothing was moved, because the selected hands were already in the target range.")  # pylint:disable=C0301
-    return redirect(url_for('range_editor_get',
+    return redirect(url_for('range_editor',
         raised=raised, can_check=can_check,
         board=board_raw,
         rng_original=rng_original,
@@ -471,3 +469,10 @@ def range_editor_post():
         l_fol='checked' if l_fol else '',
         l_pas='checked' if l_pas else '',
         l_agg='checked' if l_agg else ''))
+    
+@APP.route('/range-editor', methods=['GET', 'POST'])
+def range_editor():
+    if request.method == 'GET':
+        return range_editor_get()
+    else:
+        return range_editor_post()

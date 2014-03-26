@@ -306,7 +306,7 @@ def _running_game(game, gameid, userid, api):
     if form.validate_on_submit():
         return _handle_action(gameid, userid, api, form)
     
-    range_editor_url = url_for('range_editor_get',
+    range_editor_url = url_for('range_editor',
         rng_original=game.game_details.current_player.range_raw,
         board=game.game_details.board_raw,
         raised="true" if game.current_options.is_raise else "false",
