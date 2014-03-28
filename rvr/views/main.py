@@ -282,9 +282,15 @@ def _handle_action(gameid, userid, api, form):
         if result.is_fold:
             msg = "You folded."
         elif result.is_passive:
-            msg = "You called for %d." % (result.call_cost,)
+            if result.call_cost == 0:
+                msg = "You checked."
+            else:
+                msg = "You called for %d." % (result.call_cost,)
         elif result.is_aggressive:
-            msg = "You raised to %d." % (result.raise_total,)
+            if result.is_raise:
+                msg = "You raised to %d." % (result.raise_total,)
+            else:
+                msg = "You bet %d." % (result.raise_total,)
         elif result.is_terminate:
             msg = "The hand is over."
         else:

@@ -4,6 +4,7 @@ Temporary mixin for refactoring: new version
 
 # pylint:disable=R0903,W0232,R0201,W0613,C0111
 
+# Additional TODOs around this stuff, not specifically to do with refactoring:
 # TODO: HAND HISTORY: record (subjective) sizes of range_action
 # TODO: EQUITY PAYMENT: fold equity
 # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)

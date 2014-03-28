@@ -165,7 +165,8 @@ def range_action_to_action(range_action, hand, current_options):
             ActionResult.call(current_options.call_cost)
     elif range_contains_hand(range_action.aggressive_range, hand):
         return range_action.aggressive_range, \
-            ActionResult.raise_to(range_action.raise_total)
+            ActionResult.raise_to(range_action.raise_total,
+                                  current_options.is_raise)
     else:
         raise ValueError("hand is %s, range_action is invalid: %r" %
                          (hand, range_action))

@@ -600,7 +600,7 @@ class ActionResult(object):
     """
     def __init__(self, is_fold=False, is_passive=False, 
                  is_aggressive=False, call_cost=None, raise_total=None,
-                 is_terminate=False):
+                 is_terminate=False, is_raise=False):
         if len([b for b in [is_fold, is_passive, is_aggressive] if b]) != 1  \
             and not is_terminate:
             raise ValueError("Specify only one type of action for a response")
@@ -617,6 +617,7 @@ class ActionResult(object):
         self.call_cost = call_cost
         self.raise_total = raise_total
         self.is_terminate = is_terminate
+        self.is_raise = is_raise
         self.game_over = False
         
     @classmethod
@@ -634,11 +635,12 @@ class ActionResult(object):
         return ActionResult(is_passive=True, call_cost=call_cost)
     
     @classmethod
-    def raise_to(cls, raise_total):
+    def raise_to(cls, raise_total, is_raise):
         """
         User bet or raised
         """
-        return ActionResult(is_aggressive=True, raise_total=raise_total)
+        return ActionResult(is_aggressive=True, raise_total=raise_total,
+                            is_raise=is_raise)
     
     @classmethod
     def terminate(cls):
@@ -657,7 +659,10 @@ class ActionResult(object):
             else:
                 return "check"
         if self.is_aggressive:
-            return "bet or raise (to %d)" % (self.raise_total,)
+            if self.is_raise:
+                return "raise to %d" % (self.raise_total,)
+            else:
+                return "bet %d" % (self.raise_total,)
         if self.is_terminate:
             return "(terminate)"
         return "(inexplicable)"
@@ -665,6 +670,6 @@ class ActionResult(object):
     def __repr__(self):
         return ("ActionResult(is_fold=%r, is_passive=%r, " +
                 "is_aggressive=%r, call_cost=%r, raise_total=%r, " +
-                "is_terminate=%r)") %  \
+                "is_terminate=%r, is_raise=%r)") %  \
             (self.is_fold, self.is_passive, self.is_aggressive,
-             self.call_cost, self.raise_total, self.is_terminate)
+             self.call_cost, self.raise_total, self.is_terminate, self.is_raise)
