@@ -458,6 +458,7 @@ class GameItemBoard(GameItem):
             return "%s: %s %s %s" % (self.street, self.cards[0:6],
                                      self.cards[6:8], self.cards[8:10])
         else:
+            # Unknown, but probably PREFLOP, but shouldn't happen.
             return "(unknown street) %s: %s" % (self.street, self.cards)
     
     @classmethod

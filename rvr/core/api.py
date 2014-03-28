@@ -10,15 +10,16 @@ from sqlalchemy.exc import IntegrityError
 from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
     ANYTHING
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
-    PREFLOP, RIVER, FLOP, re_deal, range_action_to_action,\
-    finish_game, NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
+    PREFLOP, RIVER, FLOP,  \
+    NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, act_terminate
-from rvr.core.dtos import ActionResult, MAP_TABLE_DTO
+from rvr.core.dtos import MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
 import traceback
+from rvr.core.pa1 import PA1
 
 #pylint:disable=R0903
 
@@ -54,9 +55,19 @@ def api(fun):
     @create_session
     def inner(*args, **kwargs):
         """
-        No additional functionality
+        Additional functionality: rollback on error. That needs to be here
+        because it needs knowledge of both self.session and APIError.
         """
-        return fun(*args, **kwargs)
+        try:
+            result = fun(*args, **kwargs)
+            if isinstance(result, APIError):
+                self = args[0]
+                self.session.rollback()
+            return result
+        except:
+            self = args[0]
+            self.session.rollback()
+            raise
     return inner
 
 class APIError(object):
@@ -69,7 +80,7 @@ class APIError(object):
     def __str__(self):
         return self.description
 
-class API(object):
+class API(object, PA1):
     """
     Core Range vs. Range API, which may be called by:
      - a website
@@ -614,7 +625,8 @@ class API(object):
         excluded_cards.extend(game.board)
         new_board = game.board + deal_cards(excluded_cards, total - current)
         game.board = new_board
-        self._record_board(game)
+        if total > current:
+            self._record_board(game)
         # TODO: EQUITY PAYMENT: cards dealt to board
     
     def _finish_betting_round(self, game, remain):
@@ -638,97 +650,6 @@ class API(object):
                 continue
             rgp.range = remove_board_from_range(rgp.range, game.board)
             rgp.left_to_act = True
-
-    def _perform_action(self, game, rgp, range_action, current_options):
-        """
-        Determine result of range action, and apply it.
-        
-        Assumes validation is already done.
-        """
-        # pylint:disable=R0914
-        self._record_range_action(rgp, range_action)
-        left_to_act = [r for r in game.rgps if r.left_to_act]
-        remain = [r for r in game.rgps if not r.folded]
-        # pylint:disable=C0301
-        # TODO: 0: can_call and can_fold?!
-        # So we pre-compute whether or not we think the hand will end?
-        # Why not:
-        #  - perform each possible action,
-        #  - see if the hand ends,
-        #  - record results if it does (and determine the appropriate factor)
-        #  - if there are both terminal and non-terminal options, re-deal
-        #  - if there are no terminal options, use current hand (could re-deal, but as an efficiency
-        #  - if there are only terminal options, they all play, but the hand is finished
-        # In summary:
-        #  - the terminal options play, with appropriate weight
-        #  - current factor is reduced by the ratio of non-terminal-to-terminal options (between 0 to 1)
-        #  - the hand either:
-        #    - terminates, because all options are terminal
-        #    - continues with one of the non-terminal options
-        # So in terms of domain model, we need:
-        #  - a basic poker hand class that:
-        #    - generates options
-        #    - applies actions
-        #    - knows if the hand has ended
-        #  - and a play-on class that:
-        #    - maintains a current hand
-        #    - copies current hand and applies all options
-        #    - determines which options terminate and which don't
-        #    - re-deals if there is a terminal option and multiple non-terminal options
-        #    - records results of terminal options
-        #    - tracks current factor
-        # no play on when 3-handed
-        can_fold = len(remain) > 2
-        # same condition hold for calling of course, also:
-        # preflop, flop and turn, you can call
-        # if there's someone else who hasn't acted yet, you can check to them
-        can_call = can_fold or game.current_round != RIVER  \
-            or len(left_to_act) > 1
-        cards_dealt = {rgp: rgp.cards_dealt for rgp in game.rgps}
-        terminate, f_ratio, _p_ratio, a_ratio = re_deal(range_action,
-            cards_dealt, rgp, game.board, can_fold, can_call)
-        # terminate means the hand is over, and also means no action is needed.
-        # The above redeals rgp's cards in the dict, so we need to re-apply to
-        # rgp.
-        rgp.cards_dealt = cards_dealt[rgp]
-        # TODO: HAND HISTORY: record (subjective) sizes of range_action
-        # TODO: EQUITY PAYMENT: fold equity
-        # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
-        if not can_fold and can_call:
-            game.current_factor *= 1 - f_ratio
-        elif not can_fold and not can_call:
-            game.current_factor *= a_ratio
-        if not terminate:
-            rgp.range, action_result = range_action_to_action(range_action,
-                rgp.cards_dealt, current_options)
-            self._record_action_result(rgp, action_result)
-            self._record_rgp_range(rgp, rgp.range_raw)
-        else:
-            action_result = ActionResult.terminate()
-        # TODO: 1: notice when they get all in
-        # TODO: RESULTS: need final showdown sometimes (rarely) ...
-        # This equates to bettinground.complete in the old version
-        # It happens when:
-        #  - All in before the river; or,
-        #  - A call doesn't create a showdown payment on the river because there
-        #    are people left to act, but then no one raises.
-        self.apply_action_result(game, rgp, action_result)
-        if game.is_finished:
-            # TODO: STRATEGY: profitable float
-            # - hero bets one flop (etc.), villain calls
-            # - hero checks turn (etc.), villain bets
-            # - if hero doesn't bet enough on the flop (etc.), checks too much
-            #   on the turn (etc.), and folds too much to the bet, villain has
-            #   a profitable float
-            # (villain will often have a profitable float anyway due to equity,
-            #  i.e. a semi-float, but that's impossible to quantify.) 
-            # (it's also okay to be profitably floated sometimes, e.g. when a
-            #  flush draw comes off, because that doesn't happen 100% of the
-            #  time.)
-            finish_game(game)
-        action_result.game_over = game.is_finished
-        return action_result
-        # TODO: REVISIT: it might not be their turn at the point we commit, ok?
     
     @api
     def perform_action(self, gameid, userid, range_action):

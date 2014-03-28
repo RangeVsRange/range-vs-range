@@ -472,6 +472,13 @@ def range_editor_post():
     
 @APP.route('/range-editor', methods=['GET', 'POST'])
 def range_editor():
+    """
+    Combined these here (cf. decorating one with 'GET' and one with 'POST')
+    because Yawe suggested it was the more normal way. It didn't fix his 405
+    error though :(
+    """
+    # TODO: REVISIT: see if we can go back to decorating each method
+    # and not need this one
     if request.method == 'GET':
         return range_editor_get()
     else:
