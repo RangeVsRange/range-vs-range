@@ -527,13 +527,6 @@ class ActionOptions(object):
         return "ActionOptions(call_cost=%r, min_raise=%r, max_raise=%r)" %  \
             (self.call_cost, self.min_raise, self.max_raise)
     
-    def can_fold(self):
-        """
-        Does the user have the option to fold?
-        """
-        # pylint:disable=R0201
-        return True
-    
     def can_check(self):
         """
         Does the user have the option to check?

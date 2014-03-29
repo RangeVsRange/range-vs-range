@@ -20,6 +20,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
 import traceback
 from rvr.core.pa1_2 import PA1_2
+from rvr.core.pa2 import PA2
 
 #pylint:disable=R0903
 
@@ -80,7 +81,7 @@ class APIError(object):
     def __str__(self):
         return self.description
 
-class API(object, PA1_2):
+class API(object, PA2):
     """
     Core Range vs. Range API, which may be called by:
      - a website

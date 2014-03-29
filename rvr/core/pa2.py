@@ -2,6 +2,11 @@
 Temporary mixin for refactoring: new version
 """
 from rvr.poker.action import finish_game
+from rvr.core.dtos import ActionResult
+from collections import namedtuple
+from rvr.poker.cards import RIVER
+from rvr.infrastructure.util import concatenate
+import random
 
 # pylint:disable=R0903,W0232,R0201,W0613,C0111
 
@@ -24,10 +29,99 @@ from rvr.poker.action import finish_game
 #  flush draw comes off, because that doesn't happen 100% of the
 #  time.)
 
+Branch = namedtuple("is_continue",  # For this option, does play continue?
+                    "options",  # Combos that lead to this option
+                    "action")  # Action that results from this option
+
+class WhatCouldBe(object):
+    def __init__(self, game, rgp, range_action, current_options):
+        self.game = game
+        self.rgp = rgp
+        self.range_action = range_action
+        self.current_options = current_options
+        
+        self.bough = []  # list of Branch
+        self.action_result = None
+
+    def fold_continue(self):
+        remain = [r for r in self.game.rgps if not r.folded]
+        return len(remain) > 2
+    
+    def passive_continue(self):
+        remain = [r for r in self.game.rgps if not r.folded]
+        left_to_act = [r for r in self.game.rgps if r.left_to_act]
+        return len(remain) > 2 or self.game.current_round != RIVER  \
+            or len(left_to_act) > 1
+    
+    def aggressive_continue(self):
+        # Always true because, like the other two of these, we assume there is
+        # at least on option that results in this action, because otherwise the
+        # question itself doesn't make sense.
+        return True
+        
+    def consider_all(self):
+        # note that we only consider the possible
+        # mostly copied from the old re_deal
+        cards_dealt = {rgp: rgp.cards_dealt for rgp in self.game.rgps}
+        dead_cards = [card for card in self.game.board if card is not None]
+        dead_cards.extend(concatenate([v for k, v in cards_dealt.iteritems()
+                                   if k is not self.rgp]))
+        fold_options =  \
+            self.range_action.fold_range.generate_options(dead_cards)
+        passive_options =  \
+            self.range_action.passive_range.generate_options(dead_cards)
+        aggressive_options =  \
+            self.range_action.aggressive_range.generate_options(dead_cards)
+        # Consider fold
+        fold_action = ActionResult.fold()
+        if len(self.fold_options) > 0:
+            self.bough.append(Branch(self.fold_continue(),
+                                     fold_options,
+                                     fold_action))
+        # Consider call
+        passive_action = ActionResult.call(self.current_options.call_cost)
+        if len(self.passive_options) > 0:
+            self.bough.append(Branch(self.passive_continue(),
+                                     passive_options,
+                                     passive_action))
+        # Consider raise
+        aggressive_action = ActionResult.raise_to(
+            self.current_options.raise_total, self.current_options.is_raise)
+        if len(self.aggressive_options) > 0:
+            self.bough.append(Branch(self.aggressive_continue(),
+                                     aggressive_options,
+                                     aggressive_action))
+
+    def calculate_what_will_be(self):
+        """
+        Choose one of the non-terminal actions, or return termination if they're
+        all terminal. Also update game's current_factor. 
+        """
+        # reduce current factor by the ratio of non-terminal-to-terminal options
+        non_terminal = []
+        terminal = []
+        for branch in self.bough:
+            if branch.is_continue:
+                terminal.extend(branch.options)
+            else:
+                non_terminal.extend(branch.options)
+        total = len(non_terminal) + len(terminal)
+        # the more non-terminal, the less effect on current factor
+        self.game.current_factor *= float(len(non_terminal)) / total
+        if non_terminal:
+            chosen_option = random.choice(non_terminal)
+            # but which action was chosen?
+            for branch in self.bough:
+                if chosen_option in branch.options:
+                    self.action_result = branch.action
+        else:
+            self.action_result = ActionResult.terminate()
+        return self.action_result
+
 class PA2:
     """
     New implementation of play on. As mixin, for refactoring purposes.
-    """
+    """        
     def _play_all(self, game, rgp, range_action, current_options):
         """
         Plays every action in range_action, except the zero-weighted ones.
@@ -44,6 +138,7 @@ class PA2:
         Side effects:
          - reduce current factor based on non-playing ranges
          - redeal rgp's cards based on new range
+         - (later) equity payments and such
         """
         # Why not:
         #  - perform each possible action,
@@ -74,8 +169,11 @@ class PA2:
         #      options
         #    - records results of terminal options
         #    - tracks current factor
-        pass
-    
+        what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
+        what_could_be.consider_all()
+        what_could_be.calculate_what_will_be()
+        return what_could_be.action_result
+
     def _perform_action(self, game, rgp, range_action, current_options):
         """
         Inputs:
