@@ -19,7 +19,7 @@ from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
 import traceback
-from rvr.core.pa1 import PA1
+from rvr.core.pa1_2 import PA1_2
 
 #pylint:disable=R0903
 
@@ -80,7 +80,7 @@ class APIError(object):
     def __str__(self):
         return self.description
 
-class API(object, PA1):
+class API(object, PA1_2):
     """
     Core Range vs. Range API, which may be called by:
      - a website
@@ -588,9 +588,8 @@ class API(object, PA1):
             act_passive(rgp, action_result.call_cost)
         elif action_result.is_aggressive:
             act_aggressive(game, rgp, action_result.raise_total)
-        elif action_result.is_terminate:
-            act_terminate(game, rgp)
         else:
+            # terminate must not be passed here
             raise ValueError("Invalid action result")
         left_to_act = [p for p in game.rgps if p.left_to_act]
         remain = [p for p in game.rgps if not p.left_to_act and not p.folded]

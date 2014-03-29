@@ -328,6 +328,8 @@ def _finished_game(game, gameid):
     """
     Response from game page when the requested game is finished.
     """
+    # TODO: 1: display only %ages, not full ranges, link to range viewer
+    # also for running game.
     title = 'Game %d (finished)' % (gameid,)
     return render_template('finished_game.html', title=title,
         game_details=game.game_details, history=game.history)
