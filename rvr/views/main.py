@@ -15,6 +15,10 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING
 from flask_googleauth import logout
 
+# TODO: 1: when game ends, immediately show finished game page
+# TODO: 1: make raise total not mandatory at client side, and only mandatory at
+# server side if necessary
+
 def is_authenticated():
     """
     Is the user authenticated with OpenID?
@@ -259,6 +263,7 @@ def _handle_action(gameid, userid, api, form):
     """
     Handle response from an action form
     """
+    # pylint:disable=R0912
     fold = form.fold.data
     passive = form.passive.data
     aggressive = form.aggressive.data

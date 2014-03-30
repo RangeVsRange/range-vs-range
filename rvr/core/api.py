@@ -12,14 +12,13 @@ from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
-    act_passive, act_fold, act_aggressive, finish_game
+    act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe
 from rvr.core.dtos import MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
 import traceback
-from rvr.core.pa2 import WhatCouldBe
 
 #pylint:disable=R0903
 
