@@ -44,22 +44,68 @@ class WhatCouldBe(object):
         self.action_result = None
 
     def fold_continue(self):
-        remain = [r for r in self.game.rgps if not r.folded]
-        return len(remain) > 2
+        """
+        If current player folds here, will the hand continue?
+        """
+        will_remain = [r for r in self.game.rgps
+                       if not r.folded and r is not self.rgp]
+        # possible counter-example:
+        #  - river, 3-handed, one bets, on calls, we consider the last
+        #  - if this third player folds, play ends
+        #  - if this third player calls, play ends
+        #  - if this third player raises, play continues!
+        # TODO: confirmed, this is a bug, and a bug in the old c/s version too.
+        # It's more of an issue now, because there is no "what actually
+        # happened here", it just terminates. It's important that when the hand
+        # terminates, every branch of the player's range action plays. That
+        # certainly wouldn't be the case if he has a raise action, and is
+        # allowed to fold.
+        return len(will_remain) >= 2
     
     def passive_continue(self):
-        remain = [r for r in self.game.rgps if not r.folded]
-        left_to_act = [r for r in self.game.rgps if r.left_to_act]
-        return len(remain) > 2 or self.game.current_round != RIVER  \
-            or len(left_to_act) > 1
+        """
+        If a passive action is taken here, will the hand continue?
+        """
+        will_remain = [r for r in self.game.rgps
+                       if not r.folded and r is not self.rgp]
+        will_act = [r for r in self.game.rgps
+                    if r.left_to_act and r is not self.rgp]
+        if self.game.current_round != RIVER:
+            return True  # on earlier streets, a call cannot end the hand
+        if len(will_remain) >= 2:
+            # TODO: fold_continue needs to change, so does this
+            return True  # per fold_continue above
+        if len(will_act) >= 1:
+            return True  # another player will act 
+        return False
     
     def aggressive_continue(self):
+        """
+        If an aggressive action is taken here, will the hand continue?
+        """
         # Always true because, like the other two of these, we assume there is
         # at least on option that results in this action, because otherwise the
         # question itself doesn't make sense.
         return True
         
     def consider_all(self):
+        """
+        Plays every action in range_action, except the zero-weighted ones.
+        If the game can continue, this will return an appropriate action_result.
+        If not, it will return a termination. The game will continue if any
+        action results in at least two players remaining in the hand, and at
+        least one player left to act. (Whether or not that includes this
+        player.)
+        
+        Inputs: see __init__
+        
+        Outputs: an ActionResult: fold, passive, aggressive, or terminate
+        
+        Side effects:
+         - reduce current factor based on non-playing ranges
+         - redeal rgp's cards based on new range
+         - (later) equity payments and such
+        """
         # note that we only consider the possible
         # mostly copied from the old re_deal
         cards_dealt = {rgp: rgp.cards_dealt for rgp in self.game.rgps}
@@ -121,59 +167,7 @@ class WhatCouldBe(object):
 class PA2:
     """
     New implementation of play on. As mixin, for refactoring purposes.
-    """        
-    def _play_all(self, game, rgp, range_action, current_options):
-        """
-        Plays every action in range_action, except the zero-weighted ones.
-        If the game can continue, this will return an appropriate action_result.
-        If not, it will return a termination. The game will continue if any
-        action results in at least two players remaining in the hand, and at
-        least one player left to act. (Whether or not that includes this
-        player.)
-        
-        Inputs: as per _perform_action, below
-        
-        Outputs: an ActionResult: fold, passive, aggressive, or terminate
-        
-        Side effects:
-         - reduce current factor based on non-playing ranges
-         - redeal rgp's cards based on new range
-         - (later) equity payments and such
-        """
-        # Why not:
-        #  - perform each possible action,
-        #  - see if the hand ends,
-        #  - record results if it does (and determine the appropriate factor)
-        #  - if there are both terminal and non-terminal options, re-deal
-        #  - if there are no terminal options, use current hand (could re-deal,
-        #    but as an efficiency
-        #  - if there are only terminal options, they all play, but the hand is
-        #    finished
-        # In summary:
-        #  - the terminal options play, with appropriate weight
-        #  - current factor is reduced by the ratio of non-terminal-to-terminal
-        #    options (between 0 to 1)
-        #  - the hand either:
-        #    - terminates, because all options are terminal
-        #    - continues with one of the non-terminal options
-        # So in terms of domain model, we need:
-        #  - a basic poker hand class that:
-        #    - generates options
-        #    - applies actions
-        #    - knows if the hand has ended
-        #  - and a play-on class that:
-        #    - maintains a current hand
-        #    - copies current hand and applies all options
-        #    - determines which options terminate and which don't
-        #    - re-deals if there is a terminal option and multiple non-terminal
-        #      options
-        #    - records results of terminal options
-        #    - tracks current factor
-        what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
-        what_could_be.consider_all()
-        what_could_be.calculate_what_will_be()
-        return what_could_be.action_result
-
+    """
     def _perform_action(self, game, rgp, range_action, current_options):
         """
         Inputs:
@@ -202,8 +196,9 @@ class PA2:
         each option, and terminate only when all options are terminal.
         """
         self._record_range_action(rgp, range_action)
-        action_result = self._play_all(game, rgp, range_action,
-                                       current_options)
+        what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
+        what_could_be.consider_all()
+        action_result = what_could_be.calculate_what_will_be()
         if action_result.is_terminate:
             game.is_finished = True
             rgp.left_to_act = False
