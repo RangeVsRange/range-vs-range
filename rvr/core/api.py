@@ -12,15 +12,14 @@ from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
-    act_passive, act_fold, act_aggressive, act_terminate
+    act_passive, act_fold, act_aggressive, finish_game
 from rvr.core.dtos import MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
 import traceback
-from rvr.core.pa1_2 import PA1_2
-from rvr.core.pa2 import PA2
+from rvr.core.pa2 import WhatCouldBe
 
 #pylint:disable=R0903
 
@@ -81,7 +80,7 @@ class APIError(object):
     def __str__(self):
         return self.description
 
-class API(object, PA2):
+class API(object):
     """
     Core Range vs. Range API, which may be called by:
      - a website
@@ -650,6 +649,49 @@ class API(object, PA2):
                 continue
             rgp.range = remove_board_from_range(rgp.range, game.board)
             rgp.left_to_act = True
+    
+    def _perform_action(self, game, rgp, range_action, current_options):
+        """
+        Inputs:
+         - game, tables.RunningGame object, from database
+         - rgp, tables.RunningGameParticipant object, == game.current_rgp
+         - range_action, action to perform
+         - current_options, options user had here (re-computed)
+         
+        Outputs:
+         - An ActionResult, what *actually* happened
+         
+        Side effects:
+         - Records range action in DB (purely copying input to DB)
+         - Records action result in DB
+         - Records resulting range for rgp in DB
+         - Applied the resulting action to the game, i.e. things like:
+           - removing folded player from game
+           - putting chips in the pot
+           - starting the next betting round, if betting round finishes
+           - determining who is next to act, if still same betting round
+         - If the game is finished:
+           - flag that the game is finished
+           
+        It's as simple as that. Now we just need to do / calculate as described,
+        but instead of redealing based on can_call and can_fold, we'll play out
+        each option, and terminate only when all options are terminal.
+        """
+        self._record_range_action(rgp, range_action)
+        what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
+        what_could_be.consider_all()
+        action_result = what_could_be.calculate_what_will_be()
+        if action_result.is_terminate:
+            game.is_finished = True
+            rgp.left_to_act = False
+        else:
+            self._record_action_result(rgp, action_result)
+            self._record_rgp_range(rgp, rgp.range_raw)
+            self.apply_action_result(game, rgp, action_result)
+        if game.is_finished:
+            finish_game(game)
+        action_result.game_over = game.is_finished  # let the user know
+        return action_result
     
     @api
     def perform_action(self, gameid, userid, range_action):

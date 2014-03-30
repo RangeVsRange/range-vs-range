@@ -1,7 +1,6 @@
 """
 Temporary mixin for refactoring: new version
 """
-from rvr.poker.action import finish_game
 from rvr.core.dtos import ActionResult
 from collections import namedtuple
 from rvr.poker.cards import RIVER
@@ -43,50 +42,55 @@ class WhatCouldBe(object):
         self.bough = []  # list of Branch
         self.action_result = None
 
+    def game_continues(self, will_remain, will_act):
+        """
+        Given a list of players remaining in the hand, and a list of players
+        remaining to act, will the game continue? (Or is it over, contested or
+        otherwise.)
+        """
+        if self.game.current_round != RIVER:
+            # Pre-river, game continues if there are at least two players
+            return len(will_remain) >= 2
+        else:
+            # On the river, game continues if there are at least two players,
+            # and at least one left to act
+            return len(will_remain) >= 2 and len(will_act) >= 1
+
     def fold_continue(self):
         """
         If current player folds here, will the hand continue?
         """
+        # remain is everyone who else who hasn't folded
         will_remain = [r for r in self.game.rgps
                        if not r.folded and r is not self.rgp]
-        # possible counter-example:
-        #  - river, 3-handed, one bets, on calls, we consider the last
-        #  - if this third player folds, play ends
-        #  - if this third player calls, play ends
-        #  - if this third player raises, play continues!
-        # TODO: confirmed, this is a bug, and a bug in the old c/s version too.
-        # It's more of an issue now, because there is no "what actually
-        # happened here", it just terminates. It's important that when the hand
-        # terminates, every branch of the player's range action plays. That
-        # certainly wouldn't be the case if he has a raise action, and is
-        # allowed to fold.
-        return len(will_remain) >= 2
+        # to act is everyone else who's to act
+        will_act = [r for r in self.game.rgps
+                    if r.left_to_act and r is not self.rgp]
+        return self.game_continues(will_remain, will_act)
     
     def passive_continue(self):
         """
         If a passive action is taken here, will the hand continue?
         """
-        will_remain = [r for r in self.game.rgps
-                       if not r.folded and r is not self.rgp]
+        # remain is everyone who hasn't folded
+        will_remain = [r for r in self.game.rgps if not r.folded]
+        # to act is everyone else who's to act
         will_act = [r for r in self.game.rgps
                     if r.left_to_act and r is not self.rgp]
-        if self.game.current_round != RIVER:
-            return True  # on earlier streets, a call cannot end the hand
-        if len(will_remain) >= 2:
-            # TODO: fold_continue needs to change, so does this
-            return True  # per fold_continue above
-        if len(will_act) >= 1:
-            return True  # another player will act 
-        return False
+        return self.game_continues(will_remain, will_act)
     
     def aggressive_continue(self):
         """
         If an aggressive action is taken here, will the hand continue?
+
+        Actually, this will always return True.
         """
-        # Always true because, like the other two of these, we assume there is
-        # at least on option that results in this action, because otherwise the
-        # question itself doesn't make sense.
-        return True
+        # remain is everyone who hasn't folded
+        will_remain = [r for r in self.game.rgps if not r.folded]
+        # to act is everyone else who hasn't folded
+        will_act = [r for r in self.game.rgps
+                    if not r.folded and r is not self.rgp]
+        return self.game_continues(will_remain, will_act)
         
     def consider_all(self):
         """
@@ -164,50 +168,4 @@ class WhatCouldBe(object):
             self.action_result = ActionResult.terminate()
         return self.action_result
 
-class PA2:
-    """
-    New implementation of play on. As mixin, for refactoring purposes.
-    """
-    def _perform_action(self, game, rgp, range_action, current_options):
-        """
-        Inputs:
-         - game, tables.RunningGame object, from database
-         - rgp, tables.RunningGameParticipant object, == game.current_rgp
-         - range_action, action to perform
-         - current_options, options user had here (re-computed)
-         
-        Outputs:
-         - An ActionResult, what *actually* happened
-         
-        Side effects:
-         - Records range action in DB (purely copying input to DB)
-         - Records action result in DB
-         - Records resulting range for rgp in DB
-         - Applied the resulting action to the game, i.e. things like:
-           - removing folded player from game
-           - putting chips in the pot
-           - starting the next betting round, if betting round finishes
-           - determining who is next to act, if still same betting round
-         - If the game is finished:
-           - flag that the game is finished
-           
-        It's as simple as that. Now we just need to do / calculate as described,
-        but instead of redealing based on can_call and can_fold, we'll play out
-        each option, and terminate only when all options are terminal.
-        """
-        self._record_range_action(rgp, range_action)
-        what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
-        what_could_be.consider_all()
-        action_result = what_could_be.calculate_what_will_be()
-        if action_result.is_terminate:
-            game.is_finished = True
-            rgp.left_to_act = False
-        else:
-            self._record_action_result(rgp, action_result)
-            self._record_rgp_range(rgp, rgp.range_raw)
-            self.apply_action_result(game, rgp, action_result)
-        if game.is_finished:
-            finish_game(game)
-        action_result.game_over = game.is_finished  # let the user know
-        return action_result
     
