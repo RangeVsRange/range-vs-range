@@ -477,6 +477,8 @@ def range_editor():
     because Yawe suggested it was the more normal way. It didn't fix his 405
     error though :(
     """
+    # TODO: 1: an embedded version of this for hand history review in an iframe
+    # the iframe can easily be reloaded without reloading the whole page
     # TODO: REVISIT: see if we can go back to decorating each method
     # and not need this one
     if request.method == 'GET':

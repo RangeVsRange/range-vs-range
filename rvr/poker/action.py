@@ -301,7 +301,7 @@ def finish_game(game):
     # range-based showdown.
     return game
 
-# Additional TODOs around this stuff, not specifically to do with refactoring:
+# Additional to-dos around this stuff, not specifically to do with refactoring:
 # TODO: HAND HISTORY: record (subjective) sizes of range_action
 # TODO: EQUITY PAYMENT: fold equity
 # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
