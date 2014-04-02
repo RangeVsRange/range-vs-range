@@ -681,9 +681,11 @@ class API(object):
         what_could_be.consider_all()
         action_result = what_could_be.calculate_what_will_be()
         if action_result.is_terminate:
+            logging.debug("game %r is determined to terminate", game.gameid)
             game.is_finished = True
             rgp.left_to_act = False
         else:
+            logging.debug("game %r is determined to continue", game.gameid)
             self._record_action_result(rgp, action_result)
             self._record_rgp_range(rgp, rgp.range_raw)
             self.apply_action_result(game, rgp, action_result)
@@ -718,6 +720,9 @@ class API(object):
         is_valid, _err = range_action_fits(range_action, current_options,
                                            rgp.range)
         if not is_valid:
+            logging.debug("perform_action failing for reason %r in gameid %r, " +
+                          "userid %r, range_action %r",
+                          _err, gameid, userid, range_action)
             return API.ERR_INVALID_RANGES
         result = self._perform_action(game, rgp, range_action, current_options)
         notify_current_player(game)  # Notify them *after* action obviously.

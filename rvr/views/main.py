@@ -263,6 +263,7 @@ def _handle_action(gameid, userid, api, form):
     Handle response from an action form
     """
     # TODO: 0: a shitload of logging in all the code under _handle_action
+    # TODO: 0: then release.
     # pylint:disable=R0912
     fold = form.fold.data
     passive = form.passive.data
@@ -271,6 +272,8 @@ def _handle_action(gameid, userid, api, form):
     range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
                                       aggressive_raw=aggressive,
                                       raise_total=total)
+    logging.debug("performing action, gameid %r, userid %r, range_action %r",
+                  gameid, userid, range_action)
     result = api.perform_action(gameid, userid, range_action)
     # why do validation twice...
     if isinstance(result, APIError):

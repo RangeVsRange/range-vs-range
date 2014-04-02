@@ -7,8 +7,12 @@ from flask import copy_current_request_context
 from rvr.app import MAIL, make_unsubscribe_url
 from threading import Thread
 from functools import wraps
+import logging
 
 class NotificationSettings(object):
+    """
+    A simple holder for a setting to suppress email. Provides for a singleton.
+    """
     def __init__(self):
         self.suppress_email = False
         
@@ -40,7 +44,7 @@ def web_only(fun):
         """
         Do it only if emails are not suppressed.
         """
-        if not NOTIFICATION_SETTINGS.suppress_email:
+        if NOTIFICATION_SETTINGS.suppress_email:
             # Short-circuit. Don't try to send email when not run in a Flask app
             # context.
             return

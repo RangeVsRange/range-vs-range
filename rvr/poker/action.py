@@ -9,6 +9,7 @@ from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import random
 from collections import namedtuple
+import logging
 
 NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
 TOTAL_COMMUNITY_CARDS = {PREFLOP: 0, FLOP: 3, TURN: 4, RIVER: 5}
@@ -445,6 +446,9 @@ class WhatCouldBe(object):
         self.rgp.range_raw = weighted_options_to_description(branch.options)
         rgp_range = HandRange(self.rgp.range_raw)
         self.rgp.cards_dealt = rgp_range.generate_hand(self.game.board)
+        logging.debug("new range for userid %d, gameid %d, new range %r, " +
+                      "new cards_dealt %r", self.rgp.userid, self.rgp.gameid,
+                      self.rgp.range_raw, self.rgp.cards_dealt)
 
     def calculate_what_will_be(self):
         """
@@ -455,9 +459,15 @@ class WhatCouldBe(object):
         non_terminal = []
         terminal = []
         for branch in self.bough:
+            if not branch.options:
+                continue
             if branch.is_continue:
+                logging.debug("gameid %d, potential action %r would continue",
+                              self.game.gameid, branch.action)
                 non_terminal.extend(branch.options)
             else:
+                logging.debug("gameid %d, potential action %r would terminate",
+                              self.game.gameid, branch.action)
                 terminal.extend(branch.options)
         total = len(non_terminal) + len(terminal)
         # the more non-terminal, the less effect on current factor
@@ -467,9 +477,13 @@ class WhatCouldBe(object):
             # but which action was chosen?
             for branch in self.bough:
                 if chosen_option in branch.options:
+                    logging.debug("gameid %d, chosen %r for action %r",
+                        self.game.gameid, chosen_option, branch.action)
                     self.action_result = branch.action
                     self.re_range(branch)
         else:
+            logging.debug("gameid %d, what will be is to terminate",
+                          self.game.gameid)
             self.action_result = ActionResult.terminate()
         return self.action_result    
 
