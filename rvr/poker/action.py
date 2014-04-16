@@ -324,7 +324,8 @@ def finish_game(game):
 Branch = namedtuple("Branch",  # pylint:disable=C0103
                     ["is_continue",  # For this option, does play continue?
                      "options",  # Combos that lead to this option
-                     "action"])  # Action that results from this option
+                     "action",  # Action that results from this option
+                     "range"])  # Range for player making the action
 
 class WhatCouldBe(object):
     """
@@ -424,26 +425,29 @@ class WhatCouldBe(object):
         if len(fold_options) > 0:
             self.bough.append(Branch(self.fold_continue(),
                                      fold_options,
-                                     fold_action))
+                                     fold_action,
+                                     self.range_action.fold_range))
         # Consider call
         passive_action = ActionResult.call(self.current_options.call_cost)
         if len(passive_options) > 0:
             self.bough.append(Branch(self.passive_continue(),
                                      passive_options,
-                                     passive_action))
+                                     passive_action,
+                                     self.range_action.passive_range))
         # Consider raise
         aggressive_action = ActionResult.raise_to(
             self.range_action.raise_total, self.current_options.is_raise)
         if len(aggressive_options) > 0:
             self.bough.append(Branch(self.aggressive_continue(),
                                      aggressive_options,
-                                     aggressive_action))
+                                     aggressive_action,
+                                     self.range_action.aggressive_range))
 
     def re_range(self, branch):
         """
         Assign new range to rgp, and redeal their hand
         """
-        self.rgp.range_raw = weighted_options_to_description(branch.options)
+        self.rgp.range_raw = branch.range.description
         rgp_range = HandRange(self.rgp.range_raw)
         self.rgp.cards_dealt = rgp_range.generate_hand(self.game.board)
         logging.debug("new range for userid %d, gameid %d, new range %r, " +
