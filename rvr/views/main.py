@@ -272,7 +272,7 @@ def _handle_action(gameid, userid, api, form):
     range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
                                       aggressive_raw=aggressive,
                                       raise_total=total)
-    logging.debug("performing action, gameid %r, userid %r, range_action %r",
+    logging.debug("gameid %r, performing action, userid %r, range_action %r",
                   gameid, userid, range_action)
     result = api.perform_action(gameid, userid, range_action)
     # why do validation twice...

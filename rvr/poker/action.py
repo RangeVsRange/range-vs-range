@@ -450,8 +450,8 @@ class WhatCouldBe(object):
         self.rgp.range_raw = branch.range.description
         rgp_range = HandRange(self.rgp.range_raw)
         self.rgp.cards_dealt = rgp_range.generate_hand(self.game.board)
-        logging.debug("new range for userid %d, gameid %d, new range %r, " +
-                      "new cards_dealt %r", self.rgp.userid, self.rgp.gameid,
+        logging.debug("gameid %d, new range for userid %d, new range %r, " +
+                      "new cards_dealt %r", self.rgp.gameid, self.rgp.userid,
                       self.rgp.range_raw, self.rgp.cards_dealt)
 
     def calculate_what_will_be(self):
@@ -474,8 +474,14 @@ class WhatCouldBe(object):
                               self.game.gameid, branch.action)
                 terminal.extend(branch.options)
         total = len(non_terminal) + len(terminal)
+        reduction = float(len(non_terminal)) / total
+        logging.debug("gameid %d, with %d non-terminal and %d terminal, " +
+                      "multiplying current factor by %0.2f from %0.2f to %0.2f",
+                      self.game.gameid, len(non_terminal), len(terminal),
+                      reduction, self.game.current_factor,
+                      self.game.current_factor * reduction)
         # the more non-terminal, the less effect on current factor
-        self.game.current_factor *= float(len(non_terminal)) / total
+        self.game.current_factor *= reduction
         if non_terminal:
             chosen_option = random.choice(non_terminal)
             # but which action was chosen?

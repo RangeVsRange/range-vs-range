@@ -644,6 +644,7 @@ class ActionResult(object):
         return ActionResult(is_terminate=True)
     
     def __str__(self):
+        # pylint:disable=R0911
         if self.is_fold:
             return "fold"
         if self.is_passive:
