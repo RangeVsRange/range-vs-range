@@ -120,7 +120,7 @@ def unsubscribe():
         if response is api.ERR_NO_SUCH_USER:
             msg = "No record of you on Range vs. Range, sorry."
         elif isinstance(response, APIError):
-            msg = "An unknown error occurred."
+            msg = "An unknown error occurred unsubscribing you, sorry."
         else:
             msg = "You have been unsubscribed. If you log in again, you will start receiving emails again."  # pylint:disable=C0301
     flash(msg)
@@ -212,11 +212,18 @@ def join_game():
     if response is api.ERR_JOIN_GAME_ALREADY_IN:
         msg = "You are already registered in game %s." % (gameid,)
     elif response is api.ERR_JOIN_GAME_GAME_FULL:
-        msg = "Game %s is full." % (gameid,)
+        msg = "Game %d is full." % (gameid,)
     elif response is api.ERR_NO_SUCH_OPEN_GAME:
         msg = "Invalid game ID."
+    elif response is api.ERR_NO_SUCH_USER:
+        msg = "Oddly, your account does not seem to exist. " +  \
+            "Try logging out and logging back in."
+        logging.debug("userid %d can't register for game %d, " +
+                      "because user doesn't exist.",
+                      userid, gameid)
     elif isinstance(response, APIError):
-        msg = "An unknown error occurred."
+        msg = "An unknown error occurred joining game %d, sorry." % (gameid,)
+        logging.debug("unrecognised error from api.join_game: %s", response)
     else:
         msg = "You have joined game %s." % (gameid,)
         flash(msg)
@@ -250,7 +257,7 @@ def leave_game():
     elif response is api.ERR_NO_SUCH_OPEN_GAME:
         msg = "Invalid game ID."
     elif isinstance(response, APIError):
-        msg = "An unknown error occurred."
+        msg = "An unknown error occurred leaving game %d, sorry." % (gameid,)
     else:
         msg = "You have left game %s." % (gameid,)
         flash(msg)
@@ -280,7 +287,7 @@ def _handle_action(gameid, userid, api, form):
         elif result is api.ERR_INVALID_RANGES:
             msg = "Invalid ranges for that action."
         else:
-            msg = "An unknown error occurred."
+            msg = "An unknown error occurred performing action, sorry."
             logging.info('Unknown error from api.perform_action: %s', result)
         flash(msg)
         return redirect(url_for('game_page', gameid=gameid))
@@ -366,7 +373,8 @@ def game_page():
         if response is api.ERR_NO_SUCH_RUNNING_GAME:
             msg = "Invalid game ID."
         else:
-            msg = "An unknown error occurred."
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
         flash(msg)
         return redirect(url_for('error_page'))
     

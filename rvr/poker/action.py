@@ -4,7 +4,7 @@ action functionality, imported from the previous versions
 from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN
 import unittest
 from rvr.poker.handrange import HandRange,  \
-    _cmp_weighted_options, _cmp_options, weighted_options_to_description
+    _cmp_weighted_options, _cmp_options
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import random
@@ -124,8 +124,8 @@ def range_contains_hand(range_, hand):
     """
     Is hand in range?
     """
-    options = range_.generate_options()  # of the form [(hand, weight)]
-    unweighted = [weighted[0] for weighted in options]
+    options = range_.generate_options()
+    unweighted = [option[0] for option in options]
     return set(hand) in unweighted
 
 def calculate_current_options(game, rgp):
@@ -153,107 +153,6 @@ def calculate_current_options(game, rgp):
                              max_raise=bet_higher)
     else:
         return ActionOptions(call_amount)
-
-def range_action_to_action(range_action, hand, current_options):
-    """
-    range_action is a ActionDetails, ranges have text descriptions
-    hand is a list of two Card
-    returns a new range, and an action
-    """
-    # Note that this gives incorrect results if an option is in two ranges
-    if range_contains_hand(range_action.fold_range, hand):
-        return range_action.fold_range, ActionResult.fold()
-    elif range_contains_hand(range_action.passive_range, hand):
-        return range_action.passive_range, \
-            ActionResult.call(current_options.call_cost)
-    elif range_contains_hand(range_action.aggressive_range, hand):
-        return range_action.aggressive_range, \
-            ActionResult.raise_to(range_action.raise_total,
-                                  current_options.is_raise)
-    else:
-        raise ValueError("hand is %s, range_action is invalid: %r" %
-                         (hand, range_action))
-
-def re_deal(range_action, cards_dealt, dealt_key, board, can_fold, can_call):
-    """
-    This function is for when we're not letting them fold (sometimes not even
-    call).
-    
-    We reassign their hand so that it's not a fold (or call). If possible.
-    Changes cards_dealt[dealt_key] to a new hand from one of the other ranges
-    (unless they're folding 100%, of course).
-    
-    Returns fold ratio, passive ratio, aggressive ratio.
-    
-    In the case of can_fold and can_call, we calculate these ratios but don't
-    re_deal.
-    """
-    # pylint:disable=R0913,R0914
-    # Choose between passive and aggressive probabilistically
-    # But do this by re-dealing, to account for card removal effects (other
-    # hands, and the board)
-    # Note that in a range vs. range situation, it's VERY HARD to determine the
-    # probability that a player will raise cf. calling. But very luckily, we
-    # can work around that, by using the fact that all other players are
-    # currently dealt cards with a probability appropriate to their ranges, so
-    # when we use their current cards as dead cards, we achieve the
-    # probabilities we need here, without knowing exactly what those
-    # probabilities are. (But no, I haven't proven this mathematically.)
-    dead_cards = [card for card in board if card is not None]
-    dead_cards.extend(concatenate([v for k, v in cards_dealt.iteritems()
-                                   if k is not dealt_key]))
-    fold_options = range_action.fold_range.generate_options(dead_cards)
-    passive_options = range_action.passive_range.generate_options(dead_cards)
-    aggressive_options =  \
-        range_action.aggressive_range.generate_options(dead_cards)
-    terminate = False
-    if not can_fold:
-        if can_call:
-            allowed_options = passive_options + aggressive_options
-        else:
-            # On the river, heads-up, if we called it would end the hand
-            # (like a fold elsewhere)
-            allowed_options = aggressive_options
-            if not allowed_options:
-                # The hand must end. Now.
-                # They have no bet/raise range, so they cannot raise.
-                # They cannot call, because the cost and benefit of calling is
-                # already handled as a partial showdown payment
-                # They cannot necessarily fold, because they might not have a
-                # fold range.
-                # Example: on the river, heads-up, they call their whole range.
-                # In fact, that's more than an example, it happens all the time.
-                # In this case, we don't have a showdown, or even complete an
-                # action for this range_action. In fact, whether we record a
-                # call action or not is perhaps irrelevant.
-                terminate = True
-        # Edge case: It's just possible that there will be no options here. This
-        # can happen when the player's current hand is in their fold range, and
-        # due to cards dealt to the board and to other players, they can't have
-        # any of the hands in their call or raise ranges.
-        # Example: The board has AhAd, and an opponent has AsAc, and all hand in
-        # the player's passive and aggressive ranges contain an Ace, and the
-        # only options that don't contain an Ace are in the fold range.
-        # Resolution: In this case, we let them fold. They will find this
-        # astonishing, but... I think we have to.
-        if allowed_options:
-            description = weighted_options_to_description(allowed_options)
-            allowed_range = HandRange(description)
-            cards_dealt[dealt_key] = allowed_range.generate_hand()
-    # Note that we can't use RelativeSizes for this. Because that doesn't
-    # account for card removal effects. I.e. for the opponent's range. But this
-    # way indirectly does. Yes, sometimes this strangely means that Hero
-    # surprisingly folds 100%. Yes, sometimes this strangely means that Hero
-    # folds 0%. And that's okay, because those things really do happen some
-    # times. (Although neither might player might know Hero is doing it!)
-    fol = len(fold_options)
-    pas = len(passive_options)
-    agg = len(aggressive_options)
-    total = fol + pas + agg
-    return (terminate,
-        float(fol) / total,
-        float(pas) / total,
-        float(agg) / total)
 
 def act_fold(rgp):
     """
@@ -414,12 +313,12 @@ class WhatCouldBe(object):
         dead_cards = [card for card in self.game.board if card is not None]
         dead_cards.extend(concatenate([v for k, v in cards_dealt.iteritems()
                                        if k is not self.rgp]))
-        fold_options =  \
-            self.range_action.fold_range.generate_options(dead_cards)
-        passive_options =  \
-            self.range_action.passive_range.generate_options(dead_cards)
-        aggressive_options =  \
-            self.range_action.aggressive_range.generate_options(dead_cards)
+        fold_options = self.range_action.fold_range  \
+            .generate_options_unweighted(dead_cards)
+        passive_options = self.range_action.passive_range  \
+            .generate_options_unweighted(dead_cards)
+        aggressive_options = self.range_action.aggressive_range  \
+            .generate_options_unweighted(dead_cards)
         # Consider fold
         fold_action = ActionResult.fold()
         if len(fold_options) > 0:
@@ -501,77 +400,7 @@ class Test(unittest.TestCase):
     """
     Unit tests for action functionality
     """
-    # pylint:disable=R0904
-    def do_test_re_deal(self, action, dealt, key, board, result, re_dealt,
-                        iterations=1, delta=0.0):
-        """
-        Worker function for testing re_deal
-        """
-        # pylint:disable=R0913,R0914
-        action2 = ActionDetails(HandRange(action[0]),
-                                HandRange(action[1]),
-                                HandRange(action[2]), 2)
-        board2 = Card.many_from_text(board)
-        re_dealt2 = [(HandRange(text).generate_options(board2), ratio)
-                     for text, ratio in re_dealt]
-        counts = [0 for _ in re_dealt2]
-        for _ndx in xrange(iterations):
-            dealt2 = {k: Card.many_from_text(val) for k, val in dealt.items()}
-            _te, fpct, _pp, _ap = re_deal(action2, dealt2, key, board2, False,
-                                        True)
-            continue_ratio = 1.0 - fpct
-            self.assertEqual(continue_ratio, result,
-                msg="Expected continue ratio %0.3f but got %0.3f" %
-                    (result, continue_ratio))
-            for ndx, (options, ratio) in enumerate(re_dealt2):
-                if (frozenset(dealt2[key]), 1) in options:
-                    counts[ndx] += 1
-                    break
-            else:
-                self.fail("dealt[key]=%r not in expected re_dealt2 ranges: %r" %
-                          (dealt2[key], re_dealt2))
-        for ndx, val in enumerate(counts):
-            expected = re_dealt[ndx][1] * iterations
-            self.assertAlmostEqual(val, expected, delta=delta,
-                msg=("Expected count %0.0f but got count %0.0f" +  \
-                " for re_dealt item %s") % (expected, val, re_dealt[ndx][0]))
-    
-    def test_re_deal(self):
-        """
-        Test re_deal
-        """
-        # Returns 0.0 when they choose to fold 100%, and doesn't re-deal
-        # "QQ,KK,AA"/""/"", {0:JJ,1:KK}, 1, "2h3c4d" => 0.0, no re-deal
-        self.do_test_re_deal(action=["QQ,KK,AA", "nothing", "nothing"],
-                             dealt={0:"JsJh", 1:"KsKh"},
-                             key=1,
-                             board="2h3c4d",
-                             result=0.0,
-                             re_dealt=[("KsKh", 1.0)])
-        
-        # Returns 0.0 when they choose not to fold 100% but end up doing it
-        # anyway, and doesn't re-deal
-        # "KK"/"AA"/"", {0:AA,1:KK}, 1, "As2h3c" => 0.0; no re-deal
-        self.do_test_re_deal(action=["KK", "AA", "nothing"],
-                             dealt={0:"AdAh", 1:"KdKh"},
-                             key=1,
-                             board="As2h3c",
-                             result=0.0,
-                             re_dealt=[("KdKh", 1.0)])
-        
-        # Generates a new hand with the appropriate ratio/probability,
-        # accounting for card removal effects
-        # "QQ"/"KK"/"AA", {0:QQ,1:KK}, 1, "As2h3c" => 9.0 / 12.0;
-        # re-dealing AA 33.3%, KK 66.7%
-        self.do_test_re_deal(action=["QQ", "KK", "AA"],
-                             dealt={0:"QsQh", 1:"KsKh"},
-                             key=1,
-                             board="As2h3c",
-                             result=9.0/10.0,
-                             re_dealt=[("AA", 1.0/3), ("KK", 2.0/3)],
-                             iterations=10000,
-                             delta=333)
-    
+    # pylint:disable=R0904    
     def test_cmp_options(self):
         """
         Test _cmp_options
@@ -748,130 +577,6 @@ class Test(unittest.TestCase):
             self.assertTrue(range_contains_hand(range_, hand_in))
         for hand_out in hands_out:
             self.assertFalse(range_contains_hand(range_, hand_out))
-    
-    def test_range_action_to_action(self):
-        """
-        Test range_action_to_action
-        """
-        # pylint:disable=R0914,R0915
-
-        # will test:
-        # - act fold,
-        # - act check,
-        # - act call,
-        # - act raise,
-        # - act case where hand is in no range (although invalid)
-        # won't test:
-        # - act case where hand is in all ranges (because the result is
-        #   undefined)
-        
-        options_with_check = ActionOptions(0, False, 2, 196) 
-        options_with_call = ActionOptions(10, True, 20, 196)
-        options_without_raise = ActionOptions(196)
-
-        range_aa = HandRange("AA")
-        range_72o = HandRange("72o")
-        range_22_72o = HandRange("22,72o")
-        range_empty = HandRange("nothing")
-        range_22_weighted = HandRange("22(3)")
-
-        hand_72o = Card.many_from_text("7h2c")
-        hand_22 = Card.many_from_text("2h2c")
-        hand_aa = Card.many_from_text("AhAc")
-        hand_72s = Card.many_from_text("7h2h")
-
-        action_with_raise = ActionDetails(range_72o, range_22_weighted,
-                                          range_aa, 40)
-
-        rng, act = range_action_to_action(action_with_raise,
-                                          hand_72o, options_with_check)
-        self.assert_(act.is_fold)
-        self.assertEqual("72o", rng.description)
-        rng, act = range_action_to_action(action_with_raise,
-                                          hand_22, options_with_check)
-        self.assert_(act.is_passive)
-        self.assertEqual(act.call_cost, 0)
-        rng, act = range_action_to_action(action_with_raise,
-                                          hand_aa, options_with_check)
-        self.assert_(act.is_aggressive)
-        self.assertEqual(act.raise_total, 40)
-        try:
-            act = range_action_to_action(action_with_raise,
-                                         hand_72s, options_with_check)
-            self.assertTrue(False)
-        except ValueError:
-            pass
-
-        rng, act = range_action_to_action(action_with_raise,
-                                          hand_72o, options_with_call)
-        self.assert_(act.is_fold)
-        rng, act = range_action_to_action(action_with_raise,
-                                          hand_22, options_with_call)
-        self.assert_(act.is_passive)
-        self.assertEqual(act.call_cost, 10)
-        rng, act = range_action_to_action(action_with_raise,
-                                          hand_aa, options_with_call)
-        self.assert_(act.is_aggressive)
-        self.assertEqual(act.raise_total, 40)
-        try:
-            act = range_action_to_action(action_with_raise,
-                                         hand_72s, options_with_call)
-            self.assertTrue(False)
-        except ValueError:
-            pass
-
-        action_without_raise = ActionDetails(range_22_72o, range_aa,
-                                             range_empty, 0)
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_72o, options_with_check)
-        self.assert_(act.is_fold)
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_22, options_with_check)
-        self.assert_(act.is_fold)
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_aa, options_with_check)
-        self.assert_(act.is_passive)
-        self.assertEqual(act.call_cost, 0)
-        try:
-            act = range_action_to_action(action_without_raise,
-                                         hand_72s, options_with_check)
-            self.assertTrue(False)
-        except ValueError:
-            pass
-
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_72o, options_with_call)
-        self.assert_(act.is_fold)
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_22, options_with_call)
-        self.assert_(act.is_fold)
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_aa, options_with_call)
-        self.assert_(act.is_passive)
-        self.assertEqual(act.call_cost, 10)
-        try:
-            act = range_action_to_action(action_without_raise,
-                                         hand_72s, options_with_call)
-            self.assertTrue(False)
-        except ValueError:
-            pass
-
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_72o, options_without_raise)
-        self.assert_(act.is_fold)
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_22, options_without_raise)
-        self.assert_(act.is_fold)
-        rng, act = range_action_to_action(action_without_raise,
-                                          hand_aa, options_without_raise)
-        self.assert_(act.is_passive)
-        self.assertEqual(act.call_cost, 196)
-        try:
-            rng, act = range_action_to_action(action_without_raise,
-                hand_72s, options_without_raise)
-            self.assertTrue(False)
-        except ValueError:
-            pass
 
 if __name__ == '__main__':
     # 9.7s 20130205 (client-server)

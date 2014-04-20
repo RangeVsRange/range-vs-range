@@ -47,8 +47,8 @@ def range_subtract():
     result = original.subtract(subtract_1)
     result = result.subtract(subtract_2)
     result = result.subtract(subtract_3)
-    original_size = len(original.generate_options(board))
-    result_size = len(result.generate_options(board))
+    original_size = len(original.generate_options_unweighted(board))
+    result_size = len(result.generate_options_unweighted(board))
     return jsonify(difference=result.description,
                    size=1.0 * result_size / original_size)
 
