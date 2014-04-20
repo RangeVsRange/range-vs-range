@@ -6,14 +6,17 @@ from rvr.app import APP
 from rvr.forms.change import ChangeForm
 from rvr.core.api import API, APIError
 from rvr.app import AUTH
-from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
+from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,\
+    GameItemUserRange, GameItemBoard, GameItemActionResult, GameItemRangeAction
 import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
 from rvr.forms.action import action_form
 from rvr.core import dtos
-from rvr.poker.handrange import NOTHING
+from rvr.poker.handrange import NOTHING, ANYTHING, SET_ANYTHING_OPTIONS,\
+    HandRange
 from flask_googleauth import logout
+from rvr.poker.cards import RIVER, TURN, FLOP
 
 # TODO: 1: make raise total not mandatory at client side, and only mandatory at
 # server side if necessary
@@ -318,6 +321,67 @@ def _handle_action(gameid, userid, api, form):
         flash(msg)
         return redirect(url_for('game_page', gameid=gameid))
 
+def _board_to_html(item):
+    """
+    Replace little images into it
+    """
+    cards = ['<img alt="" src="/static/smallcards/%s.png">' %
+             item.cards[i:i+2] for i in range(0, len(item.cards), 2)]
+    if item.street == FLOP:
+        return "%s: %s%s%s" % (item.street, cards[0], cards[1], cards[2])
+    elif item.street == TURN:
+        return "%s: %s%s%s %s" % (item.street, cards[0], cards[1], cards[2],
+                                  cards[3])
+    elif item.street == RIVER:
+        return "%s: %s%s%s %s %s" % (item.street, cards[0], cards[1],
+                                     cards[2], cards[3], cards[4])
+    else:
+        # Unknown, but probably PREFLOP, but shouldn't happen.
+        return "(unknown street) %s: %s" % (item.street, item.cards)        
+    return str(item)
+
+def _range_action_to_html(item):
+    """
+    Convert to percentages (relative)
+    """
+    fold_total = len(item.range_action.fold_range
+        .generate_options_unweighted())
+    passive_total = len(item.range_action.passive_range
+        .generate_options_unweighted())
+    aggressive_total = len(item.range_action.aggressive_range
+        .generate_options_unweighted())
+    total = fold_total + passive_total + aggressive_total
+    return "%s folds %0.2f%%, passive %0.2f%%, aggressive %0.2f%%"  \
+        " (to total %d chips)" % (item.user, 100.0 * fold_total / total,
+                                  100.0 * passive_total / total,
+                                  100.0 * aggressive_total / total,
+                                  item.range_action.raise_total)
+
+def _user_range_to_html(item):
+    """
+    Convert to a percentage (absolute)
+    """
+    total = len(HandRange(item.range_raw).generate_options_unweighted())
+    return "%s's range now includes %0.2f%% of hands." %  \
+        (item.user, 100.0 * total / len(SET_ANYTHING_OPTIONS))
+
+def _hand_history_to_html(item):
+    """
+    Hand history items provide a basic to-text function. This function adds a little
+    extra HTML where necessary, to make them prettier.
+    """
+    if isinstance(item, GameItemUserRange):
+        return _user_range_to_html(item)
+    elif isinstance(item, GameItemRangeAction):
+        return _range_action_to_html(item)
+    elif isinstance(item, GameItemActionResult):
+        return str(item)
+    elif isinstance(item, GameItemBoard):
+        return _board_to_html(item)
+    else:
+        logging.debug("unrecognised type of hand history item: %s", item)
+        return str(item)
+
 def _running_game(game, gameid, userid, api):
     """
     Response from game page when the requested game is still running.
@@ -336,8 +400,9 @@ def _running_game(game, gameid, userid, api):
         raised="true" if game.current_options.is_raise else "false",
         can_check="true" if game.current_options.can_check() else "false")
     title = 'Game %d (running)' % (gameid,)
+    history = [_hand_history_to_html(item) for item in game.history]
     return render_template('running_game.html', title=title, form=form,
-        game_details=game.game_details, history=game.history,
+        game_details=game.game_details, history=history,
         current_options=game.current_options,
         is_me=(userid == game.game_details.current_player.user.userid),
         range_editor_url=range_editor_url)
@@ -348,9 +413,13 @@ def _finished_game(game, gameid):
     """
     # TODO: 1: display only %ages, not full ranges, link to range viewer
     # also for running_game.
+    # - cards become images
+    # - range actions become three numbers (with link to range editor)
+    # - players' ranges become singular numbers (with link to range editor)
     title = 'Game %d (finished)' % (gameid,)
+    history = [_hand_history_to_html(item) for item in game.history]
     return render_template('finished_game.html', title=title,
-        game_details=game.game_details, history=game.history)
+        game_details=game.game_details, history=history)
 
 @APP.route('/game', methods=['GET', 'POST'])
 @AUTH.required

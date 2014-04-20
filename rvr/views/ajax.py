@@ -62,6 +62,6 @@ def total_donated():
     url = "http://blockchain.info/rawaddr/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf?limit=0"  # pylint:disable=C0301
     try:
         response = json.load(urllib2.urlopen(url))
-    except urllib2.HTTPError:
+    except urllib2.HTTPError as _err:
         return abort(500)
     return jsonify(total_received=response['total_received'])

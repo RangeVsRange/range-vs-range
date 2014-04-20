@@ -10,7 +10,7 @@
 </p>
 
 Hand history:<ul>{% for item in history %}
-  <li>{{item}}</li>
+  <li>{{item|safe}}</li>
 {% endfor %}
 {% if not history %}
   <li>Nothing, yet.</li>
