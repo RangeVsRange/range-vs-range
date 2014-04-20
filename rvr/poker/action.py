@@ -447,6 +447,7 @@ class WhatCouldBe(object):
         """
         Assign new range to rgp, and redeal their hand
         """
+        # branch.options excludes cards dealt, branch.range does not
         self.rgp.range_raw = branch.range.description
         self.rgp.cards_dealt = random.choice(branch.options)
         logging.debug("gameid %d, new range for userid %d, new range %r, " +
