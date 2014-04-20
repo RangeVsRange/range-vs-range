@@ -447,6 +447,7 @@ class API(object):
         element.is_aggressive = action_result.is_aggressive
         element.call_cost = action_result.call_cost
         element.raise_total = action_result.raise_total
+        element.is_raise = action_result.is_raise
         self._record_hand_history_item(rgp.game, element)
     
     def _record_rgp_range(self, rgp, range_raw):

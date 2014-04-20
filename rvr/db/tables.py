@@ -283,6 +283,7 @@ class GameHistoryActionResult(BASE):
     is_aggressive = Column(Boolean, nullable=False)
     call_cost = Column(Integer, nullable=True)
     raise_total = Column(Integer, nullable=True)
+    is_raise = Column(Boolean, nullable=True)
 
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryActionResult.gameid," +  \

@@ -431,7 +431,8 @@ class GameItemActionResult(GameItem):
                                      is_passive=item.is_passive,
                                      is_aggressive=item.is_aggressive,
                                      call_cost=item.call_cost,
-                                     raise_total=item.raise_total)
+                                     raise_total=item.raise_total,
+                                     is_raise=item.is_raise)
         return cls(user_details, action_result)
 
 class GameItemBoard(GameItem):
@@ -582,10 +583,10 @@ class ActionDetails(object):
              self.raise_total)
             
     def __str__(self):
-        return ("folding %s, checking or calling %s, " +
-                "betting or raising (to %d) %s") %  \
+        return ("folding %s, passive %s, " +
+                "aggressive %s (to total %d chips)") %  \
             (self.fold_range.description, self.passive_range.description,
-             self.raise_total, self.aggressive_range.description)
+             self.aggressive_range.description, self.raise_total)
 
 class ActionResult(object):
     """
