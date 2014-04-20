@@ -6,14 +6,14 @@ from rvr.app import APP
 from rvr.forms.change import ChangeForm
 from rvr.core.api import API, APIError
 from rvr.app import AUTH
-from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,\
+from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,  \
     GameItemUserRange, GameItemBoard, GameItemActionResult, GameItemRangeAction
 import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
 from rvr.forms.action import action_form
 from rvr.core import dtos
-from rvr.poker.handrange import NOTHING, ANYTHING, SET_ANYTHING_OPTIONS,\
+from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange
 from flask_googleauth import logout
 from rvr.poker.cards import RIVER, TURN, FLOP

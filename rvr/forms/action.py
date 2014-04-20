@@ -3,8 +3,7 @@ User submits a range-based action
 """
 from flask_wtf.form import Form
 from wtforms.fields.simple import TextField, HiddenField
-from wtforms.fields.html5 import IntegerField
-from wtforms.validators import NumberRange, Length, Regexp
+from wtforms.validators import Length, Regexp
 from rvr.poker.handrange import NOTHING
     
 def action_form(is_check, is_raise, can_raise, min_raise, max_raise):
