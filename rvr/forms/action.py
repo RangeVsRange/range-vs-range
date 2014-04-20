@@ -27,8 +27,7 @@ def action_form(is_check, is_raise, can_raise, min_raise, max_raise):
         if can_raise:
             aggressive = TextField(label=aggressive_label,
                 validators=[Length(min=1)])
-            total = IntegerField(label=total_label,
-                validators=[NumberRange(min_raise, max_raise)])
+            total = TextField(label=total_label)
         else:
             aggressive = HiddenField(label=aggressive_label, default=NOTHING,
                 validators=[Regexp(NOTHING)])

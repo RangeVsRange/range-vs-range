@@ -273,7 +273,14 @@ def _handle_action(gameid, userid, api, form):
     fold = form.fold.data
     passive = form.passive.data
     aggressive = form.aggressive.data
-    total = form.total.data if aggressive != NOTHING else 0
+    if aggressive != NOTHING:
+        try:
+            total = int(form.total.data)
+        except ValueError:
+            flash("Incomprehensible raise total.")
+            return redirect(url_for('game_page', gameid=gameid))
+    else:
+        total = 0
     range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
                                       aggressive_raw=aggressive,
                                       raise_total=total)
@@ -305,12 +312,10 @@ def _handle_action(gameid, userid, api, form):
             else:
                 msg = "You bet %d." % (result.raise_total,)
         elif result.is_terminate:
-            msg = "The hand is over."
+            msg = "The game is finished."
         else:
             msg = "I can't figure out what happened, eh."
         flash(msg)
-        if result.game_over:
-            flash("The game is finished.")
         return redirect(url_for('game_page', gameid=gameid))
 
 def _running_game(game, gameid, userid, api):

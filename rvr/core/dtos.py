@@ -612,7 +612,6 @@ class ActionResult(object):
         self.raise_total = raise_total
         self.is_terminate = is_terminate
         self.is_raise = is_raise
-        self.game_over = False
         
     @classmethod
     def fold(cls):

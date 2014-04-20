@@ -692,7 +692,6 @@ class API(object):
             self.apply_action_result(game, rgp, action_result)
         if game.is_finished:
             finish_game(game)
-        action_result.game_over = game.is_finished  # let the user know
         return action_result
     
     @api

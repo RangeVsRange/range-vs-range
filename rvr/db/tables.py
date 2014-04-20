@@ -219,8 +219,8 @@ class RunningGameParticipant(BASE, object):
         """
         Set range, from HandRange instance
         """
-        self.range_raw =  \
-            weighted_options_to_description(range_.generate_options())
+        self.range_raw = weighted_options_to_description(
+            range_.generate_options())
     range = property(get_range, set_range)
     def get_cards_dealt(self):
         """
