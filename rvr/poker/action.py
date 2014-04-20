@@ -413,7 +413,7 @@ class WhatCouldBe(object):
         cards_dealt = {rgp: rgp.cards_dealt for rgp in self.game.rgps}
         dead_cards = [card for card in self.game.board if card is not None]
         dead_cards.extend(concatenate([v for k, v in cards_dealt.iteritems()
-                                   if k is not self.rgp]))
+                                       if k is not self.rgp]))
         fold_options =  \
             self.range_action.fold_range.generate_options(dead_cards)
         passive_options =  \
@@ -448,8 +448,7 @@ class WhatCouldBe(object):
         Assign new range to rgp, and redeal their hand
         """
         self.rgp.range_raw = branch.range.description
-        rgp_range = HandRange(self.rgp.range_raw)
-        self.rgp.cards_dealt = rgp_range.generate_hand(self.game.board)
+        self.rgp.cards_dealt = random.choice(branch.options)
         logging.debug("gameid %d, new range for userid %d, new range %r, " +
                       "new cards_dealt %r", self.rgp.gameid, self.rgp.userid,
                       self.rgp.range_raw, self.rgp.cards_dealt)
