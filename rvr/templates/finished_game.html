@@ -42,23 +42,31 @@ range_view = function(button_id, ori, fol, pas, agg) {
 
 Hand history:
 <div id="history">
-<div id="history-left">
-<ul>{% for item in history %}
-  <li>
+<div id="history-left" style="overflow-y:scroll; height:600px">
+<table style="width:100%">
+{% for item in history %}
+  <tr style="border-style: solid; border-width: 1px">
+    <td>
     {% if item[0] == "GameItemUserRange" %}
     {{ "%s's range now includes %0.2f%% of hands." % item[1] }}
     {% elif item[0] == "GameItemRangeAction" %}
     {{ "%s folds %0.2f%%, passive %0.2f%%, aggressive %0.2f%% (to total %d chips)" % item[1][0:5] }}
-    <button type=button id="view-action-{{item[1][9]}}" class="pure-button" onclick="range_view('view-action-{{item[1][9]}}', '{{item[1][5]}}', '{{item[1][6]}}', '{{item[1][7]}}', '{{item[1][8]}}');">View</button>
     {% elif item[0] == "GameItemBoard" %}
     {{ item[1][0] }}: {% for card in item[1][1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
     {% else %}
     {{item[1][0]}}
     {% endif %}
-  </li>
+    </td>
+    <td>
+    {% if item[0] == "GameItemRangeAction" %}
+    <button type=button id="view-action-{{item[1][9]}}" class="pure-button" onclick="range_view('view-action-{{item[1][9]}}', '{{item[1][5]}}', '{{item[1][6]}}', '{{item[1][7]}}', '{{item[1][8]}}');">View</button>
+    {% endif %}
+    </td>
+  </tr>
 {% endfor %}
+</table>
 {% if not history %}
-  <li>Nothing, yet.</li>
+  <ul><li>Nothing, yet.</li></ul>
 {% endif %}
 </ul>
 </div>
