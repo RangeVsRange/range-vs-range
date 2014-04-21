@@ -63,5 +63,7 @@ def total_donated():
     try:
         response = json.load(urllib2.urlopen(url))
     except urllib2.HTTPError as _err:
-        return abort(500)
+        # Most recent known value
+        # TODO: REVISIT: occasionally update this
+        return jsonify(total_received=250000)
     return jsonify(total_received=response['total_received'])
