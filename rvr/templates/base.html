@@ -16,7 +16,6 @@
     <script type=text/javascript>
   $(function() {
     // Call blockchain.info for total donated.
-    //$.getJSON('http://blockchain.info/rawaddr/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf?limit=0&cors=true'
     $.getJSON($SCRIPT_ROOT + '/ajax/total_donated',
               {},
               function(response) {
@@ -36,7 +35,7 @@
     .r_mix { background-color: #8080FF; }
     .s_hdn { }
     .s_sel { background-color: #C0C0C0 !important; }
-    .wide { padding:15px; }    
+    .wide { padding:15px; }
     </style>
   </head>
   <body>
@@ -52,18 +51,22 @@
     </p>
     {% endif %}
     {% endwith %}
-    {% block content %}{% endblock %}
-    <hr>
-    <table>
-    <tr>
-      <td class=wide><a href="http://validator.w3.org/check?uri=referer">Validate HTML 5</a></td>
-      <td class=wide><a href="https://github.com/RangeVsRange/range-vs-range/">Range vs. Range on GitHub</a></td>
-      <td class=wide><a href="http://rangevsrange.wordpress.com/advanced-training-example/">The website for the existing client/server version</a></td>
-      <td class=wide><a href="/logout">Log out</a></td>
-    </tr>
-    </table>
-    <table>
-    <tr><td>Show your support: <a href="https://blockchain.info/address/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf">1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf</a>&nbsp;&nbsp;|&nbsp;&nbsp;<span id=donated>Updating</span> BTC donated so far&nbsp;&nbsp;|&nbsp;&nbsp;Guy Upstairs started this project on December 5, 2010.</td></tr>
+    <table style="width:100%">
+    <tr><td>{% block content %}{% endblock %}</td></tr>
+    <tr><td>
+     <hr>
+     <table>
+     <tr>
+       <td class=wide><a href="http://validator.w3.org/check?uri=referer">Validate HTML 5</a></td>
+       <td class=wide><a href="https://github.com/RangeVsRange/range-vs-range/">Range vs. Range on GitHub</a></td>
+       <td class=wide><a href="http://rangevsrange.wordpress.com/advanced-training-example/">The website for the existing client/server version</a></td>
+       <td class=wide><a href="/logout">Log out</a></td>
+     </tr>
+     </table>
+     <table>
+     <tr><td>Show your support: <a href="https://blockchain.info/address/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf">1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf</a>&nbsp;&nbsp;|&nbsp;&nbsp;<span id=donated>Updating</span> BTC donated so far&nbsp;&nbsp;|&nbsp;&nbsp;Guy Upstairs started this project on December 5, 2010.</td></tr>
+     </table>
+    </td></tr>
     </table>
   </body>
 </html>

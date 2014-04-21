@@ -345,6 +345,7 @@ def range_editor_get():
     
     (Mostly a playground for experimentation right now.)
     """
+    embedded = request.args.get('embedded', 'false')
     raised = request.args.get('raised', '')
     can_check = request.args.get('can_check', '')
     rng_original = request.args.get('rng_original', ANYTHING)
@@ -371,10 +372,13 @@ def range_editor_get():
         .generate_options_unweighted(board)
     color_maker = ColorMaker(opt_ori=opt_ori, opt_una=opt_una, opt_fol=opt_fol,
                              opt_pas=opt_pas, opt_agg=opt_agg)
-    pct_unassigned = 100.0 * len(opt_una) / len(opt_ori)
-    pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
-    pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
-    pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
+    if len(opt_ori) != 0:
+        pct_unassigned = 100.0 * len(opt_una) / len(opt_ori)
+        pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
+        pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
+        pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
+    else:
+        pct_unassigned = pct_fold = pct_passive = pct_aggressive = 0.0
     rank_table = [[{'text': rank_text(row, col),
                     'id': rank_id(row, col),
                     'class': rank_class(row, col, color_maker, board),
@@ -408,7 +412,11 @@ def range_editor_get():
                      ("rng_fold", rng_fold),
                      ("rng_passive", rng_passive),
                      ("rng_aggressive", rng_aggressive)]
-    return render_template('range_editor.html', title="Range Editor",
+    if embedded == 'true':
+        template = 'range_viewer.html'
+    else:
+        template = 'range_editor.html'
+    return render_template(template, title="Range Editor",
         next_map=NEXT_MAP, hidden_fields=hidden_fields,
         rank_table=rank_table, suited_table=suited_table,
         pair_table=pair_table, offsuit_table=offsuit_table,

@@ -1,4 +1,34 @@
 {% extends "base.html" %}
+{% block scripts %}
+<style>
+#history {
+    width:100%;
+}
+#history-left {
+    width:50%;
+    float:left;
+}
+#history-right {
+    width:50%;
+    float:right;
+}
+</style>
+<script type=text/javascript>
+$(function() {
+    left_height = $('#history-left').height();
+    $('#viewer').height(left_height);
+});
+</script>
+<script type=text/javascript>
+range_view = function(ori, fol, pas, agg) {
+    url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg);
+    $('#viewer').attr('src', url);
+};
+$('#view-action').click(function() {
+    $(this).toggleClass('r_sel', true);
+});
+</script>
+{% endblock %}
 {% block content %}
 <h2>{{title}}</h2>
 
@@ -9,12 +39,20 @@
 {% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %} (BTN)
 </p>
 
-Hand history:<ul>{% for item in history %}
+Hand history:
+<div id="history">
+<div id="history-left">
+<ul>{% for item in history %}
   <li>{{item|safe}}</li>
 {% endfor %}
 {% if not history %}
   <li>Nothing, yet.</li>
 {% endif %}
 </ul>
+</div>
+<div id="history-right">
+<iframe id="viewer" src="/range-editor?embedded=true&rng_unassigned=nothing&rng_original=nothing" width="100%" seamless style="border: 0px none transparent;">Your browser does not support iframes, sorry.</iframe>
+</div>
+</div>
 
 {% endblock %}

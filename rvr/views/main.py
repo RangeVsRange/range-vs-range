@@ -14,7 +14,7 @@ from flask.globals import request, session, g
 from rvr.forms.action import action_form
 from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
-    HandRange
+    HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 from rvr.poker.cards import RIVER, TURN, FLOP
 
@@ -342,20 +342,31 @@ def _board_to_html(item):
 
 def _range_action_to_html(item):
     """
-    Convert to percentages (relative)
+    Convert to percentages (relative), link to embedded range viewer
     """
-    fold_total = len(item.range_action.fold_range
-        .generate_options_unweighted())
-    passive_total = len(item.range_action.passive_range
-        .generate_options_unweighted())
-    aggressive_total = len(item.range_action.aggressive_range
-        .generate_options_unweighted())
-    total = fold_total + passive_total + aggressive_total
+    fold_options = item.range_action.fold_range  \
+        .generate_options_unweighted()
+    passive_options = item.range_action.passive_range  \
+        .generate_options_unweighted()
+    aggressive_options = item.range_action.aggressive_range  \
+        .generate_options_unweighted()
+    all_options = fold_options + passive_options + aggressive_options
+    combined_range = unweighted_options_to_description(all_options)
+    view_html = """<button type=button id="view-action" """  \
+        """class="pure-button" """  \
+        """onclick="range_view('%s', '%s', '%s', '%s');">View</button>""" %  \
+        (combined_range, item.range_action.fold_range.description,
+         item.range_action.passive_range.description,
+         item.range_action.aggressive_range.description)
+    fold_total = len(fold_options)
+    passive_total = len(passive_options)
+    aggressive_total = len(aggressive_options)
+    total = len(all_options)
     return "%s folds %0.2f%%, passive %0.2f%%, aggressive %0.2f%%"  \
-        " (to total %d chips)" % (item.user, 100.0 * fold_total / total,
+        " (to total %d chips) %s" % (item.user, 100.0 * fold_total / total,
                                   100.0 * passive_total / total,
                                   100.0 * aggressive_total / total,
-                                  item.range_action.raise_total)
+                                  item.range_action.raise_total, view_html)
 
 def _user_range_to_html(item):
     """

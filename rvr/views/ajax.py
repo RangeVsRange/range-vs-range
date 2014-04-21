@@ -65,5 +65,6 @@ def total_donated():
     except urllib2.HTTPError as _err:
         # Most recent known value
         # TODO: REVISIT: occasionally update this
+        # Also, see if this call now honours cors=true
         return jsonify(total_received=250000)
     return jsonify(total_received=response['total_received'])
