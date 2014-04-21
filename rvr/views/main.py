@@ -321,28 +321,19 @@ def _handle_action(gameid, userid, api, form):
         flash(msg)
         return redirect(url_for('game_page', gameid=gameid))
 
-def _board_to_html(item):
+def _board_to_vars(item, index):
     """
     Replace little images into it
     """
-    cards = ['<img alt="" src="/static/smallcards/%s.png">' %
-             item.cards[i:i+2] for i in range(0, len(item.cards), 2)]
-    if item.street == FLOP:
-        return "%s: %s%s%s" % (item.street, cards[0], cards[1], cards[2])
-    elif item.street == TURN:
-        return "%s: %s%s%s %s" % (item.street, cards[0], cards[1], cards[2],
-                                  cards[3])
-    elif item.street == RIVER:
-        return "%s: %s%s%s %s %s" % (item.street, cards[0], cards[1],
-                                     cards[2], cards[3], cards[4])
-    else:
-        # Unknown, but probably PREFLOP, but shouldn't happen.
-        return "(unknown street) %s: %s" % (item.street, item.cards)        
-    return str(item)
+    cards = [item.cards[i:i+2] for i in range(0, len(item.cards), 2)]
+    return item.street, cards
 
-def _range_action_to_html(item):
+def _range_action_to_vars(item, index):
     """
-    Convert to percentages (relative), link to embedded range viewer
+    Convert to percentages (relative), and such.
+    
+    Returns (total_range, fold_range, passive_range, aggressive_range, username,
+             fold_pct, passive_pct, aggressive_pct, raise_total)
     """
     fold_options = item.range_action.fold_range  \
         .generate_options_unweighted()
@@ -352,46 +343,44 @@ def _range_action_to_html(item):
         .generate_options_unweighted()
     all_options = fold_options + passive_options + aggressive_options
     combined_range = unweighted_options_to_description(all_options)
-    view_html = """<button type=button id="view-action" """  \
-        """class="pure-button" """  \
-        """onclick="range_view('%s', '%s', '%s', '%s');">View</button>""" %  \
-        (combined_range, item.range_action.fold_range.description,
-         item.range_action.passive_range.description,
-         item.range_action.aggressive_range.description)
     fold_total = len(fold_options)
     passive_total = len(passive_options)
     aggressive_total = len(aggressive_options)
     total = len(all_options)
-    return "%s folds %0.2f%%, passive %0.2f%%, aggressive %0.2f%%"  \
-        " (to total %d chips) %s" % (item.user, 100.0 * fold_total / total,
-                                  100.0 * passive_total / total,
-                                  100.0 * aggressive_total / total,
-                                  item.range_action.raise_total, view_html)
+    return (item.user,
+            100.0 * fold_total / total,
+            100.0 * passive_total / total,
+            100.0 * aggressive_total / total,
+            item.range_action.raise_total,
+            combined_range,
+            item.range_action.fold_range.description,
+            item.range_action.passive_range.description,
+            item.range_action.aggressive_range.description,
+            index)
 
-def _user_range_to_html(item):
+def _user_range_to_vars(item, index):
     """
     Convert to a percentage (absolute)
     """
     total = len(HandRange(item.range_raw).generate_options_unweighted())
-    return "%s's range now includes %0.2f%% of hands." %  \
-        (item.user, 100.0 * total / len(SET_ANYTHING_OPTIONS))
+    return (item.user, 100.0 * total / len(SET_ANYTHING_OPTIONS))
 
-def _hand_history_to_html(item):
+def _hand_history_to_html(item, index):
     """
     Hand history items provide a basic to-text function. This function adds a little
     extra HTML where necessary, to make them prettier.
     """
     if isinstance(item, GameItemUserRange):
-        return _user_range_to_html(item)
+        return ("GameItemUserRange", _user_range_to_vars(item, index))
     elif isinstance(item, GameItemRangeAction):
-        return _range_action_to_html(item)
+        return ("GameItemRangeAction", _range_action_to_vars(item, index))
     elif isinstance(item, GameItemActionResult):
-        return str(item)
+        return ("GameItemActionResult", (str(item),))
     elif isinstance(item, GameItemBoard):
-        return _board_to_html(item)
+        return ("GameItemBoard", _board_to_vars(item, index))
     else:
         logging.debug("unrecognised type of hand history item: %s", item)
-        return str(item)
+        return ("None", (str(item),))
 
 def _running_game(game, gameid, userid, api):
     """
@@ -411,7 +400,8 @@ def _running_game(game, gameid, userid, api):
         raised="true" if game.current_options.is_raise else "false",
         can_check="true" if game.current_options.can_check() else "false")
     title = 'Game %d (running)' % (gameid,)
-    history = [_hand_history_to_html(item) for item in game.history]
+    history = [_hand_history_to_html(item, index)
+               for index, item in enumerate(game.history)]
     return render_template('running_game.html', title=title, form=form,
         game_details=game.game_details, history=history,
         current_options=game.current_options,
@@ -428,7 +418,8 @@ def _finished_game(game, gameid):
     # - range actions become three numbers (with link to range editor)
     # - players' ranges become singular numbers (with link to range editor)
     title = 'Game %d (finished)' % (gameid,)
-    history = [_hand_history_to_html(item) for item in game.history]
+    history = [_hand_history_to_html(item, index)
+               for index, item in enumerate(game.history)]
     return render_template('finished_game.html', title=title,
         game_details=game.game_details, history=history)
 

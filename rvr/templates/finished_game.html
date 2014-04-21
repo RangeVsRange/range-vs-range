@@ -20,13 +20,14 @@ $(function() {
 });
 </script>
 <script type=text/javascript>
-range_view = function(ori, fol, pas, agg) {
+range_view = function(button_id, ori, fol, pas, agg) {
     url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg);
     $('#viewer').attr('src', url);
+    $('button').each(function() {
+        $(this).toggleClass('r_sel', false);
+    });
+    $('#' + button_id).toggleClass('r_sel', true);
 };
-$('#view-action').click(function() {
-    $(this).toggleClass('r_sel', true);
-});
 </script>
 {% endblock %}
 {% block content %}
@@ -43,7 +44,18 @@ Hand history:
 <div id="history">
 <div id="history-left">
 <ul>{% for item in history %}
-  <li>{{item|safe}}</li>
+  <li>
+    {% if item[0] == "GameItemUserRange" %}
+    {{ "%s's range now includes %0.2f%% of hands." % item[1] }}
+    {% elif item[0] == "GameItemRangeAction" %}
+    {{ "%s folds %0.2f%%, passive %0.2f%%, aggressive %0.2f%% (to total %d chips)" % item[1][0:5] }}
+    <button type=button id="view-action-{{item[1][9]}}" class="pure-button" onclick="range_view('view-action-{{item[1][9]}}', '{{item[1][5]}}', '{{item[1][6]}}', '{{item[1][7]}}', '{{item[1][8]}}');">View</button>
+    {% elif item[0] == "GameItemBoard" %}
+    {{ item[1][0] }}: {% for card in item[1][1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
+    {% else %}
+    {{item[1][0]}}
+    {% endif %}
+  </li>
 {% endfor %}
 {% if not history %}
   <li>Nothing, yet.</li>
@@ -54,5 +66,4 @@ Hand history:
 <iframe id="viewer" src="/range-editor?embedded=true&rng_unassigned=nothing&rng_original=nothing" width="100%" seamless style="border: 0px none transparent;">Your browser does not support iframes, sorry.</iframe>
 </div>
 </div>
-
 {% endblock %}
