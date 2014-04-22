@@ -3,8 +3,9 @@ User submits a range-based action
 """
 from flask_wtf.form import Form
 from wtforms.fields.simple import TextField, HiddenField
-from wtforms.validators import Length, Regexp
+from wtforms.validators import Length, Regexp, Required
 from rvr.poker.handrange import NOTHING
+from wtforms.fields.html5 import IntegerField
     
 def action_form(is_check, is_raise, can_raise, min_raise, max_raise):
     """
@@ -26,7 +27,8 @@ def action_form(is_check, is_raise, can_raise, min_raise, max_raise):
         if can_raise:
             aggressive = TextField(label=aggressive_label,
                 validators=[Length(min=1)])
-            total = TextField(label=total_label)
+            total = IntegerField(label=total_label,
+                validators=[Required()])
         else:
             aggressive = HiddenField(label=aggressive_label, default=NOTHING,
                 validators=[Regexp(NOTHING)])

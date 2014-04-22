@@ -89,7 +89,7 @@
   <a class="pure-button" target="_blank" href="{{range_editor_url}}">Range editor</a> <input type="submit" value="Done" class="pure-button"/><br>
 </p>
 <details><summary><strong>Raw Ranges</strong></summary>
-<p>current range: <textarea id=original rows="4" cols="50">{{game_details.current_player.range_raw}}</textarea></p>
+<p>Current range: <textarea id=original rows="4" cols="50">{{game_details.current_player.range_raw}}</textarea></p>
 <p>
   {% for error in form.errors.fold %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.fold.label}} {{form.fold}} (<span id="fold_size">0.00</span>%) <a href="#" id="fold_the_rest">(fold the rest)</a><br>
