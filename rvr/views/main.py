@@ -16,10 +16,6 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
-from rvr.poker.cards import RIVER, TURN, FLOP
-
-# TODO: 1: make raise total not mandatory at client side, and only mandatory at
-# server side if necessary
 
 def is_authenticated():
     """
@@ -321,7 +317,7 @@ def _handle_action(gameid, userid, api, form):
         flash(msg)
         return redirect(url_for('game_page', gameid=gameid))
 
-def _board_to_vars(item, index):
+def _board_to_vars(item, _index):
     """
     Replace little images into it
     """
@@ -356,9 +352,11 @@ def _range_action_to_vars(item, index):
             item.range_action.fold_range.description,
             item.range_action.passive_range.description,
             item.range_action.aggressive_range.description,
+            item.is_check,
+            item.is_raise,
             index)
 
-def _user_range_to_vars(item, index):
+def _user_range_to_vars(item, _index):
     """
     Convert to a percentage (absolute)
     """
@@ -402,8 +400,10 @@ def _running_game(game, gameid, userid, api):
     title = 'Game %d (running)' % (gameid,)
     history = [_hand_history_to_html(item, index)
                for index, item in enumerate(game.history)]
+    board_raw = game.game_details.board_raw
+    board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
     return render_template('running_game.html', title=title, form=form,
-        game_details=game.game_details, history=history,
+        board=board, game_details=game.game_details, history=history,
         current_options=game.current_options,
         is_me=(userid == game.game_details.current_player.user.userid),
         range_editor_url=range_editor_url)
@@ -412,11 +412,7 @@ def _finished_game(game, gameid):
     """
     Response from game page when the requested game is finished.
     """
-    # TODO: 1: display only %ages, not full ranges, link to range viewer
-    # also for running_game.
-    # - cards become images
-    # - range actions become three numbers (with link to range editor)
-    # - players' ranges become singular numbers (with link to range editor)
+    # TODO: 1: players' ranges become singular numbers (with link to viewer)
     title = 'Game %d (finished)' % (gameid,)
     history = [_hand_history_to_html(item, index)
                for index, item in enumerate(game.history)]

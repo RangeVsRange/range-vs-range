@@ -460,7 +460,7 @@ class API(object):
         element.range_raw = range_raw
         self._record_hand_history_item(rgp.game, element)
         
-    def _record_range_action(self, rgp, range_action):
+    def _record_range_action(self, rgp, range_action, is_check, is_raise):
         """
         Record that this user has made this range-based action
         """
@@ -470,6 +470,8 @@ class API(object):
         element.passive_range = range_action.passive_range.description
         element.aggressive_range = range_action.aggressive_range.description
         element.raise_total = range_action.raise_total
+        element.is_check = is_check
+        element.is_raise = is_raise
         self._record_hand_history_item(rgp.game, element)
         
     def _record_board(self, game):
@@ -677,7 +679,8 @@ class API(object):
         but instead of redealing based on can_call and can_fold, we'll play out
         each option, and terminate only when all options are terminal.
         """
-        self._record_range_action(rgp, range_action)
+        self._record_range_action(rgp, range_action,
+            current_options.can_check(), current_options.is_raise)
         what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
         what_could_be.consider_all()
         action_result = what_could_be.calculate_what_will_be()

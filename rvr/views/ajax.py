@@ -7,7 +7,6 @@ from flask import jsonify
 from rvr.poker.handrange import NOTHING, ANYTHING
 import json
 import urllib2
-from werkzeug.exceptions import abort
 from rvr.views.range_editor import safe_hand_range, safe_board
 
 @APP.route('/ajax/range_subtract')

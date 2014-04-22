@@ -1,5 +1,6 @@
-{% extends "base.html" %}
+{% extends "history.html" %}
 {% block scripts %}
+{{ super() }}
 <script type=text/javascript>
   $(function() {
     // Callback to calculate "folding the rest"
@@ -48,15 +49,12 @@
 
 <h2>{{title}}</h2>
 
-<p>The game is: <strong>{{game_details.situation.description}}</strong>.</p>
-
-<p>The current betting round is: <strong>{{game_details.current_round}}</strong>.<br>
+<p>The game is: <strong>{{game_details.situation.description}}</strong>.
 {% if game_details.current_round != "preflop" %}
-The board is: <strong><span id=board>{{game_details.board_raw}}</span></strong><br>
-The pot at that start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
+<br>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}<br>
+<br>The pot at that start of this round was: <strong>{{game_details.pot_pre}}</strong>.
 {% endif %}
-
-<p>The players are seated as follows:
+<br>The players are seated as follows:
 <table border=1>
 <tr><td class=wide></td><td class=wide><strong>Stack</strong></td><td class=wide><strong>In the pot</strong></td><td class=wide></td></tr>
 {% for rgp in game_details.rgp_details %}
@@ -79,7 +77,7 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 {% endfor %}
 </table></p>
 {% if is_me %}
-<p>Your range: <span id=original>{{game_details.current_player.range_raw}}</span></p>
+<p>Your range: <textarea id=original rows="4" cols="50">{{game_details.current_player.range_raw}}</textarea></p>
 <form method="post" id="action" name="action">
 <p>
   {{form.hidden_tag()}}
@@ -106,13 +104,7 @@ The pot at that start of this round was: <strong>{{game_details.pot_pre}}</stron
 </form>
 </p>
 {% endif %}
-
-The game so far:<ul>{% for item in history %}
-  <li>{{item}}</li>
-{% endfor %}
-{% if not history %}
-  <li>Nothing, yet.</li>
-{% endif %}
-</ul>
-
+<details><summary><strong>Hand History</strong></summary>
+{{ super() }}
+</details>
 {% endblock %}

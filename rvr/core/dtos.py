@@ -368,16 +368,19 @@ class GameItemRangeAction(GameItem):
     user folds fold_range, checks or calls passive_range, bets or raises
     aggressive_range
     """
-    def __init__(self, user, range_action):
+    def __init__(self, user, range_action, is_check, is_raise):
         """
         user is a UserDetails
         """
         self.user = user
         self.range_action = range_action
+        self.is_check = is_check
+        self.is_raise = is_raise
     
     def __repr__(self):
-        return ("GameItemRangeAction(user=%r, range_action=%r)") %  \
-            (self.user, self.range_action)
+        return ("GameItemRangeAction(user=%r, range_action=%r, " +
+                "is_check=%r, is_raise=%r)") %  \
+            (self.user, self.range_action, self.is_check, self.is_raise)
     
     def __str__(self):
         return "%s performs range-based action: %s" % (self.user,
@@ -393,7 +396,7 @@ class GameItemRangeAction(GameItem):
             passive_raw=item.passive_range,
             aggressive_raw=item.aggressive_range,
             raise_total=item.raise_total)
-        return cls(user_details, range_action)
+        return cls(user_details, range_action, item.is_check, item.is_raise)
     
     def should_include_for(self, userid):
         """
@@ -532,6 +535,8 @@ class ActionOptions(object):
         """
         Does the user have the option to check?
         """
+        # Note that this is cost to call, not total contribution once called.
+        # Which is why it works for checking int he big blind.
         return self.call_cost == 0
     
     def can_raise(self):
@@ -545,9 +550,9 @@ class ActionDetails(object):
     """
     range-based action request object
     """
-    def __init__(self, 
+    def __init__(self,
                  fold_range=None, passive_range=None, aggressive_range=None,
-                 raise_total=None, 
+                 raise_total=None,
                  fold_raw=None, passive_raw=None, aggressive_raw=None):
         """
         fold_range is the part of their range they fold here
@@ -574,19 +579,18 @@ class ActionDetails(object):
         self.aggressive_range = aggressive_range  \
             if isinstance(aggressive_range, HandRange)  \
             else HandRange(aggressive_raw)
-        self.raise_total = raise_total            
+        self.raise_total = raise_total
 
     def __repr__(self):
         return ("ActionDetails(fold_range=%r, passive_range=%r, " +
-                "aggressive_range=%r, raise_total=%r)") %  \
+                "aggressive_range=%r, raise_total=%r") %  \
             (self.fold_range, self.passive_range, self.aggressive_range,
              self.raise_total)
             
     def __str__(self):
-        return ("folding %s, passive %s, " +
-                "aggressive %s (to total %d chips)") %  \
+        return "folding %s, passive %s, aggressive (to %d) %s" %  \
             (self.fold_range.description, self.passive_range.description,
-             self.aggressive_range.description, self.raise_total)
+             self.raise_total, self.aggressive_range.description)
 
 class ActionResult(object):
     """

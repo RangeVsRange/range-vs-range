@@ -306,6 +306,9 @@ class GameHistoryRangeAction(BASE):
     passive_range = Column(String, nullable=False)
     aggressive_range = Column(String, nullable=False)
     raise_total = Column(Integer, nullable=False)
+    # For syntactical context, call or check, bet or raise:
+    is_check = Column(Boolean, nullable=False)
+    is_raise = Column(Boolean, nullable=False)
     
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryRangeAction.gameid," +  \

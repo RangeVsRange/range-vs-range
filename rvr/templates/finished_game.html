@@ -1,34 +1,6 @@
-{% extends "base.html" %}
+{% extends "history.html" %}
 {% block scripts %}
-<style>
-#history {
-    width:100%;
-}
-#history-left {
-    width:50%;
-    float:left;
-}
-#history-right {
-    width:50%;
-    float:right;
-}
-</style>
-<script type=text/javascript>
-$(function() {
-    left_height = $('#history-left').height();
-    $('#viewer').height(left_height);
-});
-</script>
-<script type=text/javascript>
-range_view = function(button_id, ori, fol, pas, agg) {
-    url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg);
-    $('#viewer').attr('src', url);
-    $('button').each(function() {
-        $(this).toggleClass('r_sel', false);
-    });
-    $('#' + button_id).toggleClass('r_sel', true);
-};
-</script>
+{{ super() }}
 {% endblock %}
 {% block content %}
 <h2>{{title}}</h2>
@@ -39,39 +11,7 @@ range_view = function(button_id, ori, fol, pas, agg) {
 {% set pipe = joiner() %}
 {% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %} (BTN)
 </p>
-
-Hand history:
-<div id="history">
-<div id="history-left" style="overflow-y:scroll; height:600px">
-<table style="width:100%">
-{% for item in history %}
-  <tr style="border-style: solid; border-width: 1px">
-    <td>
-    {% if item[0] == "GameItemUserRange" %}
-    {{ "%s's range now includes %0.2f%% of hands." % item[1] }}
-    {% elif item[0] == "GameItemRangeAction" %}
-    {{ "%s folds %0.2f%%, passive %0.2f%%, aggressive %0.2f%% (to total %d chips)" % item[1][0:5] }}
-    {% elif item[0] == "GameItemBoard" %}
-    {{ item[1][0] }}: {% for card in item[1][1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
-    {% else %}
-    {{item[1][0]}}
-    {% endif %}
-    </td>
-    <td>
-    {% if item[0] == "GameItemRangeAction" %}
-    <button type=button id="view-action-{{item[1][9]}}" class="pure-button" onclick="range_view('view-action-{{item[1][9]}}', '{{item[1][5]}}', '{{item[1][6]}}', '{{item[1][7]}}', '{{item[1][8]}}');">View</button>
-    {% endif %}
-    </td>
-  </tr>
-{% endfor %}
-</table>
-{% if not history %}
-  <ul><li>Nothing, yet.</li></ul>
-{% endif %}
-</ul>
-</div>
-<div id="history-right">
-<iframe id="viewer" src="/range-editor?embedded=true&rng_unassigned=nothing&rng_original=nothing" width="100%" seamless style="border: 0px none transparent;">Your browser does not support iframes, sorry.</iframe>
-</div>
-</div>
+<details open><summary><strong>Hand History</strong></summary>
+{{ super() }}
+</details>
 {% endblock %}
