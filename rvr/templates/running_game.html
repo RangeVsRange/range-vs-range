@@ -77,10 +77,20 @@
 {% endfor %}
 </table></p>
 {% if is_me %}
-<p>Your range: <textarea id=original rows="4" cols="50">{{game_details.current_player.range_raw}}</textarea></p>
 <form method="post" id="action" name="action">
+{{form.hidden_tag()}}
+{% if current_options.can_raise() %}
 <p>
-  {{form.hidden_tag()}}
+  {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
+  {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>
+</p>
+{% endif %}
+<p>
+  <a class="pure-button" target="_blank" href="{{range_editor_url}}">Range editor</a> <input type="submit" value="Done" class="pure-button"/><br>
+</p>
+<details><summary><strong>Raw Ranges</strong></summary>
+<p>current range: <textarea id=original rows="4" cols="50">{{game_details.current_player.range_raw}}</textarea></p>
+<p>
   {% for error in form.errors.fold %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.fold.label}} {{form.fold}} (<span id="fold_size">0.00</span>%) <a href="#" id="fold_the_rest">(fold the rest)</a><br>
 </p>
@@ -91,16 +101,10 @@
 {% if current_options.can_raise() %}
 <p>
   {% for error in form.errors.aggressive %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   {{form.aggressive.label}} {{form.aggressive}} (<span id="aggressive_size">0.00</span>%) <a href="#" id="raise_the_rest">({% if current_options.is_raise %}raise{% else %}bet{% endif %} the rest)</a>
 </p>
-<p>
-  {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>
-</p>
 {% endif %}
-<p>
-  <a class="pure-button" target="_blank" href="{{range_editor_url}}">Range editor</a> <input type="submit" value="Done" class="pure-button"/><br>
-</p>
+</details>
 </form>
 </p>
 {% endif %}

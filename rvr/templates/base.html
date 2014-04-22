@@ -14,14 +14,14 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script>window.jQuery || document.write('<script src="{{url_for('static', filename='js/jquery.js') }}">\x3C/script>')</script>
     <script type=text/javascript>
-  $(function() {
-    // Call blockchain.info for total donated.
-    $.getJSON($SCRIPT_ROOT + '/ajax/total_donated',
-              {},
-              function(response) {
-                $('#donated').text((response.total_received / 100000000.0).toFixed(8));
-              });
-  });
+    $(function() {
+      // Call blockchain.info for total donated.
+      $.getJSON($SCRIPT_ROOT + '/ajax/total_donated',
+                {},
+                function(response) {
+                  $('#donated').text((response.total_received / 100000000.0).toFixed(8));
+                });
+    });
     </script>
     {% block scripts %}{% endblock %}
     <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.4.2/pure-min.css">    

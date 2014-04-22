@@ -32,7 +32,7 @@ range_view = function(button_id, ori, fol, pas, agg, is_check, is_raise) {
 {% endblock %}
 {% block content %}
 <div id="history">
-<div id="history-left" style="overflow-y:scroll; height:600px">
+<div id="history-left" style="height:600px">
 <table style="width:100%">
 {% for item in history %}
   <tr style="border-style: solid; border-width: 1px">
@@ -60,7 +60,7 @@ range_view = function(button_id, ori, fol, pas, agg, is_check, is_raise) {
 {% endif %}
 </ul>
 </div>
-<div id="history-right">
+<div id="history-right" style="height:600px">
 <iframe id="viewer" src="/range-editor?embedded=true&rng_unassigned=nothing&rng_original=nothing" width="100%" seamless style="border: 0px none transparent;">Your browser does not support iframes, sorry.</iframe>
 </div>
 </div>
