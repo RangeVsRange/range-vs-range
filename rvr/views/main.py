@@ -356,29 +356,59 @@ def _range_action_to_vars(item, index):
             item.is_raise,
             index)
 
-def _user_range_to_vars(item, _index):
+def _action_summary_to_vars(range_action, action_result, user_range, index):
     """
-    Convert to a percentage (absolute)
+    Summarise an action result and user range in the context of the most recent
+    range action.
     """
-    total = len(HandRange(item.range_raw).generate_options_unweighted())
-    return (item.user, 100.0 * total / len(SET_ANYTHING_OPTIONS))
-
-def _hand_history_to_html(item, index):
-    """
-    Hand history items provide a basic to-text function. This function adds a little
-    extra HTML where necessary, to make them prettier.
-    """
-    if isinstance(item, GameItemUserRange):
-        return ("GameItemUserRange", _user_range_to_vars(item, index))
-    elif isinstance(item, GameItemRangeAction):
-        return ("GameItemRangeAction", _range_action_to_vars(item, index))
-    elif isinstance(item, GameItemActionResult):
-        return ("GameItemActionResult", (str(item),))
-    elif isinstance(item, GameItemBoard):
-        return ("GameItemBoard", _board_to_vars(item, index))
+    new_total = len(HandRange(user_range.range_raw).  \
+        generate_options_unweighted())
+    fol = pas = agg = NOTHING
+    if action_result.action_result.is_fold:
+        original = fol = range_action.range_action.fold_range.description
+    elif action_result.action_result.is_passive:
+        original = pas = range_action.range_action.passive_range.description
     else:
-        logging.debug("unrecognised type of hand history item: %s", item)
-        return ("None", (str(item),))
+        original = agg = range_action.range_action.aggressive_range.description
+    return {"screenname": user_range.user,
+            "action_result": action_result.action_result,
+            "percent": 100.0 * new_total / len(SET_ANYTHING_OPTIONS),
+            "combos": new_total,
+            "is_check": range_action.is_check,
+            "is_raise": range_action.is_raise,
+            "original": original,
+            "fold": fol,
+            "passive": pas,
+            "aggressive": agg,
+            "index": index}
+
+def _make_history_list(game_history):
+    """
+    Hand history items provide a basic to-text function. This function adds a
+    little extra HTML where necessary, to make them prettier.
+    """
+    results = []
+    # There is always a range action and an action before a user range
+    most_recent_range_action = None
+    most_recent_action_result = None
+    for index, item in enumerate(game_history):
+        if isinstance(item, GameItemUserRange):
+            results.append(("ACTION_SUMMARY",
+                            _action_summary_to_vars(most_recent_range_action,
+                                                    most_recent_action_result,
+                                                    item, index)))
+        elif isinstance(item, GameItemRangeAction):
+            most_recent_range_action = item
+            results.append(("RANGE_ACTION",
+                            _range_action_to_vars(item, index)))
+        elif isinstance(item, GameItemActionResult):
+            most_recent_action_result = item
+        elif isinstance(item, GameItemBoard):
+            results.append(("BOARD", _board_to_vars(item, index)))
+        else:
+            logging.debug("unrecognised type of hand history item: %s", item)
+            results.append(("UNKNOWN", (str(item),)))
+    return results
 
 def _running_game(game, gameid, userid, api):
     """
@@ -398,8 +428,7 @@ def _running_game(game, gameid, userid, api):
         raised="true" if game.current_options.is_raise else "false",
         can_check="true" if game.current_options.can_check() else "false")
     title = 'Game %d (running)' % (gameid,)
-    history = [_hand_history_to_html(item, index)
-               for index, item in enumerate(game.history)]
+    history = _make_history_list(game.history)
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
     return render_template('running_game.html', title=title, form=form,
@@ -414,8 +443,7 @@ def _finished_game(game, gameid):
     """
     # TODO: 1: players' ranges become singular numbers (with link to viewer)
     title = 'Game %d (finished)' % (gameid,)
-    history = [_hand_history_to_html(item, index)
-               for index, item in enumerate(game.history)]
+    history = _make_history_list(game.history)
     return render_template('finished_game.html', title=title,
         game_details=game.game_details, history=history)
 
@@ -425,6 +453,7 @@ def game_page():
     """
     User's view of the specified game
     """
+    # TODO: REVISIT: Put dynamic range viewers inline, not left/right
     alt = ensure_user()
     if alt:
         return alt
