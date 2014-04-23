@@ -1,42 +1,31 @@
 {% extends 'base.html' %}
 {% block scripts %}
-<style>
-#history {
-    width:100%;
-}
-#history-left {
-    width:50%;
-    float:left;
-}
-#history-right {
-    width:50%;
-    float:right;
-}
-</style>
 <script type=text/javascript>
-$(function() {
-    left_height = $('#history-left').height();
-    $('#viewer').height(left_height);
-});
-</script>
-<script type=text/javascript>
-range_view = function(button_id, ori, fol, pas, agg, is_check, is_raise) {
-    url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg) + '&raised=' + encodeURIComponent(is_raise) + '&can_check=' + encodeURIComponent(is_check);
-    $('#viewer').attr('src', url);
-    $('button').each(function() {
-        $(this).toggleClass('r_sel', false);
-    });
+range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise) {
+    $('#current-viewer-row').remove();
+    if ($('#' + button_id).hasClass('r_sel')) {
+        $('#' + button_id).toggleClass('r_sel', false);
+        return;
+    }
     $('#' + button_id).toggleClass('r_sel', true);
+    dynamic_url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg) + '&raised=' + encodeURIComponent(is_raise) + '&can_check=' + encodeURIComponent(is_check);
+    iframe = $('<iframe>', {id: 'viewer', style: 'border: 0px none transparent;', src: dynamic_url});
+    iframe.width(550);
+    iframe.height(550);
+    iframe.text('Sorry, your browser does not support iframes.');
+    td = $('<td>');
+    td.append(iframe);
+    tr = $('<tr>').attr('id', 'current-viewer-row');
+    tr.append(td);
+    $('#' + row_id).after(tr);
 };
 </script>
 {% endblock %}
 {% block content %}
-<div id="history">
-<div id="history-left">
-<table style="width:100%">
+<table style="width: 700px">
 {% for hint, item in history %}
-  <tr style="border-style: solid; border-width: 1px">
-    <td>
+  <tr id="history-table-{{item.index}}" style="border-style: solid; border-width: 1px">
+    <td style="padding-left: 5px">
     {% if hint == "ACTION_SUMMARY" %}
       <strong>{{item.screenname}}
       {% set result = item.action_result %}
@@ -60,9 +49,9 @@ range_view = function(button_id, ori, fol, pas, agg, is_check, is_raise) {
       {{item[0]}}
     {% endif %}
     </td>
-    <td>
+    <td style="padding-left: 10px">
     {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
-    <button type=button id="view-action-{{item.index}}" class="pure-button" onclick="range_view('view-action-{{item.index}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+    <button type=button id="view-action-{{item.index}}" class="pure-button" onclick="range_view('view-action-{{item.index}}', 'history-table-{{item.index}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
     {% endif %}
     </td>
   </tr>
@@ -72,9 +61,4 @@ range_view = function(button_id, ori, fol, pas, agg, is_check, is_raise) {
   <ul><li>Nothing, yet.</li></ul>
 {% endif %}
 </ul>
-</div>
-<div id="history-right" style="height:600px">
-<iframe id="viewer" src="/range-editor?embedded=true&rng_unassigned=nothing&rng_original=nothing" width="100%" seamless style="border: 0px none transparent;">Your browser does not support iframes, sorry.</iframe>
-</div>
-</div>
 {% endblock %}
