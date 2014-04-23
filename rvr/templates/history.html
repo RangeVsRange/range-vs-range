@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
 {% block scripts %}
 <script type=text/javascript>
+$CURRENT_BUTTON = null;
 range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise) {
-    $('#current-viewer-row').remove();
-    if ($('#' + button_id).hasClass('r_sel')) {
-        $('#' + button_id).toggleClass('r_sel', false);
+    $('#current-viewer-row').remove(); // if any
+    if (button_id == $CURRENT_BUTTON) {
+        $CURRENT_BUTTON = null;
         return;
     }
-    $('#' + button_id).toggleClass('r_sel', true);
+    $CURRENT_BUTTON = button_id;
     dynamic_url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg) + '&raised=' + encodeURIComponent(is_raise) + '&can_check=' + encodeURIComponent(is_check);
     iframe = $('<iframe>', {id: 'viewer', style: 'border: 0px none transparent;', src: dynamic_url});
     iframe.width(550);
