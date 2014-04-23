@@ -343,18 +343,19 @@ def _range_action_to_vars(item, index):
     passive_total = len(passive_options)
     aggressive_total = len(aggressive_options)
     total = len(all_options)
-    return (item.user,
-            100.0 * fold_total / total,
-            100.0 * passive_total / total,
-            100.0 * aggressive_total / total,
-            item.range_action.raise_total,
-            combined_range,
-            item.range_action.fold_range.description,
-            item.range_action.passive_range.description,
-            item.range_action.aggressive_range.description,
-            item.is_check,
-            item.is_raise,
-            index)
+    # NOTE: some of this is necessarily common with ACTION_SUMMARY
+    return {"screenname": item.user,
+            "fold_pct": 100.0 * fold_total / total,
+            "passive_pct": 100.0 * passive_total / total,
+            "aggressive_pct": 100.0 * aggressive_total / total,
+            "raise_total": item.range_action.raise_total,
+            "is_check": item.is_check,
+            "is_raise": item.is_raise,
+            "original": combined_range,
+            "fold": item.range_action.fold_range.description,
+            "passive": item.range_action.passive_range.description,
+            "aggressive": item.range_action.aggressive_range.description,
+            "index": index}
 
 def _action_summary_to_vars(range_action, action_result, user_range, index):
     """
@@ -370,6 +371,7 @@ def _action_summary_to_vars(range_action, action_result, user_range, index):
         original = pas = range_action.range_action.passive_range.description
     else:
         original = agg = range_action.range_action.aggressive_range.description
+    # NOTE: some of this is necessarily common with RANGE_ACTION
     return {"screenname": user_range.user,
             "action_result": action_result.action_result,
             "percent": 100.0 * new_total / len(SET_ANYTHING_OPTIONS),
@@ -441,7 +443,6 @@ def _finished_game(game, gameid):
     """
     Response from game page when the requested game is finished.
     """
-    # TODO: 1: players' ranges become singular numbers (with link to viewer)
     title = 'Game %d (finished)' % (gameid,)
     history = _make_history_list(game.history)
     return render_template('finished_game.html', title=title,
@@ -453,7 +454,7 @@ def game_page():
     """
     User's view of the specified game
     """
-    # TODO: REVISIT: Put dynamic range viewers inline, not left/right
+    # TODO: REVISIT: put dynamic range viewers inline, not left/right
     alt = ensure_user()
     if alt:
         return alt
