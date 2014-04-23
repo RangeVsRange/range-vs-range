@@ -177,6 +177,18 @@ def safe_hand_range(arg_name, fallback):
         hand_range = HandRange(fallback)
     return hand_range
 
+def safe_hand_range_form(field_name, fallback):
+    """
+    Pull a HandRange object from request form field <field_name>.
+    
+    If there is a problem, return HandRange(fallback).
+    """
+    value = request.form.get(field_name, fallback, type=str)
+    hand_range = HandRange(value, is_strict=False)
+    if not hand_range.is_valid():
+        hand_range = HandRange(fallback)
+    return hand_range
+
 def safe_board(arg_name):
     """
     Pull a board (list of Card) from request arg <arg_name>.
@@ -439,15 +451,15 @@ def range_editor_post():
     rng_original = request.form.get('rng_original', ANYTHING)
     board_raw = request.form.get('board', '')
     board = safe_board_form('board')
-    opt_ori = safe_hand_range('rng_original', ANYTHING)  \
+    opt_ori = safe_hand_range_form('rng_original', ANYTHING)  \
         .generate_options_unweighted(board)
-    opt_una = safe_hand_range('rng_unassigned', rng_original)  \
+    opt_una = safe_hand_range_form('rng_unassigned', rng_original)  \
         .generate_options_unweighted(board)
-    opt_fol = safe_hand_range('rng_fold', NOTHING)  \
+    opt_fol = safe_hand_range_form('rng_fold', NOTHING)  \
         .generate_options_unweighted(board)
-    opt_pas = safe_hand_range('rng_passive', NOTHING)  \
+    opt_pas = safe_hand_range_form('rng_passive', NOTHING)  \
         .generate_options_unweighted(board)
-    opt_agg = safe_hand_range('rng_aggressive', NOTHING)  \
+    opt_agg = safe_hand_range_form('rng_aggressive', NOTHING)  \
         .generate_options_unweighted(board)
     l_una = 'l_una' in request.form
     l_fol = 'l_fol' in request.form

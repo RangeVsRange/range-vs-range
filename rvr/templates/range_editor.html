@@ -53,7 +53,7 @@ populate_parent = function() {
 {% endblock %}
 {% block content %}
 <h2>Range Editor</h2>
-<form method=post>
+<form action='{{url_for('range_editor')}}' method=post>
 {% for item in hidden_fields %}<input type=hidden name="{{item[0]}}" value="{{item[1]}}">
 {% endfor %}
 {% if rng_unassigned == 'nothing' %}

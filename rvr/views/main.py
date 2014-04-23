@@ -454,7 +454,6 @@ def game_page():
     """
     User's view of the specified game
     """
-    # TODO: REVISIT: put dynamic range viewers inline, not left/right
     alt = ensure_user()
     if alt:
         return alt
