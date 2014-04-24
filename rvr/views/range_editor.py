@@ -124,9 +124,13 @@ class OptionMover(object):
                 other.difference_update(moving)
         self.did_move = len(target) != pre
         self.did_select = bool(options_selected)
+        self.opt_una = opt_una
         self.rng_unassigned = unweighted_options_to_description(opt_una)
+        self.opt_fol = opt_fol
         self.rng_fold = unweighted_options_to_description(opt_fol)
+        self.opt_pas = opt_pas
         self.rng_passive = unweighted_options_to_description(opt_pas)
+        self.opt_agg = opt_agg
         self.rng_aggressive = unweighted_options_to_description(opt_agg)
 
 def is_suit_selected(option):
@@ -349,13 +353,56 @@ def next_map():
     items.extend([(rank_id(i + 1, i + 1), rank_id(i, i)) for i in range(12)])
     return '{' + ','.join(["'%s':'%s'" % (item) for item in items]) + '}'
 
+def make_rank_table(color_maker, board, can_check, is_raised):
+    """
+    Details for appropriate display of the rank table
+    """
+    return [[{'text': rank_text(row, col),
+              'id': rank_id(row, col),
+              'class': rank_class(row, col, color_maker, board),
+              'hover': rank_hover(row, col, color_maker, board,
+                                  is_raised=is_raised == "true",
+                                  is_can_check=can_check == "true")}
+             for col in range(13)] for row in range(13)]
+
+def make_suited_table():
+    """
+    Details for display of the suited table
+    """
+    return [[{'left': suit_text(row, col, True),
+              'right': suit_text(row, col, False),
+              'id': suit_id(row, col, SUITED),
+              'class': suit_class(row, col, SUITED),
+              'hover': suit_hover(row, col, SUITED)}
+             for col in range(4)] for row in range(4)] 
+
+def make_pair_table():
+    """
+    Details for display of the pair table
+    """
+    return [[{'left': suit_text(row, col, True),
+              'right': suit_text(row, col, False),
+              'id': suit_id(row, col, PAIR),
+              'class': suit_class(row, col, PAIR),
+              'hover': suit_hover(row, col, PAIR)}
+             for col in range(4)] for row in range(3)]
+    
+def make_offsuit_table():
+    """
+    Details for display of the offsuit table
+    """
+    return [[{'left': suit_text(row, col, True),
+              'right': suit_text(row, col, False),
+              'id': suit_id(row, col, OFFSUIT),
+              'class': suit_class(row, col, OFFSUIT),
+              'hover': suit_hover(row, col, OFFSUIT)}
+             for col in range(4)] for row in range(4)]
+
 NEXT_MAP = next_map()
 
 def range_editor_get():
     """
     An HTML range editor!
-    
-    (Mostly a playground for experimentation right now.)
     """
     embedded = request.args.get('embedded', 'false')
     raised = request.args.get('raised', '')
@@ -391,31 +438,11 @@ def range_editor_get():
         pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
     else:
         pct_unassigned = pct_fold = pct_passive = pct_aggressive = 0.0
-    rank_table = [[{'text': rank_text(row, col),
-                    'id': rank_id(row, col),
-                    'class': rank_class(row, col, color_maker, board),
-                    'hover': rank_hover(row, col, color_maker, board,
-                                        is_raised=raised == "true",
-                                        is_can_check=can_check == "true")}
-                   for col in range(13)] for row in range(13)]
-    suited_table = [[{'left': suit_text(row, col, True),
-                      'right': suit_text(row, col, False),
-                      'id': suit_id(row, col, SUITED),
-                      'class': suit_class(row, col, SUITED),
-                      'hover': suit_hover(row, col, SUITED)}
-                     for col in range(4)] for row in range(4)] 
-    pair_table = [[{'left': suit_text(row, col, True),
-                    'right': suit_text(row, col, False),
-                    'id': suit_id(row, col, PAIR),
-                    'class': suit_class(row, col, PAIR),
-                    'hover': suit_hover(row, col, PAIR)}
-                   for col in range(4)] for row in range(3)]
-    offsuit_table = [[{'left': suit_text(row, col, True),
-                       'right': suit_text(row, col, False),
-                       'id': suit_id(row, col, OFFSUIT),
-                       'class': suit_class(row, col, OFFSUIT),
-                       'hover': suit_hover(row, col, OFFSUIT)}
-                      for col in range(4)] for row in range(4)]
+    rank_table = make_rank_table(color_maker, board, can_check=can_check,
+                                 is_raised=raised)
+    suited_table = make_suited_table()
+    pair_table = make_pair_table()
+    offsuit_table = make_offsuit_table()
     hidden_fields = [("raised", raised),
                      ("can_check", can_check),
                      ("board", board_raw),
@@ -442,7 +469,7 @@ def range_editor_get():
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
         raised=raised, can_check=can_check)
 
-def range_editor_post():
+def range_editor_post_redirect():
     """
     Range editor uses Post-Redirect-Get
     """
@@ -489,13 +516,101 @@ def range_editor_post():
         l_fol='checked' if l_fol else '',
         l_pas='checked' if l_pas else '',
         l_agg='checked' if l_agg else ''))
+
+def range_editor_post():
+    """
+    Straight post-response, not using post-redirect-get because PythonAnywhere
+    (apparently) has a problem with excessively long referer URIs. The other
+    option (to avoid the refresh-repost problem) would be to have cookies and
+    a UUID as an index in the get parameter (to avoid issues with multiple
+    tabs).
+    """
+    raised = request.form.get('raised', '')
+    can_check = request.form.get('can_check', '')
+    rng_original = request.form.get('rng_original', ANYTHING)    
+    board_raw = request.form.get('board', '')
+    board = safe_board_form('board')
+    images = card_names(board_raw)
+    opt_ori = safe_hand_range_form('rng_original', ANYTHING)  \
+        .generate_options_unweighted(board)
+    opt_una = safe_hand_range_form('rng_unassigned', rng_original)  \
+        .generate_options_unweighted(board)
+    opt_fol = safe_hand_range_form('rng_fold', NOTHING)  \
+        .generate_options_unweighted(board)
+    opt_pas = safe_hand_range_form('rng_passive', NOTHING)  \
+        .generate_options_unweighted(board)
+    opt_agg = safe_hand_range_form('rng_aggressive', NOTHING)  \
+        .generate_options_unweighted(board)
+    l_una = 'l_una' in request.form
+    l_fol = 'l_fol' in request.form
+    l_pas = 'l_pas' in request.form
+    l_agg = 'l_agg' in request.form
+    options_selected = get_selected_options(opt_ori, board)
+    option_mover = OptionMover(opt_ori=opt_ori, opt_una=opt_una,
+        opt_fol=opt_fol, opt_pas=opt_pas, opt_agg=opt_agg,
+        l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
+        options_selected=options_selected,
+        action=request.form.get('submit', ''))
+    if not option_mover.did_select:
+        flash("Nothing was moved, because nothing was selected.")
+    elif not option_mover.did_move and option_mover.did_lock:
+        flash("Nothing was moved, because the selected hands were locked.")
+    elif not option_mover.did_move:
+        flash("Nothing was moved, because the selected hands were already in the target range.")  # pylint:disable=C0301
+    opt_ori = safe_hand_range_form('rng_original', ANYTHING)  \
+        .generate_options_unweighted(board)
+    opt_una = option_mover.opt_una
+    opt_fol = option_mover.opt_fol
+    opt_pas = option_mover.opt_pas
+    opt_agg = option_mover.opt_agg
+    color_maker = ColorMaker(opt_ori=opt_ori, opt_una=opt_una, opt_fol=opt_fol,
+                             opt_pas=opt_pas, opt_agg=opt_agg)
+    if len(opt_ori) != 0:
+        pct_unassigned = 100.0 * len(opt_una) / len(opt_ori)
+        pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
+        pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
+        pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
+    else:
+        pct_unassigned = pct_fold = pct_passive = pct_aggressive = 0.0
+    rank_table = make_rank_table(color_maker, board, can_check=can_check,
+                                 is_raised=raised)
+    suited_table = make_suited_table()
+    pair_table = make_pair_table()
+    offsuit_table = make_offsuit_table()
+    # Range viewer doesn't support post, obviously.
+    hidden_fields = [("raised", raised),
+                     ("can_check", can_check),
+                     ("board", board_raw),
+                     ("rng_original", rng_original),
+                     ("rng_unassigned", option_mover.rng_unassigned),
+                     ("rng_fold", option_mover.rng_fold),
+                     ("rng_passive", option_mover.rng_passive),
+                     ("rng_aggressive", option_mover.rng_aggressive)]
+    template = 'range_editor.html'
+    return render_template(template, title="Range Editor",
+        next_map=NEXT_MAP, hidden_fields=hidden_fields,
+        rank_table=rank_table, suited_table=suited_table,
+        pair_table=pair_table, offsuit_table=offsuit_table,
+        card_names=images,
+        rng_unassigned=option_mover.rng_unassigned,
+        rng_fold=option_mover.rng_fold,
+        rng_passive=option_mover.rng_passive,
+        rng_aggressive=option_mover.rng_aggressive,
+        l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
+        pct_unassigned=pct_unassigned, pct_fold=pct_fold,
+        pct_passive=pct_passive, pct_aggressive=pct_aggressive,
+        raised=raised, can_check=can_check)
     
+
 @APP.route('/range-editor', methods=['GET', 'POST'])
 def range_editor():
     """
     Combined these here (cf. decorating one with 'GET' and one with 'POST')
     because Yawe suggested it was the more normal way. It didn't fix his 405
     error though :(
+    
+    Note: I believe the 405 error is caused by excessively long (~3000 bytes)
+    referer URIs. 
     """
     # TODO: REVISIT: see if we can go back to decorating each method
     # and not need this one
