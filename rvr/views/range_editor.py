@@ -3,8 +3,7 @@ The main pages for the site
 """
 from flask import render_template
 from rvr.app import APP
-from werkzeug.utils import redirect
-from flask.helpers import url_for, flash
+from flask.helpers import flash
 from flask.globals import request
 from rvr.poker.handrange import NOTHING, ANYTHING, HandRange,  \
     unweighted_options_to_description
@@ -77,6 +76,7 @@ def remove_moving(moving, options):
     return len(moving) < pre
 
 class OptionMover(object):
+    # pylint:disable=R0902
     """
     Calculates which options to move where
     """
@@ -125,12 +125,12 @@ class OptionMover(object):
         self.did_move = len(target) != pre
         self.did_select = bool(options_selected)
         self.opt_una = opt_una
-        self.rng_unassigned = unweighted_options_to_description(opt_una)
         self.opt_fol = opt_fol
-        self.rng_fold = unweighted_options_to_description(opt_fol)
         self.opt_pas = opt_pas
-        self.rng_passive = unweighted_options_to_description(opt_pas)
         self.opt_agg = opt_agg
+        self.rng_unassigned = unweighted_options_to_description(opt_una)
+        self.rng_fold = unweighted_options_to_description(opt_fol)
+        self.rng_passive = unweighted_options_to_description(opt_pas)
         self.rng_aggressive = unweighted_options_to_description(opt_agg)
 
 def is_suit_selected(option):
@@ -469,54 +469,6 @@ def range_editor_get():
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
         raised=raised, can_check=can_check)
 
-def range_editor_post_redirect():
-    """
-    Range editor uses Post-Redirect-Get
-    """
-    raised = request.form.get('raised', '')
-    can_check = request.form.get('can_check', '')
-    rng_original = request.form.get('rng_original', ANYTHING)
-    board_raw = request.form.get('board', '')
-    board = safe_board_form('board')
-    opt_ori = safe_hand_range_form('rng_original', ANYTHING)  \
-        .generate_options_unweighted(board)
-    opt_una = safe_hand_range_form('rng_unassigned', rng_original)  \
-        .generate_options_unweighted(board)
-    opt_fol = safe_hand_range_form('rng_fold', NOTHING)  \
-        .generate_options_unweighted(board)
-    opt_pas = safe_hand_range_form('rng_passive', NOTHING)  \
-        .generate_options_unweighted(board)
-    opt_agg = safe_hand_range_form('rng_aggressive', NOTHING)  \
-        .generate_options_unweighted(board)
-    l_una = 'l_una' in request.form
-    l_fol = 'l_fol' in request.form
-    l_pas = 'l_pas' in request.form
-    l_agg = 'l_agg' in request.form
-    options_selected = get_selected_options(opt_ori, board)
-    option_mover = OptionMover(opt_ori=opt_ori, opt_una=opt_una,
-        opt_fol=opt_fol, opt_pas=opt_pas, opt_agg=opt_agg,
-        l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
-        options_selected=options_selected,
-        action=request.form.get('submit', ''))
-    if not option_mover.did_select:
-        flash("Nothing was moved, because nothing was selected.")
-    elif not option_mover.did_move and option_mover.did_lock:
-        flash("Nothing was moved, because the selected hands were locked.")
-    elif not option_mover.did_move:
-        flash("Nothing was moved, because the selected hands were already in the target range.")  # pylint:disable=C0301
-    return redirect(url_for('range_editor',
-        raised=raised, can_check=can_check,
-        board=board_raw,
-        rng_original=rng_original,
-        rng_unassigned=option_mover.rng_unassigned,
-        rng_fold=option_mover.rng_fold,
-        rng_passive=option_mover.rng_passive,
-        rng_aggressive=option_mover.rng_aggressive,
-        l_una='checked' if l_una else '',
-        l_fol='checked' if l_fol else '',
-        l_pas='checked' if l_pas else '',
-        l_agg='checked' if l_agg else ''))
-
 def range_editor_post():
     """
     Straight post-response, not using post-redirect-get because PythonAnywhere
@@ -600,7 +552,6 @@ def range_editor_post():
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
         raised=raised, can_check=can_check)
-    
 
 @APP.route('/range-editor', methods=['GET', 'POST'])
 def range_editor():
