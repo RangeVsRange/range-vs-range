@@ -454,6 +454,7 @@ def game_page():
     """
     User's view of the specified game
     """
+    # TODO: 0: make sure we don't lose values that are posted but invalid
     # TODO: 0: correct client-side validation
     # specifically, check that there is something in fold range, passive range,
     # aggressive range, and that either 1) aggressive range is NOTHING, or

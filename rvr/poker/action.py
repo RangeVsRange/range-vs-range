@@ -205,7 +205,6 @@ def finish_game(game):
 # TODO: HAND HISTORY: record (subjective) sizes of range_action
 # TODO: EQUITY PAYMENT: fold equity
 # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
-# TODO: 1: notice when they get all in
 # TODO: RESULTS: need final showdown sometimes (rarely) ...
 # TODO: REVISIT: it might not be their turn at the point we commit, ok?
 # TODO: STRATEGY: profitable float
@@ -236,6 +235,7 @@ class WhatCouldBe(object):
         self.range_action = range_action
         self.current_options = current_options
         
+        self.all_in = any([player.stack == 0 for player in game.rgps])
         self.bough = []  # list of Branch
         self.action_result = None
 
@@ -245,13 +245,15 @@ class WhatCouldBe(object):
         remaining to act, will the game continue? (Or is it over, contested or
         otherwise.)
         """
-        if self.game.current_round != RIVER:
+        if self.game.current_round == RIVER or self.all_in:
+            # On the river, game continues if there are at least two players,
+            # and at least one left to act.
+            # Similarly, if one player is all in, game continues if there are
+            # at least two players, and at least one left to act.
+            return len(will_remain) >= 2 and len(will_act) >= 1
+        else:
             # Pre-river, game continues if there are at least two players
             return len(will_remain) >= 2
-        else:
-            # On the river, game continues if there are at least two players,
-            # and at least one left to act
-            return len(will_remain) >= 2 and len(will_act) >= 1
 
     def fold_continue(self):
         """
