@@ -563,7 +563,7 @@ def range_editor():
     Note: I believe the 405 error is caused by excessively long (~3000 bytes)
     referer URIs. 
     """
-    # TODO: 1: suppress bet in range viewer
+    # TODO: 2: suppress bet in range viewer when all in
     # TODO: REVISIT: see if we can go back to decorating each method
     # and not need this one
     if request.method == 'GET':

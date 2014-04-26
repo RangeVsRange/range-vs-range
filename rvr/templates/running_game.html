@@ -79,14 +79,11 @@
 {% if is_me %}
 <form method="post" id="action" name="action">
 {{form.hidden_tag()}}
-{% if current_options.can_raise() %}
 <p>
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
-  {{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em><br>
-</p>
-{% endif %}
-<p>
-  <a class="pure-button" target="_blank" href="{{range_editor_url}}">Range editor</a> <input type="submit" value="Done" class="pure-button"/><br>
+  <a class="pure-button" target="_blank" href="{{range_editor_url}}">Range editor</a>
+  {% if current_options.can_raise() %}{{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em>{% endif %}
+  <input type="submit" value="Done" class="pure-button"/>
 </p>
 <details><summary><strong>Raw Ranges</strong></summary>
 <p>Current range: <textarea id=original rows="4" cols="50">{{game_details.current_player.range_raw}}</textarea></p>

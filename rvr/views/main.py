@@ -433,10 +433,11 @@ def _running_game(game, gameid, userid, api):
     history = _make_history_list(game.history)
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
+    is_me = (userid == game.game_details.current_player.user.userid)
     return render_template('running_game.html', title=title, form=form,
         board=board, game_details=game.game_details, history=history,
         current_options=game.current_options,
-        is_me=(userid == game.game_details.current_player.user.userid),
+        is_me=is_me,
         range_editor_url=range_editor_url)
 
 def _finished_game(game, gameid):
@@ -454,8 +455,11 @@ def game_page():
     """
     User's view of the specified game
     """
-    # TODO: 0: make sure we don't lose values that are posted but invalid
-    # TODO: 0: correct client-side validation
+    # TODO: 0: put raise total into range editor, with corresponding validation
+    # TODO: 0: then we may as well have the range editor post the game page :)
+    # TODO: 1: send game page ranges (if present) to range editor
+    # TODO: 1: make sure we don't lose values that are posted but invalid
+    # TODO: 1: correct client-side validation
     # specifically, check that there is something in fold range, passive range,
     # aggressive range, and that either 1) aggressive range is NOTHING, or
     # 2) raise total is at least a minimum raise.
