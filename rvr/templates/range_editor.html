@@ -64,7 +64,8 @@ populate_parent = function() {
     alert("You can't raise to more than " + $MAX_RAISE + ".");
     return false;
   }
-  return post_to_parent(t);
+  post_to_parent(t);
+  return false;
 };
 </script>
 <style>
@@ -75,7 +76,7 @@ populate_parent = function() {
 {% endblock %}
 {% block content %}
 <h2>Range Editor</h2>
-<form formid='form-ignore'></form>
+<form id='form-ignore' onsubmit="return populate_parent();"></form>
 <form action='{{url_for('range_editor')}}' method=post>
 {% for item in hidden_fields %}<input type=hidden name="{{item[0]}}" value="{{item[1]}}">
 {% endfor %}
@@ -85,7 +86,7 @@ populate_parent = function() {
 <p>{% if can_check == "true" %}Check{% else %}Call{% endif %}: {{rng_passive}}</p>
 <p>{% if raised == "true" %}Raise{% else %}Bet{% endif %}: {{rng_aggressive}}</p>
 <p>
- <label for="raise-total">Now you just need to decide {% if raised == "true" %}what to raise to{% else %}how much to bet{% endif %}: </label><input form='form-ignore' id='raise-total' type=number maxlength=3 size=4 min={{min_raise}} max={{max_raise}}> <em>({% if raised == "true" %}raise to{% else %}bet{% endif %} {{min_raise}} - {{max_raise}})</em>, then click here: <button type=button class="pure-button" onclick="populate_parent();">Done</button>
+ <label for="raise-total">Now you just need to decide {% if raised == "true" %}what to raise to{% else %}how much to bet{% endif %}: </label><input type=number form='form-ignore' id='raise-total' type=number maxlength=3 size=4 min={{min_raise}} max={{max_raise}}> <em>({% if raised == "true" %}raise to{% else %}bet{% endif %} {{min_raise}} - {{max_raise}})</em>, then click here: <button type=submit form='form-ignore' type=submit class="pure-button">Done</button>
 </p>
 <hr>
 {% endif %}

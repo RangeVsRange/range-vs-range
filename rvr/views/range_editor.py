@@ -446,7 +446,7 @@ def range_editor_get():
                      ("max_raise", max_raise),
                      ("board", board_raw),
                      ("rng_original", rng_original.description),
-                     ("rng_unassigned", rng_unassigned),
+                     ("rng_unassigned", rng_unassigned.description),
                      ("rng_fold", rng_fold.description),
                      ("rng_passive", rng_passive.description),
                      ("rng_aggressive", rng_aggressive.description)]
@@ -459,7 +459,7 @@ def range_editor_get():
         rank_table=rank_table, suited_table=suited_table,
         pair_table=pair_table, offsuit_table=offsuit_table,
         card_names=images,
-        rng_unassigned=rng_unassigned,
+        rng_unassigned=rng_unassigned.description,
         rng_fold=rng_fold.description,
         rng_passive=rng_passive.description,
         rng_aggressive=rng_aggressive.description,
