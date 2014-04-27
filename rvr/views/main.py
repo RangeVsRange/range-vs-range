@@ -457,8 +457,6 @@ def game_page():
     """
     User's view of the specified game
     """
-    # TODO: 1: send game page ranges (if present) to range editor
-    # (because it's the only way to do direct entry)
     # TODO: 1: make sure we don't lose values that are posted but invalid
     # TODO: 1: correct client-side validation
     # specifically, check that there is something in fold range, passive range,

@@ -409,11 +409,10 @@ def range_editor_get():
     can_check = request.args.get('can_check', '')
     min_raise = request.args.get('min_raise', '0')
     max_raise = request.args.get('max_raise', '200')
-    rng_original = request.args.get('rng_original', ANYTHING)
-    rng_unassigned = request.args.get('rng_unassigned', rng_original)
-    rng_fold = request.args.get('rng_fold', NOTHING)
-    rng_passive = request.args.get('rng_passive', NOTHING)
-    rng_aggressive = request.args.get('rng_aggressive', NOTHING)
+    rng_original = safe_hand_range('rng_original', ANYTHING)
+    rng_fold = safe_hand_range('rng_fold', NOTHING)
+    rng_passive = safe_hand_range('rng_passive', NOTHING)
+    rng_aggressive = safe_hand_range('rng_aggressive', NOTHING)
     l_una = request.args.get('l_una', '') == 'checked'
     l_fol = request.args.get('l_fol', 'checked') == 'checked'
     l_pas = request.args.get('l_pas', 'checked') == 'checked'
@@ -421,16 +420,12 @@ def range_editor_get():
     board_raw = request.args.get('board', '')
     images = card_names(board_raw)
     board = safe_board_form('board')
-    opt_ori = safe_hand_range('rng_original', ANYTHING)  \
-        .generate_options_unweighted(board)
-    opt_una = safe_hand_range('rng_unassigned', rng_original)  \
-        .generate_options_unweighted(board)
-    opt_fol = safe_hand_range('rng_fold', NOTHING)  \
-        .generate_options_unweighted(board)
-    opt_pas = safe_hand_range('rng_passive', NOTHING)  \
-        .generate_options_unweighted(board)
-    opt_agg = safe_hand_range('rng_aggressive', NOTHING)  \
-        .generate_options_unweighted(board)
+    opt_ori = rng_original.generate_options_unweighted(board)
+    opt_fol = rng_fold.generate_options_unweighted(board)
+    opt_pas = rng_passive.generate_options_unweighted(board)
+    opt_agg = rng_aggressive.generate_options_unweighted(board)
+    opt_una = list(set(opt_ori) - set(opt_fol) - set(opt_pas) - set(opt_agg))
+    rng_unassigned = HandRange(unweighted_options_to_description(opt_una))
     color_maker = ColorMaker(opt_ori=opt_ori, opt_una=opt_una, opt_fol=opt_fol,
                              opt_pas=opt_pas, opt_agg=opt_agg)
     if len(opt_ori) != 0:
@@ -450,11 +445,11 @@ def range_editor_get():
                      ("min_raise", min_raise),
                      ("max_raise", max_raise),
                      ("board", board_raw),
-                     ("rng_original", rng_original),
+                     ("rng_original", rng_original.description),
                      ("rng_unassigned", rng_unassigned),
-                     ("rng_fold", rng_fold),
-                     ("rng_passive", rng_passive),
-                     ("rng_aggressive", rng_aggressive)]
+                     ("rng_fold", rng_fold.description),
+                     ("rng_passive", rng_passive.description),
+                     ("rng_aggressive", rng_aggressive.description)]
     if embedded == 'true':
         template = 'range_viewer.html'
     else:
@@ -465,9 +460,9 @@ def range_editor_get():
         pair_table=pair_table, offsuit_table=offsuit_table,
         card_names=images,
         rng_unassigned=rng_unassigned,
-        rng_fold=rng_fold,
-        rng_passive=rng_passive,
-        rng_aggressive=rng_aggressive,
+        rng_fold=rng_fold.description,
+        rng_passive=rng_passive.description,
+        rng_aggressive=rng_aggressive.description,
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
@@ -573,8 +568,6 @@ def range_editor():
     Note: I believe the 405 error is caused by excessively long (~3000 bytes)
     referer URIs. 
     """
-    # TODO: 0: calculate unassigned as original - fold - passive - aggressive.
-    # (use range_subtract logic?)
     # TODO: 2: suppress bet in range viewer when all in
     # TODO: REVISIT: see if we can go back to decorating each method
     # and not need this one
