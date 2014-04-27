@@ -573,6 +573,8 @@ def range_editor():
     Note: I believe the 405 error is caused by excessively long (~3000 bytes)
     referer URIs. 
     """
+    # TODO: 0: calculate unassigned as original - fold - passive - aggressive.
+    # (use range_subtract logic?)
     # TODO: 2: suppress bet in range viewer when all in
     # TODO: REVISIT: see if we can go back to decorating each method
     # and not need this one

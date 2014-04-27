@@ -458,13 +458,14 @@ def game_page():
     User's view of the specified game
     """
     # TODO: 1: send game page ranges (if present) to range editor
+    # (because it's the only way to do direct entry)
     # TODO: 1: make sure we don't lose values that are posted but invalid
     # TODO: 1: correct client-side validation
     # specifically, check that there is something in fold range, passive range,
     # aggressive range, and that either 1) aggressive range is NOTHING, or
     # 2) raise total is at least a minimum raise.
     # use $('#the-form-id').submit(function(){})
-    # (return false from function to veto submission)
+    # (return false from this function to veto submission)
     alt = ensure_user()
     if alt:
         return alt
