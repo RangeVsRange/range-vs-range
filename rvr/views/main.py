@@ -17,6 +17,8 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 
+# TODO: 0: move email templates into their own folder, html similarly
+
 def is_authenticated():
     """
     Is the user authenticated with OpenID?
@@ -429,6 +431,7 @@ def _running_game(game, gameid, userid, api):
         board=game.game_details.board_raw,
         raised="true" if game.current_options.is_raise else "false",
         can_check="true" if game.current_options.can_check() else "false",
+        can_raise="true" if game.current_options.can_raise() else "false",
         min_raise=game.current_options.min_raise,
         max_raise=game.current_options.max_raise)
     title = 'Game %d (running)' % (gameid,)

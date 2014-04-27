@@ -407,6 +407,7 @@ def range_editor_get():
     embedded = request.args.get('embedded', 'false')
     raised = request.args.get('raised', '')
     can_check = request.args.get('can_check', '')
+    can_raise = request.args.get('can_raise', '')
     min_raise = request.args.get('min_raise', '0')
     max_raise = request.args.get('max_raise', '200')
     rng_original = safe_hand_range('rng_original', ANYTHING)
@@ -442,6 +443,7 @@ def range_editor_get():
     offsuit_table = make_offsuit_table()
     hidden_fields = [("raised", raised),
                      ("can_check", can_check),
+                     ("can_raise", can_raise),
                      ("min_raise", min_raise),
                      ("max_raise", max_raise),
                      ("board", board_raw),
@@ -466,13 +468,13 @@ def range_editor_get():
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
-        raised=raised, can_check=can_check,
+        raised=raised, can_check=can_check, can_raise=can_raise,
         min_raise=min_raise, max_raise=max_raise)
 
 def range_editor_post():
     """
     Straight post-response, not using post-redirect-get because PythonAnywhere
-    (apparently) has a problem with excessively long referer URIs. The other
+    (apparently) has a problem with excessively long referrer URIs. The other
     option (to avoid the refresh-repost problem) would be to have cookies and
     a UUID as an index in the get parameter (to avoid issues with multiple
     tabs).
@@ -568,7 +570,6 @@ def range_editor():
     Note: I believe the 405 error is caused by excessively long (~3000 bytes)
     referer URIs. 
     """
-    # TODO: 2: suppress bet in range viewer when all in
     # TODO: REVISIT: see if we can go back to decorating each method
     # and not need this one
     if request.method == 'GET':

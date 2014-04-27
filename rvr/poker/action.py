@@ -152,7 +152,7 @@ def calculate_current_options(game, rgp):
                              min_raise=bet_lower,
                              max_raise=bet_higher)
     else:
-        return ActionOptions(call_amount)
+        return ActionOptions(call_amount, is_raise=raised_to != 0)
 
 def act_fold(rgp):
     """

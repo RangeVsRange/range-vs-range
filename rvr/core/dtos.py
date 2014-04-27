@@ -528,8 +528,9 @@ class ActionOptions(object):
         self.max_raise = max_raise
         
     def __repr__(self):
-        return "ActionOptions(call_cost=%r, min_raise=%r, max_raise=%r)" %  \
-            (self.call_cost, self.min_raise, self.max_raise)
+        return "ActionOptions(call_cost=%r, is_raise=%r, min_raise=%r, "  \
+            "max_raise=%r)" % (self.call_cost, self.is_raise, self.min_raise,
+                               self.max_raise)
     
     def can_check(self):
         """

@@ -84,9 +84,13 @@ populate_parent = function() {
 <p>You've assigned your whole range. Here's the result:</p>
 <p>Fold: {{rng_fold}}</p>
 <p>{% if can_check == "true" %}Check{% else %}Call{% endif %}: {{rng_passive}}</p>
-<p>{% if raised == "true" %}Raise{% else %}Bet{% endif %}: {{rng_aggressive}}</p>
+{% if can_raise == 'true' %}<p>{% if raised == "true" %}Raise{% else %}Bet{% endif %}: {{rng_aggressive}}</p>{% endif %}
 <p>
- <label for="raise-total">Now you just need to decide {% if raised == "true" %}what to raise to{% else %}how much to bet{% endif %}: </label><input type=number form='form-ignore' id='raise-total' type=number maxlength=3 size=4 min={{min_raise}} max={{max_raise}}> <em>({% if raised == "true" %}raise to{% else %}bet{% endif %} {{min_raise}} - {{max_raise}})</em>, then click here: <button type=submit form='form-ignore' type=submit class="pure-button">Done</button>
+{% if can_raise == 'true' %}
+  <label for="raise-total">Now you just need to decide {% if raised == "true" %}what to raise to{% else %}how much to bet{% endif %}: </label>
+  <input type=number form='form-ignore' id='raise-total' type=number maxlength=3 size=4 min={{min_raise}} max={{max_raise}}> <em>({% if raised == "true" %}raise to{% else %}bet{% endif %} {{min_raise}} - {{max_raise}})</em>, then click here:
+{% endif %}
+<button type=submit form='form-ignore' type=submit class="pure-button">Done</button>
 </p>
 <hr>
 {% endif %}
@@ -128,14 +132,16 @@ populate_parent = function() {
   </table>
  </td>
  <td class=wide>
+  {% if can_raise == 'true' %}
   <table>
    <tr><td>{% if raised == "true" %}Raise range{% else %}Bet range{% endif %}</td></tr>
    <tr><td>{{ '%0.2f' % pct_aggressive }}%</td></tr>
    <tr><td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Lock</label></td></tr>
    <tr><td><button type=submit name=submit value="aggressive">{% if raised == "true" %}Raise{% else %}Bet{% endif %}</button></td></tr>
   </table>
-<!-- End 4 x Range -->
+  {% endif %}
  </td>
+<!-- End 4 x Range -->
  </tr>
  </table>
 </td>
