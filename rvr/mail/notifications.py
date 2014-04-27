@@ -7,12 +7,12 @@ from flask import copy_current_request_context
 from rvr.app import MAIL, make_unsubscribe_url
 from threading import Thread
 from functools import wraps
-import logging
 
 class NotificationSettings(object):
     """
     A simple holder for a setting to suppress email. Provides for a singleton.
     """
+    #pylint:disable=R0903
     def __init__(self):
         self.suppress_email = False
         

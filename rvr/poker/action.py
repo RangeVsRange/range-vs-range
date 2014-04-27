@@ -201,8 +201,6 @@ def finish_game(game):
     # range-based showdown (river, or all in)
     return game
 
-# Additional to-dos around this stuff, not specifically to do with refactoring:
-# TODO: HAND HISTORY: record (subjective) sizes of range_action
 # TODO: EQUITY PAYMENT: fold equity
 # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
 # TODO: RESULTS: need final showdown sometimes (rarely) ...
@@ -210,7 +208,7 @@ def finish_game(game):
 # TODO: STRATEGY: profitable float
 # - hero bets one flop (etc.), villain calls
 # - hero checks turn (etc.), villain bets
-# - if hero doesn't bet enough on the flop (etc.), checks too much
+# - if hero doesn't bet big enough on the flop (etc.), checks too much
 #   on the turn (etc.), and folds too much to the bet, villain has
 #   a profitable float
 # (villain will often have a profitable float anyway due to equity,
