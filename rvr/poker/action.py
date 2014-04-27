@@ -198,7 +198,7 @@ def finish_game(game):
     """
     # TODO: RESULTS: finish game
     # There may be a winner: one person with left_to_act True. Or there may be a
-    # range-based showdown.
+    # range-based showdown (river, or all in)
     return game
 
 # Additional to-dos around this stuff, not specifically to do with refactoring:

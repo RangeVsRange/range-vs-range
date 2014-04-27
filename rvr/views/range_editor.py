@@ -407,6 +407,8 @@ def range_editor_get():
     embedded = request.args.get('embedded', 'false')
     raised = request.args.get('raised', '')
     can_check = request.args.get('can_check', '')
+    min_raise = request.args.get('min_raise', '0')
+    max_raise = request.args.get('max_raise', '200')
     rng_original = request.args.get('rng_original', ANYTHING)
     rng_unassigned = request.args.get('rng_unassigned', rng_original)
     rng_fold = request.args.get('rng_fold', NOTHING)
@@ -445,6 +447,8 @@ def range_editor_get():
     offsuit_table = make_offsuit_table()
     hidden_fields = [("raised", raised),
                      ("can_check", can_check),
+                     ("min_raise", min_raise),
+                     ("max_raise", max_raise),
                      ("board", board_raw),
                      ("rng_original", rng_original),
                      ("rng_unassigned", rng_unassigned),
@@ -467,7 +471,8 @@ def range_editor_get():
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
-        raised=raised, can_check=can_check)
+        raised=raised, can_check=can_check,
+        min_raise=min_raise, max_raise=max_raise)
 
 def range_editor_post():
     """
@@ -479,6 +484,8 @@ def range_editor_post():
     """
     raised = request.form.get('raised', '')
     can_check = request.form.get('can_check', '')
+    min_raise = request.form.get('min_raise', '0')
+    max_raise = request.form.get('max_raise', '200')
     rng_original = request.form.get('rng_original', ANYTHING)    
     board_raw = request.form.get('board', '')
     board = safe_board_form('board')
@@ -532,6 +539,8 @@ def range_editor_post():
     # Range viewer doesn't support post, obviously.
     hidden_fields = [("raised", raised),
                      ("can_check", can_check),
+                     ("min_raise", min_raise),
+                     ("max_raise", max_raise),
                      ("board", board_raw),
                      ("rng_original", rng_original),
                      ("rng_unassigned", option_mover.rng_unassigned),
@@ -551,7 +560,8 @@ def range_editor_post():
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
-        raised=raised, can_check=can_check)
+        raised=raised, can_check=can_check,
+        min_raise=min_raise, max_raise=max_raise)
 
 @APP.route('/range-editor', methods=['GET', 'POST'])
 def range_editor():

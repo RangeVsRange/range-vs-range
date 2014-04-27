@@ -428,7 +428,9 @@ def _running_game(game, gameid, userid, api):
         rng_original=game.game_details.current_player.range_raw,
         board=game.game_details.board_raw,
         raised="true" if game.current_options.is_raise else "false",
-        can_check="true" if game.current_options.can_check() else "false")
+        can_check="true" if game.current_options.can_check() else "false",
+        min_raise=game.current_options.min_raise,
+        max_raise=game.current_options.max_raise)
     title = 'Game %d (running)' % (gameid,)
     history = _make_history_list(game.history)
     board_raw = game.game_details.board_raw
@@ -455,8 +457,6 @@ def game_page():
     """
     User's view of the specified game
     """
-    # TODO: 0: put raise total into range editor, with corresponding validation
-    # TODO: 0: then we may as well have the range editor post the game page :)
     # TODO: 1: send game page ranges (if present) to range editor
     # TODO: 1: make sure we don't lose values that are posted but invalid
     # TODO: 1: correct client-side validation
