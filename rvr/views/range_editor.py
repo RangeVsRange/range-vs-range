@@ -481,6 +481,7 @@ def range_editor_post():
     """
     raised = request.form.get('raised', '')
     can_check = request.form.get('can_check', '')
+    can_raise = request.form.get('can_raise', '')
     min_raise = request.form.get('min_raise', '0')
     max_raise = request.form.get('max_raise', '200')
     rng_original = request.form.get('rng_original', ANYTHING)    
@@ -536,6 +537,7 @@ def range_editor_post():
     # Range viewer doesn't support post, obviously.
     hidden_fields = [("raised", raised),
                      ("can_check", can_check),
+                     ("can_raise", can_raise),
                      ("min_raise", min_raise),
                      ("max_raise", max_raise),
                      ("board", board_raw),
@@ -557,7 +559,7 @@ def range_editor_post():
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
         pct_unassigned=pct_unassigned, pct_fold=pct_fold,
         pct_passive=pct_passive, pct_aggressive=pct_aggressive,
-        raised=raised, can_check=can_check,
+        raised=raised, can_check=can_check, can_raise=can_raise,
         min_raise=min_raise, max_raise=max_raise)
 
 @APP.route('/range-editor', methods=['GET', 'POST'])

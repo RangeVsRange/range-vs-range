@@ -3,6 +3,7 @@
 <script type=text/javascript>
 $MIN_RAISE = Number({{min_raise}});
 $MAX_RAISE = Number({{max_raise}});
+$CAN_RAISE = '{{can_raise}}' == 'true';
 next_map = {{ next_map|safe }};
 rank_select = function(_id) {
   $('#' + _id).toggleClass('r_sel');
@@ -45,24 +46,29 @@ post_to_parent = function(raise_total) {
   fold.value = "{{ rng_fold }}";
   passive.value = "{{ rng_passive }}";
   aggressive.value = "{{ rng_aggressive }}";
-  total.value = raise_total;
+  if ($CAN_RAISE) {
+    total.value = raise_total;
+  }
   form = doc.getElementById("action");
   form.submit();
   window.close();
 };
 populate_parent = function() {
-  var t = parseInt($('#raise-total').val());
-  if (isNaN(t)) {
-    alert("You gotta specify a raise amount.");
-    return false;
-  }
-  if (t < $MIN_RAISE) {
-    alert("You gotta raise to at least " + $MIN_RAISE + ".");
-    return false;
-  }
-  if (t > $MAX_RAISE) {
-    alert("You can't raise to more than " + $MAX_RAISE + ".");
-    return false;
+  var t;
+  if ($CAN_RAISE) {
+    t = parseInt($('#raise-total').val());
+    if (isNaN(t)) {
+      alert("You gotta specify a raise amount.");
+      return false;
+    }
+    if (t < $MIN_RAISE) {
+      alert("You gotta raise to at least " + $MIN_RAISE + ".");
+      return false;
+    }
+    if (t > $MAX_RAISE) {
+      alert("You can't raise to more than " + $MAX_RAISE + ".");
+      return false;
+    }
   }
   post_to_parent(t);
   return false;
