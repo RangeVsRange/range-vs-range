@@ -64,7 +64,7 @@ def _your_turn(recipient, screenname, identity):
     """
     msg = Message("It's your turn on Range vs. Range")
     msg.add_recipient(recipient)
-    msg.html = render_template('your_turn.html', recipient=recipient,
+    msg.html = render_template('email/your_turn.html', recipient=recipient,
                                screenname=screenname,
                                unsubscribe=make_unsubscribe_url(identity))
     send_email_async(msg)
@@ -76,10 +76,9 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting):
     """
     msg = Message("A game has started on Range vs. Range")
     msg.add_recipient(recipient)
-    msg.html = render_template('game_started.html', recipient=recipient,
-                               screenname=screenname, is_starter=is_starter,
-                               is_acting=is_acting,
-                               unsubscribe=make_unsubscribe_url(identity))
+    msg.html = render_template('email/game_started.html',
+        recipient=recipient, screenname=screenname, is_starter=is_starter,
+        is_acting=is_acting, unsubscribe=make_unsubscribe_url(identity))
     send_email_async(msg)
 
 def notify_current_player(game):

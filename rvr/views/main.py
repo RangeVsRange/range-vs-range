@@ -17,8 +17,6 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 
-# TODO: 0: move email templates into their own folder, html similarly
-
 def is_authenticated():
     """
     Is the user authenticated with OpenID?
