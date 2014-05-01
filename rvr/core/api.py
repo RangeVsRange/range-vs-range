@@ -526,8 +526,10 @@ class API(object):
             running_game = None
             
         try:
-            # This commits either the add or the start game.
-            # This is important so that there are never duplicate game ids.
+            # This commits either the add or the start game. We do this so that
+            # if it's going to fail, it fails before the ensure_open_games()
+            # below. This is important so that there are never duplicate game
+            # ids.
             self.session.commit()  # explicitly check that it commits okay
         except IntegrityError as _ex:
             # An error will occur if game no longer exists, or user no longer

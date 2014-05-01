@@ -199,12 +199,11 @@ def finish_game(game):
     # TODO: RESULTS: finish game
     # There may be a winner: one person with left_to_act True. Or there may be a
     # range-based showdown (river, or all in)
+    # TODO: RESULTS: need final showdown sometimes (rarely) ...
     return game
 
 # TODO: EQUITY PAYMENT: fold equity
 # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
-# TODO: RESULTS: need final showdown sometimes (rarely) ...
-# TODO: REVISIT: it might not be their turn at the point we commit, ok?
 # TODO: STRATEGY: profitable float
 # - hero bets one flop (etc.), villain calls
 # - hero checks turn (etc.), villain bets

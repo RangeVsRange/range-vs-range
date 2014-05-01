@@ -1,18 +1,27 @@
 """
 Creation of database, connection to database, sessions for use of database
 """
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
 from functools import wraps
 from rvr.local_settings import SQLALCHEMY_DATABASE_URI
 
-ENGINE = create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
+ENGINE = create_engine(SQLALCHEMY_DATABASE_URI, echo=False,
+                       isolation_level='SERIALIZABLE')
 SESSION = sessionmaker(bind=ENGINE)
 BASE = declarative_base()
 
 #pylint:disable=R0903
+
+@event.listens_for(ENGINE, "begin")
+def do_begin(conn):
+    """
+    To allows SQLite serializable isolation, per http://docs.sqlalchemy.org/en
+    /latest/dialects/sqlite.html#serializable-transaction-isolation
+    """
+    conn.execute("BEGIN")
 
 # from http://docs.sqlalchemy.org/en/rel_0_8/orm/session.html
 @contextmanager

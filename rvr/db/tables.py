@@ -335,10 +335,9 @@ class GameHistoryBoard(BASE):
 
 # TODO: HAND HISTORY: the following hand history items:
 #  - analysis of a fold, bet, call
-#  - fold equity payment
-#  - board card equity payment
+#  - equity payment (fold equity, board card equity, etc.)
 #  - showdown equities
-#  - showdown payment
+#  - showdown result
 #  - chat
 # Record analysis against specific hand history (range action) items.
 # Record equity payments against hand history items - deals, range actions, etc.
