@@ -458,6 +458,7 @@ def game_page():
     """
     User's view of the specified game
     """
+    # TODO: 2: a table of game on the home page, sortable?
     # TODO: 1: make sure we don't lose values that are posted but invalid
     # TODO: 1: correct client-side validation
     # specifically, check that there is something in fold range, passive range,

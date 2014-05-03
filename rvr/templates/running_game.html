@@ -89,7 +89,7 @@
 <p>
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
   <a id="range-editor-url" class="pure-button" target="_blank" href="{{range_editor_url}}" onclick="update_range_editor_url()">Range editor</a>
-  {% if current_options.can_raise() %}{{form.total.label}} {{form.total}} <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em>{% endif %}
+  {% if current_options.can_raise() %}{{form.total.label}} <input id={{form.total.id}} name={{form.total.name}} type=number maxlength=3 size=4 min={{current_options.min_raise}} max={{current_options.max_raise}}> <em>(raise to: {{current_options.min_raise}} - {{current_options.max_raise}})</em>{% endif %}
   <input type="submit" value="Done" class="pure-button"/>
 </p>
 <details><summary><strong>Raw Ranges</strong></summary>
