@@ -277,7 +277,7 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
             total = int(form.total.data)
         except ValueError:
             flash("Incomprehensible raise total.")
-            return redirect(url_for('game_page', gameid=gameid))
+            return False
     else:
         total = 0
     range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
@@ -292,7 +292,7 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
         range_action.aggressive_range.validate()
     except ValueError as err:
         flash("%s range is invalid. Reason: %s." % (range_name, err.message))
-        return redirect(url_for('game_page', gameid=gameid))
+        return False
     logging.debug("gameid %r, performing action, userid %r, range_action %r",
                   gameid, userid, range_action)
     result = api.perform_action(gameid, userid, range_action)
@@ -306,7 +306,7 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
             msg = "An unknown error occurred performing action, sorry."
             logging.info('Unknown error from api.perform_action: %s', result)
         flash(msg)
-        return redirect(url_for('game_page', gameid=gameid))
+        return False
     else:
         if result.is_fold:
             msg = "You folded."
@@ -325,7 +325,7 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
         else:
             msg = "I can't figure out what happened, eh."
         flash(msg)
-        return redirect(url_for('game_page', gameid=gameid))
+        return True
 
 def _board_to_vars(item, _index):
     """
@@ -432,9 +432,12 @@ def _running_game(game, gameid, userid, api):
         min_raise=game.current_options.min_raise,
         max_raise=game.current_options.max_raise)
     if form.validate_on_submit():
-        return _handle_action(gameid, userid, api, form,
-            game.current_options.can_check(), game.current_options.can_raise())
+        if _handle_action(gameid, userid, api, form,
+                          game.current_options.can_check(),
+                          game.current_options.can_raise()):
+            return redirect(url_for('game_page', gameid=gameid))   
     
+    # First load, OR something's wrong with their data.
     range_editor_url = url_for('range_editor',
         rng_original=game.game_details.current_player.range_raw,
         board=game.game_details.board_raw,
