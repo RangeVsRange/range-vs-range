@@ -264,11 +264,11 @@ def leave_game():
     flash(msg)
     return redirect(url_for('error_page'))
 
-def _handle_action(gameid, userid, api, form):
+def _handle_action(gameid, userid, api, form, can_check, can_raise):
     """
     Handle response from an action form
     """
-    # pylint:disable=R0912
+    # pylint:disable=R0912,R0913
     fold = form.fold.data
     passive = form.passive.data
     aggressive = form.aggressive.data
@@ -283,6 +283,16 @@ def _handle_action(gameid, userid, api, form):
     range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
                                       aggressive_raw=aggressive,
                                       raise_total=total)
+    try:
+        range_name = "Fold"
+        range_action.fold_range.validate()
+        range_name = "Check" if can_check else "Call"
+        range_action.passive_range.validate()
+        range_name = "Raise" if can_raise else "Bet"
+        range_action.aggressive_range.validate()
+    except ValueError as err:
+        flash("%s range is invalid. Reason: %s." % (range_name, err.message))
+        return redirect(url_for('game_page', gameid=gameid))
     logging.debug("gameid %r, performing action, userid %r, range_action %r",
                   gameid, userid, range_action)
     result = api.perform_action(gameid, userid, range_action)
@@ -422,7 +432,8 @@ def _running_game(game, gameid, userid, api):
         min_raise=game.current_options.min_raise,
         max_raise=game.current_options.max_raise)
     if form.validate_on_submit():
-        return _handle_action(gameid, userid, api, form)
+        return _handle_action(gameid, userid, api, form,
+            game.current_options.can_check(), game.current_options.can_raise())
     
     range_editor_url = url_for('range_editor',
         rng_original=game.game_details.current_player.range_raw,
@@ -460,12 +471,6 @@ def game_page():
     """
     # TODO: 2: a table of game on the home page, sortable?
     # TODO: 1: make sure we don't lose values that are posted but invalid
-    # TODO: 1: correct client-side validation
-    # specifically, check that there is something in fold range, passive range,
-    # aggressive range, and that either 1) aggressive range is NOTHING, or
-    # 2) raise total is at least a minimum raise.
-    # use $('#the-form-id').submit(function(){})
-    # (return false from this function to veto submission)
     alt = ensure_user()
     if alt:
         return alt

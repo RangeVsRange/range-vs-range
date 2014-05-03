@@ -51,22 +51,60 @@
     $('#range-editor-url').attr("href", updated);
   };
   validate_form = function() {
-    {% if current_options.can_raise() %}
-      var t = parseInt($('#{{form.total.id}}').val());
-      if (isNaN(t)) {
-        alert("You gotta specify a raise amount.");
+    var fold = $('#{{form.fold.id}}').val();
+    var passive = $('#{{form.passive.id}}').val();
+    var aggressive = $('#{{form.aggressive.id}}').val();
+    if (fold.length < 1) {
+      alert("You gotta enter a fold range.");
+      return false;
+    }
+    if (passive.length < 1) {
+      {% if current_options.can_check() %}
+      alert("You gotta enter a check range.");
+      {% else %}
+      alert("You gotta enter a call range.");
+      {% endif %}
+      return false;
+    }
+    {% if current_options.can_raise() -%}
+    if (aggressive.length < 1) {
+      {% if current_options.is_raise %}
+      alert("You gotta enter a raise range.");
+      {% else %}
+      alert("You gotta enter a bet range.");
+      {% endif %}
+      return false;
+    }
+    if (aggressive != 'nothing') {
+      {# validate raise total only if raise range specified -#}
+      var total = parseInt($('#{{form.total.id}}').val());
+      if (isNaN(total)) {
+        {% if current_options.is_raise %}
+        alert("You gotta enter a raise range.");
+        {% else %}
+        alert("You gotta enter a bet range.");
+        {% endif %}
         return false;
       }
-      {# IE doesn't auto-validate these HTML5 elements, so we gotta. #}
-      if (t < {{current_options.min_raise}}) {
+      {# IE doesn't auto-validate these HTML5 elements, so we gotta. -#}
+      if (total < {{current_options.min_raise}}) {
+        {% if current_options.is_raise %}
         alert("You gotta raise to at least {{current_options.min_raise}}.");
+        {% else %}
+        alert("You gotta bet at least {{current_options.min_raise}}.");
+        {% endif %}
         return false;
       }
-      if (t > {{current_options.max_raise}}) {
+      if (total > {{current_options.max_raise}}) {
+        {% if current_options.is_raise %}
         alert("You can't raise to more than {{current_options.max_raise}}.");
+        {% else %}
+        alert("You can't bet more than {{current_options.max_raise}}.");
+        {% endif %}
         return false;
       }
-    {% endif %}
+    }
+    {%- endif %}
     return true;
   };
 </script>

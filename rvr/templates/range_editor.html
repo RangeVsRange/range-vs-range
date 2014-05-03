@@ -58,7 +58,7 @@ populate_parent = function() {
   if ($CAN_RAISE) {
     t = parseInt($('#raise-total').val());
     if (isNaN(t)) {
-      alert("You gotta specify a raise amount.");
+      alert("You gotta enter a raise amount.");
       return false;
     }
     if (t < $MIN_RAISE) {
