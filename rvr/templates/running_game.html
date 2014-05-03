@@ -49,7 +49,26 @@
     updated += '&rng_passive=' + $('#passive').val();
     updated += '&rng_aggressive=' + $('#aggressive').val();
     $('#range-editor-url').attr("href", updated);
-  }
+  };
+  validate_form = function() {
+    {% if current_options.can_raise() %}
+      var t = parseInt($('#{{form.total.id}}').val());
+      if (isNaN(t)) {
+        alert("You gotta specify a raise amount.");
+        return false;
+      }
+      {# IE doesn't auto-validate these HTML5 elements, so we gotta. #}
+      if (t < {{current_options.min_raise}}) {
+        alert("You gotta raise to at least {{current_options.min_raise}}.");
+        return false;
+      }
+      if (t > {{current_options.max_raise}}) {
+        alert("You can't raise to more than {{current_options.max_raise}}.");
+        return false;
+      }
+    {% endif %}
+    return true;
+  };
 </script>
 {% endblock %}
 {% block content %}
@@ -84,7 +103,7 @@
 {% endfor %}
 </table></p>
 {% if is_me %}
-<form method="post" id="action" name="action">
+<form method="post" id="action" name="action" onsubmit="return validate_form();">
 {{form.hidden_tag()}}
 <p>
   {% for error in form.errors.total %}<span style="color: red;">[{{error}}]</span><br>{% endfor %}
