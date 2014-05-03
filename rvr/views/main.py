@@ -472,8 +472,8 @@ def game_page():
     """
     User's view of the specified game
     """
+    # TODO: 1: strategic analysis
     # TODO: 2: a table of game on the home page, sortable?
-    # TODO: 1: make sure we don't lose values that are posted but invalid
     alt = ensure_user()
     if alt:
         return alt
