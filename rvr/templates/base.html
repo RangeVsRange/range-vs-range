@@ -56,7 +56,7 @@
     .wide { padding:15px; }
     </style>
   </head>
-  <body>
+  <body><div style="padding:15px">
     <div><h1><a href="{{ url_for('home_page') }}">Range vs. Range</a></h1></div>
     <div><h2><em>Advanced No Limit Hold'em Training</em></h2></div>
     <hr>
@@ -69,22 +69,15 @@
     </p>
     {% endif %}
     {% endwith %}
-    <table style="width:100%">
-    <tr><td>{% block content %}{% endblock %}</td></tr>
-    <tr><td>
-     <hr>
-     <table>
-     <tr>
-       <td class=wide><a href="http://validator.w3.org/check?uri=referer">Validate HTML 5</a></td>
-       <td class=wide><a href="https://github.com/RangeVsRange/range-vs-range/">Range vs. Range on GitHub</a></td>
-       <td class=wide><a href="http://rangevsrange.wordpress.com/advanced-training-example/">The website for the existing client/server version</a></td>
-       <td class=wide><a href="/logout">Log out</a></td>
-     </tr>
-     </table>
-     <table>
-     <tr><td>Show your support: <a href="https://blockchain.info/address/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf">1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf</a>&nbsp;&nbsp;|&nbsp;&nbsp;<span id=donated>Updating</span> BTC donated so far&nbsp;&nbsp;|&nbsp;&nbsp;Guy Upstairs started this project on December 5, 2010.</td></tr>
-     </table>
-    </td></tr>
-    </table>
-  </body>
+    {% block content %}{% endblock %}
+    <hr>
+    <span class=wide><a href="http://validator.w3.org/check?uri=referer">Validate HTML 5</a></span>
+    <span class=wide><a href="https://github.com/RangeVsRange/range-vs-range/">Range vs. Range on GitHub</a></span>
+    <span class=wide><a href="http://rangevsrange.wordpress.com/advanced-training-example/">The website for the existing client/server version</a></span>
+    <span class=wide><a href="/logout">Log out</a></span>
+    <br><br>
+    <span class=wide>Show your support: <a href="https://blockchain.info/address/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf">1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf</a></span>
+    <span class=wide><span id=donated>Updating</span> BTC donated so far</span>
+    <span class=wide>Guy Upstairs started this project on December 5, 2010.</span>
+  </div></body>
 </html>
