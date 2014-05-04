@@ -176,19 +176,9 @@ def home_page():
                if any([u.userid == userid for u in og.users])]
     others_open = [og for og in open_games
                    if not any([u.userid == userid for u in og.users])]
-    my_turn_games = [mg for mg in my_games.running_details
-                     if mg.current_user_details.userid == userid]
-    others_turn_games = [mg for mg in my_games.running_details
-                         if mg.current_user_details.userid != userid]
-    # TODO: 2: a table of games on the home page, sortable?
-    # Three tables:
-    # 1. running games (only if there are any)
-    #     -> w/ is it my turn column
-    # 2. open games
-    #     -> w/ am I registered column
-    # 3. finished games
+    form = ChangeForm()
     return render_template('home.html', title='Home',
-        screenname=screenname, userid=userid,
+        screenname=screenname, userid=userid, change_form=form,
         r_games=my_games,
         my_open=my_open,
         others_open=others_open,
