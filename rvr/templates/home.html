@@ -40,13 +40,26 @@ $(function() {
       headers: { 0: { sorter:'game' } }
   });
 });
+show_change_details = function() {
+    $('#change-summary').hide();
+    $('#change-details').show();
+    $('#{{change_form.change.id}}').focus();
+};
 open-games
 </script>
 {% endblock %}
 {% block content %}
 <form action="{{url_for('change_screenname')}}" method="post" name="change">
 {{change_form.hidden_tag()}}
-<p>Your screen name is <strong>{{screenname}}</strong>. <label for="{{change_form.change.id}}">You can change your screen name, if you want to: </label>{{change_form.change}} <input type="submit" value="Go!" />
+<p>Your screen name is <strong>{{screenname}}</strong>.
+
+<span id="change-summary">
+ <button type=button onclick="show_change_details();">Change</button>
+</span>
+<span id="change-details" style="display: none;">
+ <label for="{{change_form.change.id}}">Enter a new screen name: </label>{{change_form.change}} <input type="submit" value="Go!" />
+</span>
+
 </p>
 </form>
 
