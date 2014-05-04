@@ -20,7 +20,7 @@ $.tablesorter.addParser({
 $(function() {
   $("#running-games").tablesorter({
       // Sort by is my turn, then by game number 
-      sortList: [[1,0],[0,0]],
+      sortList: [[1,0]],
       headers: { 0: { sorter:'game' },
                  1: { sorter:'isme' } }
   });
@@ -28,7 +28,7 @@ $(function() {
 $(function() {
   $("#open-games").tablesorter({
       // Sort by am I registered, then by game number 
-      sortList: [[1,0],[0,0]],
+      sortList: [[1,0]],
       headers: { 0: { sorter:'game' },
                  1: { sorter:'isme' } }
   });
