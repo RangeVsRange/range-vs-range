@@ -55,7 +55,8 @@ post_to_parent = function(raise_total) {
 };
 populate_parent = function() {
   var t;
-  if ($CAN_RAISE) {
+  var r = "{{ rng_aggressive }}";
+  if ($CAN_RAISE && r != 'nothing') {
     t = parseInt($('#raise-total').val());
     if (isNaN(t)) {
       alert("You gotta enter a raise amount.");
