@@ -120,7 +120,6 @@ class RunningGame(BASE, object):
     Has a many-to-many relationship with User, via RunningGameParticipant.
     """
     __tablename__ = 'running_game'
-    # TODO: 2: make open game id carry over to running game
     # TODO: REVISIT: ForeignKey("running_game_participant.gameid")
     gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"),

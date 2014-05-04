@@ -380,9 +380,11 @@ class API(object):
         all_ogps = open_game.ogps + [final_ogp]
         running_game = tables.RunningGame()
         running_game.next_hh = 0
-        running_game.game = open_game
+        # Maintain game ids from open games, essentially hijacking the
+        # uniqueness of the gameid sequence in open game.
+        running_game.gameid = open_game.gameid
         running_game.situation = situation
-        # we have to calculate current userid in advance so we can flush
+        # We have to calculate current userid in advance so we can flush.
         running_game.current_userid =  \
             all_ogps[situation.current_player_num].userid
         running_game.board_raw = situation.board_raw
