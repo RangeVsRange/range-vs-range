@@ -12,7 +12,8 @@
       $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script type=text/javascript>window.jQuery || document.write('<script src="{{url_for('static', filename='js/jquery.js') }}">\x3C/script>')</script>
+    <script type=text/javascript>window.jQuery || document.write('<script src="{{ url_for('static', filename='js/jquery.js') }}">\x3C/script>')</script>
+    <script type=text/javascript src="{{ url_for('static', filename='tablesorter/jquery.tablesorter.min.js') }}"></script>
     <script type=text/javascript>
     $(function() {
       // Call blockchain.info for total donated.
@@ -25,6 +26,23 @@
     </script>
     {% block scripts %}{% endblock %}
     <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.4.2/pure-min.css">    
+    <style>
+    table.tablesorter {
+        width: 100%;
+    }
+    table.tablesorter thead tr .header {
+        background-image: url({{ url_for('static', filename='tablesorter/bg.gif') }});
+        background-repeat: no-repeat;
+        background-position: center right;
+        cursor: pointer;
+    }
+    table.tablesorter thead tr .headerSortUp {
+        background-image: url({{ url_for('static', filename='tablesorter/asc.gif') }});
+    }
+    table.tablesorter thead tr .headerSortDown {
+        background-image: url({{ url_for('static', filename='tablesorter/desc.gif') }});
+    }
+    </style>
     <style>
     .r_hdn { }
     .r_sel { background-color: #C0C0C0 !important; }

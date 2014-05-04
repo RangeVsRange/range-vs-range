@@ -17,6 +17,8 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 
+# TODO: 1: strategic analysis
+
 def is_authenticated():
     """
     Is the user authenticated with OpenID?
@@ -178,8 +180,15 @@ def home_page():
                      if mg.current_user_details.userid == userid]
     others_turn_games = [mg for mg in my_games.running_details
                          if mg.current_user_details.userid != userid]
+    # TODO: 2: a table of games on the home page, sortable?
+    # Three tables:
+    # 1. running games (only if there are any)
+    #     -> w/ is it my turn column
+    # 2. open games
+    #     -> w/ am I registered column
+    # 3. finished games
     return render_template('home.html', title='Home',
-        screenname=screenname,
+        screenname=screenname, userid=userid, games=my_games,
         my_open=my_open,
         others_open=others_open,
         my_turn_games=my_turn_games,
@@ -472,8 +481,6 @@ def game_page():
     """
     User's view of the specified game
     """
-    # TODO: 1: strategic analysis
-    # TODO: 2: a table of game on the home page, sortable?
     alt = ensure_user()
     if alt:
         return alt
