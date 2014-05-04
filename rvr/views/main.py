@@ -188,11 +188,10 @@ def home_page():
     #     -> w/ am I registered column
     # 3. finished games
     return render_template('home.html', title='Home',
-        screenname=screenname, userid=userid, games=my_games,
+        screenname=screenname, userid=userid,
+        r_games=my_games,
         my_open=my_open,
         others_open=others_open,
-        my_turn_games=my_turn_games,
-        others_turn_games=others_turn_games,
         my_finished_games=my_games.finished_details
         )
 
@@ -455,7 +454,7 @@ def _running_game(game, gameid, userid, api):
         can_raise="true" if game.current_options.can_raise() else "false",
         min_raise=game.current_options.min_raise,
         max_raise=game.current_options.max_raise)
-    title = 'Game %d (running)' % (gameid,)
+    title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history)
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]

@@ -111,22 +111,22 @@
 {% endblock %}
 {% block content %}
 
-<h2>{{title}}</h2>
-
-<p>The game is: <strong>{{game_details.situation.description}}</strong>.
+<h2>{{title}} - {{game_details.situation.description}}</h2>
 {% if game_details.current_round != "Preflop" %}
-<br>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}<br>
+The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}<br>
 <br>The pot at that start of this round was: <strong>{{game_details.pot_pre}}</strong>.
 {% endif %}
-<br>The players are seated as follows:
-<table border=1>
-<tr><td class=wide></td><td class=wide><strong>Stack</strong></td><td class=wide><strong>In the pot</strong></td><td class=wide></td></tr>
+<table class="pure-table pure-table-bordered">
+<thead>
+<tr><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td><td><strong>Status</strong></td></tr>
+</thead>
+<tbody>
 {% for rgp in game_details.rgp_details %}
 <tr>
-  <td class=wide><strong>{{rgp.user.screenname}}</strong></td>
-  <td class=wide>{{rgp.stack}}</td>
-  <td class=wide>{{rgp.contributed}}</td>
-  <td class=wide>
+  <td><strong>{{rgp.user.screenname}}</strong></td>
+  <td>{{rgp.stack}}</td>
+  <td>{{rgp.contributed}}</td>
+  <td>
   {% if rgp.user.screenname == game_details.current_player.user.screenname %}
     <em>(acting now)</em>
   {% elif rgp.left_to_act %}
@@ -139,7 +139,8 @@
   </td>
 </tr>
 {% endfor %}
-</table></p>
+</tbody>
+</table>
 {% if is_me %}
 <form method="post" id="action" name="action" onsubmit="return validate_form();">
 {{form.hidden_tag()}}
@@ -167,7 +168,6 @@
 {% endif %}
 </details>
 </form>
-</p>
 {% endif %}
 <details><summary><strong>Hand History</strong></summary>
 {{ super() }}

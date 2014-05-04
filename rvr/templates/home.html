@@ -2,10 +2,18 @@
 {% block scripts %}
 <script type=text/javascript>
 $.tablesorter.addParser({ 
-    id: 'ismyturn', 
+    id: 'isme', 
     is: function(s) { return false; }, 
     format: function(s) { 
         return s.toLowerCase().replace(/yes/,0).replace(/no/,1); 
+    },
+    type: 'numeric'
+});
+$.tablesorter.addParser({ 
+    id: 'game', 
+    is: function(s) { return false; }, 
+    format: function(s) { 
+        return s.split(" ")[1];
     },
     type: 'numeric'
 });
@@ -13,18 +21,34 @@ $(function() {
   $("#running-games").tablesorter({
       // Sort by is my turn, then by game number 
       sortList: [[1,0],[0,0]],
-      headers: { 1: { sorter:'ismyturn' } }
-  }); 
+      headers: { 0: { sorter:'game' },
+                 1: { sorter:'isme' } }
+  });
 });
+$(function() {
+  $("#open-games").tablesorter({
+      // Sort by am I registered, then by game number 
+      sortList: [[1,0],[0,0]],
+      headers: { 0: { sorter:'game' },
+                 1: { sorter:'isme' } }
+  });
+});
+$(function() {
+  $("#finished-games").tablesorter({
+      // Sort by game number 
+      sortList: [[0,0]],
+      headers: { 0: { sorter:'game' } }
+  });
+});
+open-games
 </script>
 {% endblock %}
 {% block content %}
-<h2>Home</h2>
-<p>You are logged in as: <strong>{{screenname}}</strong>. To change your screenname, <a href="{{ url_for('change_screenname') }}">click here</a>.</p>
+<p>You are logged in as <strong>{{screenname}}</strong> (<a href="{{ url_for('change_screenname') }}">change screenname</a>).</p>
 
-{% if games.running_details %}
+{% if r_games.running_details %}
+<details open><summary><strong>Your running games</strong></summary>
 <table id="running-games" class="tablesorter pure-table pure-table-striped">
- <caption><strong>Your running games</strong></caption>
  <thead>
   <tr>
    <th>Game #</th>
@@ -34,7 +58,7 @@ $(function() {
   </tr>
  </thead>
  <tbody>
-  {% for game in games.running_details %}
+  {% for game in r_games.running_details %}
   <tr>
    <td><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a></td>
    <td>{% if game.current_user_details.userid == userid %}Yes{% else %}No{% endif %}</td>
@@ -44,36 +68,63 @@ $(function() {
   {% endfor %}
  </tbody>
 </table>
+</details>
 {% endif %}
 
-{% if others_open %}
-  <p>Open games you can join:</p>
-  <ul>{% for game in others_open %}{% set pipe = joiner() %}
-    <li>Game {{game.gameid}}, <em>"{{game.situation.description}}"</em>
-    {% if game.users %}
-      with players: {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
-    {% else %}
-      with no players registered.
-    {% endif %}
-    To join this game, <a href="{{ url_for('join_game', gameid=game.gameid) }}">click here</a>.</li>
-  {% endfor %}</ul>
-{% endif %}
-
-{% if my_open %}
-  <p>Open games you're registered in:</p>
-  <ul>{% for game in my_open %}{% set pipe = joiner() %}
-    <li>Game {{game.gameid}}, <em>"{{game.situation.description}}"</em> with players:
-    {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.
-    To leave this game, <a href="{{ url_for('leave_game', gameid=game.gameid) }}">click here</a>.</li>
-  {% endfor %}</ul>
+{% if my_open or others_open %}
+<details><summary><strong>Open games</strong></summary>
+<table id="open-games" class="tablesorter pure-table pure-table-striped">
+ <thead>
+  <tr>
+   <th>Game #</th>
+   <th>Registered</th>
+   <th>Game description</th>
+   <th>Players registered</th>
+  </tr>
+ </thead>
+ <tbody>
+  {% for game in my_open %}
+  <tr>
+   <td>Game {{game.gameid}} - <a href="{{ url_for('leave_game', gameid=game.gameid) }}">Leave</a></td>
+   <td>Yes</td>
+   <td>{{game.situation.description}}</td>
+   <td>{% set pipe = joiner() %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
+  </tr>
+  {% endfor %}
+  {% for game in others_open %}
+  <tr>
+   <td>Game {{game.gameid}} - <a href="{{ url_for('join_game', gameid=game.gameid) }}">Join</a></td>
+   <td>No</td>
+   <td>{{game.situation.description}}</td>
+   <td>{% set pipe = joiner() %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
+  </tr>
+  {% endfor %}
+ </tbody>
+</table>
+</details>
 {% endif %}
 
 {% if my_finished_games %}
-  <p>Your finished games:</p>
-  <ul>{% for game in my_finished_games %}{% set pipe = joiner() %}
-    <li><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a>, <em>"{{game.situation.description}}"</em> with players:
-    {% for user in game.users %}{{pipe()}}<strong>{{user.screenname}}</strong>{% endfor %}.</li>
-  {% endfor %}</ul>
+<details><summary><strong>Your finished games</strong></summary>
+<table id="finished-games" class="tablesorter pure-table pure-table-striped">
+ <thead>
+  <tr>
+   <th>Game #</th>
+   <th>Game description</th>
+   <th>Players</th>
+  </tr>
+ </thead>
+ <tbody>
+  {% for game in my_finished_games %}
+  <tr>
+   <td><a href="{{ url_for('game_page', gameid=game.gameid) }}">Game {{game.gameid}}</a></td>
+   <td>{{game.situation.description}}</td>
+   <td>{% set pipe = joiner() %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
+  </tr>
+  {% endfor %}
+ </tbody>
+</table>
+</details>
 {% endif %}
 
 {% endblock %}
