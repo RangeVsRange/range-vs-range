@@ -45,13 +45,15 @@ show_change_details = function() {
     $('#change-details').show();
     $('#{{change_form.change.id}}').focus();
 };
-open-games
 </script>
+<style>
+.game-table { padding: 10px 0px; }
+</style>
 {% endblock %}
 {% block content %}
 <form action="{{url_for('change_screenname')}}" method="post" name="change">
 {{change_form.hidden_tag()}}
-<p>Your screen name is <strong>{{screenname}}</strong>.
+Your screen name is <strong>{{screenname}}</strong>.
 
 <span id="change-summary">
  <button type=button onclick="show_change_details();">Change</button>
@@ -59,12 +61,10 @@ open-games
 <span id="change-details" style="display: none;">
  <label for="{{change_form.change.id}}">Enter a new screen name: </label>{{change_form.change}} <input type="submit" value="Go!" />
 </span>
-
-</p>
 </form>
 
 {% if r_games.running_details %}
-<details open><summary><strong>Your running games</strong></summary>
+<details open class="game-table"><summary><strong>Your running games</strong></summary>
 <table id="running-games" class="tablesorter pure-table pure-table-striped">
  <thead>
   <tr>
@@ -89,7 +89,7 @@ open-games
 {% endif %}
 
 {% if my_open or others_open %}
-<details><summary><strong>Open games</strong></summary>
+<details class="game-table"><summary><strong>Open games</strong></summary>
 <table id="open-games" class="tablesorter pure-table pure-table-striped">
  <thead>
   <tr>
@@ -122,7 +122,7 @@ open-games
 {% endif %}
 
 {% if my_finished_games %}
-<details><summary><strong>Your finished games</strong></summary>
+<details class="game-table"><summary><strong>Your finished games</strong></summary>
 <table id="finished-games" class="tablesorter pure-table pure-table-striped">
  <thead>
   <tr>
