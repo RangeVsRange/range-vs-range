@@ -5,6 +5,7 @@ from cmd import Cmd
 from rvr.core.api import APIError, API
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
 from rvr.core import dtos
+from rvr.db.dump import load, dump
 #pylint:disable=R0201,R0904
 
 class AdminCmd(Cmd):
@@ -244,6 +245,20 @@ class AdminCmd(Cmd):
             print "Error:", result.description  # pylint:disable=E1101
             return
         print result
+
+    def do_dump(self, params):
+        """
+        dump { out | in }
+        """
+        filename = 'db.pkl'
+        if params == 'out':
+            dump(filename)
+            print "Successfully exported database to %s." % (filename,)
+        elif params == 'in':
+            load(filename)
+            print "Successfully read %s into database." % (filename,)
+        else:
+            print "Bad syntax. See 'help dump'."
 
     def do_exit(self, _details):
         """
