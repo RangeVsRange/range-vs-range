@@ -78,7 +78,7 @@ class Situation(BASE):
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
-    # It's possible to do this FK better: http://goo.gl/CHgYzP
+    # TODO: REVISIT: It's possible to do this FK better: http://goo.gl/CHgYzP
     current_player_num = Column(Integer, ForeignKey("situation_player.order",
         use_alter=True, name="fk_current_player"), nullable=False)
     

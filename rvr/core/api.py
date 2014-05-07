@@ -418,7 +418,7 @@ class API(object):
             # it is implied.
         # TODO: REVISIT: check that this cascades to ogps
         self.session.delete(open_game)
-        self._deal_to_board(running_game)
+        self._deal_to_board(running_game)  # also changes ranges
         notify_first_player(running_game, starter_id=final_ogp.userid)
         logging.debug("Started game %d", open_game.gameid)
         return running_game
@@ -622,7 +622,8 @@ class API(object):
     
     def _deal_to_board(self, game):
         """
-        Deal as many cards as are needed to bring the board up to the current round
+        Deal as many cards as are needed to bring the board up to the current
+        round. Also remove these cards from players' ranges.
         """
         total = TOTAL_COMMUNITY_CARDS[game.current_round]
         current = len(game.board)
@@ -632,6 +633,8 @@ class API(object):
         game.board = new_board
         if total > current:
             self._record_board(game)
+        for rgp in game.rgps:
+            rgp.range = remove_board_from_range(rgp.range, game.board)
         # TODO: EQUITY PAYMENT: cards dealt to board
     
     def _finish_betting_round(self, game, remain):
@@ -653,7 +656,6 @@ class API(object):
             rgp.contributed = 0
             if rgp.folded:
                 continue
-            rgp.range = remove_board_from_range(rgp.range, game.board)
             rgp.left_to_act = True
     
     def _perform_action(self, game, rgp, range_action, current_options):
@@ -717,6 +719,12 @@ class API(object):
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
+
+        # TODO: 0: remove this, it's a bugfix correction only
+        for rgp in game.rgps:
+            rgp.range = remove_board_from_range(rgp.range, game.board)
+        self.session.commit()
+        
         # check that they're in the game and it's their turn        
         if game.current_userid == userid:
             rgp = game.current_rgp

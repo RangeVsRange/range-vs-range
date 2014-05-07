@@ -29,8 +29,12 @@ At deployment time:
   - copy in the new database
 """
 import pickle
-from rvr.db.tables import User
+from rvr.db.tables import User, SituationPlayer, Situation
 from rvr.db.creation import SESSION
+
+#pylint:disable=C0103
+
+# TODO: 0: support other tables, starting with least dependencies
 
 def read_users(session):
     """ Read User table from DB into memory """
@@ -52,6 +56,136 @@ def write_users(session, users):
         user.screenname = screenname
         user.email = email
         user.unsubscribed = unsubscribed
+
+def read_situations(session):
+    """ Read Situation table from DB into memory """
+    situations = session.query(Situation).all()
+    return [(situation.situationid,
+             situation.description,
+             situation.participants,
+             situation.is_limit,
+             situation.big_blind,
+             situation.board_raw,
+             situation.current_round,
+             situation.pot_pre,
+             situation.increment,
+             situation.bet_count,
+             situation.current_player_num)
+            for situation in situations]
+
+def write_situations(session, situations):
+    """ Write Situation from memory into DB """
+    for situationid, description, participants, is_limit, big_blind,  \
+            board_raw, current_round, pot_pre, increment, bet_count,  \
+            current_player_num in situations:
+        situation = Situation()
+        session.add(situation)
+        situation.situationid = situationid
+        situation.description = description
+        situation.participants = participants
+        situation.is_limit = is_limit
+        situation.big_blind = big_blind
+        situation.board_raw = board_raw
+        situation.current_round = current_round
+        situation.pot_pre = pot_pre
+        situation.increment = increment
+        situation.bet_count = bet_count
+        situation.current_player_num = current_player_num
+
+def read_situation_players(session):
+    """ Read SituationPlayer table from DB into memory """
+    sps = session.query(SituationPlayer).all()
+    return [(sp.situationid,
+             sp.order,
+             sp.stack,
+             sp.contributed,
+             sp.range_raw,
+             sp.left_to_act)
+            for sp in sps]
+
+def write_situation_players(session, sps):
+    """ Write SituationPlayer from memory into DB """
+    for situationid, order, stack, contributed, range_raw, left_to_act in sps:
+        sp = SituationPlayer()
+        session.add(sp)
+        sp.situationid = situationid
+        sp.order = order
+        sp.stack = stack
+        sp.contributed = contributed
+        sp.range_raw = range_raw
+        sp.left_to_act = left_to_act
+
+def read_open_games(session):
+    # TODO:
+    """ Read OpenGame table from DB into memory """
+
+def write_open_games(session, ogs):
+    # TODO:
+    """ Write OpenGame from memory into DB """
+
+def read_open_game_participants(session):
+    # TODO:
+    """ Read GameParticipant table from DB into memory """
+
+def write_open_game_participants(session, ogps):
+    # TODO:
+    """ Write GameParticipant from memory into DB """
+
+def read_running_games(session):
+    # TODO:
+    """ Read RunningGame table from DB into memory """
+
+def write_running_games(session, rgs):
+    # TODO:
+    """ Write RunningGame from memory into DB """
+
+def read_running_game_participants(session):
+    # TODO:
+    """ Read RunningGameParticipant table from DB into memory """
+
+def write_running_game_participants(session, rgps):
+    # TODO:
+    """ Write RunningGameParticipant from memory into DB """
+
+def read_game_history_bases(session):
+    # TODO:
+    """ Read GameHistoryBase table from DB into memory """
+
+def write_game_history_bases(session, ghbs):
+    # TODO:
+    """ Write GameHistoryBase from memory into DB """
+
+def read_game_history_user_ranges(session):
+    # TODO:
+    """ Read GameHistoryUserRange table from DB into memory """
+
+def write_game_history_user_ranges(session, ghurs):
+    # TODO:
+    """ Write GameHistoryUserRange from memory into DB """
+
+def read_game_history_action_results(session):
+    # TODO:
+    """ Read GameHistoryActionResult table from DB into memory """
+
+def write_game_history_action_results(session, ghars):
+    # TODO:
+    """ Write GameHistoryActionResult from memory into DB """
+
+def read_game_history_range_actions(session):
+    # TODO:
+    """ Read HandHistoryRangeAction table from DB into memory """
+
+def write_game_history_range_actions(session, ghras):
+    # TODO:
+    """ Write HandHistoryRangeAction from memory into DB """
+
+def read_game_history_boards(session):
+    # TODO:
+    """ Read GameHistoryBoard table from DB into memory """
+
+def write_game_history_boards(session, ghbs):
+    # TODO:
+    """ Write GameHistoryBoard from memory into DB """
 
 def read_db():
     """ Read all tables from DB into memory """
