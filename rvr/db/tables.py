@@ -124,7 +124,6 @@ class RunningGame(BASE, object):
     gameid = Column(Integer, primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          nullable=False)
-    next_hh = Column(Integer, default=0, nullable=False)
     situation = relationship("Situation", backref="running_games")
     # TODO: REVISIT: ForeignKey("running_game_participant.userid")
     # This should be a foreign key, but then SQLAlchemy thinks there's a
@@ -133,6 +132,7 @@ class RunningGame(BASE, object):
     # Surely the fact that this is nullable should allow post_update to work!
     # if current_userid is None, game is finished
     current_userid = Column(Integer, nullable=True)
+    next_hh = Column(Integer, default=0, nullable=False)
     # game state
     board_raw = Column(String, nullable=False)
     current_round = Column(String, nullable=False)

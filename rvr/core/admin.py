@@ -6,6 +6,7 @@ from rvr.core.api import APIError, API
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
 from rvr.core import dtos
 from rvr.db.dump import load, dump
+from sqlalchemy.exc import IntegrityError, OperationalError
 #pylint:disable=R0201,R0904
 
 class AdminCmd(Cmd):
@@ -25,6 +26,11 @@ class AdminCmd(Cmd):
             print "Error:", result
         else:
             print "Database created"
+            
+    def do_initialise(self, _details):
+        """
+        Initialise a (created but empty) database
+        """
         result = self.api.initialise_db()
         if result:
             print "Error:", result
@@ -255,7 +261,18 @@ class AdminCmd(Cmd):
             dump(filename)
             print "Successfully exported database to %s." % (filename,)
         elif params == 'in':
-            load(filename)
+            try:
+                load(filename)
+            except IntegrityError as err:
+                print "IntegrityError. Is the database empty?"
+                print "Perhaps delete the database and try the 'createdb' command."
+                print "Details:", err
+                return
+            except OperationalError as err:
+                print "OperationalError. Does the database exist?"
+                print "Perhaps try the 'createdb' command."
+                print "Details:", err
+                return
             print "Successfully read %s into database." % (filename,)
         else:
             print "Bad syntax. See 'help dump'."

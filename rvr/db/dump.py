@@ -29,12 +29,14 @@ At deployment time:
   - copy in the new database
 """
 import pickle
-from rvr.db.tables import User, SituationPlayer, Situation
+from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
+    OpenGameParticipant, RunningGame, RunningGameParticipant, \
+    GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
+    GameHistoryUserRange, GameHistoryBase
 from rvr.db.creation import SESSION
+from sqlalchemy.exc import IntegrityError
 
 #pylint:disable=C0103
-
-# TODO: 0: support other tables, starting with least dependencies
 
 def read_users(session):
     """ Read User table from DB into memory """
@@ -116,88 +118,273 @@ def write_situation_players(session, sps):
         sp.left_to_act = left_to_act
 
 def read_open_games(session):
-    # TODO:
     """ Read OpenGame table from DB into memory """
+    ogs = session.query(OpenGame).all()
+    return [(og.gameid,
+             og.situationid,
+             og.participants)
+            for og in ogs]
 
 def write_open_games(session, ogs):
-    # TODO:
     """ Write OpenGame from memory into DB """
+    for gameid, situationid, participants in ogs:
+        og = OpenGame()
+        session.add(og)
+        og.gameid = gameid
+        og.situationid = situationid
+        og.participants = participants
 
 def read_open_game_participants(session):
-    # TODO:
     """ Read GameParticipant table from DB into memory """
+    ogps = session.query(OpenGameParticipant).all()
+    return [(ogp.userid,
+             ogp.gameid)
+            for ogp in ogps]
 
 def write_open_game_participants(session, ogps):
-    # TODO:
     """ Write GameParticipant from memory into DB """
+    for userid, gameid in ogps:
+        ogp = OpenGameParticipant()
+        session.add(ogp)
+        ogp.userid = userid
+        ogp.gameid = gameid
 
 def read_running_games(session):
-    # TODO:
     """ Read RunningGame table from DB into memory """
+    rgs = session.query(RunningGame).all()
+    return [(rg.gameid,
+             rg.situationid,
+             rg.current_userid,
+             rg.next_hh,
+             rg.board_raw,
+             rg.current_round,
+             rg.pot_pre,
+             rg.increment,
+             rg.bet_count,
+             rg.current_factor)
+            for rg in rgs]
 
 def write_running_games(session, rgs):
-    # TODO:
     """ Write RunningGame from memory into DB """
+    for gameid, situationid, current_userid, next_hh, board_raw,  \
+            current_round, pot_pre, increment, bet_count,  \
+            current_factor in rgs:
+        rg = RunningGame()
+        session.add(rg)
+        rg.gameid = gameid
+        rg.situationid = situationid
+        rg.current_userid = current_userid
+        rg.next_hh = next_hh
+        rg.board_raw = board_raw
+        rg.current_round = current_round
+        rg.pot_pre = pot_pre
+        rg.increment = increment
+        rg.bet_count = bet_count
+        rg.current_factor = current_factor
 
 def read_running_game_participants(session):
-    # TODO:
     """ Read RunningGameParticipant table from DB into memory """
+    rgps = session.query(RunningGameParticipant).all()
+    return [(rgp.userid,
+             rgp.gameid,
+             rgp.order,
+             rgp.stack,
+             rgp.contributed,
+             rgp.range_raw,
+             rgp.left_to_act,
+             rgp.folded,
+             rgp.cards_dealt_raw)
+            for rgp in rgps]
 
 def write_running_game_participants(session, rgps):
-    # TODO:
     """ Write RunningGameParticipant from memory into DB """
+    for userid, gameid, order, stack, contributed, range_raw, left_to_act, \
+            folded, cards_dealt_raw in rgps:
+        rgp = RunningGameParticipant()
+        session.add(rgp)
+        rgp.userid = userid
+        rgp.gameid = gameid
+        rgp.order = order
+        rgp.stack = stack
+        rgp.contributed = contributed
+        rgp.range_raw = range_raw
+        rgp.left_to_act = left_to_act
+        rgp.folded = folded
+        rgp.cards_dealt_raw = cards_dealt_raw
 
 def read_game_history_bases(session):
-    # TODO:
     """ Read GameHistoryBase table from DB into memory """
+    ghbs = session.query(GameHistoryBase).all()
+    return [(ghb.gameid,
+             ghb.order)
+            for ghb in ghbs]
 
 def write_game_history_bases(session, ghbs):
-    # TODO:
     """ Write GameHistoryBase from memory into DB """
+    for gameid, order in ghbs:
+        ghb = GameHistoryBase()
+        session.add(ghb)
+        ghb.gameid = gameid
+        ghb.order = order
 
 def read_game_history_user_ranges(session):
-    # TODO:
     """ Read GameHistoryUserRange table from DB into memory """
+    ghurs = session.query(GameHistoryUserRange).all()
+    return [(ghur.gameid,
+             ghur.order,
+             ghur.userid,
+             ghur.range_raw)
+            for ghur in ghurs]
 
 def write_game_history_user_ranges(session, ghurs):
-    # TODO:
     """ Write GameHistoryUserRange from memory into DB """
+    for gameid, order, userid, range_raw in ghurs:
+        ghur = GameHistoryUserRange()
+        session.add(ghur)
+        ghur.gameid = gameid
+        ghur.order = order
+        ghur.userid = userid
+        ghur.range_raw = range_raw
 
 def read_game_history_action_results(session):
-    # TODO:
     """ Read GameHistoryActionResult table from DB into memory """
+    ghars = session.query(GameHistoryActionResult).all()
+    return [(ghar.gameid,
+             ghar.order,
+             ghar.userid,
+             ghar.is_fold,
+             ghar.is_passive,
+             ghar.is_aggressive,
+             ghar.call_cost,
+             ghar.raise_total,
+             ghar.is_raise)
+            for ghar in ghars]
 
 def write_game_history_action_results(session, ghars):
-    # TODO:
     """ Write GameHistoryActionResult from memory into DB """
+    for gameid, order, userid, is_fold, is_passive, is_aggressive, call_cost,  \
+            raise_total, is_raise in ghars:
+        ghar = GameHistoryActionResult()
+        session.add(ghar)
+        ghar.gameid = gameid
+        ghar.order = order
+        ghar.userid = userid
+        ghar.is_fold = is_fold
+        ghar.is_passive = is_passive
+        ghar.is_aggressive = is_aggressive
+        ghar.call_cost = call_cost
+        ghar.raise_total = raise_total
+        ghar.is_raise = is_raise
 
 def read_game_history_range_actions(session):
-    # TODO:
     """ Read HandHistoryRangeAction table from DB into memory """
+    ghras = session.query(GameHistoryRangeAction).all()
+    return [(ghra.gameid,
+             ghra.order,
+             ghra.userid,
+             ghra.fold_range,
+             ghra.passive_range,
+             ghra.aggressive_range,
+             ghra.raise_total,
+             ghra.is_check,
+             ghra.is_raise)
+            for ghra in ghras]
 
 def write_game_history_range_actions(session, ghras):
-    # TODO:
     """ Write HandHistoryRangeAction from memory into DB """
+    for gameid, order, userid, fold_range, passive_range, aggressive_range,  \
+            raise_total, is_check, is_raise in ghras:
+        ghra = GameHistoryRangeAction()
+        session.add(ghra)
+        ghra.gameid = gameid
+        ghra.order = order
+        ghra.userid = userid
+        ghra.fold_range = fold_range
+        ghra.passive_range = passive_range
+        ghra.aggressive_range = aggressive_range
+        ghra.raise_total = raise_total
+        ghra.is_check = is_check
+        ghra.is_raise = is_raise
 
 def read_game_history_boards(session):
-    # TODO:
     """ Read GameHistoryBoard table from DB into memory """
+    ghbs = session.query(GameHistoryBoard).all()
+    return [(ghb.gameid,
+             ghb.order,
+             ghb.street,
+             ghb.cards)
+            for ghb in ghbs]
 
 def write_game_history_boards(session, ghbs):
-    # TODO:
     """ Write GameHistoryBoard from memory into DB """
+    for gameid, order, street, cards in ghbs:
+        ghb = GameHistoryBoard()
+        session.add(ghb)
+        ghb.gameid = gameid
+        ghb.order = order
+        ghb.street = street
+        ghb.cards = cards
+
+TABLE_READERS = {User: read_users,
+                 Situation: read_situations,
+                 SituationPlayer: read_situation_players,
+                 OpenGame: read_open_games,
+                 OpenGameParticipant: read_open_game_participants,
+                 RunningGame: read_running_games,
+                 RunningGameParticipant: read_running_game_participants,
+                 GameHistoryBase: read_game_history_bases,
+                 GameHistoryUserRange: read_game_history_user_ranges,
+                 GameHistoryActionResult: read_game_history_action_results,
+                 GameHistoryRangeAction: read_game_history_range_actions,
+                 GameHistoryBoard: read_game_history_boards}
+
+TABLE_WRITERS = {User: write_users,
+                 Situation: write_situations,
+                 SituationPlayer: write_situation_players,
+                 OpenGame: write_open_games,
+                 OpenGameParticipant: write_open_game_participants,
+                 RunningGame: write_running_games,
+                 RunningGameParticipant: write_running_game_participants,
+                 GameHistoryBase: write_game_history_bases,
+                 GameHistoryUserRange: write_game_history_user_ranges,
+                 GameHistoryActionResult: write_game_history_action_results,
+                 GameHistoryRangeAction: write_game_history_range_actions,
+                 GameHistoryBoard: write_game_history_boards}
 
 def read_db():
     """ Read all tables from DB into memory """
     session = SESSION()
-    users = read_users(session)
-    return {"User": users}
+    return {table.__tablename__: TABLE_READERS[table](session)
+            for table in [User,
+                          Situation,
+                          SituationPlayer,
+                          OpenGame,
+                          OpenGameParticipant,
+                          RunningGame,
+                          RunningGameParticipant,
+                          GameHistoryBase,
+                          GameHistoryUserRange,
+                          GameHistoryActionResult,
+                          GameHistoryRangeAction,
+                          GameHistoryBoard]}
 
 def write_db(data):
     """ Write all tables from memory into DB """
     session = SESSION()
-    write_users(session, data["User"])
-    session.commit()
+    for table in [User,
+                  Situation,
+                  SituationPlayer,
+                  OpenGame,
+                  OpenGameParticipant,
+                  RunningGame,
+                  RunningGameParticipant,
+                  GameHistoryBase,
+                  GameHistoryUserRange,
+                  GameHistoryActionResult,
+                  GameHistoryRangeAction,
+                  GameHistoryBoard]:
+        TABLE_WRITERS[table](session, data[table.__tablename__])
+    session.commit()        
 
 def dump(filename):
     """ Read all tables from DB into memory, and write to file """
