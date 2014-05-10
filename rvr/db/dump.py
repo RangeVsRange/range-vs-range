@@ -34,7 +34,6 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
     GameHistoryUserRange, GameHistoryBase
 from rvr.db.creation import SESSION
-from sqlalchemy.exc import IntegrityError
 
 #pylint:disable=C0103
 
@@ -384,7 +383,7 @@ def write_db(data):
                   GameHistoryRangeAction,
                   GameHistoryBoard]:
         TABLE_WRITERS[table](session, data[table.__tablename__])
-    session.commit()        
+    session.commit()
 
 def dump(filename):
     """ Read all tables from DB into memory, and write to file """

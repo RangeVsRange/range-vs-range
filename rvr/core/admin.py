@@ -265,7 +265,7 @@ class AdminCmd(Cmd):
                 load(filename)
             except IntegrityError as err:
                 print "IntegrityError. Is the database empty?"
-                print "Perhaps delete the database and try the 'createdb' command."
+                print "Perhaps delete the database and try the 'createdb' command."  # pylint:disable=C0301
                 print "Details:", err
                 return
             except OperationalError as err:
