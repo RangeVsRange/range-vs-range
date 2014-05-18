@@ -10,6 +10,9 @@ from functools import wraps
 
 #pylint:disable=R0903
 
+# TODO: 2: better email, like with a link to the game page ldo!
+# or even the hand history table (or a modified / mobile friendly version)
+
 class NotificationSettings(object):
     """
     A simple holder for a setting to suppress email. Provides for a singleton.

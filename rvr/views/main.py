@@ -17,9 +17,6 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 
-# TODO: 0: port the old dump.py, set it up (live), ready for the DB change
-# TODO: 1: strategic analysis
-
 def is_authenticated():
     """
     Is the user authenticated with OpenID?

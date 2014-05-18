@@ -12,7 +12,7 @@ Data transfer objects:
 from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange
-from rvr.poker.cards import FLOP, TURN, RIVER
+from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -472,6 +472,49 @@ class GameItemBoard(GameItem):
         """
         return cls(item.street, item.cards)
 
+class AnalysisItemFoldEquity(object):
+    """
+    All about the fold equity of a bet.
+    """
+    STREET_DESCRIPTIONS = {PREFLOP: "Preflop",
+                           FLOP: "On the flop",
+                           TURN: "On the turn",
+                           RIVER: "On the river"}
+    
+    def __init__(self, bettor, street, pot_before_bet, is_raise, bet_cost,
+                 raise_total, pot_if_called, immediate_result, semibluff_ev,
+                 semibluff_equity):
+        # bettor is a UserDetails
+        self.bettor = bettor
+        self.street = street
+        self.pot_before_bet = pot_before_bet
+        self.is_raise = is_raise
+        self.bet_cost = bet_cost
+        self.raise_total = raise_total
+        self.pot_if_called = pot_if_called
+        self.immediate_result = float(immediate_result)
+        self.semibluff_ev = float(semibluff_ev)
+        self.semibluff_equity = float(semibluff_equity)
+    
+    def __repr__(self):
+        return "AnalysisItemFoldEquity(bettor=%r, street=%r, "  \
+            "pot_before_bet=%r, is_raise=%r, bet_cost=%r, raise_total=%r, "  \
+            "pot_if_called=%r, immediate_result=%r, semibluff_ev=%r, "  \
+            "semibluff_equity=%r)" %  \
+            (self.bettor, self.street, self.pot_before_bet, self.is_raise,
+             self.bet_cost, self.raise_total, self.pot_if_called,
+             self.immediate_result, self.semibluff_ev, self.semibluff_equity)
+  
+    @classmethod
+    def from_afe(cls, afe):
+        """
+        Create from AnalysisFoldEquity
+        """
+        bettor = UserDetails.from_user(afe.action_result.user)
+        return cls(bettor, afe.street, afe.pot_before_bet, afe.is_raise,
+                   afe.bet_cost, afe.raise_total, afe.pot_if_called,
+                   afe.immediate_result, afe.semibluff_ev, afe.semibluff_equity)
+
 MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryRangeAction: GameItemRangeAction,
                  tables.GameHistoryActionResult: GameItemActionResult,
@@ -487,15 +530,18 @@ class RunningGameHistory(object):
     
     It will contain analysis only if the game is finished.
     """
-    def __init__(self, game_details, history_items, current_options):
+    def __init__(self, game_details, current_options, history_items,
+                 analysis_items):
         self.game_details = game_details
-        self.history = history_items
         self.current_options = current_options
+        self.history = history_items
+        self.analysis = analysis_items
         
     def __repr__(self):
-        return ("RunningGameHistory(game_details=%r, history=%r, " +  \
-                "current_options=%r)") %  \
-            (self.game_details, self.history, self.current_options)
+        return "RunningGameHistory(game_details=%r, current_options=%r, "  \
+            "history=%r, analysis_items=%r)" %  \
+            (self.game_details, self.current_options, self.history,
+             self.analysis)
         
     def is_finished(self):
         """

@@ -7,6 +7,7 @@ from rvr.core import dtos
 from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
+import traceback
 from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
     ANYTHING
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
@@ -18,7 +19,8 @@ from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
-import traceback
+from rvr.analysis.analyse import AnalysisReplayer, already_analysed
+from rvr.db.tables import AnalysisFoldEquity
 
 #pylint:disable=R0903
 
@@ -36,7 +38,8 @@ def exception_mapper(fun):
             return fun(*args, **kwargs)
         except Exception as ex:
             logging.info("Unhandled exception in API function: %r", ex)
-            logging.info("Exception traceback: %r", traceback.format_exc())
+            for line in traceback.format_exc().splitlines():
+                logging.info(line)
             return API.ERR_UNKNOWN
     return inner
 
@@ -719,11 +722,6 @@ class API(object):
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
-
-        # TODO: 0: remove this, it's a bugfix correction only
-        for rgp in game.rgps:
-            rgp.range = remove_board_from_range(rgp.range, game.board)
-        self.session.commit()
         
         # check that they're in the game and it's their turn        
         if game.current_userid == userid:
@@ -759,7 +757,19 @@ class API(object):
                       for child in all_child_items]
         return [dto for dto in child_dtos
                 if game.is_finished or dto.should_include_for(userid)]
-    
+
+    @api
+    def _get_analysis_items(self, game):
+        """
+        Returns an ordered list of analysis items form the game.
+        """
+        afes = self.session.query(AnalysisFoldEquity)  \
+            .filter(AnalysisFoldEquity.gameid == game.gameid).all()
+        sorted_afes = sorted(afes, key=lambda afe: afe.order)
+        aifes = [dtos.AnalysisItemFoldEquity.from_afe(afe)
+                 for afe in sorted_afes]
+        return aifes 
+        
     def _get_game(self, gameid, userid=None):
         """
         Return game <gameid>. If <userid> is not None, return private data for
@@ -780,12 +790,15 @@ class API(object):
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items = self._get_history_items(game, userid)
+        analysis_items = self._get_analysis_items(game)
         if game.current_userid is None:
             current_options = None
         else:
             current_options = calculate_current_options(game, game.current_rgp)
-        return dtos.RunningGameHistory(game_details, history_items,
-                                       current_options)        
+        return dtos.RunningGameHistory(game_details=game_details,
+                                       history_items=history_items,
+                                       analysis_items=analysis_items,
+                                       current_options=current_options)
 
     @api
     def get_public_game(self, gameid):
@@ -831,3 +844,32 @@ class API(object):
                 self.session.flush()  # get gameid
                 logging.debug("Created open game %d for situation %d",
                               new_game.gameid, situation.situationid)
+                
+    def _run_pending_analysis(self):
+        """
+        Look through all games for analysis that has not yet been done, and do
+        it, and record the analysis in the database.
+        
+        If you need to RE-analyse the database, delete existing analysis first. 
+        """
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.current_userid == None).all()
+        for game in games:
+            if not already_analysed(self.session, game):                
+                replayer = AnalysisReplayer(self.session, game)
+                replayer.analyse()
+                
+    @api
+    def run_pending_analysis(self):
+        """
+        Analyse games that haven't been analysed.
+        """
+        return self._run_pending_analysis()
+
+    @api
+    def reanalyse_all(self):
+        """
+        Delete all analysis, and reanalyse all games.
+        """
+        self.session.query(tables.AnalysisFoldEquity).delete()
+        return self._run_pending_analysis()

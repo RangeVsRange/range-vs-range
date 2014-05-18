@@ -236,7 +236,7 @@ class AdminCmd(Cmd):
     def do_handhistory(self, params):
         """
         handhistory <gameid> [<userid>]
-        display hand history for given game, from given user's perspective, if
+        Display hand history for given game, from given user's perspective, if
         specified.
         """
         args = params.split(None, 1)
@@ -251,6 +251,23 @@ class AdminCmd(Cmd):
             print "Error:", result.description  # pylint:disable=E1101
             return
         print result
+        
+    def do_analyse(self, details):
+        """
+        analyse [refresh]
+        Run all analysis. If refresh, reanalyse everything. 
+        """
+        if details == "":
+            result = self.api.run_pending_analysis()
+        elif details == "refresh":
+            result = self.api.reanalyse_all()
+        else:
+            print "Bad syntax. See 'help analyse'."
+            return
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        else:
+            print "Analysis run."
 
     def do_dump(self, params):
         """

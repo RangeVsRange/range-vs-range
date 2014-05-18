@@ -4,12 +4,14 @@ Declares database tables
 from sqlalchemy import Column, Integer, String, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
-from sqlalchemy.types import Float
+from sqlalchemy.types import Float, Numeric
 from rvr.poker.cards import Card
 from rvr.poker.handrange import HandRange, weighted_options_to_description
 from sqlalchemy.orm.session import object_session
 
 #pylint:disable=W0232,R0903
+
+# TODO: REVISIT: do strings need fixed lengths?
 
 class User(BASE):
     """
@@ -340,3 +342,106 @@ class GameHistoryBoard(BASE):
 #  - chat
 # Record analysis against specific hand history (range action) items.
 # Record equity payments against hand history items - deals, range actions, etc.
+
+# TODO: 1: strategic analysis
+# everything written to the database must be linked to a hand history row
+# - fold equity analysis row (might be semibluff EV, or immediate profit)
+# - profitable float (linked to call, and bet)
+# - bets equity when called on river, and hand-by-hand
+# - weak calls on river, and hand by hand
+# - strong folds on river, and hand by hand
+# - medium strength bluff-raises on river, and hand-by-hand
+class AnalysisFoldEquity(BASE):
+    """
+    Profitability, or required semibluff EV, of a bet, on any street.
+    """
+    __tablename__ = "analysis_fold_equity"
+    # Keys
+    gameid = Column(Integer, ForeignKey("running_game.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_action_result.order"),
+                       primary_key=True)
+    # Relationships
+    action_result = relationship("GameHistoryActionResult",
+        primaryjoin="and_(GameHistoryActionResult.gameid"
+        "==AnalysisFoldEquity.gameid,GameHistoryActionResult.order"
+        "==AnalysisFoldEquity.order)")
+    # Relevant columns
+    street = Column(String, nullable=False)
+    pot_before_bet = Column(Integer, nullable=False)
+    is_raise = Column(Boolean, nullable=False)
+    bet_cost = Column(Integer, nullable=False)
+    raise_total = Column(Integer, nullable=False)
+    pot_if_called = Column(Integer, nullable=False)
+    immediate_result = Column(Numeric, nullable=False)
+    # These next two can be negative, but if so we won't show them to the user.
+    # Example: a bluff here wins 1.0 chips, and requires -0.3 chips EV to
+    # semibluff, or -8.0% equity when called.
+    semibluff_ev = Column(Numeric, nullable=False)
+    semibluff_equity = Column(Numeric, nullable=False)
+
+# class AnalysisFoldEquityFolder(BASE):
+#     range_action_id = Column(Integer,
+#         ForeignKey("game_history_range_action.order"), primary_key=True)
+#     fold_ratio = Column(Numeric, nullable=False)  
+#     range_action = relationship("GameHistoryRangeAction",
+#         primaryjoin="and_(GameHistoryRangeAction.gameid"
+#         "==AnalysisFoldEquity.gameid,GameHistoryRangeAction.order"
+#         "==AnalysisFoldEquity.range_action_id)")
+
+# class AnalysisFloat(BASE):
+#     """
+#     Profitability of a call with the intention of betting later, on any street
+#     """
+#     pass
+# 
+# class AnalysisRiverBet(BASE):
+#     """
+#     Equity of a bet when called, on the river, summary of the many hands.
+#     """
+#     pass
+# 
+# class AnalysisRiverBetHand(BASE):
+#     """
+#     Analysis of the equity of an individual hand in a river bet range.
+#     """
+#     pass
+# 
+# class AnalysisRiverCall(BASE):
+#     """
+#     EV and equity of all hands in a call range on the river, summary.
+#     This should include checks, too. It's interesting to know what your
+#     showdown value is.
+#     """
+#     pass
+# 
+# class AnalysisRiverCallHand(BASE):
+#     """
+#     Analysis of the EV and equity of an individual hand in a river call (or
+#     check) range.
+#     """
+# 
+# class AnalysisRiverFold(BASE):
+#     """
+#     EV and equity of all hands in a fold range on the river, summary. But only
+#     when there's actually a bet.
+#     """
+#     pass
+# 
+# class AnalysisRiverFoldHand(BASE):
+#     """
+#     Analysis of the EV and equity of an individual hand in a river fold range.
+#     """
+#     pass
+# 
+# class AnalysisRiverBluffRaise(BASE):
+#     """
+#     EV and equity of a bluff raise on the river, summary. Includes betting as
+#     a bluff when we could check.
+#     """
+#     pass
+# 
+# class AnalysisRiverBluffRaiseHand(BASE):
+#     """
+#     EV and equity of an individual hand in a raise range on the river.
+#     """
