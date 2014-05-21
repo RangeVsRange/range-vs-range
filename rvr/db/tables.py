@@ -346,7 +346,8 @@ class GameHistoryBoard(BASE):
 # TODO: 1: strategic analysis
 # everything written to the database must be linked to a hand history row
 # - fold equity analysis row (might be semibluff EV, or immediate profit)
-# - profitable float (linked to call, and bet)
+# - profitable float / bet (linked to call, and bet)
+# - profitable float / raise (linked to call, and raise)
 # - bets equity when called on river, and hand-by-hand
 # - weak calls on river, and hand by hand
 # - strong folds on river, and hand by hand
