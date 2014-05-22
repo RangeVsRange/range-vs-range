@@ -99,7 +99,7 @@ def change_screenname():
             return redirect(url_for('home_page'))
     current = session['screenname'] if 'screenname' in session  \
         else g.user['name']
-    return render_template('change.html', title='Change Your Screenname',
+    return render_template('old/change.html', title='Change Your Screenname',
                            current=current, form=form)
 
 @APP.route('/unsubscribe', methods=['GET'])
@@ -123,7 +123,7 @@ def unsubscribe():
         else:
             msg = "You have been unsubscribed. If you log in again, you will start receiving emails again."  # pylint:disable=C0301
     flash(msg)
-    return render_template('base.html', title='Unsubscribe')
+    return render_template('old/base.html', title='Unsubscribe')
 
 @logout.connect_via(APP)
 def on_logout(_source, **_kwargs):
@@ -147,7 +147,7 @@ def error_page():
     """
     Unauthenticated page for showing errors to user.
     """
-    return render_template('base.html', title='Sorry')
+    return render_template('old/base.html', title='Sorry')
 
 @APP.route('/', methods=['GET'])
 def home_page():
@@ -155,7 +155,7 @@ def home_page():
     Generates the unauthenticated landing page. AKA the main or home page.
     """
     if not is_authenticated():
-        return render_template('landing.html', title='Welcome')
+        return render_template('old/landing.html', title='Welcome')
     alt = ensure_user()
     if alt:
         return alt
@@ -175,7 +175,7 @@ def home_page():
     others_open = [og for og in open_games
                    if not any([u.userid == userid for u in og.users])]
     form = ChangeForm()
-    return render_template('home.html', title='Home',
+    return render_template('old/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
         r_games=my_games,
         my_open=my_open,
@@ -447,7 +447,7 @@ def _running_game(game, gameid, userid, api):
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
     is_me = (userid == game.game_details.current_player.user.userid)
-    return render_template('running_game.html', title=title, form=form,
+    return render_template('old/running_game.html', title=title, form=form,
         board=board, game_details=game.game_details, history=history,
         current_options=game.current_options,
         is_me=is_me,
@@ -459,7 +459,7 @@ def _finished_game(game, gameid):
     """
     title = 'Game %d (finished)' % (gameid,)
     history = _make_history_list(game.history)
-    return render_template('finished_game.html', title=title,
+    return render_template('old/finished_game.html', title=title,
         game_details=game.game_details, history=history)
 
 @APP.route('/game', methods=['GET', 'POST'])

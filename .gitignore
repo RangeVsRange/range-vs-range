@@ -8,3 +8,4 @@ local_settings.py
 *.db
 /openid-store
 /server.cfg
+/db.pkl

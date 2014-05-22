@@ -453,9 +453,9 @@ def range_editor_get():
                      ("rng_passive", rng_passive.description),
                      ("rng_aggressive", rng_aggressive.description)]
     if embedded == 'true':
-        template = 'range_viewer.html'
+        template = 'old/range_viewer.html'
     else:
-        template = 'range_editor.html'
+        template = 'old/range_editor.html'
     return render_template(template, title="Range Editor",
         next_map=NEXT_MAP, hidden_fields=hidden_fields,
         rank_table=rank_table, suited_table=suited_table,
@@ -546,7 +546,7 @@ def range_editor_post():
                      ("rng_fold", option_mover.rng_fold),
                      ("rng_passive", option_mover.rng_passive),
                      ("rng_aggressive", option_mover.rng_aggressive)]
-    template = 'range_editor.html'
+    template = 'old/range_editor.html'
     return render_template(template, title="Range Editor",
         next_map=NEXT_MAP, hidden_fields=hidden_fields,
         rank_table=rank_table, suited_table=suited_table,
