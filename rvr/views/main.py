@@ -161,6 +161,9 @@ def about_page():
 
 @APP.route('/faq', methods=['GET'])
 def faq_page():
+    """
+    Frequently asked questions (unauthenticated).
+    """
     navbar_items = [('', url_for('about_page'), 'About'),
                     ('active', url_for('faq_page'), 'FAQ'),
                     ('', url_for('log_in'), 'Log in')]
