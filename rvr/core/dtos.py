@@ -424,6 +424,8 @@ class GameItemActionResult(GameItem):
         return "%s performs action: %s" % (self.user,
                                            self.action_result)
     
+    # TODO: 0: observers can't see actions because there are no range actions
+    
     @classmethod
     def from_history_item(cls, item):
         """
