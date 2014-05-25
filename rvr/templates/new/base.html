@@ -21,9 +21,9 @@
     </div>
     <div class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-        <li class="active"><a href="#">Home</a></li>
-        <li><a href="#">About</a></li>
-        <li><a href="{{url_for('log_in')}}">Log in</a></li>
+        {% for class, href, text in navbar_items %}
+        <li class="{{class}}"><a href="{{href}}">{{text}}</a></li>
+        {% endfor %}
       </ul>
     </div><!--/.nav-collapse -->
   </div>

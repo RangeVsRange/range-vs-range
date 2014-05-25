@@ -154,7 +154,10 @@ def about_page():
     """
     Unauthenticated information page.
     """
-    return render_template('new/about.html')
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('active', url_for('about_page'), 'About'),
+                    ('', url_for('log_in'), 'Log in')]
+    return render_template('new/about.html', navbar_items=navbar_items)
 
 @APP.route('/', methods=['GET'])
 def home_page():
@@ -162,8 +165,10 @@ def home_page():
     Generates the unauthenticated landing page. AKA the main or home page.
     """
     if not is_authenticated():
-        # TODO: 0: refactor out a "new/base.html" template 
-        return render_template('new/landing.html')
+        navbar_items = [('active', url_for('home_page'), 'Home'),
+                        ('', url_for('about_page'), 'About'),
+                        ('', url_for('log_in'), 'Log in')]
+        return render_template('new/landing.html', navbar_items=navbar_items)
     alt = ensure_user()
     if alt:
         return alt

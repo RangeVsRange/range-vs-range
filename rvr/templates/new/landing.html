@@ -15,9 +15,9 @@
         <div class="inner">
           <h3 class="masthead-brand">Range vs. Range</h3>
           <ul class="nav masthead-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li><a href="{{url_for('about_page')}}">About</a></li>
-            <li><a href="{{url_for('log_in')}}">Log in</a></li>
+            {% for class, href, text in navbar_items %}
+            <li class="{{class}}"><a href="{{href}}">{{text}}</a></li>
+            {% endfor %}
           </ul>
         </div>
       </div>
@@ -27,7 +27,8 @@
         <hr>
         <p class="lead">Training that will change the game of No-limit Hold'em.</p>
         <p class="lead">
-          <a href="#" class="btn btn-lg btn-default">Learn more</a>
+          <a href="{{url_for('about_page')}}" class="btn btn-lg btn-default">Learn more</a>
+          <a href="{{url_for('log_in')}}" class="btn btn-lg btn-default">Log in</a>
         </p>
       </div>
     </div>
