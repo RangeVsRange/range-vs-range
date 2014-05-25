@@ -154,10 +154,17 @@ def about_page():
     """
     Unauthenticated information page.
     """
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('active', url_for('about_page'), 'About'),
+    navbar_items = [('active', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ'),
                     ('', url_for('log_in'), 'Log in')]
     return render_template('new/about.html', navbar_items=navbar_items)
+
+@APP.route('/faq', methods=['GET'])
+def faq_page():
+    navbar_items = [('', url_for('about_page'), 'About'),
+                    ('active', url_for('faq_page'), 'FAQ'),
+                    ('', url_for('log_in'), 'Log in')]
+    return render_template('new/faq.html', navbar_items=navbar_items)
 
 @APP.route('/', methods=['GET'])
 def home_page():
