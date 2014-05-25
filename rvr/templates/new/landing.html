@@ -25,7 +25,7 @@
       <ul class="nav navbar-nav">
         <li class="active"><a href="#">Home</a></li>
         <li><a href="#">About</a></li>
-        <li><a href="#">Log in</a></li>
+        <li><a href="{{url_for('log_in')}}">Log in</a></li>
       </ul>
     </div><!--/.nav-collapse -->
   </div>
@@ -36,9 +36,9 @@
 <div class="jumbotron">
   <div class="container">
     <h1>Range vs. Range</h1>
-    <p>Truly revolutionary training for professional no-limit hold'em.</p>
+    <p>Revolutionary training for professional no-limit hold'em.</p>
     <p><a class="btn btn-primary btn-lg" role="button">Learn more &raquo;</a>
-    <a class="btn btn-primary btn-lg" role="button">Log in</a></p>
+    <a href="{{url_for('log_in')}}" class="btn btn-primary btn-lg" role="button">Log in</a></p>
   </div>
 </div>
 
@@ -56,22 +56,26 @@
       <h3>Training that makes you consider your range, not just your cards</h3>
       <p>Training on Range vs. Range is playing poker &mdash; but you don't get to see your cards. Instead, you see is your range, and you decide what hands to fold, check or call, and bet or raise with. If you know anything about playing mid-stakes and above, you already know that range-based thinking is vital to beating the regulars. Range vs. Range has it baked in from the beginning.</p>
     </div>
+  </div>
+  <div class="row">
     <div class="col-md-4">
       <h3>Training that takes the luck out of poker</h3>
-      <p></p>
+      <p>Luck is what makes poker fun, and it's also what makes it profitable. Luck is what makes it so hard to improve at poker. When you try something new, you never really know if it's working. Is it an improvement, or are you just running good? How many times do you have to sample a random variable before you can establish the true average? The answer, unfortunately, is <strong>infinity</strong>. Range vs. Range gives you every hand with equal probability. Your opponent also has every hand with equal probability. This is it &mdash; an infinity of experience, dealt to you in every hand you play on Range vs. Range.</p>
     </div>
     <div class="col-md-4">
       <h3>Training that shows you precisely how much EV you are losing</h3>
-      <p></p>
+      <p>When you finish a hand on Range vs. Range, you will see exactly where you were exploitable, and exactly where you missed opportunities to exploit your opponent. If you folded a hand that is worth a call, we'll tell you exactly how much it cost you. If you missed an opportunity to bluff, we'll tell you. If you bet a medium-strength hand on the river, we'll tell you. And we'll tell you exactly how much EV you can gain by improving every single one of these spots. And that's all in just one hand, because you're playing your range, not your cards.</p>
     </div>
     <div class="col-md-4">
       <h3>Training that shows you how to improve incrementally, from where you are right now</h3>
-      <p></p>
+      <p>Every other kind of poker training tells you what you should do, as if there was one right answer. There is even software out there now that tells you what stats you should have. That you should improve not by playing how the pros play, but by mimicking their statistics. This is madness. Don't aim to be someone else. Be yourself, but better. Keep what is good about your game, and improve what is not. Don't aim to be almost as good as the best players in your game. Aim to be better.</p>
     </div>
+  </div>
+  <div class="row">
     <div class="col-md-4">
       <h3>Training to beat the regulars in your game</h3>
-      <p></p>
+      <p>You already know how to beat fish. If you're happy table-selecting and fish-hunting at your stakes, and you're winning at those stakes, then Range vs. Range is not for you. There's nothing wrong with that. On the other hand, if you want to beat the regulars in your game, and you want to move up stakes, then you need Range vs. Range. If you want to set your sights higher, and beat the players who are making those training videos, whose stats are the targets in <a href="http://www.holdemmanager.com/buy/4/leak-buster-no-limit">Leak Buster</a>, then you need Range vs. Range's strategic analysis. This is continual improvement, from where you are right now, to the moon.</p>
     </div>
-  </div><!-- /.row -->
+  </div>
 </div><!-- /.container -->
 {% endblock %}
