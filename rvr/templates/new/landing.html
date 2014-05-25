@@ -1,0 +1,77 @@
+{% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rvr.css') }}">
+{% endblock %}
+
+{% block title %}Range vs. Range{% endblock %}
+
+{% block navbar %}
+<!-- Per http://getbootstrap.com/examples/navbar-fixed-top/ -->
+<!-- Fixed navbar -->
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Range vs. Range</a>
+    </div>
+    <div class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Log in</a></li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Range vs. Range</h1>
+    <p>Truly revolutionary training for professional no-limit hold'em.</p>
+    <p><a class="btn btn-primary btn-lg" role="button">Learn more &raquo;</a>
+    <a class="btn btn-primary btn-lg" role="button">Log in</a></p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-4">
+      <h3>Training that makes you think</h3>
+      <p>Range vs. Range puts you in the driver's seat. This training is not about watching someone else play. Range vs. Range is watching <strong>you</strong> play. You will face exactly the kinds of decisions that you'll get at the table, and Range vs. Range will tell you exactly how to improve.</p>
+    </div>
+    <div class="col-md-4">
+      <h3>Training that targets the situations you need to improve</h3>
+      <p>Focus on what you want to improve. If you are a heads-up player, you can play our heads-up situation. If you want to defend the blinds more, we have a situation for that. Have trouble playing in position when you've called a 3-bet? We've got that covered too. Whatever situation it is you want to practice or improve, you can play over and over again, always getting strategic feedback on your play until you have complete confidence in that situation.</p>
+    </div>
+    <div class="col-md-4">
+      <h3>Training that makes you consider your range, not just your cards</h3>
+      <p>Training on Range vs. Range is playing poker &mdash; but you don't get to see your cards. Instead, you see is your range, and you decide what hands to fold, check or call, and bet or raise with. If you know anything about playing mid-stakes and above, you already know that range-based thinking is vital to beating the regulars. Range vs. Range has it baked in from the beginning.</p>
+    </div>
+    <div class="col-md-4">
+      <h3>Training that takes the luck out of poker</h3>
+      <p></p>
+    </div>
+    <div class="col-md-4">
+      <h3>Training that shows you precisely how much EV you are losing</h3>
+      <p></p>
+    </div>
+    <div class="col-md-4">
+      <h3>Training that shows you how to improve incrementally, from where you are right now</h3>
+      <p></p>
+    </div>
+    <div class="col-md-4">
+      <h3>Training to beat the regulars in your game</h3>
+      <p></p>
+    </div>
+  </div><!-- /.row -->
+</div><!-- /.container -->
+{% endblock %}

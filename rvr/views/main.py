@@ -155,7 +155,7 @@ def home_page():
     Generates the unauthenticated landing page. AKA the main or home page.
     """
     if not is_authenticated():
-        return render_template('old/landing.html', title='Welcome')
+        return render_template('new/landing.html')
     alt = ensure_user()
     if alt:
         return alt

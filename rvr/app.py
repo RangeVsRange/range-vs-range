@@ -7,12 +7,15 @@ import os
 from flask_googleauth import GoogleAuth
 from flask_mail import Mail
 from flask.helpers import url_for
+from flask_bootstrap import Bootstrap
 
 APP = Flask(__name__)
 APP.config.from_object('rvr.config')
 APP.config.from_object('rvr.local_settings')
 APP.wsgi_app = SharedDataMiddleware(APP.wsgi_app,
     {'/':os.path.join(os.path.dirname(__file__), 'static')})
+
+Bootstrap(APP)
 
 MAIL = Mail(APP)
 
