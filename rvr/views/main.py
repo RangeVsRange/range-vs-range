@@ -149,6 +149,13 @@ def error_page():
     """
     return render_template('old/base.html', title='Sorry')
 
+@APP.route('/about', methods=['GET'])
+def about_page():
+    """
+    Unauthenticated information page.
+    """
+    return render_template('new/about.html')
+
 @APP.route('/', methods=['GET'])
 def home_page():
     """
