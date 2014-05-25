@@ -165,10 +165,7 @@ def home_page():
     Generates the unauthenticated landing page. AKA the main or home page.
     """
     if not is_authenticated():
-        navbar_items = [('active', url_for('home_page'), 'Home'),
-                        ('', url_for('about_page'), 'About'),
-                        ('', url_for('log_in'), 'Log in')]
-        return render_template('new/landing.html', navbar_items=navbar_items)
+        return render_template('new/landing.html')
     alt = ensure_user()
     if alt:
         return alt
