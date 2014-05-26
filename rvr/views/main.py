@@ -409,6 +409,15 @@ def _action_summary_to_vars(range_action, action_result, user_range, index):
             "passive": pas,
             "aggressive": agg,
             "index": index}
+    
+def _action_result_to_vars(action_result, index):
+    """
+    Summarises action result for the case where the hand is in progress, and
+    the user is not allowed to view the other players' ranges.
+    """
+    return {"screenname": action_result.user,
+            "action_result": action_result.action_result,
+            "index": index}
 
 def _make_history_list(game_history):
     """
@@ -419,8 +428,12 @@ def _make_history_list(game_history):
     # There is always a range action and an action before a user range
     most_recent_range_action = None
     most_recent_action_result = None
+    pending_action_result = None
     for index, item in enumerate(game_history):
         if isinstance(item, GameItemUserRange):
+            if pending_action_result is not None:
+                results.remove(pending_action_result)
+                pending_action_result = None
             results.append(("ACTION_SUMMARY",
                             _action_summary_to_vars(most_recent_range_action,
                                                     most_recent_action_result,
@@ -431,6 +444,10 @@ def _make_history_list(game_history):
                             _range_action_to_vars(item, index)))
         elif isinstance(item, GameItemActionResult):
             most_recent_action_result = item
+            pending_action_result = ("ACTION_RESULT",
+                                     _action_result_to_vars(item, index))
+            results.append(pending_action_result)
+            # This will be removed if there is a following user range
         elif isinstance(item, GameItemBoard):
             results.append(("BOARD", _board_to_vars(item, index)))
         else:

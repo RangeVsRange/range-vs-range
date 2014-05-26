@@ -38,6 +38,16 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
       {%- else %}does something inexplicable
       {%- endif %},</strong>
       with {{item.combos}} combos ({{"%0.2f" % item.percent}}% of all possible hands) 
+    {% elif hint == "ACTION_RESULT" %}
+      <strong>{{item.screenname}}
+      {% set result = item.action_result %}
+      {% if result.is_fold %}folds
+      {%- elif result.is_passive and result.call_cost %}calls {{result.call_cost}}
+      {%- elif result.is_passive %}checks
+      {%- elif result.is_aggressive and result.is_raise %}raises to {{result.raise_total}}
+      {%- elif result.is_aggressive %}bets {{result.raise_total}}
+      {%- else %}does something inexplicable
+      {%- endif %}</strong>
     {% elif hint == "RANGE_ACTION" %}
       {{item.screenname}}
       folds {{"%0.2f" % item.fold_pct}}%,
@@ -53,6 +63,8 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
     <td style="padding-left: 10px">
     {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
     <button type=button id="view-action-{{item.index}}" class="pure-button" onclick="range_view('view-action-{{item.index}}', 'history-table-{{item.index}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+    {% elif hint == "ACTION_RESULT" %}
+    <div title="Range hidden while hand is in progress"><button type=button class="pure-button" disabled=disabled>View</button></div>
     {% endif %}
     </td>
   </tr>
