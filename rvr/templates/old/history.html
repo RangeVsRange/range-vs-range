@@ -48,6 +48,7 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
       {%- elif result.is_aggressive %}bets {{result.raise_total}}
       {%- else %}does something inexplicable
       {%- endif %}</strong>
+      (ranges hidden while hand is in progress)
     {% elif hint == "RANGE_ACTION" %}
       {{item.screenname}}
       folds {{"%0.2f" % item.fold_pct}}%,
