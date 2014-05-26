@@ -27,3 +27,9 @@ def make_unsubscribe_url(identity):
     Make a proper Flask-smart URL for unsubscribing.
     """
     return url_for('unsubscribe', _external=True, identity=identity)
+
+def make_game_url(gameid):
+    """
+    Make a game URL for sending via email.
+    """
+    return url_for('game_page', _external=True, gameid=gameid)

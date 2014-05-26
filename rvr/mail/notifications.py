@@ -4,11 +4,11 @@ For sending email to users, like telling them it's their turn to act in a game.
 from flask_mail import Message
 from flask.templating import render_template
 from flask import copy_current_request_context
-from rvr.app import MAIL, make_unsubscribe_url
+from rvr.app import MAIL, make_unsubscribe_url, make_game_url
 from threading import Thread
 from functools import wraps
 
-#pylint:disable=R0903
+#pylint:disable=R0903,R0913
 
 # TODO: 2: better email, like with a link to the game page ldo!
 # or even the hand history table (or a modified / mobile friendly version)
@@ -56,7 +56,7 @@ def web_only(fun):
     return inner
 
 @web_only
-def _your_turn(recipient, screenname, identity):
+def _your_turn(recipient, screenname, identity, game):
     """
     Lets recipient know it's their turn in a game.
 
@@ -70,11 +70,14 @@ def _your_turn(recipient, screenname, identity):
     msg.add_recipient(recipient)
     msg.html = render_template('email/your_turn.html', recipient=recipient,
                                screenname=screenname,
-                               unsubscribe=make_unsubscribe_url(identity))
+                               unsubscribe=make_unsubscribe_url(identity),
+                               game_url=make_game_url(str(game.gameid)),
+                               gameid=game.gameid)
     send_email_async(msg)
 
 @web_only
-def _game_started(recipient, screenname, identity, is_starter, is_acting):
+def _game_started(recipient, screenname, identity, is_starter, is_acting,
+                  game):
     """
     Lets recipient know their game has started.
     """
@@ -82,7 +85,8 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting):
     msg.add_recipient(recipient)
     msg.html = render_template('email/game_started.html',
         recipient=recipient, screenname=screenname, is_starter=is_starter,
-        is_acting=is_acting, unsubscribe=make_unsubscribe_url(identity))
+        is_acting=is_acting, unsubscribe=make_unsubscribe_url(identity),
+        game_url=make_game_url(str(game.gameid)), gameid=game.gameid)
     send_email_async(msg)
 
 def notify_current_player(game):
@@ -95,7 +99,8 @@ def notify_current_player(game):
     user = game.current_rgp.user
     _your_turn(recipient=user.email,
                screenname=user.screenname,
-               identity=user.identity)
+               identity=user.identity,
+               game=game)
 
 def notify_first_player(game, starter_id):
     """
@@ -107,4 +112,5 @@ def notify_first_player(game, starter_id):
                       screenname=rgp.user.screenname,
                       identity=rgp.user.identity,
                       is_starter=(rgp.userid==starter_id),
-                      is_acting=(rgp.userid==game.current_userid))
+                      is_acting=(rgp.userid==game.current_userid),
+                      game=game)
