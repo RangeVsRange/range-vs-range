@@ -16,6 +16,7 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
+from rvr.infrastructure.util import concatenate
 
 def is_authenticated():
     """
@@ -60,8 +61,6 @@ def ensure_user():
     else:
         session['screenname'] = result.screenname
         session['userid'] = result.userid
-        flash("You have logged in as '%s'." %
-              (result.screenname, ))
 
 @APP.route('/change', methods=['GET','POST'])
 @AUTH.required
@@ -154,20 +153,24 @@ def about_page():
     """
     Unauthenticated information page.
     """
-    navbar_items = [('active', url_for('about_page'), 'About'),
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('active', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ'),
                     ('', url_for('log_in'), 'Log in')]
-    return render_template('new/about.html', navbar_items=navbar_items)
+    return render_template('new/about.html', title="About",
+                           navbar_items=navbar_items)
 
 @APP.route('/faq', methods=['GET'])
 def faq_page():
     """
     Frequently asked questions (unauthenticated).
     """
-    navbar_items = [('', url_for('about_page'), 'About'),
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
                     ('active', url_for('faq_page'), 'FAQ'),
                     ('', url_for('log_in'), 'Log in')]
-    return render_template('new/faq.html', navbar_items=navbar_items)
+    return render_template('new/faq.html', title="FAQ",
+                           navbar_items=navbar_items)
 
 @APP.route('/', methods=['GET'])
 def home_page():
@@ -195,13 +198,17 @@ def home_page():
     others_open = [og for og in open_games
                    if not any([u.userid == userid for u in og.users])]
     form = ChangeForm()
-    return render_template('old/home.html', title='Home',
+    navbar_items = [('active', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ'),
+                    ('', './logout', 'Log out')]
+    return render_template('new/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
         r_games=my_games,
         my_open=my_open,
         others_open=others_open,
-        my_finished_games=my_games.finished_details
-        )
+        my_finished_games=my_games.finished_details,
+        navbar_items=navbar_items)
 
 @APP.route('/join', methods=['GET'])
 @AUTH.required
