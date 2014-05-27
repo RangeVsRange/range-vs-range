@@ -193,6 +193,7 @@ def home_page():
     if isinstance(my_games, APIError):
         flash("An unknown error occurred retrieving your running games.")
         return redirect(url_for("error_page"))
+    selected_heading = request.cookies.get("selected-heading", "heading-open")
     my_games.running_details.sort(
         key=lambda rg: rg.current_user_details.userid != userid)
     my_open = [og for og in open_games
@@ -211,7 +212,8 @@ def home_page():
         my_open=my_open,
         others_open=others_open,
         my_finished_games=my_games.finished_details,
-        navbar_items=navbar_items)
+        navbar_items=navbar_items,
+        selected_heading=selected_heading)
 
 @APP.route('/join', methods=['GET'])
 @AUTH.required
