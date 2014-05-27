@@ -193,6 +193,8 @@ def home_page():
     if isinstance(my_games, APIError):
         flash("An unknown error occurred retrieving your running games.")
         return redirect(url_for("error_page"))
+    my_games.running_details.sort(
+        key=lambda rg: rg.current_user_details.userid != userid)
     my_open = [og for og in open_games
                if any([u.userid == userid for u in og.users])]
     others_open = [og for og in open_games
@@ -202,6 +204,7 @@ def home_page():
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ'),
                     ('', './logout', 'Log out')]
+    # TODO: 0: the 'play' are at the bottom, should be top!
     return render_template('new/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
         r_games=my_games,
