@@ -52,15 +52,26 @@ def ensure_user():
         # in). We redirect them to a page that allows them to choose a
         # different screenname.
         if request.endpoint != 'change_screenname':
-            flash("The screenname '%s' is already taken." % screenname)
+            flash("The screenname '%s' is already taken." % (screenname,))
             return redirect(url_for('change_screenname'))
     elif isinstance(result, APIError):
         flash("Error registering user details.")
         logging.debug("login error: %s", result)
         return redirect(url_for('error_page'))
     else:
-        session['screenname'] = result.screenname
         session['userid'] = result.userid
+        session['screenname'] = result.screenname
+        req2 = ChangeScreennameRequest(result.userid,
+                                       "Player %d" % (result.userid,))
+        if result.screenname != req2.screenname:
+            result2 = api.change_screenname(req2)
+            if isinstance(result2, APIError):
+                flash("Couldn't give you screenname '%s', "
+                      "you are stuck with '%s' until you change it." %
+                      (req2.screenname, result.screenname))
+            else:
+                session['screenname'] = req2.screenname
+        flash("You have logged in as '%s'" % (session['screenname'],))
 
 @APP.route('/change', methods=['GET','POST'])
 @AUTH.required

@@ -229,6 +229,10 @@ class API(object):
         """
         Change user's screenname
         """
+        # "Player X" is reserved for userid X
+        if request.screenname.startswith("Player ") and  \
+                request.screenname != "Player %d" % (request.userid,):
+            return self.ERR_DUPLICATE_SCREENNAME
         # Check for existing user with this screenname
         matches = self.session.query(tables.User)  \
             .filter(tables.User.screenname == request.screenname).all()
