@@ -179,7 +179,7 @@ class API(object):
         """
         1. Create or validate OpenID-based account
         inputs: identity, email, screenname
-        outputs: userid
+        outputs: existed, user_details
         """
         matches = self.session.query(tables.User)  \
             .filter(tables.User.identity == request.identity)  \
@@ -188,7 +188,9 @@ class API(object):
             # return user from database
             user = matches[0]
             user.unsubscribed = False
-            return dtos.UserDetails.from_user(user)
+            # TODO: 0: convert these two values into a new DTO
+            # (and below, where returning False, UserDetails)
+            return True, dtos.UserDetails.from_user(user)
         else:
             # create user in database
             user = tables.User()
@@ -210,7 +212,7 @@ class API(object):
                     raise
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
-            return dtos.UserDetails.from_user(user)
+            return False, dtos.UserDetails.from_user(user)
             
     @api
     def unsubscribe(self, identity):
