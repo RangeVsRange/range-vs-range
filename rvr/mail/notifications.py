@@ -10,8 +10,7 @@ from functools import wraps
 
 #pylint:disable=R0903,R0913
 
-# TODO: 2: better email, like with a link to the game page ldo!
-# or even the hand history table (or a modified / mobile friendly version)
+# TODO: 4: modified hand history table in email
 
 class NotificationSettings(object):
     """

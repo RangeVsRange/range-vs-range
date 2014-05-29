@@ -188,7 +188,7 @@ class API(object):
             # return user from database
             user = matches[0]
             user.unsubscribed = False
-            # TODO: 0: convert these two values into a new DTO
+            # TODO: 1: convert these two values into a new DTO
             # (and below, where returning False, UserDetails)
             return True, dtos.UserDetails.from_user(user)
         else:

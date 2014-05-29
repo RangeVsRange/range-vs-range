@@ -87,7 +87,7 @@ class FoldEquityAccumulator(object):
         afe.semibluff_ev = -afe.immediate_result / other_ratio
         afe.semibluff_equity = afe.semibluff_ev / self.pot_if_called
         return afe
-        # TODO: 0: need a supplementary table for individual folders
+        # TODO: 2: need a supplementary table for individual folders
         # (to store userid, fold_ratio combos, in order, for later display)
 
 class AnalysisReplayer(object):

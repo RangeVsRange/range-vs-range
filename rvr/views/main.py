@@ -16,13 +16,18 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
-from rvr.infrastructure.util import concatenate
 
 def is_authenticated():
     """
     Is the user authenticated with OpenID?
     """
     return g.user and 'identity' in g.user
+
+def is_logged_in():
+    """
+    Is the user logged in (i.e. they've been to the database)
+    """
+    return 'userid' in session and 'screenname' in session
 
 def ensure_user():
     """
@@ -32,7 +37,7 @@ def ensure_user():
     if not is_authenticated():
         # user is not authenticated yet
         return
-    if 'userid' in session and 'screenname' in session:
+    if is_logged_in():
         # user is authenticated and authorised (logged in)
         return
     if 'screenname' in session:
@@ -59,7 +64,7 @@ def ensure_user():
         logging.debug("login error: %s", result)
         return redirect(url_for('error_page'))
     else:
-        # TODO: 0: what if their Google name is "Player Guy"?
+        # TODO: REVISIT: what if their Google name is "Player Guy"?
         session['userid'] = result.userid
         session['screenname'] = result.screenname
         req2 = ChangeScreennameRequest(result.userid,
@@ -167,10 +172,11 @@ def about_page():
     """
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('active', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ'),
-                    ('', url_for('log_in'), 'Log in')]
+                    ('', url_for('faq_page'), 'FAQ')]
+    # TODO: 0: pass a 'is logged in' flag, for base to use instead of userid
     return render_template('new/about.html', title="About",
-                           navbar_items=navbar_items)
+                           navbar_items=navbar_items,
+                           is_logged_in=is_logged_in())
 
 @APP.route('/faq', methods=['GET'])
 def faq_page():
@@ -179,10 +185,10 @@ def faq_page():
     """
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
-                    ('active', url_for('faq_page'), 'FAQ'),
-                    ('', url_for('log_in'), 'Log in')]
+                    ('active', url_for('faq_page'), 'FAQ')]
     return render_template('new/faq.html', title="FAQ",
-                           navbar_items=navbar_items)
+                           navbar_items=navbar_items,
+                           is_logged_in=is_logged_in())
 
 @APP.route('/', methods=['GET'])
 def home_page():
@@ -215,9 +221,7 @@ def home_page():
     form = ChangeForm()
     navbar_items = [('active', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ'),
-                    ('', './logout', 'Log out')]
-    # TODO: 0: the 'play' are at the bottom, should be top!
+                    ('', url_for('faq_page'), 'FAQ')]
     return render_template('new/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
         r_games=my_games,
@@ -225,7 +229,8 @@ def home_page():
         others_open=others_open,
         my_finished_games=my_games.finished_details,
         navbar_items=navbar_items,
-        selected_heading=selected_heading)
+        selected_heading=selected_heading,
+        is_logged_in=is_logged_in())
 
 @APP.route('/join', methods=['GET'])
 @AUTH.required
