@@ -173,7 +173,6 @@ def about_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('active', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    # TODO: 0: pass a 'is logged in' flag, for base to use instead of userid
     return render_template('new/about.html', title="About",
                            navbar_items=navbar_items,
                            is_logged_in=is_logged_in())
