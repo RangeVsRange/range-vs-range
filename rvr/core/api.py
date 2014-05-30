@@ -188,9 +188,7 @@ class API(object):
             # return user from database
             user = matches[0]
             user.unsubscribed = False
-            # TODO: 1: convert these two values into a new DTO
-            # (and below, where returning False, UserDetails)
-            return True, dtos.UserDetails.from_user(user)
+            return dtos.LoginResponse.from_user(user, True)
         else:
             # create user in database
             user = tables.User()
@@ -212,7 +210,7 @@ class API(object):
                     raise
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
-            return False, dtos.UserDetails.from_user(user)
+            return dtos.LoginResponse.from_user(user, False)
             
     @api
     def unsubscribe(self, identity):

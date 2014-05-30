@@ -60,8 +60,8 @@ class AdminCmd(Cmd):
         if isinstance(response, APIError):
             print "Error:", response
             return
-        print "User is logged in with userid='%s', screenname='%s'" % \
-            (response.userid, response.screenname)
+        print "User is logged in, response %r" % \
+            (response)
 
     def do_getuserid(self, details):
         """

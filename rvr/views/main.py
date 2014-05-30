@@ -50,7 +50,7 @@ def ensure_user():
     req = LoginRequest(identity=g.user['identity'],  # @UndefinedVariable
                        email=g.user['email'],  # @UndefinedVariable
                        screenname=screenname)
-    existed, result = api.login(req)
+    result = api.login(req)
     if result == API.ERR_DUPLICATE_SCREENNAME:
         session['screenname'] = g.user['name']
         # User is authenticated with OpenID, but not yet authorised (logged
@@ -69,7 +69,7 @@ def ensure_user():
         session['screenname'] = result.screenname
         req2 = ChangeScreennameRequest(result.userid,
                                        "Player %d" % (result.userid,))
-        if not existed and result.screenname != req2.screenname:
+        if not result.existed and result.screenname != req2.screenname:
             result2 = api.change_screenname(req2)
             if isinstance(result2, APIError):
                 flash("Couldn't give you screenname '%s', "

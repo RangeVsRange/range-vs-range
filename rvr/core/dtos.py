@@ -61,6 +61,28 @@ class DetailedUser(object):
 
 class UserDetails(object):
     """
+    Userid and screenname for user, as recorded in database.
+    """
+    def __init__(self, userid, screenname):
+        self.userid = userid
+        self.screenname = screenname
+    
+    def __repr__(self):
+        return "UserDetails(userid=%r, screenname=%r)" %  \
+            (self.userid, self.screenname)
+
+    def __str__(self):
+        return self.screenname
+
+    @classmethod
+    def from_user(cls, user):
+        """
+        Create object from tables.User
+        """
+        return cls(user.userid, user.screenname)
+
+class LoginResponse(UserDetails):
+    """
     Response from a LoginRequest. Note that the screenname may change because
     the user has chosen a different one.
     
@@ -71,22 +93,20 @@ class UserDetails(object):
     If response has the same screenname, it means either that the user has
     logged in previously, or they were created with that screenname.
     """
-    def __init__(self, userid, screenname):
-        self.userid = userid
-        self.screenname = screenname
+    def __init__(self, userid, screenname, existed):
+        UserDetails.__init__(self, userid, screenname)
+        self.existed = existed
     
     def __repr__(self):
-        return "UserDetails(%r, id=%r)" % (self.screenname, self.userid)
-        
-    def __str__(self):
-        return self.screenname
+        return "LoginResponse(userid=%r, screenname=%r, existed=%r)" %  \
+            (self.userid, self.screenname, self.existed)
     
     @classmethod
-    def from_user(cls, user):
+    def from_user(cls, user, existed):  # pylint:disable=W0221
         """
         Create object from tables.User
         """
-        return cls(user.userid, user.screenname)
+        return cls(user.userid, user.screenname, existed)
 
 class SituationPlayerDetails(object):
     """

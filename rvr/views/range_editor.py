@@ -407,7 +407,7 @@ def range_editor_get():
     embedded = request.args.get('embedded', 'false')
     raised = request.args.get('raised', '')
     can_check = request.args.get('can_check', '')
-    can_raise = request.args.get('can_raise', '')
+    can_raise = request.args.get('can_raise', 'true')
     min_raise = request.args.get('min_raise', '0')
     max_raise = request.args.get('max_raise', '200')
     rng_original = safe_hand_range('rng_original', ANYTHING)
@@ -481,7 +481,7 @@ def range_editor_post():
     """
     raised = request.form.get('raised', '')
     can_check = request.form.get('can_check', '')
-    can_raise = request.form.get('can_raise', '')
+    can_raise = request.form.get('can_raise', 'true')
     min_raise = request.form.get('min_raise', '0')
     max_raise = request.form.get('max_raise', '200')
     rng_original = request.form.get('rng_original', ANYTHING)    
