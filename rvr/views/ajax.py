@@ -8,6 +8,7 @@ from rvr.poker.handrange import NOTHING, ANYTHING
 import json
 import urllib2
 from rvr.views.range_editor import safe_hand_range, safe_board
+import logging
 
 @APP.route('/ajax/range_subtract')
 def range_subtract():
@@ -65,5 +66,6 @@ def total_donated():
         # Most recent known value
         # TODO: REVISIT: occasionally update this
         # Also, see if this call now honours cors=true
+        logging.info("Failed to retrieve donation total.")
         return jsonify(total_received=250000)
     return jsonify(total_received=response['total_received'])

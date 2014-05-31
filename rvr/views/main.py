@@ -64,7 +64,8 @@ def ensure_user():
         logging.debug("login error: %s", result)
         return redirect(url_for('error_page'))
     else:
-        # TODO: REVISIT: what if their Google name is "Player Guy"?
+        # If their Google name is "Player <X>", they will not be able to have
+        # their Google name as their screenname. Unless their login errors.
         session['userid'] = result.userid
         session['screenname'] = result.screenname
         req2 = ChangeScreennameRequest(result.userid,
