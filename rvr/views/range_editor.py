@@ -452,6 +452,7 @@ def range_editor_get():
                      ("rng_fold", rng_fold.description),
                      ("rng_passive", rng_passive.description),
                      ("rng_aggressive", rng_aggressive.description)]
+    # TODO: 1: upgrade range viewer, range editor pages
     if embedded == 'true':
         template = 'old/range_viewer.html'
     else:

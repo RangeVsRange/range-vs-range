@@ -116,6 +116,7 @@ def change_screenname():
             return redirect(url_for('home_page'))
     current = session['screenname'] if 'screenname' in session  \
         else g.user['name']
+    # TODO: 0: upgrade change page
     return render_template('old/change.html', title='Change Your Screenname',
                            current=current, form=form)
 
@@ -140,6 +141,7 @@ def unsubscribe():
         else:
             msg = "You have been unsubscribed. If you log in again, you will start receiving emails again."  # pylint:disable=C0301
     flash(msg)
+    # TODO: 0: upgrade unsubscribe page
     return render_template('old/base.html', title='Unsubscribe')
 
 @logout.connect_via(APP)
@@ -164,6 +166,7 @@ def error_page():
     """
     Unauthenticated page for showing errors to user.
     """
+    # TODO: 0: upgrade error page
     return render_template('old/base.html', title='Sorry')
 
 @APP.route('/about', methods=['GET'])
