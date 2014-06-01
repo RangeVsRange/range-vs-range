@@ -60,6 +60,9 @@
 
 {% block scripts %}
 {{super()}}
+<script>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
 <script src="{{url_for('static', filename='js/jquery.cookie.js')}}"></script>
 <script>
     (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=

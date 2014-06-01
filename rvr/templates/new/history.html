@@ -1,5 +1,30 @@
 {% extends "new/base.html" %}
 
+{% block scripts %}
+{{super()}}
+<script type=text/javascript>
+$CURRENT_BUTTON = null;
+range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise) {
+    $('#current-viewer-row').remove(); // if any
+    if (button_id == $CURRENT_BUTTON) {
+        $CURRENT_BUTTON = null;
+        return;
+    }
+    $CURRENT_BUTTON = button_id;
+    dynamic_url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg) + '&raised=' + encodeURIComponent(is_raise) + '&can_check=' + encodeURIComponent(is_check);
+    iframe = $('<iframe>', {id: 'viewer', style: 'border: 0px none transparent;', src: dynamic_url});
+    iframe.width(550);
+    iframe.height(550);
+    iframe.text('Sorry, your browser does not support iframes.');
+    td = $('<td>');
+    td.append(iframe);
+    tr = $('<tr>').attr('id', 'current-viewer-row');
+    tr.append(td);
+    $('#' + row_id).after(tr);
+};
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container">
 {% if history %}
@@ -40,6 +65,13 @@
         {% else %}
           {{item[0]}}
         {% endif %}
+        <div class="pull-right">
+          {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
+          <button class="btn btn-primary" type=button id="view-action-{{item.index}}" onclick="range_view('view-action-{{item.index}}', 'history-table-{{item.index}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+          {% elif hint == "ACTION_RESULT" %}
+          <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
+          {% endif %}
+        </div>
       </td>
     </tr>
   {% endfor %}
