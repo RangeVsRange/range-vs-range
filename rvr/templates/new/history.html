@@ -1,0 +1,55 @@
+{% extends "new/base.html" %}
+
+{% block content %}
+{% if history %}
+<div class="container">
+<table class="table table-bordered table-condensed">
+  {% for hint, item in history %}
+    <tr id="history-table-{{item.index}}">
+      <td>
+        {% if hint == "ACTION_SUMMARY" %}
+          <strong>{{item.screenname}}
+          {% set result = item.action_result %}
+          {% if result.is_fold %}folds
+          {%- elif result.is_passive and result.call_cost %}calls {{result.call_cost}}
+          {%- elif result.is_passive %}checks
+          {%- elif result.is_aggressive and result.is_raise %}raises to {{result.raise_total}}
+          {%- elif result.is_aggressive %}bets {{result.raise_total}}
+          {%- else %}does something inexplicable
+          {%- endif %},</strong>
+          with {{item.combos}} combos ({{"%0.2f" % item.percent}}% of all possible hands) 
+        {% elif hint == "ACTION_RESULT" %}
+          <strong>{{item.screenname}}
+          {% set result = item.action_result %}
+          {% if result.is_fold %}folds
+          {%- elif result.is_passive and result.call_cost %}calls {{result.call_cost}}
+          {%- elif result.is_passive %}checks
+          {%- elif result.is_aggressive and result.is_raise %}raises to {{result.raise_total}}
+          {%- elif result.is_aggressive %}bets {{result.raise_total}}
+          {%- else %}does something inexplicable
+          {%- endif %}</strong>
+          (ranges hidden while hand is in progress)
+        {% elif hint == "RANGE_ACTION" %}
+          {{item.screenname}}
+          folds {{"%0.2f" % item.fold_pct}}%,
+          {% if item.is_check %}checks{% else %}calls{% endif %} {{"%0.2f" % item.passive_pct}}%,
+          {% if item.is_raise %}raises{% else %}bets{% endif %} {{"%0.2f" % item.aggressive_pct}}%
+          (to total {{item.raise_total}})
+        {% elif hint == "BOARD" %}
+          {{item[0]}}: {% for card in item[1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
+        {% else %}
+          {{item[0]}}
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+</div>
+{% else %}
+<table class="table">
+  <tr>
+    <td>Nothing, yet.</td>
+  </tr>
+</table>
+{% endif %}
+{% endblock %}

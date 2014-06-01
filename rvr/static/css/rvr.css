@@ -1,7 +1,12 @@
+html {
+  overflow-y: scroll;
+}
+
 body {
   padding-top: 50px;
 }
 
-html {
-  overflow-y: scroll;
+td {
+  vertical-align: middle !important;
 }
+

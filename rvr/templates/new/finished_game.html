@@ -1,0 +1,16 @@
+{% extends "new/history.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>{{title}}</h1>
+    <p>Situation: <strong>{{game_details.situation.description}}</strong></p>
+    <p>Players: {% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}</p>
+  </div>
+</div>
+
+{{ flash_messages() }}
+
+{{ super() }}
+
+{% endblock %}

@@ -525,8 +525,12 @@ def _finished_game(game, gameid):
     """
     title = 'Game %d (finished)' % (gameid,)
     history = _make_history_list(game.history)
-    return render_template('old/finished_game.html', title=title,
-        game_details=game.game_details, history=history)
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]    
+    return render_template('new/finished_game.html', title=title,
+        game_details=game.game_details, history=history,
+        navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 @APP.route('/game', methods=['GET', 'POST'])
 @AUTH.required
@@ -534,6 +538,7 @@ def game_page():
     """
     User's view of the specified game
     """
+    # TODO: 2: every position should have a name
     alt = ensure_user()
     if alt:
         return alt
