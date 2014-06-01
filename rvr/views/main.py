@@ -513,11 +513,15 @@ def _running_game(game, gameid, userid, api):
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
     is_me = (userid == game.game_details.current_player.user.userid)
-    return render_template('old/running_game.html', title=title, form=form,
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('new/running_game.html', title=title, form=form,
         board=board, game_details=game.game_details, history=history,
         current_options=game.current_options,
         is_me=is_me,
-        range_editor_url=range_editor_url)
+        range_editor_url=range_editor_url,
+        navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 def _finished_game(game, gameid):
     """
@@ -527,7 +531,7 @@ def _finished_game(game, gameid):
     history = _make_history_list(game.history)
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]    
+                    ('', url_for('faq_page'), 'FAQ')]
     return render_template('new/finished_game.html', title=title,
         game_details=game.game_details, history=history,
         navbar_items=navbar_items, is_logged_in=is_logged_in())

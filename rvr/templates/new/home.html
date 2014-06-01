@@ -1,14 +1,5 @@
 {% extends "new/base.html" %}
 
-{% block styles %}
-{{super()}}
-<style type="text/css">
-  td {
-    vertical-align: middle !important;
-  }
-</style>
-{% endblock %}
-
 {% block scripts %}
 {{ super() }}
 <script>
@@ -48,7 +39,7 @@
   <div class="tab-pane{% if selected_heading == "heading-my" %} active{% endif %}" id="my">
 {%- if r_games.running_details %}
   <div class="table-responsive">
-  <table class="table table-striped">
+  <table class="table">
     <thead>
       <tr>
         <th style="min-width: 200px; width: 200px">Game</th>
@@ -82,7 +73,7 @@
 <!-- Open games -->
   <div class="tab-pane{% if selected_heading == "heading-open" %} active{% endif %}" id="open">
   <div class="table-responsive">
-  <table class="table table-striped">
+  <table class="table">
     <thead>
       <tr>
         <th style="min-width: 200px; width: 200px">Game</th>
@@ -130,7 +121,7 @@
   <div class="tab-pane{% if selected_heading == "heading-finished" %} active{% endif %}" id="finished">
 {%- if my_finished_games %}
   <div class="table-responsive">
-  <table class="table table-striped">
+  <table class="table">
     <thead>
       <tr>
         <th style="min-width: 200px; width: 200px">Game</th>

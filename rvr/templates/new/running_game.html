@@ -1,0 +1,67 @@
+{% extends "new/history.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>{{title}}</h1>
+    <p>Situation: <strong>{{game_details.situation.description}}</strong></p>
+    <p>Players: {% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}</p>
+  </div>
+</div>
+
+{{ flash_messages() }}
+
+<div class="container">
+
+<h3>Game state</h3>
+
+{% if game_details.current_round != "Preflop" %}
+<p>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}</p>
+<p>The pot at the start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
+{% endif %}
+
+<table class="table table-bordered">
+<thead>
+<tr class="info"><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td><td><strong>Status</strong></td></tr>
+</thead>
+<tbody>
+{% for rgp in game_details.rgp_details %}
+<tr>
+  <td><strong>{{rgp.user.screenname}}</strong></td>
+  <td>{{rgp.stack}}</td>
+  <td>{{rgp.contributed}}</td>
+  <td>
+  {% if rgp.user.screenname == game_details.current_player.user.screenname %}
+    <em>(acting now)</em>
+  {% elif rgp.left_to_act %}
+    <em>(still to act)</em>
+  {% elif rgp.folded %}
+    <em>(folded)</em>
+  {% else %}
+    <em>(acted)</em>
+  {% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% if is_me %}
+<a class="btn btn-primary" id="range-editor-url" target="_blank" href="{{range_editor_url}}">Range editor</a>
+<form method="post" id="action" name="action" onsubmit="return validate_form();">
+  {{form.hidden_tag()}}
+  {% if current_options.can_raise() %}{{form.total}}{% endif %}
+  {{form.fold}}
+  {{form.passive}}
+  {% if current_options.can_raise() %}
+  {{form.aggressive}}
+  {% endif %}
+</form>
+{% endif %}
+
+<hr>
+
+<h3>Hand history</h3>
+</div>
+{{ super() }}
+{% endblock %}
