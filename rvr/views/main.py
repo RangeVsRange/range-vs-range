@@ -519,10 +519,10 @@ def _running_game(game, gameid, userid, api):
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/running_game.html', title=title, form=form,
+    return render_template('new/game.html', title=title, form=form,
         board=board, game_details=game.game_details, history=history,
         current_options=game.current_options,
-        is_me=is_me,
+        is_me=is_me, is_running=True,
         range_editor_url=range_editor_url,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
@@ -535,8 +535,8 @@ def _finished_game(game, gameid):
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/finished_game.html', title=title,
-        game_details=game.game_details, history=history,
+    return render_template('new/game.html', title=title,
+        game_details=game.game_details, history=history, is_running=False,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 @APP.route('/game', methods=['GET', 'POST'])

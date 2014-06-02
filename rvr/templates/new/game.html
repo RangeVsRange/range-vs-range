@@ -1,0 +1,155 @@
+{% extends "new/base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type=text/javascript>
+$CURRENT_BUTTON = null;
+range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise) {
+    $('#current-viewer-row').remove(); // if any
+    if (button_id == $CURRENT_BUTTON) {
+        $CURRENT_BUTTON = null;
+        return;
+    }
+    $CURRENT_BUTTON = button_id;
+    dynamic_url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg) + '&raised=' + encodeURIComponent(is_raise) + '&can_check=' + encodeURIComponent(is_check);
+    iframe = $('<iframe>', {id: 'viewer', style: 'border: 0px none transparent;', src: dynamic_url});
+    iframe.width(550);
+    iframe.height(550);
+    iframe.text('Sorry, your browser does not support iframes.');
+    td = $('<td>');
+    td.append(iframe);
+    tr = $('<tr>').attr('id', 'current-viewer-row');
+    tr.append(td);
+    $('#' + row_id).after(tr);
+};
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+  <div class="page-header">
+    <h1>{{title}} <small>{% if is_running %}running{% else %}finished{% endif %}</small></h1>
+  </div>
+</div>
+
+{{ flash_messages() }}
+
+<div class="container">
+
+<h3>Situation</h3>
+<p>{{game_details.situation.description}}</p>
+
+<h3>Players</h3>
+<p>{% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}{{rgp.user.screenname}}{% endfor %}</p>
+
+{% if is_running %}
+    <h3>Game state</h3>
+    
+    {% if game_details.current_round != "Preflop" %}
+    <p>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}</p>
+    <p>The pot at the start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
+    {% endif %}
+    
+    <table class="table table-bordered">
+    <thead>
+    <tr class="info"><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td><td><strong>Status</strong></td></tr>
+    </thead>
+    <tbody>
+    {% for rgp in game_details.rgp_details %}
+    <tr>
+      <td><strong>{{rgp.user.screenname}}</strong></td>
+      <td>{{rgp.stack}}</td>
+      <td>{{rgp.contributed}}</td>
+      <td>
+      {% if rgp.user.screenname == game_details.current_player.user.screenname %}
+        <em>(acting now)</em>
+      {% elif rgp.left_to_act %}
+        <em>(still to act)</em>
+      {% elif rgp.folded %}
+        <em>(folded)</em>
+      {% else %}
+        <em>(acted)</em>
+      {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+    
+    {% if is_me %}
+    <a class="btn btn-primary" id="range-editor-url" target="_blank" href="{{range_editor_url}}">Range editor</a>
+    <form method="post" id="action" name="action" onsubmit="return validate_form();">
+      {{form.hidden_tag()}}
+      {% if current_options.can_raise() %}{{form.total}}{% endif %}
+      {{form.fold}}
+      {{form.passive}}
+      {% if current_options.can_raise() %}
+      {{form.aggressive}}
+      {% endif %}
+    </form>
+    {% endif %}
+{% endif %}
+
+<h3>History</h3>
+{% if history %}
+<table class="table table-condensed">
+  {% for hint, item in history %}
+    <tr id="history-table-{{item.index}}">
+      <td>
+        {% if hint == "ACTION_SUMMARY" %}
+          <strong>{{item.screenname}}
+          {% set result = item.action_result %}
+          {% if result.is_fold %}folds
+          {%- elif result.is_passive and result.call_cost %}calls {{result.call_cost}}
+          {%- elif result.is_passive %}checks
+          {%- elif result.is_aggressive and result.is_raise %}raises to {{result.raise_total}}
+          {%- elif result.is_aggressive %}bets {{result.raise_total}}
+          {%- else %}does something inexplicable
+          {%- endif %},</strong>
+          with {{item.combos}} combos ({{"%0.2f" % item.percent}}% of all possible hands) 
+        {% elif hint == "ACTION_RESULT" %}
+          <strong>{{item.screenname}}
+          {% set result = item.action_result %}
+          {% if result.is_fold %}folds
+          {%- elif result.is_passive and result.call_cost %}calls {{result.call_cost}}
+          {%- elif result.is_passive %}checks
+          {%- elif result.is_aggressive and result.is_raise %}raises to {{result.raise_total}}
+          {%- elif result.is_aggressive %}bets {{result.raise_total}}
+          {%- else %}does something inexplicable
+          {%- endif %}</strong>
+          (ranges hidden while hand is in progress)
+        {% elif hint == "RANGE_ACTION" %}
+          {{item.screenname}}
+          folds {{"%0.2f" % item.fold_pct}}%,
+          {% if item.is_check %}checks{% else %}calls{% endif %} {{"%0.2f" % item.passive_pct}}%,
+          {% if item.is_raise %}raises{% else %}bets{% endif %} {{"%0.2f" % item.aggressive_pct}}%
+          (to total {{item.raise_total}})
+        {% elif hint == "BOARD" %}
+          {{item[0]}}: {% for card in item[1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
+        {% else %}
+          {{item[0]}}
+        {% endif %}
+      </td>
+      <td>
+        <div class="pull-right">
+          {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
+          <button class="btn btn-primary" type=button id="view-action-{{item.index}}" onclick="range_view('view-action-{{item.index}}', 'history-table-{{item.index}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+          {% elif hint == "ACTION_RESULT" %}
+          <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+{% else %}
+<table class="table">
+  <tr>
+    <td>Nothing, yet.</td>
+  </tr>
+</table>
+{% endif %}
+
+</div>
+{% endblock %}
