@@ -37,23 +37,36 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 
 <div class="container">
 
-<h3>Situation</h3>
-<p>{{game_details.situation.description}}</p>
+<ul class="nav nav-tabs">
+  <li class="active"><a id="heading-situation" href="#situation" data-toggle="tab">Situation</a></li>
+{% if is_running %}
+  <li><a id="heading-game-state" href="#game-state" data-toggle="tab">Game state</a></li>
+  {% if is_me %}
+  <li><a id="heading-range-editor" href="#range-editor" data-toggle="tab">Range editor</a></li>
+  {% endif %}
+{% endif %}
+  <li><a id="heading-history" href="#history" data-toggle="tab">History</a></li>
+</ul>
 
-<h3>Players</h3>
-<p>{% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}{{rgp.user.screenname}}{% endfor %}</p>
+<div class="tab-content">
+
+<div class="tab-pane active" id="situation">
+<p/>
+<p>Situation: <strong>{{game_details.situation.description}}</strong></p>
+<p>Players: {% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}</p>
+</div>
 
 {% if is_running %}
-    <h3>Game state</h3>
-    
+  <div class="tab-pane" id="game-state">
     {% if game_details.current_round != "Preflop" %}
+    <p/>
     <p>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}</p>
     <p>The pot at the start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
     {% endif %}
     
     <table class="table table-bordered">
     <thead>
-    <tr class="info"><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td><td><strong>Status</strong></td></tr>
+    <tr><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td><td><strong>Status</strong></td></tr>
     </thead>
     <tbody>
     {% for rgp in game_details.rgp_details %}
@@ -76,8 +89,10 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
     {% endfor %}
     </tbody>
     </table>
-    
-    {% if is_me %}
+  </div>
+  
+  {% if is_me %}
+  <div class="tab-pane" id="range-editor">
     <a class="btn btn-primary" id="range-editor-url" target="_blank" href="{{range_editor_url}}">Range editor</a>
     <form method="post" id="action" name="action" onsubmit="return validate_form();">
       {{form.hidden_tag()}}
@@ -88,10 +103,11 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
       {{form.aggressive}}
       {% endif %}
     </form>
-    {% endif %}
+  </div>
+  {% endif %}
 {% endif %}
 
-<h3>History</h3>
+<div class="tab-pane" id="history">
 {% if history %}
 <table class="table table-condensed">
   {% for hint, item in history %}
@@ -150,6 +166,9 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
   </tr>
 </table>
 {% endif %}
-
 </div>
+
+</div> <!-- .tab-content -->
+
+</div> <!-- .container -->
 {% endblock %}
