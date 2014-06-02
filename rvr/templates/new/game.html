@@ -38,26 +38,26 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 <div class="container">
 
 <ul class="nav nav-tabs">
-  <li class="active"><a id="heading-situation" href="#situation" data-toggle="tab">Situation</a></li>
+  <li><a id="heading-situation" href="#situation" data-toggle="tab">Situation</a></li>
 {% if is_running %}
-  <li><a id="heading-game-state" href="#game-state" data-toggle="tab">Game state</a></li>
+  <li class="active"><a id="heading-game-state" href="#game-state" data-toggle="tab">Game state</a></li>
   {% if is_me %}
   <li><a id="heading-range-editor" href="#range-editor" data-toggle="tab">Range editor</a></li>
   {% endif %}
 {% endif %}
-  <li><a id="heading-history" href="#history" data-toggle="tab">History</a></li>
+  <li{% if not is_running %} class="active"{% endif %}><a id="heading-history" href="#history" data-toggle="tab">History</a></li>
 </ul>
 
 <div class="tab-content">
 
-<div class="tab-pane active" id="situation">
+<div class="tab-pane" id="situation">
 <p/>
 <p>Situation: <strong>{{game_details.situation.description}}</strong></p>
 <p>Players: {% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}</p>
 </div>
 
 {% if is_running %}
-  <div class="tab-pane" id="game-state">
+  <div class="tab-pane active" id="game-state">
     {% if game_details.current_round != "Preflop" %}
     <p/>
     <p>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}</p>
@@ -107,7 +107,7 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
   {% endif %}
 {% endif %}
 
-<div class="tab-pane" id="history">
+<div class="tab-pane{% if not is_running %} active{% endif %}" id="history">
 {% if history %}
 <table class="table table-condensed">
   {% for hint, item in history %}
