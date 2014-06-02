@@ -530,7 +530,7 @@ def _finished_game(game, gameid):
     """
     Response from game page when the requested game is finished.
     """
-    title = 'Game %d (finished)' % (gameid,)
+    title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history)
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),

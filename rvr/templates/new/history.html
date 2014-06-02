@@ -26,7 +26,6 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 {% endblock %}
 
 {% block content %}
-<div class="container">
 {% if history %}
 <table class="table table-condensed">
   {% for hint, item in history %}
@@ -85,5 +84,4 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
   </tr>
 </table>
 {% endif %}
-</div>
 {% endblock %}
