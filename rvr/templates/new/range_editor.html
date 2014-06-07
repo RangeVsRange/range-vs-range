@@ -6,15 +6,6 @@
 body {
   padding-top: 0px;
 }
-.r_hdn { }
-.r_sel { background-color: #C0C0C0 !important; }
-.r_una { background-color: #FFFFFF; }
-.r_fol { background-color: #FF8080; }
-.r_pas { background-color: #FFFF80; }
-.r_agg { background-color: #80FF80; }
-.r_mix { background-color: #8080FF; }
-.s_hdn { }
-.s_sel { background-color: #C0C0C0 !important; }
 </style>
 {% endblock %}
 
@@ -100,7 +91,7 @@ body {
 </div>
 {% endif %}
 <div class="form-group">
-  <button type=submit class="btn btn-primary">Done</button>
+  <button type=submit class="btn btn-primary">Do it</button>
   <p class="help-block">Or review your range choices below.</p>
 </div>
 </form>
@@ -115,11 +106,13 @@ body {
 The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
 {% endif %}
 
+<div class="pad-above">
 <table><tr>
 <td class="combo-table">
 
 <!-- Start Rank Combos -->
   <label>Select rank combos:</label> <div class="btn-group"><a class="btn btn-default" onclick="select_all_rank(false)">None</a><a class="btn btn-default" onclick="select_all_rank(true)">All</a></div>
+  <div class="pad-above">
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
@@ -127,37 +120,41 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
     {% endfor %}
    </tr>{% endfor %}
   </table>
+  </div>
 <!-- End Rank Combos -->
 
 </td>
-<td class="combo-table hidden-xs">
-
+<td class="combo-table hidden-xs pad-left">
 <!-- Start Suit Combos -->
   {{ suit_intro() }}
-  {{ suited_suits() }}
-  {{ pair_suits() }}
-  {{ offsuit_suits() }}
+  <div class="pad-above">{{ suited_suits() }}</div>
+  <div class="pad-above">{{ pair_suits() }}</div>
+  <div class="pad-above">{{ offsuit_suits() }}</div>
 <!-- End Suit Combos -->
 
 </td>
 </table>
 
-<div class="visible-xs">
+<div class="visible-xs pad-above">
   {{ suit_intro() }}
 </div>
+<div class="pad-above">
 <table class="visible-xs"><tr>
-  <td class="combo-table">
+  <td class="combo-table pad-left">
     {{ suited_suits() }}
   </td>
-  <td class="combo-table">
+  <td class="combo-table pad-left">
     {{ pair_suits() }}
   </td>
-  <td class="combo-table">
+  <td class="combo-table pad-left">
     {{ offsuit_suits() }}
   </td>
 </tr></table>
+</div>
+</div>
 
 <!-- Start 4 x Range -->
+<div class="pad-above">
 <table class="table table-condensed" style="width:400px">
   <tr>
     <td><button class="btn btn-primary" type=submit name=submit value="reset">(Reset)</button></td>
@@ -178,6 +175,7 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
     {% if can_raise == 'true' %}<td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Lock</label></td>{% endif %}
   </tr>
 </table>
+</div>
 <!-- End 4 x Range -->
 
 

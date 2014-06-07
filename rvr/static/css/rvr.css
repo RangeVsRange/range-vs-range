@@ -54,3 +54,21 @@ iframe {
     padding-top:4px;
     padding-bottom:4px;
 }
+
+.pad-above {
+    padding-top:10px;
+}
+
+.pad-left {
+    padding-left:10px;
+}
+
+.r_hdn { }
+.r_sel { background-color: #C0C0C0 !important; }
+.r_una { background-color: #FFFFFF; }
+.r_fol { background-color: #FF8080; }
+.r_pas { background-color: #FFFF80; }
+.r_agg { background-color: #80FF80; }
+.r_mix { background-color: #8080FF; }
+.s_hdn { }
+.s_sel { background-color: #C0C0C0 !important; }
