@@ -6,20 +6,54 @@
 body {
   padding-top: 0px;
 }
+.r_hdn { }
+.r_sel { background-color: #C0C0C0 !important; }
+.r_una { background-color: #FFFFFF; }
+.r_fol { background-color: #FF8080; }
+.r_pas { background-color: #FFFF80; }
+.r_agg { background-color: #80FF80; }
+.r_mix { background-color: #8080FF; }
+.s_hdn { }
+.s_sel { background-color: #C0C0C0 !important; }
 </style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{url_for('static', filename="js/range-editor.js")}}"></script>
+<script>
+    $MIN_RAISE = Number({{min_raise}});
+    $MAX_RAISE = Number({{max_raise}});
+    $CAN_RAISE = '{{can_raise}}' == 'true';
+    $NEXT_MAP = {{ next_map|safe }};
+    $RNG_FOLD = "{{ rng_fold }}";
+    $RNG_PASSIVE = "{{ rng_passive }}";
+    $RNG_AGGRESSIVE = "{{ rng_aggressive }}";
+</script>
 {% endblock %}
 
 {% block navbar %}
 {# That's right - nothing. #}
 {% endblock %}
 
-{% block scripts %}
-{{ super() }}
-{% endblock %}
-
 {% block content %}
 
 {{ flash_messages() }}
+
+<form id='form-ignore' onsubmit="return populate_parent();"></form>
+{% if rng_unassigned == 'nothing' %}
+You've assigned your whole range.
+{% if rng_aggressive != 'nothing' %}
+  <label for="raise-total">Now you just need to decide {% if raised == "true" %}what to raise to{% else %}how much to bet{% endif %}: </label>
+  <input type=number form='form-ignore' id='raise-total' type=number maxlength=3 size=4 min={{min_raise}} max={{max_raise}}> <em>({% if raised == "true" %}raise to{% else %}bet{% endif %} {{min_raise}} - {{max_raise}})</em>, then click here:
+{% endif %}
+<button type=submit form='form-ignore' type=submit>Done</button>
+<hr>
+{% endif %}
+
+<form action='{{url_for('range_editor')}}' method=post>
+{% for item in hidden_fields %}<input type=hidden name="{{item[0]}}" value="{{item[1]}}">
+{% endfor %}
 
 <div class="row">
   <div class="col-xs-12 col-sm-9 col-md-8 col-lg-6">
@@ -30,7 +64,7 @@ body {
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<div title="{{details.hover}}"><button type=button id="{{details.id}}" class="{{details.class}} rank-button pure-button" onclick="rank_click('{{details.id}}');">{{details.text}}</button></div><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} hidden-button pure-button" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<div title="{{details.hover}}"><button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs" onclick="rank_click('{{details.id}}');">{{details.text}}</button></div><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs invisible" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>
@@ -51,7 +85,7 @@ body {
    {% for row in suited_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -61,7 +95,7 @@ body {
    {% for row in pair_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -71,7 +105,7 @@ body {
    {% for row in offsuit_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button pure-button" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -126,5 +160,7 @@ body {
  </tr>
 </table>
 <!-- End 4 x Range -->
+
+</form>
 
 {% endblock %}

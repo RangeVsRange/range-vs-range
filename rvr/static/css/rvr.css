@@ -36,3 +36,17 @@ iframe {
     margin-left:auto;
     margin-right:auto;
 }
+
+.rank-button {
+    width:35px;
+    height:30px!important;
+}
+
+.suit-button {
+    background-color: #FFFFFF;
+    width:46px;
+    padding-left:0px;
+    padding-right:0px;
+    padding-top:4px;
+    padding-bottom:4px;
+}
