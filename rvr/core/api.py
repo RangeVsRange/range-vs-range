@@ -158,7 +158,7 @@ class API(object):
             left_to_act=True,
             range_raw="88-22,AJs-A2s,K7s+,Q9s+,J8s+,T7s+,96s+,86s+,75s+,64s+,54s,A8o+,KTo+,QTo+,J9o+,T9o,98o,87o")
         three_situation = dtos.SituationDetails(
-            description="Three-way flop: CO, BTN, BB",
+            description="Three-way flop. CO minraised, BTN cold called, BB called. BB to act first on the flop.",
             players=[three_bb, three_co, three_btn],  # BB is first to act
             current_player=0,  # BB is next to act
             is_limit=False,
