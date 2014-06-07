@@ -10,3 +10,29 @@ td {
   vertical-align: middle !important;
 }
 
+iframe {
+  border: 0px none transparent;
+}
+
+@media (min-width: 768px) {
+    .pull-right-sm {
+        float: right;
+    }
+}
+
+@media (min-width: 992px) {
+    .pull-right-md {
+        float: right;
+    }
+}
+
+@media (min-width: 1200px) {
+    .pull-right-lg {
+        float: right;
+    }
+}
+
+.center-table {
+    margin-left:auto;
+    margin-right:auto;
+}

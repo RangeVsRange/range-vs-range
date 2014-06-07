@@ -94,6 +94,7 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
   {% if is_me %}
   <div class="tab-pane" id="range-editor">
     <a class="btn btn-primary" id="range-editor-url" target="_blank" href="{{range_editor_url}}">Range editor</a>
+    <iframe src="{{range_editor_url}}" min-width="100%" width="100%" height="1200px" name="range-editor"></iframe>
     <form method="post" id="action" name="action" onsubmit="return validate_form();">
       {{form.hidden_tag()}}
       {% if current_options.can_raise() %}{{form.total}}{% endif %}
