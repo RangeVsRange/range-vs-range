@@ -51,7 +51,6 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 <div class="tab-content">
 
 <div class="tab-pane" id="situation">
-<p/>
 <p>Situation: <strong>{{game_details.situation.description}}</strong></p>
 <p>Players: {% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}</p>
 </div>
@@ -59,7 +58,6 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 {% if is_running %}
   <div class="tab-pane active" id="game-state">
     {% if game_details.current_round != "Preflop" %}
-    <p/>
     <p>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}</p>
     <p>The pot at the start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
     {% endif %}

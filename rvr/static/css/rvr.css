@@ -10,6 +10,10 @@ td, th {
   vertical-align: middle !important;
 }
 
+td.combo-table {
+  vertical-align: top !important;
+}
+
 iframe {
   border: 0px none transparent;
 }
