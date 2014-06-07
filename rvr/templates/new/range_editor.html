@@ -60,7 +60,7 @@ You've assigned your whole range.
     <div class="pull-right-sm">
 
 <!-- Start Rank Combos -->
-  <p>Select rank combos: <a class="pure-button" onclick="select_all_rank(false)">None</a> <a class="pure-button" onclick="select_all_rank(true)">All</a> <em>tip: try ctrl-click, or hover</em></p>
+  <label>Select rank combos:</label> <div class="btn-group"><a class="btn btn-default" onclick="select_all_rank(false)">None</a><a class="btn btn-default" onclick="select_all_rank(true)">All</a></div>
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
@@ -75,12 +75,10 @@ You've assigned your whole range.
   <div class="col-xs-12 col-sm-3 col-md-4 col-lg-6">
 
 <!-- Start Suit Combos -->
+  <label>Select suit combos:</label> <div class="btn-group"><button class="btn btn-default" type=button onclick="select_all_suit(false)">None</button><button type=button class="btn btn-default" onclick="select_all_suit(true)">All</button></div>
   <table>
    <tr>
-    <td colspan=2><button type=button onclick="select_all_suit(false)">None</button></td><td colspan=2><button type=button onclick="select_all_suit(true)">All</button></td>
-   </tr>
-   <tr>
-    <td colspan=4>Select suited combos:</td>
+    <td colspan=4><label>Suited combos:</label></td>
    </tr>
    {% for row in suited_table %}
    <tr>
@@ -90,7 +88,7 @@ You've assigned your whole range.
    </tr>
    {% endfor %}
    <tr>
-    <td colspan=4>Select pair combos:</td>
+    <td colspan=4><label>Pair combos:</label></td>
    </tr>
    {% for row in pair_table %}
    <tr>
@@ -100,7 +98,7 @@ You've assigned your whole range.
    </tr>
    {% endfor %}
    <tr>
-    <td colspan=4>Select offsuit combos:</td>
+    <td colspan=4><label>Offsuit combos:</label></td>
    </tr>
    {% for row in offsuit_table %}
    <tr>
@@ -117,49 +115,29 @@ You've assigned your whole range.
 </div>
 
 
-<!-- style="margin-left:auto;margin-right:auto;display:table;" -->
-
-
 <!-- Start 4 x Range -->
-<table class="center-table">
- <tr>
-  <td>
-   <table>
-    <tr><td>Unassigned</td></tr>
-    <tr><td>{{ '%0.2f' % pct_unassigned }}%</td></tr>
-    <tr><td><input type=checkbox id=l_una name=l_una {% if l_una %}checked=checked{% endif %}><label for=l_una>Lock</label></td></tr>
-    <tr><td><button type=submit name=submit value="reset">(Reset)</button></td></tr>
-   </table>
-  </td>
-  <td>
-   <table>
-    <tr><td>Fold range</td></tr>
-    <tr><td>{{ '%0.2f' % pct_fold }}%</td></tr>
-    <tr><td><input type=checkbox id=l_fol name=l_fol {% if l_fol %}checked=checked{% endif %}><label for=l_fol>Lock</label></td></tr>
-    <tr><td><button type=submit name=submit value="fold">Fold</button></td></tr>
-   </table>
-  </td>
-  <td>
-   <table>
-    <tr><td>{% if can_check == "true" %}Check range{% else %}Call range{% endif %}</td></tr>
-    <tr><td>{{ '%0.2f' % pct_passive }}%</td></tr>
-    <tr><td><input type=checkbox id=l_pas name=l_pas {% if l_pas %}checked=checked{% endif %}><label for=l_pas>Lock</label></td></tr>
-    <tr><td><button type=submit name=submit value="passive">{% if can_check == "true" %}Check{% else %}Call{% endif %}</button></td></tr>
-   </table>
-  </td>
-  <td>
-   {% if can_raise == 'true' %}
-   <table>
-    <tr><td>{% if raised == "true" %}Raise range{% else %}Bet range{% endif %}</td></tr>
-    <tr><td>{{ '%0.2f' % pct_aggressive }}%</td></tr>
-    <tr><td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Lock</label></td></tr>
-    <tr><td><button type=submit name=submit value="aggressive">{% if raised == "true" %}Raise{% else %}Bet{% endif %}</button></td></tr>
-   </table>
-   {% endif %}
-  </td>
- </tr>
+<table class="table table-condensed center-table" style="width:400px">
+  <tr>
+    <td><button class="btn btn-primary" type=submit name=submit value="reset">(Reset)</button></td>
+    <td><button class="btn btn-primary" type=submit name=submit value="fold">Fold</button></td>
+    <td><button class="btn btn-primary" type=submit name=submit value="passive">{% if can_check == "true" %}Check{% else %}Call{% endif %}</button></td>
+    {% if can_raise == 'true' %}<td><button class="btn btn-primary" type=submit name=submit value="aggressive">{% if raised == "true" %}Raise{% else %}Bet{% endif %}</button></td>{% endif %}
+  </tr>
+  <tr>
+    <td>{{ '%0.2f' % pct_unassigned }}%</td>
+    <td>{{ '%0.2f' % pct_fold }}%</td>
+    <td>{{ '%0.2f' % pct_passive }}%</td>
+    {% if can_raise == 'true' %}<td>{{ '%0.2f' % pct_aggressive }}%</td>{% endif %}
+  </tr>
+  <tr>
+    <td><input type=checkbox id=l_una name=l_una {% if l_una %}checked=checked{% endif %}><label for=l_una>Lock</label></td>
+    <td><input type=checkbox id=l_fol name=l_fol {% if l_fol %}checked=checked{% endif %}><label for=l_fol>Lock</label></td>
+    <td><input type=checkbox id=l_pas name=l_pas {% if l_pas %}checked=checked{% endif %}><label for=l_pas>Lock</label></td>
+    {% if can_raise == 'true' %}<td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Lock</label></td>{% endif %}
+  </tr>
 </table>
 <!-- End 4 x Range -->
+
 
 </form>
 

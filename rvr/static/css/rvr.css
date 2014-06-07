@@ -6,7 +6,7 @@ body {
   padding-top: 50px;
 }
 
-td {
+td, th {
   vertical-align: middle !important;
 }
 
