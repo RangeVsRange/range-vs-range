@@ -116,9 +116,12 @@ def change_screenname():
             return redirect(url_for('home_page'))
     current = session['screenname'] if 'screenname' in session  \
         else g.user['name']
-    # TODO: 0: upgrade change page
-    return render_template('old/change.html', title='Change Your Screenname',
-                           current=current, form=form)
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('new/change.html', title='Change Your Screenname',
+        current=current, form=form, navbar_items=navbar_items,
+        is_logged_in=is_logged_in(), is_account=True)
 
 @APP.route('/unsubscribe', methods=['GET'])
 def unsubscribe():

@@ -1,0 +1,31 @@
+{% extends "new/base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+  html {
+    overflow-y: scroll;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>Change your screenname</h1>
+  </div>
+</div>
+
+{{ flash_messages() }}
+
+<div class="container">
+    <p>This page lets you change your screenname, even though you might not have an account!</p>
+    <p>Your current screenname is <strong>{{current}}</strong>.</p>
+    <form method="post" name="change">
+    <p>
+      {{form.hidden_tag()}}
+      {{form.change.label}} {{form.change}} <input type="submit" value="Go!" /><br>
+    </p>
+    </form>
+</div>
+{% endblock %}

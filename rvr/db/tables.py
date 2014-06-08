@@ -344,7 +344,7 @@ class GameHistoryBoard(BASE):
 # Record equity payments against hand history items - deals, range actions, etc.
 
 # TODO: 3: strategic analysis
-# TODO: 2: individual combos differ in fold equity, and it matters
+# TODO: 1: individual combos differ in fold equity, and it matters
 # everything written to the database must be linked to a hand history row
 # - fold equity analysis row (might be semibluff EV, or immediate profit)
 # - profitable float / bet (linked to call, and bet)
