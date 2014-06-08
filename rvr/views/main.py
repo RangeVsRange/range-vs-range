@@ -145,7 +145,7 @@ def unsubscribe():
             msg = "You have been unsubscribed. If you log in again, you will start receiving emails again."  # pylint:disable=C0301
     flash(msg)
     # TODO: 0: upgrade unsubscribe page
-    return render_template('old/base.html', title='Unsubscribe')
+    return render_template('new/flash.html', title='Unsubscribe')
 
 @logout.connect_via(APP)
 def on_logout(_source, **_kwargs):
@@ -169,8 +169,11 @@ def error_page():
     """
     Unauthenticated page for showing errors to user.
     """
-    # TODO: 0: upgrade error page
-    return render_template('old/base.html', title='Sorry')
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('new/flash.html', title='Sorry',
+        navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 @APP.route('/about', methods=['GET'])
 def about_page():
