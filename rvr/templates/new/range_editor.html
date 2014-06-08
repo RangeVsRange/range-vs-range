@@ -1,15 +1,6 @@
 {% extends "new/base.html" %}
 {% import "new/rank_table.html" as rt %}
 
-{% block styles %}
-{{super()}}
-<style>
-body {
-  padding-top: 0px;
-}
-</style>
-{% endblock %}
-
 {% block scripts %}
 {{ super() }}
 <script src="{{url_for('static', filename="js/range-editor.js")}}"></script>
