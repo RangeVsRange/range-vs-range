@@ -1,4 +1,5 @@
 {% extends "new/base.html" %}
+{% import "new/rank_table.html" as rt %}
 
 {% block styles %}
 {{super()}}
@@ -113,13 +114,7 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
 <!-- Start Rank Combos -->
   <label>Select rank combos:</label> <div class="btn-group"><a class="btn btn-default" onclick="select_all_rank(false)">None</a><a class="btn btn-default" onclick="select_all_rank(true)">All</a></div>
   <div class="pad-above">
-  <table>
-   {% for row in rank_table %}<tr>
-    {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<div title="{{details.hover}}"><button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs" onclick="rank_click('{{details.id}}');">{{details.text}}</button></div><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs invisible" disabled=disabled>&nbsp;</button>{% endif %}</td>
-    {% endfor %}
-   </tr>{% endfor %}
-  </table>
+  {{ rt.formatted_rank_table(rank_table) }}  
   </div>
 <!-- End Rank Combos -->
 
@@ -169,10 +164,10 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
     {% if can_raise == 'true' %}<td>{{ '%0.2f' % pct_aggressive }}%</td>{% endif %}
   </tr>
   <tr>
-    <td><input type=checkbox id=l_una name=l_una {% if l_una %}checked=checked{% endif %}><label for=l_una>Lock</label></td>
-    <td><input type=checkbox id=l_fol name=l_fol {% if l_fol %}checked=checked{% endif %}><label for=l_fol>Lock</label></td>
-    <td><input type=checkbox id=l_pas name=l_pas {% if l_pas %}checked=checked{% endif %}><label for=l_pas>Lock</label></td>
-    {% if can_raise == 'true' %}<td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Lock</label></td>{% endif %}
+    <td><input type=checkbox id=l_una name=l_una {% if l_una %}checked=checked{% endif %}><label for=l_una>Hold</label></td>
+    <td><input type=checkbox id=l_fol name=l_fol {% if l_fol %}checked=checked{% endif %}><label for=l_fol>Hold</label></td>
+    <td><input type=checkbox id=l_pas name=l_pas {% if l_pas %}checked=checked{% endif %}><label for=l_pas>Hold</label></td>
+    {% if can_raise == 'true' %}<td><input type=checkbox id=l_agg name=l_agg {% if l_agg %}checked=checked{% endif %}><label for=l_agg>Hold</label></td>{% endif %}
   </tr>
 </table>
 </div>

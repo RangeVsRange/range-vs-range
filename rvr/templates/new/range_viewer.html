@@ -1,0 +1,21 @@
+{% extends "new/base.html" %}
+{% import "new/rank_table.html" as rt %}
+
+{% block styles %}
+{{super()}}
+<style>
+body {
+  padding-top: 0px;
+}
+</style>
+{% endblock %}
+
+{% block navbar %}
+{# That's right - nothing. #}
+{% endblock %}
+
+{% block content %}
+
+{{ rt.formatted_rank_table(rank_table) }}
+
+{% endblock %}

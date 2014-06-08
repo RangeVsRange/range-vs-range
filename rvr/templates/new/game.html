@@ -13,8 +13,8 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
     $CURRENT_BUTTON = button_id;
     dynamic_url = $SCRIPT_ROOT + '/range-editor?embedded=true&rng_unassigned=nothing&rng_original=' + encodeURIComponent(ori) + '&rng_fold=' + encodeURIComponent(fol) + '&rng_passive=' + encodeURIComponent(pas) + '&rng_aggressive=' + encodeURIComponent(agg) + '&raised=' + encodeURIComponent(is_raise) + '&can_check=' + encodeURIComponent(is_check);
     iframe = $('<iframe>', {id: 'viewer', style: 'border: 0px none transparent;', src: dynamic_url});
-    iframe.width(550);
-    iframe.height(550);
+    iframe.width(470);  // Could be as low as 461 (@ 2014-06-08)
+    iframe.height(410);  // Could be as low as 399 (@ 2014-06-08)
     iframe.text('Sorry, your browser does not support iframes.');
     td = $('<td>');
     td.append(iframe);
@@ -23,6 +23,15 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
     $('#' + row_id).after(tr);
 };
 </script>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+  html {
+    overflow-y: scroll;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
