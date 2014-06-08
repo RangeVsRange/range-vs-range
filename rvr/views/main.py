@@ -144,7 +144,6 @@ def unsubscribe():
         else:
             msg = "You have been unsubscribed. If you log in again, you will start receiving emails again."  # pylint:disable=C0301
     flash(msg)
-    # TODO: 0: upgrade unsubscribe page
     return render_template('new/flash.html', title='Unsubscribe')
 
 @logout.connect_via(APP)
