@@ -552,6 +552,7 @@ def game_page():
     """
     # TODO: 2: every position should have a name
     # TODO: 2: chat
+    # TODO: 2: if you don't act for a week (cfgable), you fold 100%
     alt = ensure_user()
     if alt:
         return alt

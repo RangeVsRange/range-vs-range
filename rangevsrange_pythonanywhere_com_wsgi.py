@@ -2,7 +2,7 @@
 
 """
 PythonAnywhere WSGI file. To host in PythonAnywhere:
- - Set up your virtualenv (https://www.pythonanywhere.com/wiki/VirtualEnvForNewerDjango)
+ - Create your web app and set up your virtualenv (per https://www.pythonanywhere.com/wiki/VirtualEnvForNewerDjango)
  - Install the required packages into your virtualenv
  - Put the contents of this file into your WSGI file on PAW (/var/www/...)
  - Change the paths in this file to those appropriate to your account
