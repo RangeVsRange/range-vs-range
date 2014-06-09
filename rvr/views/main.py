@@ -119,7 +119,7 @@ def change_screenname():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/change.html', title='Change Your Screenname',
+    return render_template('web/change.html', title='Change Your Screenname',
         current=current, form=form, navbar_items=navbar_items,
         is_logged_in=is_logged_in(), is_account=True)
 
@@ -144,7 +144,7 @@ def unsubscribe():
         else:
             msg = "You have been unsubscribed. If you log in again, you will start receiving emails again."  # pylint:disable=C0301
     flash(msg)
-    return render_template('new/flash.html', title='Unsubscribe')
+    return render_template('web/flash.html', title='Unsubscribe')
 
 @logout.connect_via(APP)
 def on_logout(_source, **_kwargs):
@@ -171,7 +171,7 @@ def error_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/flash.html', title='Sorry',
+    return render_template('web/flash.html', title='Sorry',
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 @APP.route('/about', methods=['GET'])
@@ -182,7 +182,7 @@ def about_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('active', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/about.html', title="About",
+    return render_template('web/about.html', title="About",
                            navbar_items=navbar_items,
                            is_logged_in=is_logged_in())
 
@@ -194,7 +194,7 @@ def faq_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('active', url_for('faq_page'), 'FAQ')]
-    return render_template('new/faq.html', title="FAQ",
+    return render_template('web/faq.html', title="FAQ",
                            navbar_items=navbar_items,
                            is_logged_in=is_logged_in())
 
@@ -204,7 +204,7 @@ def home_page():
     Generates the unauthenticated landing page. AKA the main or home page.
     """
     if not is_authenticated():
-        return render_template('new/landing.html')
+        return render_template('web/landing.html')
     alt = ensure_user()
     if alt:
         return alt
@@ -230,7 +230,7 @@ def home_page():
     navbar_items = [('active', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/home.html', title='Home',
+    return render_template('web/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
         r_games=my_games,
         my_open=my_open,
@@ -524,7 +524,7 @@ def _running_game(game, gameid, userid, api):
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/game.html', title=title, form=form,
+    return render_template('web/game.html', title=title, form=form,
         board=board, game_details=game.game_details, history=history,
         current_options=game.current_options,
         is_me=is_me, is_running=True,
@@ -540,7 +540,7 @@ def _finished_game(game, gameid):
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    return render_template('new/game.html', title=title,
+    return render_template('web/game.html', title=title,
         game_details=game.game_details, history=history, is_running=False,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
