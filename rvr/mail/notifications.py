@@ -10,8 +10,6 @@ from functools import wraps
 
 #pylint:disable=R0903,R0913
 
-# TODO: 4: modified hand history table in email
-
 class NotificationSettings(object):
     """
     A simple holder for a setting to suppress email. Provides for a singleton.
