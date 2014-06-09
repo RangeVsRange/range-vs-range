@@ -23,6 +23,18 @@
   <label>Select suit combos:</label> <div class="btn-group"><button class="btn btn-default" type=button onclick="select_all_suit(false)">None</button><button type=button class="btn btn-default" onclick="select_all_suit(true)">All</button></div>
 {% endmacro %}
 
+{% macro suit_hidden() %}
+  {% for table in [suited_table, pair_table, offsuit_table] -%}
+    {% for row in table -%}
+      {% for details in row -%}
+        {% if details.class != "s_hdn" -%}
+          <input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">
+        {%- endif %}
+      {%- endfor %}
+    {%- endfor %}
+  {%- endfor %}
+{% endmacro %}
+
 {% macro suited_suits() %}
   <table>
    <tr>
@@ -31,7 +43,7 @@
    {% for row in suited_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -46,7 +58,7 @@
    {% for row in pair_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -61,7 +73,7 @@
    {% for row in offsuit_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md" id="{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div><input type=hidden id="sel_{{details.id}}" name="sel_{{details.id}}" class="s_h" value="true">{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -112,6 +124,7 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
 </td>
 <td class="combo-table hidden-xs pad-left">
 <!-- Start Suit Combos -->
+  {{ suit_hidden() }}
   {{ suit_intro() }}
   <div class="pad-above">{{ suited_suits() }}</div>
   <div class="pad-above">{{ pair_suits() }}</div>
@@ -126,6 +139,7 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
 </div>
 <div class="pad-above">
 <table class="visible-xs"><tr>
+  {# no suit_hidden() here -#}
   <td class="combo-table pad-left">
     {{ suited_suits() }}
   </td>

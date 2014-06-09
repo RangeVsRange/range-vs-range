@@ -19,8 +19,9 @@ rank_click = function(_id) {
   }
 };
 suit_click = function(_id) {
-  $('#' + _id).toggleClass('s_sel');
-  $('#sel_' + _id).val($('#' + _id).hasClass('s_sel'));
+  $('.id_' + _id).toggleClass('s_sel');
+  var is_sel = $('.id_' + _id).hasClass('s_sel');
+  $('#sel_' + _id).val(is_sel);
 };
 select_all_rank = function(select) {
   $('.rank-button').toggleClass('r_sel', select);
