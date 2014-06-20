@@ -17,6 +17,9 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 
+# TODO: 0: add a time column to hand history table
+# TODO: 1: auto-fold 1 week after last action
+
 def is_authenticated():
     """
     Is the user authenticated with OpenID?

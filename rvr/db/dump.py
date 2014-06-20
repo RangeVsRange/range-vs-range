@@ -19,8 +19,7 @@ At deployment time:
 - in production:
   - dump the previous version of the database ('dump out' from the console)
 - in a local development environment:
-  - create a new database
-  - run the site to create and populate the database
+  - create a new database (but don't initialise it)
   - try loading the dump (from production) into the new database
     (using the updated code)
   - if it works, this is your new database file
@@ -215,16 +214,18 @@ def read_game_history_bases(session):
     """ Read GameHistoryBase table from DB into memory """
     ghbs = session.query(GameHistoryBase).all()
     return [(ghb.gameid,
-             ghb.order)
+             ghb.order,
+             ghb.time)
             for ghb in ghbs]
 
 def write_game_history_bases(session, ghbs):
     """ Write GameHistoryBase from memory into DB """
-    for gameid, order in ghbs:
+    for gameid, order, time in ghbs:
         ghb = GameHistoryBase()
         session.add(ghb)
         ghb.gameid = gameid
         ghb.order = order
+        ghb.time = time
 
 def read_game_history_user_ranges(session):
     """ Read GameHistoryUserRange table from DB into memory """

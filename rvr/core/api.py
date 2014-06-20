@@ -21,6 +21,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
 from rvr.analysis.analyse import AnalysisReplayer, already_analysed
 from rvr.db.tables import AnalysisFoldEquity
+import datetime
 
 #pylint:disable=R0903
 
@@ -437,6 +438,7 @@ class API(object):
         base = tables.GameHistoryBase()
         base.gameid = game.gameid
         base.order = game.next_hh
+        base.time = datetime.datetime.utcnow()
         game.next_hh += 1
         item.gameid = base.gameid
         item.order = base.order

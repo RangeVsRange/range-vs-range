@@ -4,7 +4,7 @@ Declares database tables
 from sqlalchemy import Column, Integer, String, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
-from sqlalchemy.types import Float, Numeric
+from sqlalchemy.types import Float, Numeric, DateTime
 from rvr.poker.cards import Card
 from rvr.poker.handrange import HandRange, weighted_options_to_description
 from sqlalchemy.orm.session import object_session
@@ -246,6 +246,7 @@ class GameHistoryBase(BASE):
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
     order = Column(Integer, primary_key=True)
+    time = Column(DateTime, nullable=False)
     game = relationship("RunningGame",
                         backref=backref("history", cascade="all"))
 
