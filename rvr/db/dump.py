@@ -18,11 +18,13 @@ At deployment time:
   be reading (from the file) (visually)
 - in production:
   - dump the previous version of the database ('dump out' from the console)
+  - back up the existing database (rvr.db) into /home/rangevsrange/backup
 - in a local development environment:
   - create a new database (but don't initialise it)
   - try loading the dump (from production) into the new database
     (using the updated code)
   - if it works, this is your new database file
+  - run some serious local testing
 - in production:
   - backup the old database
   - copy in the new database
