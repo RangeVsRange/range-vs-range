@@ -912,7 +912,7 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid != None).all()
         for game in games:
-            if game.last_action_time + datetime.timedelta(seconds=7) <  \
+            if game.last_action_time + datetime.timedelta(days=7) <  \
                     datetime.datetime.utcnow():
                 # This doesn't cause a race condition because we have isolation
                 # level set to SERIALIZABLE
