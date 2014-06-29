@@ -1,7 +1,7 @@
 """
 Form for change of screenname page
 """
-from flask_wtf.form import Form
+from wtforms import Form
 from wtforms.fields.simple import TextField
 from wtforms.validators import Length
 
