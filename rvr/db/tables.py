@@ -143,6 +143,8 @@ class RunningGame(BASE, object):
     bet_count = Column(Integer, nullable=False)
     # keeping track of how unlikely this line is
     current_factor = Column(Float, nullable=False)
+    # keeping track of timeouts
+    last_action_time = Column(DateTime, nullable=False)  # or game start time
     # in lieu of a relationship...
     # TODO: REVISIT: can we do this with a one-to-one relationship?
     # ... and not cause circular reference issues?!
@@ -334,6 +336,23 @@ class GameHistoryBoard(BASE):
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryBoard.gameid," +  \
         " GameHistoryBase.order==GameHistoryBoard.order)")
+
+class GameHistoryTimeout(BASE):
+    """
+    Player <userid> has timed out.
+    """
+    __tablename__ = "game_history_timeout"
+    
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_base.order"),
+                   primary_key=True)
+    userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
+    
+    hh_base = relationship("GameHistoryBase", primaryjoin=  \
+        "and_(GameHistoryBase.gameid==GameHistoryTimeout.gameid," +  \
+        " GameHistoryBase.order==GameHistoryTimeout.order)")
+    user = relationship("User")
 
 # TODO: HAND HISTORY: the following hand history items:
 #  - analysis of a fold, bet, call

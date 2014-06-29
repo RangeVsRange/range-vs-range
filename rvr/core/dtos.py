@@ -492,6 +492,31 @@ class GameItemBoard(GameItem):
         """
         return cls(item.street, item.cards)
 
+class GameItemTimeout(GameItem):
+    """
+    User has timed out.
+    """
+    def __init__(self, user):
+        """
+        user is a UserDetails
+        """
+        self.user = user
+
+    def __repr__(self):
+        return ("GameItemTimeout(user=%r)") %  \
+            (self.user)
+    
+    def __str__(self):
+        return "%s has timed out" % (self.user)
+    
+    @classmethod
+    def from_history_item(cls, item):
+        """
+        Create from a GameHistoryTimeout
+        """
+        user_details = UserDetails.from_user(item.user)
+        return cls(user_details)
+
 class AnalysisItemFoldEquity(object):
     """
     All about the fold equity of a bet.
@@ -538,7 +563,8 @@ class AnalysisItemFoldEquity(object):
 MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryRangeAction: GameItemRangeAction,
                  tables.GameHistoryActionResult: GameItemActionResult,
-                 tables.GameHistoryBoard: GameItemBoard}
+                 tables.GameHistoryBoard: GameItemBoard,
+                 tables.GameHistoryTimeout: GameItemTimeout}
 
 class RunningGameHistory(object):
     """

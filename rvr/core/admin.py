@@ -268,6 +268,13 @@ class AdminCmd(Cmd):
             print "Error:", result.description
         else:
             print "Analysis run."
+            
+    def do_timeout(self, _details):
+        """
+        timeout
+        Fold any players who have timed out.
+        """
+        self.api.process_timeouts()
 
     def do_dump(self, params):
         """

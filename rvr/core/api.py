@@ -9,7 +9,7 @@ import logging
 from sqlalchemy.exc import IntegrityError
 import traceback
 from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
-    ANYTHING
+    ANYTHING, NOTHING
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
@@ -23,7 +23,7 @@ from rvr.analysis.analyse import AnalysisReplayer, already_analysed
 from rvr.db.tables import AnalysisFoldEquity
 import datetime
 
-#pylint:disable=R0903
+#pylint:disable=R0903,R0904
 
 def exception_mapper(fun):
     """
@@ -401,6 +401,7 @@ class API(object):
         running_game.increment = situation.increment
         running_game.bet_count = situation.bet_count
         running_game.current_factor = 1.0
+        running_game.last_action_time = datetime.datetime.utcnow()
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
@@ -460,6 +461,7 @@ class API(object):
         element.raise_total = action_result.raise_total
         element.is_raise = action_result.is_raise
         self._record_hand_history_item(rgp.game, element)
+        rgp.game.last_action_time = datetime.datetime.utcnow()
     
     def _record_rgp_range(self, rgp, range_raw):
         """
@@ -493,6 +495,14 @@ class API(object):
         element.street = game.current_round
         element.cards = game.board_raw
         self._record_hand_history_item(game, element)
+        
+    def _record_timeoout(self, rgp):
+        """
+        Record timeout
+        """
+        element = tables.GameHistoryTimeout()
+        element.user = rgp.user
+        self._record_hand_history_item(rgp.game, element)
 
     @api
     def join_game(self, userid, gameid):
@@ -879,3 +889,31 @@ class API(object):
         """
         self.session.query(tables.AnalysisFoldEquity).delete()
         return self._run_pending_analysis()
+
+    def _timeout(self, game):
+        """
+        Timeout the current player by folding their current range.
+        """
+        rgp = game.current_rgp
+        current_options = calculate_current_options(game, rgp)
+        range_action = dtos.ActionDetails(fold_raw=rgp.range_raw,
+            passive_raw=NOTHING, aggressive_raw=NOTHING, raise_total=0)
+        logging.debug("gameid %d, userid %d being timed out", game.gameid,
+                      rgp.userid)
+        self._record_timeoout(rgp)
+        self._perform_action(game, rgp, range_action, current_options)
+
+    @api
+    def process_timeouts(self):
+        """
+        Fold players' hands where those players have not acted for the
+        standard timeout time period.
+        """
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.current_userid != None).all()
+        for game in games:
+            if game.last_action_time + datetime.timedelta(days=7) <  \
+                    datetime.datetime.utcnow():
+                # This doesn't cause a race condition because we have isolation
+                # level set to SERIALIZABLE
+                self._timeout(game)

@@ -18,7 +18,6 @@ At deployment time:
   be reading (from the file) (visually)
 - in production:
   - dump the previous version of the database ('dump out' from the console)
-  - back up the existing database (rvr.db) into /home/rangevsrange/backup
 - in a local development environment:
   - create a new database (but don't initialise it)
   - try loading the dump (from production) into the new database
@@ -33,7 +32,7 @@ import pickle
 from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     OpenGameParticipant, RunningGame, RunningGameParticipant, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
-    GameHistoryUserRange, GameHistoryBase
+    GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout
 from rvr.db.creation import SESSION
 
 #pylint:disable=C0103
@@ -161,14 +160,15 @@ def read_running_games(session):
              rg.pot_pre,
              rg.increment,
              rg.bet_count,
-             rg.current_factor)
+             rg.current_factor,
+             rg.last_action_time)
             for rg in rgs]
 
 def write_running_games(session, rgs):
     """ Write RunningGame from memory into DB """
     for gameid, situationid, current_userid, next_hh, board_raw,  \
             current_round, pot_pre, increment, bet_count,  \
-            current_factor in rgs:
+            current_factor, last_action_time in rgs:
         rg = RunningGame()
         session.add(rg)
         rg.gameid = gameid
@@ -181,6 +181,7 @@ def write_running_games(session, rgs):
         rg.increment = increment
         rg.bet_count = bet_count
         rg.current_factor = current_factor
+        rg.last_action_time = last_action_time
 
 def read_running_game_participants(session):
     """ Read RunningGameParticipant table from DB into memory """
@@ -326,6 +327,23 @@ def write_game_history_boards(session, ghbs):
         ghb.order = order
         ghb.street = street
         ghb.cards = cards
+        
+def read_game_history_timeouts(session):
+    """ Read GameHistoryTimeout table from DB into memory """
+    ghts = session.query(GameHistoryTimeout).all()
+    return [(ght.gameid,
+             ght.order,
+             ght.userid)
+            for ght in ghts]
+    
+def write_game_history_timeouts(session, ghts):
+    """ Write GameHistoryTimeout from memory into DB """
+    for gameid, order, userid in ghts:
+        ght = GameHistoryTimeout()
+        session.add(ght)
+        ght.gameid = gameid
+        ght.order = order
+        ght.userid = userid
 
 TABLE_READERS = {User: read_users,
                  Situation: read_situations,

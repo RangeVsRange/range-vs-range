@@ -61,6 +61,8 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
           (to total {{item.raise_total}})
         {% elif hint == "BOARD" %}
           {{item[0]}}: {% for card in item[1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
+        {% elif hint == "TIMEOUT" %}
+          {{item.screenname}} has timed out.
         {% else %}
           {{item[0]}}
         {% endif %}

@@ -7,7 +7,8 @@ from rvr.forms.change import ChangeForm
 from rvr.core.api import API, APIError
 from rvr.app import AUTH
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,  \
-    GameItemUserRange, GameItemBoard, GameItemActionResult, GameItemRangeAction
+    GameItemUserRange, GameItemBoard, GameItemActionResult,  \
+    GameItemRangeAction, GameItemTimeout
 import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
@@ -16,9 +17,6 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
-
-# TODO: 0: add a time column to hand history table
-# TODO: 1: auto-fold 1 week after last action
 
 def is_authenticated():
     """
@@ -410,7 +408,7 @@ def _range_action_to_vars(item, index):
     aggressive_total = len(aggressive_options)
     total = len(all_options)
     # NOTE: some of this is necessarily common with ACTION_SUMMARY
-    return {"screenname": item.user,
+    return {"screenname": item.user.screenname,
             "fold_pct": 100.0 * fold_total / total,
             "passive_pct": 100.0 * passive_total / total,
             "aggressive_pct": 100.0 * aggressive_total / total,
@@ -438,7 +436,7 @@ def _action_summary_to_vars(range_action, action_result, user_range, index):
     else:
         original = agg = range_action.range_action.aggressive_range.description
     # NOTE: some of this is necessarily common with RANGE_ACTION
-    return {"screenname": user_range.user,
+    return {"screenname": user_range.user.screenname,
             "action_result": action_result.action_result,
             "percent": 100.0 * new_total / len(SET_ANYTHING_OPTIONS),
             "combos": new_total,
@@ -455,8 +453,15 @@ def _action_result_to_vars(action_result, index):
     Summarises action result for the case where the hand is in progress, and
     the user is not allowed to view the other players' ranges.
     """
-    return {"screenname": action_result.user,
+    return {"screenname": action_result.user.screenname,
             "action_result": action_result.action_result,
+            "index": index}
+    
+def _timeout_to_vars(timeout, index):
+    """
+    Summarises a timeout.
+    """
+    return {"screenname": timeout.user.screenname,
             "index": index}
 
 def _make_history_list(game_history):
@@ -490,6 +495,8 @@ def _make_history_list(game_history):
             # This will be removed if there is a following user range
         elif isinstance(item, GameItemBoard):
             results.append(("BOARD", _board_to_vars(item, index)))
+        elif isinstance(item, GameItemTimeout):
+            results.append(("TIMEOUT", _timeout_to_vars(item, index)))
         else:
             logging.debug("unrecognised type of hand history item: %s", item)
             results.append(("UNKNOWN", (str(item),)))
@@ -555,7 +562,6 @@ def game_page():
     """
     # TODO: 2: every position should have a name
     # TODO: 2: chat
-    # TODO: 2: if you don't act for a week (cfgable), you fold 100%
     alt = ensure_user()
     if alt:
         return alt
