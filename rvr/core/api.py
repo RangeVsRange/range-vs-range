@@ -720,6 +720,7 @@ class API(object):
             self.apply_action_result(game, rgp, action_result)
         if game.is_finished:
             finish_game(game)
+        notify_current_player(game)  # Notify them *after* action obviously.
         return action_result
     
     @api
@@ -754,7 +755,6 @@ class API(object):
                           _err, gameid, userid, range_action)
             return API.ERR_INVALID_RANGES
         result = self._perform_action(game, rgp, range_action, current_options)
-        notify_current_player(game)  # Notify them *after* action obviously.
         return result
         
     def _get_history_items(self, game, userid=None):
@@ -912,7 +912,7 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid != None).all()
         for game in games:
-            if game.last_action_time + datetime.timedelta(days=7) <  \
+            if game.last_action_time + datetime.timedelta(seconds=7) <  \
                     datetime.datetime.utcnow():
                 # This doesn't cause a race condition because we have isolation
                 # level set to SERIALIZABLE

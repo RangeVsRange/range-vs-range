@@ -16,6 +16,7 @@ class NotificationSettings(object):
     """
     def __init__(self):
         self.suppress_email = False
+        self.async_email = True
         
 NOTIFICATION_SETTINGS = NotificationSettings()
 
@@ -35,6 +36,15 @@ def send_email_async(msg):
     
     thr = Thread(target=with_context)
     thr.start()
+    
+def send_email(msg):
+    """
+    Send email, async only if NOTIFICATION_SETTINGS.async_email
+    """
+    if NOTIFICATION_SETTINGS.async_email:
+        send_email_async(msg)
+    else:
+        MAIL.send(msg)
 
 def web_only(fun):
     """
@@ -70,7 +80,7 @@ def _your_turn(recipient, screenname, identity, game):
                                unsubscribe=make_unsubscribe_url(identity),
                                game_url=make_game_url(str(game.gameid)),
                                gameid=game.gameid)
-    send_email_async(msg)
+    send_email(msg)
 
 @web_only
 def _game_started(recipient, screenname, identity, is_starter, is_acting,
@@ -84,7 +94,7 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting,
         recipient=recipient, screenname=screenname, is_starter=is_starter,
         is_acting=is_acting, unsubscribe=make_unsubscribe_url(identity),
         game_url=make_game_url(str(game.gameid)), gameid=game.gameid)
-    send_email_async(msg)
+    send_email(msg)
 
 def notify_current_player(game):
     """

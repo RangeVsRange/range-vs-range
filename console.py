@@ -13,6 +13,7 @@ logging.basicConfig()
 logging.root.setLevel(logging.DEBUG)
 
 NOTIFICATION_SETTINGS.suppress_email = False
+NOTIFICATION_SETTINGS.async_email = False
 
 CMD = AdminCmd()
 CMD.prompt = "> "
