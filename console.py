@@ -12,7 +12,7 @@ from rvr.mail.notifications import NOTIFICATION_SETTINGS
 logging.basicConfig()
 logging.root.setLevel(logging.DEBUG)
 
-NOTIFICATION_SETTINGS.suppress_email = True
+NOTIFICATION_SETTINGS.suppress_email = False
 
 CMD = AdminCmd()
 CMD.prompt = "> "
