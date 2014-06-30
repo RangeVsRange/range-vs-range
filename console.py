@@ -10,7 +10,8 @@ from rvr.core.admin import AdminCmd
 from rvr.mail.notifications import NOTIFICATION_SETTINGS
 from rvr.app import APP
 from rvr.local_settings import SERVER_NAME
-from rvr.views import main, ajax, range_editor  # @UnusedImport
+from rvr.views import main, ajax, range_editor  # @UnusedImport pylint:disable=W0611,C0301
+import sys
 
 logging.basicConfig()
 logging.root.setLevel(logging.DEBUG)
@@ -22,5 +23,10 @@ with APP.app_context():
     NOTIFICATION_SETTINGS.async_email = False
     
     CMD = AdminCmd()
-    CMD.prompt = "> "
-    CMD.cmdloop("Range vs. Range admin tool. Type ? for help.")
+    
+    CMDLINE = " ".join(sys.argv[1:])
+    if CMDLINE:
+        CMD.onecmd(CMDLINE)
+    else:
+        CMD.prompt = "> "
+        CMD.cmdloop("Range vs. Range admin tool. Type ? for help.")

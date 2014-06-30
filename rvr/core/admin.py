@@ -7,7 +7,8 @@ from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
 from rvr.core import dtos
 from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
-#pylint:disable=R0201,R0904
+
+#pylint:disable=R0201,R0904,E1103
 
 class AdminCmd(Cmd):
     """
@@ -274,7 +275,11 @@ class AdminCmd(Cmd):
         timeout
         Fold any players who have timed out.
         """
-        self.api.process_timeouts()
+        result = self.api.process_timeouts()
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        else:
+            print result, "timeouts processed."
 
     def do_dump(self, params):
         """

@@ -909,6 +909,7 @@ class API(object):
         Fold players' hands where those players have not acted for the
         standard timeout time period.
         """
+        count = 0
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid != None).all()
         for game in games:
@@ -917,3 +918,5 @@ class API(object):
                 # This doesn't cause a race condition because we have isolation
                 # level set to SERIALIZABLE
                 self._timeout(game)
+                count += 1
+        return count
