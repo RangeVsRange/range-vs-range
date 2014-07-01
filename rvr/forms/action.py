@@ -1,10 +1,10 @@
 """
 User submits a range-based action
 """
-from wtforms import Form
 from wtforms.fields.simple import HiddenField
 from wtforms.validators import Length, Regexp
 from rvr.poker.handrange import NOTHING
+from flask_wtf.form import Form
 
 def action_form(is_check, is_raise, can_raise, min_raise, max_raise):
     """

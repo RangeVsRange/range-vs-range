@@ -561,7 +561,7 @@ def game_page():
     User's view of the specified game
     """
     # TODO: 2: every position should have a name
-    # TODO: 2: chat
+    # TODO: 3: chat
     alt = ensure_user()
     if alt:
         return alt
