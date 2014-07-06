@@ -491,6 +491,10 @@ class HandRange(object):
         """
         option is a list of (hand, weight)
         """
+        # TODO: 3: remove the concept of weighted options from HandRange
+        # It might still be worth having a WeightedHandRange, specifically for
+        # situations, but then convert to (unweighted) HandRange when the game
+        # starts.
         excluded_cards = board or []
         excluded_mnemonics = [card.to_mnemonic() for card in excluded_cards]
         # it's really nice for this to be a list, for self.polarise_weights
@@ -553,17 +557,29 @@ class HandRange(object):
         random.shuffle(pick)
         return pick
     
-    def subtract(self, other):
+    def subtract(self, other, board=None):
         """
         Return a HandRange with all options from self that are not options in
         other.
         
         other should also be a HandRange. 
         """
-        mine = set(self.generate_options())
-        other = set(other.generate_options())
+        mine = set(self.generate_options(board))
+        other = set(other.generate_options(board))
         mine.difference_update(other)
         # Note that this will only remove options with the same weight.
+        return HandRange(weighted_options_to_description(mine))
+    
+    def add(self, other, board=None):
+        """
+        Return a HandRange with all option from self and all options in other.
+        
+        other should also be a HandRange.
+        """
+        mine = set(self.generate_options(board))
+        other = set(other.generate_options(board))
+        mine.update(other)
+        # Note that this will duplicate options with different weights.
         return HandRange(weighted_options_to_description(mine))
         
     def validate(self):

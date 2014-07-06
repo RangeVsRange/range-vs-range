@@ -381,16 +381,30 @@ class GameHistoryTimeout(BASE):
 # - weak calls on river, and hand by hand
 # - strong folds on river, and hand by hand
 # - medium strength bluff-raises on river, and hand-by-hand
+
+class RangeItem(BASE):
+    """
+    One hand in a range. Used to tie results to specific combos.
+    
+    Note: these are singletons, defined once and used everywhere.
+    
+    This table doesn't achieve much, except to ensure uniqueness within a range.
+    """
+    __tablename__ = "range_item"
+    higher_card = Column(String, primary_key=True)
+    lower_card = Column(String, primary_key=True)
+
 class AnalysisFoldEquity(BASE):
     """
     Profitability, or required semibluff EV, of a bet, on any street.
     """
+    # TODO: 3: detail who folded, and what percentage of their ranges
     __tablename__ = "analysis_fold_equity"
     # Keys
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
     order = Column(Integer, ForeignKey("game_history_action_result.order"),
-                       primary_key=True)
+                   primary_key=True)
     # Relationships
     action_result = relationship("GameHistoryActionResult",
         primaryjoin="and_(GameHistoryActionResult.gameid"
@@ -403,21 +417,39 @@ class AnalysisFoldEquity(BASE):
     bet_cost = Column(Integer, nullable=False)
     raise_total = Column(Integer, nullable=False)
     pot_if_called = Column(Integer, nullable=False)
+
+class AnalysisFoldEquityItem(BASE):
+    """
+    Individual combo in the analysis of fold equity in a spot.
+    """
+    __tablename__ = "analysis_fold_equity_item"
+    # Keys
+    gameid = Column(Integer, ForeignKey("analysis_fold_equity.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("analysis_fold_equity.order"),
+                   primary_key=True)
+    higher_card = Column(String, ForeignKey("range_item.higher_card"),
+                         primary_key=True)
+    lower_card = Column(String, ForeignKey("range_item.lower_card"),
+                        primary_key=True)
+    # Relationships
+    analysis_fold_item = relationship("AnalysisFoldEquity",
+        backref=backref("items", cascade="all"),
+        primaryjoin="and_(AnalysisFoldEquityItem.gameid"
+        "==AnalysisFoldEquity.gameid,AnalysisFoldEquityItem.order"
+        "==AnalysisFoldEquity.order)")
+    range_item = relationship("RangeItem",
+        primaryjoin="and_(AnalysisFoldEquityItem.higher_card"
+        "==RangeItem.higher_card,AnalysisFoldEquityItem.lower_card"
+        "==RangeItem.lower_card)")
+    # Relevant columns
+    fold_ratio = Column(Numeric, nullable=False)
     immediate_result = Column(Numeric, nullable=False)
     # These next two can be negative, but if so we won't show them to the user.
     # Example: a bluff here wins 1.0 chips, and requires -0.3 chips EV to
     # semibluff, or -8.0% equity when called.
     semibluff_ev = Column(Numeric, nullable=False)
     semibluff_equity = Column(Numeric, nullable=False)
-
-# class AnalysisFoldEquityFolder(BASE):
-#     range_action_id = Column(Integer,
-#         ForeignKey("game_history_range_action.order"), primary_key=True)
-#     fold_ratio = Column(Numeric, nullable=False)  
-#     range_action = relationship("GameHistoryRangeAction",
-#         primaryjoin="and_(GameHistoryRangeAction.gameid"
-#         "==AnalysisFoldEquity.gameid,GameHistoryRangeAction.order"
-#         "==AnalysisFoldEquity.range_action_id)")
 
 # class AnalysisFloat(BASE):
 #     """

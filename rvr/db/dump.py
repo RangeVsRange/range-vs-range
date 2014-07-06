@@ -35,6 +35,8 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout
 from rvr.db.creation import SESSION
 
+# TODO: 1: support dumping of analysis
+
 #pylint:disable=C0103
 
 def read_users(session):

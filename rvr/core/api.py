@@ -16,11 +16,12 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe
 from rvr.core.dtos import MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
-from rvr.poker.cards import deal_cards
+from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
+    SUITS_HIGH_TO_LOW
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player
 from rvr.analysis.analyse import AnalysisReplayer, already_analysed
-from rvr.db.tables import AnalysisFoldEquity
+from rvr.db.tables import AnalysisFoldEquity, RangeItem
 import datetime
 
 #pylint:disable=R0903,R0904
@@ -112,67 +113,59 @@ class API(object):
         """
         #pylint:disable=R0201
         BASE.metadata.create_all(ENGINE)
-        
+    
+    def _add_all_situations(self):
+        """
+        Add all situations
+        """
+        err = None
+        err = err or self._add_situation(_create_hu())
+        err = err or self._add_situation(_create_three())
+        return err
+    
+    def _add_card_combo(self, higher_card, lower_card):
+        """
+        Add a RangeItem
+        """
+        item = RangeItem()
+        item.higher_card = higher_card.to_mnemonic()
+        item.lower_card = lower_card.to_mnemonic()
+        self.session.add(item)
+        try:
+            self.session.commit()
+            logging.debug("Added range item: %s, %s", item.higher_card,
+                          item.lower_card)
+        except IntegrityError:
+            self.session.rollback()
+            # No error, it's a singleton, it's there, we're happy.
+    
+    def _add_card_combos(self):
+        """
+        Populate table of RangeItem
+        """
+        deck1 = [Card(rank, suit)
+                 for rank in RANKS_HIGH_TO_LOW
+                 for suit in SUITS_HIGH_TO_LOW]
+        deck2 = deck1[:]
+        err = None
+        for card1 in deck1:
+            for card2 in deck2:
+                if card1 > card2:
+                    err = err or self._add_card_combo(higher_card=card1,
+                                                      lower_card=card2)
+        return err  
+    
     @api
     def initialise_db(self):
         """
         Create initial data for database
         """
         self.session.commit()  # any errors are our own
-        
-        hu_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
-            stack=198,
-            contributed=2,
-            left_to_act=True,
-            range_raw=ANYTHING)
-        hu_btn = dtos.SituationPlayerDetails(
-            stack=199,
-            contributed=1,
-            left_to_act=True,
-            range_raw=ANYTHING)
-        hu_situation = dtos.SituationDetails(
-            description="Heads-up preflop, 100 BB",
-            players=[hu_bb, hu_btn],  # BB acts first in future rounds
-            current_player=1,  # BTN acts next (this round)
-            is_limit=False,
-            big_blind=2,
-            board_raw='',
-            current_round=PREFLOP,
-            pot_pre=0,
-            increment=2,
-            bet_count=1)
-        
-        # pylint:disable=C0301
-        three_co = dtos.SituationPlayerDetails(
-            stack=195,
-            contributed=0,
-            left_to_act=True,
-            range_raw="22+,A2s+,K7s+,Q9s+,J8s+,T8s+,97s+,87s,76s,65s,A8o+,KTo+,QTo+,JTo,T9o")
-        three_btn = dtos.SituationPlayerDetails(
-            stack=195,
-            contributed=0,
-            left_to_act=True,
-            range_raw="88-22,AJs-A2s,KTs-K7s,Q9s,J9s,T8s+,97s+,86s+,75s+,64s+,54s,A8o+,KTo+,QJo")
-        three_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
-            stack=195,
-            contributed=0,
-            left_to_act=True,
-            range_raw="88-22,AJs-A2s,K7s+,Q9s+,J8s+,T7s+,96s+,86s+,75s+,64s+,54s,A8o+,KTo+,QTo+,J9o+,T9o,98o,87o")
-        three_situation = dtos.SituationDetails(
-            description="Three-way flop. CO minraised, BTN cold called, BB called. BB to act first on the flop.",
-            players=[three_bb, three_co, three_btn],  # BB is first to act
-            current_player=0,  # BB is next to act
-            is_limit=False,
-            big_blind=2,
-            board_raw='',
-            current_round=FLOP,
-            pot_pre=16,
-            increment=2,
-            bet_count=0)
-        
+                        
         # Each of these also commits.
-        err = self._add_situation(hu_situation)
-        err = err or self._add_situation(three_situation)
+        err = None
+        err = err or self._add_card_combos()
+        err = err or self._add_all_situations()
         return err
     
     @api
@@ -887,7 +880,9 @@ class API(object):
         """
         Delete all analysis, and reanalyse all games.
         """
+        self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
+        self.session.commit()
         return self._run_pending_analysis()
 
     def _timeout(self, game):
@@ -920,3 +915,63 @@ class API(object):
                 self._timeout(game)
                 count += 1
         return count
+
+def _create_hu():
+    """
+    Create the heads-up situation
+    """
+    hu_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+        stack=198,
+        contributed=2,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    hu_btn = dtos.SituationPlayerDetails(
+        stack=199,
+        contributed=1,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    hu_situation = dtos.SituationDetails(
+        description="Heads-up preflop, 100 BB",
+        players=[hu_bb, hu_btn],  # BB acts first in future rounds
+        current_player=1,  # BTN acts next (this round)
+        is_limit=False,
+        big_blind=2,
+        board_raw='',
+        current_round=PREFLOP,
+        pot_pre=0,
+        increment=2,
+        bet_count=1)
+    return hu_situation
+
+def _create_three():
+    """
+    Create the three-handed situation
+    """
+    # pylint:disable=C0301
+    three_co = dtos.SituationPlayerDetails(
+        stack=195,
+        contributed=0,
+        left_to_act=True,
+        range_raw="22+,A2s+,K7s+,Q9s+,J8s+,T8s+,97s+,87s,76s,65s,A8o+,KTo+,QTo+,JTo,T9o")
+    three_btn = dtos.SituationPlayerDetails(
+        stack=195,
+        contributed=0,
+        left_to_act=True,
+        range_raw="88-22,AJs-A2s,KTs-K7s,Q9s,J9s,T8s+,97s+,86s+,75s+,64s+,54s,A8o+,KTo+,QJo")
+    three_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+        stack=195,
+        contributed=0,
+        left_to_act=True,
+        range_raw="88-22,AJs-A2s,K7s+,Q9s+,J8s+,T7s+,96s+,86s+,75s+,64s+,54s,A8o+,KTo+,QTo+,J9o+,T9o,98o,87o")
+    three_situation = dtos.SituationDetails(
+        description="Three-way flop. CO minraised, BTN cold called, BB called. BB to act first on the flop.",
+        players=[three_bb, three_co, three_btn],  # BB is first to act
+        current_player=0,  # BB is next to act
+        is_limit=False,
+        big_blind=2,
+        board_raw='',
+        current_round=FLOP,
+        pot_pre=16,
+        increment=2,
+        bet_count=0)
+    return three_situation

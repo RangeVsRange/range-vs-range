@@ -517,9 +517,36 @@ class GameItemTimeout(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(user_details)
 
+class AnalysisItemFoldEquityItem(object):
+    """
+    All about the fold equity of betting a particular combo.
+    """
+    def __init__(self, cards, fold_ratio, immediate_result,
+                 semibluff_ev, semibluff_equity):
+        self.cards = cards
+        self.fold_ratio = float(fold_ratio)
+        self.immediate_result = float(immediate_result)
+        self.semibluff_ev = float(semibluff_ev)
+        self.semibluff_equity = float(semibluff_equity)
+
+    def __repr__(self):
+        return "AnalysisItemFoldEquityItem(cards=%r, fold_ratio=%r, "  \
+            "immediate_result=%r, semibluff_ev=%r, semibluff_equity=%r)" %  \
+            (self.cards, self.fold_ratio, self.immediate_result,
+             self.semibluff_ev, self.semibluff_equity)
+            
+    @classmethod
+    def from_afei(cls, afei):
+        """
+        Create from AnalysisFoldEquityItem
+        """
+        cards = [afei.higher_card, afei.lower_card]
+        return cls(cards, afei.fold_ratio,
+            afei.immediate_result, afei.semibluff_ev, afei.semibluff_equity)
+
 class AnalysisItemFoldEquity(object):
     """
-    All about the fold equity of a bet.
+    All about the fold equity of a betting range.
     """
     STREET_DESCRIPTIONS = {PREFLOP: "Preflop",
                            FLOP: "On the flop",
@@ -527,8 +554,7 @@ class AnalysisItemFoldEquity(object):
                            RIVER: "On the river"}
     
     def __init__(self, bettor, street, pot_before_bet, is_raise, bet_cost,
-                 raise_total, pot_if_called, immediate_result, semibluff_ev,
-                 semibluff_equity):
+                 raise_total, pot_if_called, items):
         # bettor is a UserDetails
         self.bettor = bettor
         self.street = street
@@ -537,18 +563,14 @@ class AnalysisItemFoldEquity(object):
         self.bet_cost = bet_cost
         self.raise_total = raise_total
         self.pot_if_called = pot_if_called
-        self.immediate_result = float(immediate_result)
-        self.semibluff_ev = float(semibluff_ev)
-        self.semibluff_equity = float(semibluff_equity)
+        self.items = items
     
     def __repr__(self):
         return "AnalysisItemFoldEquity(bettor=%r, street=%r, "  \
             "pot_before_bet=%r, is_raise=%r, bet_cost=%r, raise_total=%r, "  \
-            "pot_if_called=%r, immediate_result=%r, semibluff_ev=%r, "  \
-            "semibluff_equity=%r)" %  \
+            "pot_if_called=%r, items=%r)" %  \
             (self.bettor, self.street, self.pot_before_bet, self.is_raise,
-             self.bet_cost, self.raise_total, self.pot_if_called,
-             self.immediate_result, self.semibluff_ev, self.semibluff_equity)
+             self.bet_cost, self.raise_total, self.pot_if_called, self.items)
   
     @classmethod
     def from_afe(cls, afe):
@@ -556,9 +578,11 @@ class AnalysisItemFoldEquity(object):
         Create from AnalysisFoldEquity
         """
         bettor = UserDetails.from_user(afe.action_result.user)
+        items = [AnalysisItemFoldEquityItem.from_afei(item)
+                 for item in afe.items]
         return cls(bettor, afe.street, afe.pot_before_bet, afe.is_raise,
                    afe.bet_cost, afe.raise_total, afe.pot_if_called,
-                   afe.immediate_result, afe.semibluff_ev, afe.semibluff_equity)
+                   items)
 
 MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryRangeAction: GameItemRangeAction,
