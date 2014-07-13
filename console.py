@@ -13,7 +13,8 @@ from rvr.local_settings import _SERVER_NAME
 from rvr.views import main, ajax, range_editor  # @UnusedImport pylint:disable=W0611,C0301
 import sys
 
-logging.basicConfig()
+logging.basicConfig(format="%(asctime)s: %(message)s",
+                    datefmt='%Y-%m-%d %H:%M:%S')
 logging.root.setLevel(logging.DEBUG)
 
 APP.SERVER_NAME = _SERVER_NAME

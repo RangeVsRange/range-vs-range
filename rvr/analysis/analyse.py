@@ -7,8 +7,8 @@ of the same.
 """
 import logging
 from rvr.infrastructure.util import concatenate
-from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction, \
-    GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,\
+from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
+    GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card
@@ -39,7 +39,7 @@ class FoldEquityAccumulator(object):
     def __init__(self, gameid, order, street, board, bettor, bettor_range,
                  raise_total, is_raise, pot_before_bet, bet_cost, pot_if_called,
                  potential_folders):
-        logging.debug("FEA, gameid %d, order %d, initialising",
+        logging.debug("gameid %d, FEA, order %d, initialising",
                       gameid, order)
         self.gameid = gameid
         self.order = order
@@ -61,7 +61,7 @@ class FoldEquityAccumulator(object):
         
         Returns True if this fea is complete.
         """
-        logging.debug("FEA, gameid %d, adding folder: userid %d",
+        logging.debug("gameid %d, FEA, adding folder: userid %d",
                       self.gameid, ghra.userid)
         self.potential_folders.remove(ghra.userid)
         fold_range = HandRange(ghra.fold_range)
@@ -119,7 +119,7 @@ class FoldEquityAccumulator(object):
         """
         Assuming complete, return an AnalysisFoldEquity
         """
-        logging.debug("FEA, gameid %d, finalising", self.gameid)
+        logging.debug("gameid %d, FEA, calculating...", self.gameid)
         assert len(self.potential_folders) == 0
         afe = self._create_afe()
         session.add(afe)
@@ -137,7 +137,7 @@ class AnalysisReplayer(object):
     """
     #pylint:disable=W0201
     def __init__(self, session, game):
-        logging.debug("AnalysisReplayer, gameid %d, initialising",
+        logging.debug("gameid %d, AnalysisReplayer, initialising",
                       game.gameid)
         if not game.is_finished:
             raise ValueError("Can't analyse game until finished.")
@@ -231,7 +231,7 @@ class AnalysisReplayer(object):
         If you need to reanalyse the game, delete the existing analysis first.
         """
         gameid = self.game.gameid
-        logging.debug("AnalysisReplayer, gameid %d, analyse", gameid)
+        logging.debug("gameid %d, AnalysisReplayer, analyse", gameid)
         items = [self.session.query(table)
                  .filter(table.gameid == gameid).all()
                  for table in [GameHistoryBoard,

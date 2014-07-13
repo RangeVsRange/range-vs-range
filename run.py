@@ -27,6 +27,7 @@ def _main():
             use_reloader=APP.config.get('RELOADER', False))
 
 if  __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(format="%(asctime)s: %(message)s",
+                        datefmt='%Y-%m-%d %H:%M:%S')
     logging.root.setLevel(logging.DEBUG)
     _main()
