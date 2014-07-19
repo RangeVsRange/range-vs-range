@@ -88,11 +88,25 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting,
     """
     Lets recipient know their game has started.
     """
-    msg = Message("A game has started on Range vs. Range")
+    msg = Message("Your game has started on Range vs. Range")
     msg.add_recipient(recipient)
     msg.html = render_template('email/game_started.html',
         recipient=recipient, screenname=screenname, is_starter=is_starter,
         is_acting=is_acting, unsubscribe=make_unsubscribe_url(identity),
+        game_url=make_game_url(str(game.gameid)), gameid=game.gameid)
+    send_email(msg)
+
+@web_only
+def _game_finished(recipient, screenname, identity, game):
+    """
+    Lets recipient know their game has finished and analysis is ready.
+    """
+    # TODO: 1: notify player (via this) when game finishes. 
+    msg = Message("Your game has finished on Range vs. Range")
+    msg.add_recipient(recipient)
+    msg.html = render_template('email/game_complete.html',
+        recipient=recipient, screenname=screenname,
+        unsubscribe=make_unsubscribe_url(identity),
         game_url=make_game_url(str(game.gameid)), gameid=game.gameid)
     send_email(msg)
 

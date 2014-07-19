@@ -145,6 +145,7 @@ class RunningGame(BASE, object):
     current_factor = Column(Float, nullable=False)
     # keeping track of timeouts
     last_action_time = Column(DateTime, nullable=False)  # or game start time
+    # TODO: 3: a flag to mark completed game as "completed with no timeouts"
     # in lieu of a relationship...
     # TODO: REVISIT: can we do this with a one-to-one relationship?
     # ... and not cause circular reference issues?!
@@ -362,15 +363,6 @@ class GameHistoryTimeout(BASE):
 #  - chat
 # Record analysis against specific hand history (range action) items.
 # Record equity payments against hand history items - deals, range actions, etc.
-
-# TODO: 1: individual combos differ in fold equity, and it matters
-# and when there are multiple folders, it gets a little interesting.
-# For each combo for Hero, we can consider what ratio each folder folds and
-# multiple them together to get a total fold ratio. It's quite simple, but
-# there's a lot of calculating involved. (Actually, it's not too bad, I think
-# it scales linearly in the number of villains.)
-# But we'll need to record down to the level of having a row for things like
-# "for this hero combo, villain #1 folds this ratio
 
 # TODO: 3: strategic analysis
 # everything written to the database must be linked to a hand history row

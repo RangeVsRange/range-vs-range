@@ -17,6 +17,9 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
+from rvr.poker.cards import PREFLOP, FLOP, TURN, RIVER
+
+# pylint:disable=R0911
 
 def is_authenticated():
     """
@@ -421,7 +424,8 @@ def _range_action_to_vars(item, index):
             "aggressive": item.range_action.aggressive_range.description,
             "index": index}
 
-def _action_summary_to_vars(range_action, action_result, user_range, index):
+def _action_summary_to_vars(range_action, action_result, action_result_index,
+                            user_range, index):
     """
     Summarise an action result and user range in the context of the most recent
     range action.
@@ -438,6 +442,7 @@ def _action_summary_to_vars(range_action, action_result, user_range, index):
     # NOTE: some of this is necessarily common with RANGE_ACTION
     return {"screenname": user_range.user.screenname,
             "action_result": action_result.action_result,
+            "action_result_index": action_result_index,
             "percent": 100.0 * new_total / len(SET_ANYTHING_OPTIONS),
             "combos": new_total,
             "is_check": range_action.is_check,
@@ -478,10 +483,12 @@ def _make_history_list(game_history):
         if isinstance(item, GameItemUserRange):
             if pending_action_result is not None:
                 results.remove(pending_action_result)
+                action_result_index = pending_action_result[1]['index']
                 pending_action_result = None
             results.append(("ACTION_SUMMARY",
                             _action_summary_to_vars(most_recent_range_action,
                                                     most_recent_action_result,
+                                                    action_result_index,
                                                     item, index)))
         elif isinstance(item, GameItemRangeAction):
             most_recent_range_action = item
@@ -591,3 +598,71 @@ def game_page():
         return _finished_game(response, gameid)
     else:
         return _running_game(response, gameid, userid, api)
+
+STREET_TEXT = {PREFLOP: "Preflop",
+               FLOP: "On the flop",
+               TURN: "On the turn",
+               RIVER: "On the river",
+               None: "After the hand"}
+
+@APP.route('/analysis', methods=['GET'])
+@AUTH.required
+def analysis_page():
+    """
+    Analysis of a particular hand history item.
+    """
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        flash("Invalid game ID.")
+        return redirect(url_for('error_page'))
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        flash("Invalid game ID (not a number).")
+        return redirect(url_for('error_page'))
+
+    api = API()
+    response = api.get_public_game(gameid)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+            msg = "Invalid game ID."
+        else:
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
+        flash(msg)
+        return redirect(url_for('error_page'))
+    game = response
+    
+    order = request.args.get('order', None)
+    if order is None:
+        flash("Invalid order.")
+        return redirect(url_for('error_page'))
+    try:
+        order = int(order)
+    except ValueError:
+        flash("Invalid order (not a number).")
+        return redirect(url_for('error_page'))
+
+    try:
+        item = game.history[order]
+    except IndexError:
+        flash("Invalid order (not in game).")
+        return redirect(url_for('error_page'))
+
+    if not item.action_result.is_aggressive:
+        flash("Analysis only for bets right now, sorry.")
+        return redirect(url_for('error_page'))
+    
+    street_text = STREET_TEXT[game.game_details.situation.current_round]
+    if item.action_result.is_raise:
+        action_text = "raises to %d" % (item.action_result.raise_total,)
+    else:
+        action_text = "bets %d" % (item.action_result.raise_total,)
+    
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('web/analysis.html', gameid=gameid,
+        street_text=street_text, screenname=item.user.screenname,
+        action_text=action_text, navbar_items=navbar_items,
+        is_logged_in=is_logged_in())

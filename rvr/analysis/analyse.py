@@ -111,7 +111,7 @@ class FoldEquityAccumulator(object):
         if nonfold_ratio:
             afei.semibluff_ev = -afei.immediate_result / nonfold_ratio
         else:
-            afei.semibluff_ev = float('Inf')
+            afei.semibluff_ev = float('-inf')
         afei.semibluff_equity = afei.semibluff_ev / self.pot_if_called
         return afei
     
@@ -126,6 +126,7 @@ class FoldEquityAccumulator(object):
         for combo in self.bettor_range.generate_options_unweighted(self.board):
             afei = self._create_afei(combo)
             session.add(afei)
+        logging.debug("gameid %d, FEA, finalised", self.gameid)
         return afe
         # TODO: 3: need a supplementary table for individual folders
         # (to store userid, fold_ratio combos, in order, for later display)
