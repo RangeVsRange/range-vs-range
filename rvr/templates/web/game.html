@@ -158,7 +158,7 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
       </td>
       <td>
         <div class="pull-right">
-          {% if not is_running and hint == "ACTION_SUMMARY" %}
+          {% if not is_running and hint == "ACTION_SUMMARY" and item.action_result.is_aggressive %}
           <a class="btn btn-primary" href="{{url_for('analysis_page', gameid=game_details.gameid, order=item.action_result_index)}}">Analyse</a>
           {% endif %}        
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
