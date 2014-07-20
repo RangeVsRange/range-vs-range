@@ -12,7 +12,7 @@ Data transfer objects:
 from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange
-from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP
+from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -540,7 +540,8 @@ class AnalysisItemFoldEquityItem(object):
         """
         Create from AnalysisFoldEquityItem
         """
-        cards = [afei.higher_card, afei.lower_card]
+        cards = [Card.from_text(afei.higher_card),
+                 Card.from_text(afei.lower_card)]
         return cls(cards, afei.fold_ratio,
             afei.immediate_result, afei.semibluff_ev, afei.semibluff_equity)
 
@@ -551,7 +552,8 @@ class AnalysisItemFoldEquity(object):
     STREET_DESCRIPTIONS = {PREFLOP: "Preflop",
                            FLOP: "On the flop",
                            TURN: "On the turn",
-                           RIVER: "On the river"}
+                           RIVER: "On the river",
+                           None: "After the hand"}
     
     def __init__(self, bettor, street, pot_before_bet, is_raise, bet_cost,
                  raise_total, pot_if_called, items):
@@ -580,6 +582,9 @@ class AnalysisItemFoldEquity(object):
         bettor = UserDetails.from_user(afe.action_result.user)
         items = [AnalysisItemFoldEquityItem.from_afei(item)
                  for item in afe.items]
+        # TODO: 0: confirm ordering
+        items.sort(key=lambda item: (item.immediate_result, item.cards),
+                   reverse=True)
         return cls(bettor, afe.street, afe.pot_before_bet, afe.is_raise,
                    afe.bet_cost, afe.raise_total, afe.pot_if_called,
                    items)

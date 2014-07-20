@@ -17,9 +17,8 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
-from rvr.poker.cards import PREFLOP, FLOP, TURN, RIVER
 
-# pylint:disable=R0911
+# pylint:disable=R0911,R0912
 
 def is_authenticated():
     """
@@ -83,6 +82,13 @@ def ensure_user():
             else:
                 session['screenname'] = req2.screenname
         flash("You have logged in as '%s'" % (session['screenname'],))
+
+def error(message):
+    """
+    Flash error message and redirect to error page.
+    """
+    flash(message)
+    return redirect(url_for('error_page'))
 
 @APP.route('/change', methods=['GET','POST'])
 @AUTH.required
@@ -599,12 +605,6 @@ def game_page():
     else:
         return _running_game(response, gameid, userid, api)
 
-STREET_TEXT = {PREFLOP: "Preflop",
-               FLOP: "On the flop",
-               TURN: "On the turn",
-               RIVER: "On the river",
-               None: "After the hand"}
-
 @APP.route('/analysis', methods=['GET'])
 @AUTH.required
 def analysis_page():
@@ -613,13 +613,11 @@ def analysis_page():
     """
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        flash("Invalid game ID.")
-        return redirect(url_for('error_page'))
+        return error("Invalid game ID.")
     try:
         gameid = int(gameid)
     except ValueError:
-        flash("Invalid game ID (not a number).")
-        return redirect(url_for('error_page'))
+        return error("Invalid game ID (not a number).")
 
     api = API()
     response = api.get_public_game(gameid)
@@ -629,40 +627,52 @@ def analysis_page():
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
                 (gameid,)
-        flash(msg)
-        return redirect(url_for('error_page'))
+        return error(msg)
     game = response
     
     order = request.args.get('order', None)
     if order is None:
-        flash("Invalid order.")
-        return redirect(url_for('error_page'))
+        return error("Invalid order.")
     try:
         order = int(order)
     except ValueError:
-        flash("Invalid order (not a number).")
-        return redirect(url_for('error_page'))
+        return error("Invalid order (not a number).")
 
     try:
         item = game.history[order]
     except IndexError:
-        flash("Invalid order (not in game).")
-        return redirect(url_for('error_page'))
+        return error("Invalid order (not in game).")
+
+    if not isinstance(item, dtos.GameItemActionResult):
+        return error("Invalid order (not a bet or raise).") 
 
     if not item.action_result.is_aggressive:
-        flash("Analysis only for bets right now, sorry.")
-        return redirect(url_for('error_page'))
-    
-    street_text = STREET_TEXT[game.game_details.situation.current_round]
+        return error("Analysis only for bets right now, sorry.")
+
+    try:
+        aife = game.analysis[order]
+    except KeyError:
+        return error("Analysis for this action is not ready yet.")
+
+    street = game.game_details.situation.current_round
+    street_text = aife.STREET_DESCRIPTIONS[street]
     if item.action_result.is_raise:
         action_text = "raises to %d" % (item.action_result.raise_total,)
     else:
         action_text = "bets %d" % (item.action_result.raise_total,)
-    
+
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
+    # TODO: 0: remove analysis button for calls and folds (only bets)
+    # TODO: 1: show only hands that bet and shouldn't have,
+    # TODO: 1: or didn't bet and could have?
+    # TODO: 1: this had the benefit of removing value hands,
+    # TODO: 1: but not medium-strength (correctly) passive hands
+    # TODO: 1: semibluff EV / equity always N/A on river
     return render_template('web/analysis.html', gameid=gameid,
         street_text=street_text, screenname=item.user.screenname,
-        action_text=action_text, navbar_items=navbar_items,
-        is_logged_in=is_logged_in())
+        action_text=action_text, items=aife.items,
+        navbar_items=navbar_items, is_logged_in=is_logged_in(),
+        inf=[float('inf'), float('-inf')])
+    # TODO: REVISIT: how to compare to inf in a template?

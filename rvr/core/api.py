@@ -774,10 +774,8 @@ class API(object):
         """
         afes = self.session.query(AnalysisFoldEquity)  \
             .filter(AnalysisFoldEquity.gameid == game.gameid).all()
-        sorted_afes = sorted(afes, key=lambda afe: afe.order)
-        aifes = [dtos.AnalysisItemFoldEquity.from_afe(afe)
-                 for afe in sorted_afes]
-        return aifes 
+        return {afe.order: dtos.AnalysisItemFoldEquity.from_afe(afe)
+                for afe in afes}
         
     def _get_game(self, gameid, userid=None):
         """

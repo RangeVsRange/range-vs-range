@@ -5,7 +5,29 @@
 {% block content %}
 <div class="container">
   <div class="page-header">
-    <h1>Analysis of Game {{gameid}}<br><small>{{street_text}}, <strong>{{screenname}}</strong> {{action_text}}</small></h1>
+    <h1>Analysis of Game {{gameid}}<br><small>{{street_text}}, {{screenname}} {{action_text}}</small></h1>
   </div>
+</div>
+<div class="container">
+  <table class="table table-bordered">
+  <thead>
+  <tr>
+    <td><strong>Cards</strong></td>
+    <td><strong>EV of a bluff</strong></td>
+    <td><strong>Fold ratio</strong></td>
+    <td><strong>EV required to semibluff</strong></td>
+  </tr>
+  </thead>
+  <tbody>
+  {% for item in items %}
+  <tr>
+    <td>{{item.cards[0].to_mnemonic()}}{{item.cards[1].to_mnemonic()}}</td>
+    <td>{{item.immediate_result}} chips</td>
+    <td>{{"%0.2f" % (item.fold_ratio * 100,)}}%</td>
+    <td>{% if item.semibluff_ev in inf or item.semibluff_ev < 0.0 %}N/A{% else %}{{item.semibluff_ev}} chips ({{"%0.2f" % (item.semibluff_equity * 100,)}}% of pot){% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+  </table>
 </div>
 {% endblock %}
