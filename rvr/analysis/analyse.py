@@ -36,9 +36,9 @@ class FoldEquityAccumulator(object):
     """
     Holds the data needed to calculate and create an AnalysisFoldEquity.
     """
-    def __init__(self, gameid, order, street, board, bettor, bettor_range,
-                 raise_total, is_raise, pot_before_bet, bet_cost, pot_if_called,
-                 potential_folders):
+    def __init__(self, gameid, order, street, board, bettor, range_action,
+                 raise_total, pot_before_bet, bet_cost,
+                 pot_if_called, potential_folders):
         logging.debug("gameid %d, FEA, order %d, initialising",
                       gameid, order)
         self.gameid = gameid
@@ -46,9 +46,8 @@ class FoldEquityAccumulator(object):
         self.street = street
         self.board = Card.many_from_text(board)
         self.bettor = bettor
-        self.bettor_range = HandRange(bettor_range)
+        self.range_action = range_action
         self.raise_total = raise_total
-        self.is_raise = is_raise
         self.pot_before_bet = pot_before_bet
         self.bet_cost = bet_cost
         self.pot_if_called = pot_if_called
@@ -80,13 +79,14 @@ class FoldEquityAccumulator(object):
         afe.order = self.order
         afe.street = self.street
         afe.pot_before_bet = self.pot_before_bet
-        afe.is_raise = self.is_raise
+        afe.is_raise = self.range_action.is_raise
+        afe.is_check = self.range_action.is_check
         afe.bet_cost = self.bet_cost
         afe.raise_total = self.raise_total
         afe.pot_if_called = self.pot_if_called
         return afe
     
-    def _create_afei(self, combo):
+    def _create_afei(self, combo, is_agg=False, is_pas=False, is_fol=False):
         """
         Create an AnalaysisFoldEquityItem for a particular combo in Hero's range
         """
@@ -96,6 +96,9 @@ class FoldEquityAccumulator(object):
         lower_card, higher_card = sorted(combo)
         afei.higher_card = higher_card.to_mnemonic()
         afei.lower_card = lower_card.to_mnemonic()
+        afei.is_aggressive = is_agg
+        afei.is_passive = is_pas
+        afei.is_fold = is_fol
         afei.fold_ratio = 1.0
         for _folder, fold_range, nonfold_range in self.folds:
             fold_size = len(fold_range.generate_options_unweighted(
@@ -123,8 +126,17 @@ class FoldEquityAccumulator(object):
         assert len(self.potential_folders) == 0
         afe = self._create_afe()
         session.add(afe)
-        for combo in self.bettor_range.generate_options_unweighted(self.board):
-            afei = self._create_afei(combo)
+        for combo in HandRange(self.range_action.aggressive_range)  \
+                .generate_options_unweighted(self.board):
+            afei = self._create_afei(combo, is_agg=True)
+            session.add(afei)
+        for combo in HandRange(self.range_action.passive_range)  \
+                .generate_options_unweighted(self.board):
+            afei = self._create_afei(combo, is_pas=True)
+            session.add(afei)
+        for combo in HandRange(self.range_action.fold_range)  \
+                .generate_options_unweighted(self.board):
+            afei = self._create_afei(combo, is_fol=True)
             session.add(afei)
         logging.debug("gameid %d, FEA, finalised", self.gameid)
         return afe
@@ -178,7 +190,6 @@ class AnalysisReplayer(object):
         if item.is_aggressive:
             amount_raised = item.raise_total - max(self.contrib.values())
             bet_cost = item.raise_total - self.contrib[item.userid]
-            is_raise = any(self.contrib.values())
             self.contrib[item.userid] = item.raise_total
             self.stacks[item.userid] -= bet_cost
             # we assume the person who has contributed the most calls
@@ -189,9 +200,8 @@ class AnalysisReplayer(object):
                 street=self.street,
                 board=self.board,
                 bettor=item.userid,
-                bettor_range=self.ranges[item.userid],  # range before bet
+                range_action=self.prev_range_action,  # ranges before bet
                 raise_total=item.raise_total, 
-                is_raise=is_raise, 
                 pot_before_bet=self.pot, 
                 bet_cost=bet_cost, 
                 pot_if_called=pot_if_called, 

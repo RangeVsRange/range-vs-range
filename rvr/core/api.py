@@ -767,7 +767,6 @@ class API(object):
         return [dto for dto in child_dtos
                 if game.is_finished or dto.should_include_for(userid)]
 
-    @api
     def _get_analysis_items(self, game):
         """
         Returns an ordered list of analysis items form the game.

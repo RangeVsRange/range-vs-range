@@ -406,6 +406,7 @@ class AnalysisFoldEquity(BASE):
     street = Column(String, nullable=False)
     pot_before_bet = Column(Integer, nullable=False)
     is_raise = Column(Boolean, nullable=False)
+    is_check = Column(Boolean, nullable=False)
     bet_cost = Column(Integer, nullable=False)
     raise_total = Column(Integer, nullable=False)
     pot_if_called = Column(Integer, nullable=False)
@@ -424,6 +425,9 @@ class AnalysisFoldEquityItem(BASE):
                          primary_key=True)
     lower_card = Column(String, ForeignKey("range_item.lower_card"),
                         primary_key=True)
+    is_aggressive = Column(Boolean, nullable=False)
+    is_passive = Column(Boolean, nullable=False)
+    is_fold = Column(Boolean, nullable=False)
     # Relationships
     analysis_fold_item = relationship("AnalysisFoldEquity",
         backref=backref("items", cascade="all"),

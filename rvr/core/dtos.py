@@ -521,9 +521,12 @@ class AnalysisItemFoldEquityItem(object):
     """
     All about the fold equity of betting a particular combo.
     """
-    def __init__(self, cards, fold_ratio, immediate_result,
-                 semibluff_ev, semibluff_equity):
+    def __init__(self, cards, is_aggressive, is_passive, is_fold, fold_ratio,
+                 immediate_result, semibluff_ev, semibluff_equity):
         self.cards = cards
+        self.is_aggressive = is_aggressive
+        self.is_passive = is_passive
+        self.is_fold = is_fold
         self.fold_ratio = float(fold_ratio)
         self.immediate_result = float(immediate_result)
         self.semibluff_ev = float(semibluff_ev)
@@ -542,8 +545,9 @@ class AnalysisItemFoldEquityItem(object):
         """
         cards = [Card.from_text(afei.higher_card),
                  Card.from_text(afei.lower_card)]
-        return cls(cards, afei.fold_ratio,
-            afei.immediate_result, afei.semibluff_ev, afei.semibluff_equity)
+        return cls(cards, afei.is_aggressive, afei.is_passive, afei.is_fold,
+            afei.fold_ratio, afei.immediate_result, afei.semibluff_ev,
+            afei.semibluff_equity)
 
 class AnalysisItemFoldEquity(object):
     """
@@ -555,13 +559,14 @@ class AnalysisItemFoldEquity(object):
                            RIVER: "On the river",
                            None: "After the hand"}
     
-    def __init__(self, bettor, street, pot_before_bet, is_raise, bet_cost,
-                 raise_total, pot_if_called, items):
+    def __init__(self, bettor, street, pot_before_bet, is_raise, is_check,
+                 bet_cost, raise_total, pot_if_called, items):
         # bettor is a UserDetails
         self.bettor = bettor
         self.street = street
         self.pot_before_bet = pot_before_bet
         self.is_raise = is_raise
+        self.is_check = is_check
         self.bet_cost = bet_cost
         self.raise_total = raise_total
         self.pot_if_called = pot_if_called
@@ -569,10 +574,11 @@ class AnalysisItemFoldEquity(object):
     
     def __repr__(self):
         return "AnalysisItemFoldEquity(bettor=%r, street=%r, "  \
-            "pot_before_bet=%r, is_raise=%r, bet_cost=%r, raise_total=%r, "  \
-            "pot_if_called=%r, items=%r)" %  \
+            "pot_before_bet=%r, is_raise=%r, is_check=%r, bet_cost=%r, "  \
+            "raise_total=%r, pot_if_called=%r, items=%r)" %  \
             (self.bettor, self.street, self.pot_before_bet, self.is_raise,
-             self.bet_cost, self.raise_total, self.pot_if_called, self.items)
+             self.is_check, self.bet_cost, self.raise_total, self.pot_if_called,
+             self.items)
   
     @classmethod
     def from_afe(cls, afe):
@@ -583,11 +589,11 @@ class AnalysisItemFoldEquity(object):
         items = [AnalysisItemFoldEquityItem.from_afei(item)
                  for item in afe.items]
         # TODO: 0: confirm ordering
-        items.sort(key=lambda item: (item.immediate_result, item.cards),
+        items.sort(key=lambda item: (-item.immediate_result, item.cards),
                    reverse=True)
         return cls(bettor, afe.street, afe.pot_before_bet, afe.is_raise,
-                   afe.bet_cost, afe.raise_total, afe.pot_if_called,
-                   items)
+                   afe.is_check, afe.bet_cost, afe.raise_total,
+                   afe.pot_if_called, items)
 
 MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryRangeAction: GameItemRangeAction,
@@ -658,7 +664,7 @@ class ActionOptions(object):
         Does the user have the option to check?
         """
         # Note that this is cost to call, not total contribution once called.
-        # Which is why it works for checking int he big blind.
+        # Which is why it works for checking in the big blind.
         return self.call_cost == 0
     
     def can_raise(self):

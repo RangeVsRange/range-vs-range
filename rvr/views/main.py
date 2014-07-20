@@ -670,9 +670,10 @@ def analysis_page():
     # TODO: 1: this had the benefit of removing value hands,
     # TODO: 1: but not medium-strength (correctly) passive hands
     # TODO: 1: semibluff EV / equity always N/A on river
+    # TODO: REVISIT: how to compare to inf in a template?
     return render_template('web/analysis.html', gameid=gameid,
         street_text=street_text, screenname=item.user.screenname,
         action_text=action_text, items=aife.items,
+        is_raise=aife.is_raise, is_check=aife.is_check,
         navbar_items=navbar_items, is_logged_in=is_logged_in(),
         inf=[float('inf'), float('-inf')])
-    # TODO: REVISIT: how to compare to inf in a template?

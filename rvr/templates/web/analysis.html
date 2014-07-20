@@ -2,6 +2,33 @@
 
 {% block title %}Analysis - Range vs. Range{% endblock %}
 
+{% macro table_start() %}
+    <table class="table table-bordered table-striped">
+    <thead>
+    <tr>
+      <td><strong>Cards</strong></td>
+      <td><strong>EV of a bluff</strong></td>
+      {# <td><strong>Fold ratio</strong></td> #}
+      <td><strong>EV required to semibluff</strong></td>
+    </tr>
+    </thead>
+    <tbody>
+{% endmacro %}
+
+{% macro table_middle(item) %}
+    <tr>
+      <td>{{item.cards[0].to_mnemonic()}}{{item.cards[1].to_mnemonic()}}</td>
+      <td>{{"%0.2f" % (item.immediate_result,)}} chips</td>
+      {# <td>{{"%0.2f" % (item.fold_ratio * 100,)}}%</td> #}
+      <td>{% if item.semibluff_ev in inf or item.semibluff_ev < 0.0 %}N/A{% else %}{{"%0.2f" % (item.semibluff_ev,)}} chips ({{"%0.2f" % (item.semibluff_equity * 100,)}}% of pot){% endif %}</td>
+    </tr>
+{% endmacro %}
+
+{% macro table_end() %}
+    </tbody>
+    </table>
+{% endmacro %}
+
 {% block content %}
 <div class="container">
   <div class="page-header">
@@ -9,25 +36,34 @@
   </div>
 </div>
 <div class="container">
-  <table class="table table-bordered">
-  <thead>
-  <tr>
-    <td><strong>Cards</strong></td>
-    <td><strong>EV of a bluff</strong></td>
-    <td><strong>Fold ratio</strong></td>
-    <td><strong>EV required to semibluff</strong></td>
-  </tr>
-  </thead>
-  <tbody>
-  {% for item in items %}
-  <tr>
-    <td>{{item.cards[0].to_mnemonic()}}{{item.cards[1].to_mnemonic()}}</td>
-    <td>{{item.immediate_result}} chips</td>
-    <td>{{"%0.2f" % (item.fold_ratio * 100,)}}%</td>
-    <td>{% if item.semibluff_ev in inf or item.semibluff_ev < 0.0 %}N/A{% else %}{{item.semibluff_ev}} chips ({{"%0.2f" % (item.semibluff_equity * 100,)}}% of pot){% endif %}</td>
-  </tr>
-  {% endfor %}
-  </tbody>
-  </table>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#aggressive" data-toggle="tab">{% if is_raise %}Hands raised{% else %}Hands bet{% endif %}</a></li>
+    <li><a href="#passive" data-toggle="tab">{% if is_check %}Hands checked{% else %}Hands called{% endif %}</a></li>
+    <li><a href="#fold" data-toggle="tab">Hands folded</a></li>
+  </ul>
+
+  <div class="tab-content">
+  <div class="tab-pane active" id="aggressive">
+    {{ table_start() }}
+    {% for item in items %}{% if item.is_aggressive %}
+    {{ table_middle(item) }}
+    {% endif %}{% endfor %}
+    {{ table_end() }}
+  </div>
+  <div class="tab-pane" id="passive">
+    {{ table_start() }}
+    {% for item in items %}{% if item.is_passive %}
+    {{ table_middle(item) }}
+    {% endif %}{% endfor %}
+    {{ table_end() }}
+  </div>
+  <div class="tab-pane" id="fold">
+    {{ table_start() }}
+    {% for item in items %}{% if item.is_fold %}
+    {{ table_middle(item) }}
+    {% endif %}{% endfor %}
+    {{ table_end() }}
+  </div>
+  </div>
 </div>
 {% endblock %}
