@@ -575,6 +575,8 @@ def game_page():
     """
     # TODO: 2: every position should have a name
     # TODO: 3: chat
+    # TODO: 1: make analysis and finished game available unauthenticated
+    # TODO: 1: (separate out finished game from this)
     alt = ensure_user()
     if alt:
         return alt
@@ -664,16 +666,13 @@ def analysis_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    # TODO: 0: remove analysis button for calls and folds (only bets)
-    # TODO: 1: show only hands that bet and shouldn't have,
-    # TODO: 1: or didn't bet and could have?
-    # TODO: 1: this had the benefit of removing value hands,
-    # TODO: 1: but not medium-strength (correctly) passive hands
-    # TODO: 1: semibluff EV / equity always N/A on river
-    # TODO: REVISIT: how to compare to inf in a template?
+    # TODO: 0: sort aggressive hands from worst bluff to best bluff
+    # TODO: 0: sort passive and fold hands from best bluff to worst bluff
+    # TODO: 0: have a status column: "good bluff" / "bad bluff" / "semibluff"
+    # TODO: 0: (bad bluff is on river, semibluff is on other streets)
     return render_template('web/analysis.html', gameid=gameid,
         street_text=street_text, screenname=item.user.screenname,
         action_text=action_text, items=aife.items,
         is_raise=aife.is_raise, is_check=aife.is_check,
         navbar_items=navbar_items, is_logged_in=is_logged_in(),
-        inf=[float('inf'), float('-inf')])
+        nan=float('NaN'))

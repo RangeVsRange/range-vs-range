@@ -73,7 +73,8 @@ def _your_turn(recipient, screenname, identity, game):
     
     Uses Flask-Mail; sends asynchronously.
     """
-    msg = Message("It's your turn on Range vs. Range")
+    msg = Message("It's your turn in Game %d on Range vs. Range" %
+                  (game.gameid,))
     msg.add_recipient(recipient)
     msg.html = render_template('email/your_turn.html', recipient=recipient,
                                screenname=screenname,
@@ -88,7 +89,8 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting,
     """
     Lets recipient know their game has started.
     """
-    msg = Message("Your game has started on Range vs. Range")
+    msg = Message("Game %d has started on Range vs. Range" %
+                  (game.gameid,))
     msg.add_recipient(recipient)
     msg.html = render_template('email/game_started.html',
         recipient=recipient, screenname=screenname, is_starter=is_starter,
@@ -101,8 +103,9 @@ def _game_finished(recipient, screenname, identity, game):
     """
     Lets recipient know their game has finished and analysis is ready.
     """
-    # TODO: 1: notify player (via this) when game finishes. 
-    msg = Message("Your game has finished on Range vs. Range")
+    # TODO: 1: template for game finished / analysis ready
+    msg = Message("Analysis for Game %d on Range vs. Range" %
+                  (game.gameid,))
     msg.add_recipient(recipient)
     msg.html = render_template('email/game_complete.html',
         recipient=recipient, screenname=screenname,
@@ -135,3 +138,13 @@ def notify_first_player(game, starter_id):
                       is_starter=(rgp.userid==starter_id),
                       is_acting=(rgp.userid==game.current_userid),
                       game=game)
+
+def notify_finished(game):
+    """
+    Notify everyone their game is finished.
+    """
+    for rgp in game.rgps:
+        _game_finished(recipient=rgp.user.email,
+                       screenname=rgp.user.screenname,
+                       identity=rgp.user.identity,
+                       game=game)

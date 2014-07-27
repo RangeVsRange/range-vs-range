@@ -19,7 +19,8 @@ from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
 from sqlalchemy.orm.exc import NoResultFound
-from rvr.mail.notifications import notify_current_player, notify_first_player
+from rvr.mail.notifications import notify_current_player, notify_first_player,\
+    notify_finished
 from rvr.analysis.analyse import AnalysisReplayer, already_analysed
 from rvr.db.tables import AnalysisFoldEquity, RangeItem
 import datetime
@@ -864,7 +865,8 @@ class API(object):
             if not already_analysed(self.session, game):                
                 replayer = AnalysisReplayer(self.session, game)
                 replayer.analyse()
-                
+                notify_finished(game)
+
     @api
     def run_pending_analysis(self):
         """

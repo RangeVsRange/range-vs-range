@@ -537,7 +537,14 @@ class AnalysisItemFoldEquityItem(object):
             "immediate_result=%r, semibluff_ev=%r, semibluff_equity=%r)" %  \
             (self.cards, self.fold_ratio, self.immediate_result,
              self.semibluff_ev, self.semibluff_equity)
-            
+    
+    @classmethod
+    def none2nan(cls, val):
+        """
+        If value if None, convert to NaN
+        """
+        return float('NaN') if val is None else val
+    
     @classmethod
     def from_afei(cls, afei):
         """
@@ -546,8 +553,9 @@ class AnalysisItemFoldEquityItem(object):
         cards = [Card.from_text(afei.higher_card),
                  Card.from_text(afei.lower_card)]
         return cls(cards, afei.is_aggressive, afei.is_passive, afei.is_fold,
-            afei.fold_ratio, afei.immediate_result, afei.semibluff_ev,
-            afei.semibluff_equity)
+            afei.fold_ratio, afei.immediate_result,
+            cls.none2nan(afei.semibluff_ev),
+            cls.none2nan(afei.semibluff_equity))
 
 class AnalysisItemFoldEquity(object):
     """

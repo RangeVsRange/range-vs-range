@@ -11,7 +11,7 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem
 from rvr.poker.handrange import HandRange
-from rvr.poker.cards import Card
+from rvr.poker.cards import Card, RIVER
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -111,11 +111,12 @@ class FoldEquityAccumulator(object):
         nonfold_ratio = 1.0 - afei.fold_ratio
         afei.immediate_result = afei.fold_ratio * self.pot_before_bet -  \
             nonfold_ratio * self.bet_cost
-        if nonfold_ratio:
+        if nonfold_ratio and self.street != RIVER:
             afei.semibluff_ev = -afei.immediate_result / nonfold_ratio
+            afei.semibluff_equity = afei.semibluff_ev / self.pot_if_called
         else:
-            afei.semibluff_ev = float('-inf')
-        afei.semibluff_equity = afei.semibluff_ev / self.pot_if_called
+            afei.semibluff_ev = float('NaN')
+            afei.semibluff_equity = float('NaN')
         return afei
     
     def finalise(self, session):

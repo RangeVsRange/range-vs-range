@@ -1,0 +1,11 @@
+{% extends "email/email.html" %}
+{% block content %}
+<p>
+<strong>{{screenname}}</strong>, <a href="{{game_url}}">Game {{gameid}}</a> is finished and the analysis is ready.
+Take a look.
+</p>
+<p>
+On the <a href="{{game_url}}#history">game page</a>, click the 'Analyse' button for any bet.
+This will show you the fold equity for each hand in the range (both those hands that were bet, and those hands that didn't but could have). It will also tell you how much equity is needed for a semibluff to be profitable.
+</p>
+{% endblock %}

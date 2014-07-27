@@ -10,6 +10,7 @@ from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import random
 from collections import namedtuple
 import logging
+from rvr.mail.notifications import notify_finished
 
 NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
 TOTAL_COMMUNITY_CARDS = {PREFLOP: 0, FLOP: 3, TURN: 4, RIVER: 5}
