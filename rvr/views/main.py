@@ -674,5 +674,4 @@ def analysis_page():
         street_text=street_text, screenname=item.user.screenname,
         action_text=action_text, items=aife.items,
         is_raise=aife.is_raise, is_check=aife.is_check,
-        navbar_items=navbar_items, is_logged_in=is_logged_in(),
-        nan=float('NaN'))
+        navbar_items=navbar_items, is_logged_in=is_logged_in())

@@ -115,8 +115,8 @@ class FoldEquityAccumulator(object):
             afei.semibluff_ev = -afei.immediate_result / nonfold_ratio
             afei.semibluff_equity = afei.semibluff_ev / self.pot_if_called
         else:
-            afei.semibluff_ev = float('NaN')
-            afei.semibluff_equity = float('NaN')
+            afei.semibluff_ev = None
+            afei.semibluff_equity = None
         return afei
     
     def finalise(self, session):

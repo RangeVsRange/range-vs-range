@@ -444,9 +444,8 @@ class AnalysisFoldEquityItem(BASE):
     # These next two can be negative, but if so we won't show them to the user.
     # Example: a bluff here wins 1.0 chips, and requires -0.3 chips EV to
     # semibluff, or -8.0% equity when called.
-    # TODO: REVISIT: Writing NaN to these columns appears to convert to None
-    semibluff_ev = Column(Numeric, nullable=True)  # NaN == None
-    semibluff_equity = Column(Numeric, nullable=True) # NaN == None
+    semibluff_ev = Column(Numeric, nullable=True)
+    semibluff_equity = Column(Numeric, nullable=True)
 
 # class AnalysisFloat(BASE):
 #     """
