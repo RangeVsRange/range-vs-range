@@ -529,8 +529,9 @@ class AnalysisItemFoldEquityItem(object):
         self.is_fold = is_fold
         self.fold_ratio = float(fold_ratio)
         self.immediate_result = float(immediate_result)
-        self.semibluff_ev = float(semibluff_ev)
-        self.semibluff_equity = float(semibluff_equity)
+        self.semibluff_ev = float(semibluff_ev) if semibluff_ev else None
+        self.semibluff_equity =  \
+            float(semibluff_equity) if semibluff_equity else None
 
     def __repr__(self):
         return "AnalysisItemFoldEquityItem(cards=%r, fold_ratio=%r, "  \

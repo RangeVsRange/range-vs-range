@@ -390,7 +390,6 @@ class AnalysisFoldEquity(BASE):
     """
     Profitability, or required semibluff EV, of a bet, on any street.
     """
-    # TODO: 3: detail who folded, and what percentage of their ranges
     __tablename__ = "analysis_fold_equity"
     # Keys
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
