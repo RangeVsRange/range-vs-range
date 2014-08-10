@@ -2,6 +2,13 @@
 
 {% block title %}Analysis - Range vs. Range{% endblock %}
 
+{% block scripts %}
+  {{ super() }}
+  <script>
+  $('.bluff-header').popover({trigger: 'hover'})
+  </script>
+{% endblock %}
+ 
 {% macro table_start() %}
     <table class="table table-bordered table-striped">
     <thead>
@@ -37,31 +44,31 @@
 </div>
 <div class="container">
   <ul class="nav nav-tabs">
-    <li class="active"><a href="#aggressive" data-toggle="tab">{% if is_raise %}Hands raised{% else %}Hands bet{% endif %}</a></li>
-    <li><a href="#passive" data-toggle="tab">{% if is_check %}Hands checked{% else %}Hands called{% endif %}</a></li>
-    <li><a href="#fold" data-toggle="tab">Hands folded</a></li>
+    <li class="active"><a href="#aggressive" class="bluff-header" data-container="body" data-toggle="tab" data-placement="top" data-content="showing the worst bluff first">{% if is_raise %}Hands raised{% else %}Hands bet{% endif %}</a></li>
+    <li><a href="#passive" class="bluff-header" data-container="body" data-toggle="tab" data-placement="top" data-content="showing the best (potential) bluff first">{% if is_check %}Hands checked{% else %}Hands called{% endif %}</a></li>
+    <li><a href="#fold" class="bluff-header" data-container="body" data-toggle="tab" data-placement="top" data-content="showing the best (potential) bluff first">Hands folded</a></li>
   </ul>
 
   <div class="tab-content">
   <div class="tab-pane active" id="aggressive">
     {{ table_start() }}
-    {% for item in items %}{% if item.is_aggressive %}
+    {% for item in items_aggressive %}
     {{ table_middle(item) }}
-    {% endif %}{% endfor %}
+    {% endfor %}
     {{ table_end() }}
   </div>
   <div class="tab-pane" id="passive">
     {{ table_start() }}
-    {% for item in items %}{% if item.is_passive %}
+    {% for item in items_passive %}
     {{ table_middle(item) }}
-    {% endif %}{% endfor %}
+    {% endfor %}
     {{ table_end() }}
   </div>
   <div class="tab-pane" id="fold">
     {{ table_start() }}
-    {% for item in items %}{% if item.is_fold %}
+    {% for item in items_fold %}
     {{ table_middle(item) }}
-    {% endif %}{% endfor %}
+    {% endfor %}
     {{ table_end() }}
   </div>
   </div>

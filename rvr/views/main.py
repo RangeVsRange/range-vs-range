@@ -666,12 +666,13 @@ def analysis_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    # TODO: 0: sort aggressive hands from worst bluff to best bluff
-    # TODO: 0: sort passive and fold hands from best bluff to worst bluff
     # TODO: 0: have a status column: "good bluff" / "bad bluff" / "semibluff"
     # TODO: 0: (bad bluff is on river, semibluff is on other streets)
     return render_template('web/analysis.html', gameid=gameid,
         street_text=street_text, screenname=item.user.screenname,
-        action_text=action_text, items=aife.items,
+        action_text=action_text,
+        items_aggressive=[i for i in reversed(aife.items) if i.is_aggressive],
+        items_passive=[i for i in aife.items if i.is_passive],
+        items_fold=[i for i in aife.items if i.is_fold],
         is_raise=aife.is_raise, is_check=aife.is_check,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
