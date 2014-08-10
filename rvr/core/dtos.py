@@ -590,7 +590,6 @@ class AnalysisItemFoldEquity(object):
         bettor = UserDetails.from_user(afe.action_result.user)
         items = [AnalysisItemFoldEquityItem.from_afei(item)
                  for item in afe.items]
-        # TODO: 0: confirm ordering
         items.sort(key=lambda item: (-item.immediate_result, item.cards),
                    reverse=True)
         return cls(bettor, afe.street, afe.pot_before_bet, afe.is_raise,

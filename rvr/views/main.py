@@ -18,7 +18,7 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 
-# pylint:disable=R0911,R0912
+# pylint:disable=R0911,R0912,R0914
 
 def is_authenticated():
     """
@@ -567,28 +567,13 @@ def _finished_game(game, gameid):
         game_details=game.game_details, history=history, is_running=False,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
-@APP.route('/game', methods=['GET', 'POST'])
-@AUTH.required
-def game_page():
+def authenticated_game_page(gameid):
     """
-    User's view of the specified game
+    Game page when user is not authenticated (i.e. the public view)
     """
-    # TODO: 2: every position should have a name
-    # TODO: 3: chat
-    # TODO: 1: make analysis and finished game available unauthenticated
-    # TODO: 1: (separate out finished game from this)
     alt = ensure_user()
     if alt:
         return alt
-    gameid = request.args.get('gameid', None)
-    if gameid is None:
-        flash("Invalid game ID.")
-        return redirect(url_for('error_page'))
-    try:
-        gameid = int(gameid)
-    except ValueError:
-        flash("Invalid game ID.")
-        return redirect(url_for('error_page'))
     userid = session['userid']
 
     api = API()
@@ -607,8 +592,51 @@ def game_page():
     else:
         return _running_game(response, gameid, userid, api)
 
+def unauthenticated_game_page(gameid):
+    """
+    Game page when user is authenticated (i.e. the private view)
+    """
+    api = API()
+    response = api.get_public_game(gameid)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+            msg = "Invalid game ID."
+        else:
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
+        flash(msg)
+        return redirect(url_for('error_page'))
+    
+    if response.is_finished():
+        return _finished_game(response, gameid)
+    else:
+        return _running_game(response, gameid, None, api)
+
+@APP.route('/game', methods=['GET', 'POST'])
+def game_page():
+    """
+    View of the specified game, authentication-aware
+    """
+    # TODO: 2: every position should have a name
+    # TODO: 3: chat
+    # TODO: 0: make analysis and finished game available unauthenticated
+    # TODO: 0: then add Facebook, Reddit, Twitter links from the page
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        flash("Invalid game ID.")
+        return redirect(url_for('error_page'))
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        flash("Invalid game ID.")
+        return redirect(url_for('error_page'))
+
+    if is_authenticated():
+        return authenticated_game_page(gameid)
+    else:
+        return unauthenticated_game_page(gameid)        
+
 @APP.route('/analysis', methods=['GET'])
-@AUTH.required
 def analysis_page():
     """
     Analysis of a particular hand history item.
@@ -666,13 +694,18 @@ def analysis_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    # TODO: 0: have a status column: "good bluff" / "bad bluff" / "semibluff"
-    # TODO: 0: (bad bluff is on river, semibluff is on other streets)
+    items_aggressive = [i for i in reversed(aife.items) if i.is_aggressive]
+    items_passive = [i for i in aife.items if i.is_passive]
+    items_fold = [i for i in aife.items if i.is_fold]
+    # Could also have a status column or popover or similar:
+    # "good bluff" = +EV
+    # "bad bluff" = -EV on river
+    # "possible semibluff" = -EV on river
     return render_template('web/analysis.html', gameid=gameid,
         street_text=street_text, screenname=item.user.screenname,
         action_text=action_text,
-        items_aggressive=[i for i in reversed(aife.items) if i.is_aggressive],
-        items_passive=[i for i in aife.items if i.is_passive],
-        items_fold=[i for i in aife.items if i.is_fold],
+        items_aggressive=items_aggressive,
+        items_passive=items_passive,
+        items_fold=items_fold,
         is_raise=aife.is_raise, is_check=aife.is_check,
         navbar_items=navbar_items, is_logged_in=is_logged_in())

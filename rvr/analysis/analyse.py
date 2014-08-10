@@ -15,7 +15,7 @@ from rvr.poker.cards import Card, RIVER
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
-# TODO: 0: unit tests for analysis; i.e. that the analysis is correct
+# TODO: 1: unit tests for analysis; i.e. that the analysis is correct
 # This is quite important, because coming back to it later, finding that it's
 # subtly wrong, and then having to tell everyone that would be quite bad.
 

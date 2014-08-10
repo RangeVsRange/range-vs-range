@@ -103,7 +103,6 @@ def _game_finished(recipient, screenname, identity, game):
     """
     Lets recipient know their game has finished and analysis is ready.
     """
-    # TODO: 1: template for game finished / analysis ready
     msg = Message("Analysis for Game %d on Range vs. Range" %
                   (game.gameid,))
     msg.add_recipient(recipient)
