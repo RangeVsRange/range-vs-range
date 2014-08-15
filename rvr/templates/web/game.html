@@ -1,5 +1,14 @@
 {% extends "web/base.html" %}
 
+{% block metas %}
+{{super()}}
+<meta property="og:title" content="{{title}} - Range vs. Range"/>
+<meta property="og:url" content="{{request.url}}"/>
+<meta property="og:image" content="{{url_for('static', filename='social/RvR.png')}}"/>
+<meta property="og:site_name" content="Range vs. Range"/>
+<meta property="og:description" content="History and analysis of {{title}} on Range vs. Range"/>
+{% endblock %}
+
 {% block scripts %}
 {{super()}}
 <script type=text/javascript>
@@ -179,6 +188,8 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 </table>
 {% endif %}
 </div>
+
+{% if not is_running %}{{ share_buttons() }}{% endif %}
 
 </div> <!-- .tab-content -->
 

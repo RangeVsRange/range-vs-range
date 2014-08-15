@@ -58,6 +58,28 @@
 {% endwith %}
 {% endmacro %}
 
+{% macro share_buttons() %}
+{# <div class="fb-share-button" data-href="{{request.url}}" data-type="box"></div> #}
+{# <a href="http://www.reddit.com/submit" onclick="window.location = 'http://www.reddit.com/submit?url=' + encodeURIComponent(window.location); return false"> <img src="http://www.reddit.com/static/spreddit7.gif" alt="submit to reddit" border="0" /> </a> #}
+{# <a target="_blank" href="http://www.facebook.com/sharer/sharer.php?u={{request.url|e}}"><img height=40 width=40 src="{{url_for('static', filename='social/fb_icon_325x325.png')}}"></a> #}
+{# <a target="_blank" href="http://www.reddit.com/submit?url={{request.url|e}}&title={{(title + " - Range vs. Range")|urlencode}}"><img height=40 src="{{url_for('static', filename='social/reddit-alien.svg')}}"></a> #}
+<hr>
+Share this page:
+<!-- AddToAny BEGIN http://www.addtoany.com/buttons/for/website -->
+<div class="a2a_kit a2a_kit_size_32 a2a_default_style">
+<a class="a2a_dd" href="http://www.addtoany.com/share_save"></a>
+<a class="a2a_button_facebook"></a>
+<a class="a2a_button_twitter"></a>
+<a class="a2a_button_google_plus"></a>
+</div>
+<script type="text/javascript">
+var a2a_config = a2a_config || {};
+a2a_config.prioritize = ["facebook", "twitter", "reddit", "google_plus"];
+</script>
+<script type="text/javascript" src="//static.addtoany.com/menu/page.js"></script>
+<!-- AddToAny END -->
+{% endmacro %}
+
 {% block scripts %}
 {{super()}}
 <script>
@@ -71,5 +93,24 @@
     e.src='//www.google-analytics.com/analytics.js';
     r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
     ga('create','UA-51322840-1');ga('send','pageview');
+</script>
+
+<div id="fb-root"></div>
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '1538701496358104',
+      xfbml      : true,
+      version    : 'v2.0'
+    });
+  };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "//connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
 </script>
 {% endblock %}

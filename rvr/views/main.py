@@ -619,8 +619,6 @@ def game_page():
     """
     # TODO: 2: every position should have a name
     # TODO: 3: chat
-    # TODO: 0: make analysis and finished game available unauthenticated
-    # TODO: 0: then add Facebook, Reddit, Twitter links from the page
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
