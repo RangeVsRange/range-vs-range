@@ -560,11 +560,13 @@ def _finished_game(game, gameid):
     """
     title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history)
+    analyses = game.analysis.keys() 
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/game.html', title=title,
-        game_details=game.game_details, history=history, is_running=False,
+        game_details=game.game_details, history=history, analyses=analyses,
+        is_running=False,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 def authenticated_game_page(gameid):
@@ -619,10 +621,6 @@ def game_page():
     """
     # TODO: 2: every position should have a name
     # TODO: 3: chat
-    # TODO: 0: I got lots of emails saying analysis was ready suddenly - WHY?
-    # Because the sends emails even when analysis isn't performed.
-    # TODO: 1: Game 55 needs its analyse button refresh because the bet got
-    #   called by the first of two players (so no fold equity analysis).
     # TODO: 1: the prod DB needs to be rebuilt:
     # - dump out
     # - delete rvr.db

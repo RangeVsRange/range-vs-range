@@ -862,10 +862,13 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid == None).all()
         for game in games:
-            if not already_analysed(self.session, game):                
+            if not already_analysed(self.session, game):
                 replayer = AnalysisReplayer(self.session, game)
                 replayer.analyse()
-                notify_finished(game)
+                if already_analysed(self.session, game):
+                    # Don't tell them if there's no analysis!
+                    logging.debug("gameid %d, notifying", game.gameid)
+                    notify_finished(game)
 
     @api
     def run_pending_analysis(self):
