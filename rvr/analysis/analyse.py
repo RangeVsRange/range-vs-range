@@ -39,7 +39,7 @@ class FoldEquityAccumulator(object):
     def __init__(self, gameid, order, street, board, bettor, range_action,
                  raise_total, pot_before_bet, bet_cost,
                  pot_if_called, potential_folders):
-        logging.debug("gameid %d, FEA, order %d, initialising",
+        logging.debug("gameid %d, FEA %d, initialising",
                       gameid, order)
         self.gameid = gameid
         self.order = order
@@ -60,8 +60,8 @@ class FoldEquityAccumulator(object):
         
         Returns True if this fea is complete.
         """
-        logging.debug("gameid %d, FEA, adding folder: userid %d",
-                      self.gameid, ghra.userid)
+        logging.debug("gameid %d, FEA %d, adding folder: userid %d",
+                      self.gameid, self.order, ghra.userid)
         self.potential_folders.remove(ghra.userid)
         fold_range = HandRange(ghra.fold_range)
         pas = HandRange(ghra.passive_range)
@@ -123,7 +123,8 @@ class FoldEquityAccumulator(object):
         """
         Assuming complete, return an AnalysisFoldEquity
         """
-        logging.debug("gameid %d, FEA, calculating...", self.gameid)
+        logging.debug("gameid %d, FEA %d, calculating...", self.gameid,
+                      self.order)
         assert len(self.potential_folders) == 0
         afe = self._create_afe()
         session.add(afe)
@@ -139,7 +140,7 @@ class FoldEquityAccumulator(object):
                 .generate_options_unweighted(self.board):
             afei = self._create_afei(combo, is_fol=True)
             session.add(afei)
-        logging.debug("gameid %d, FEA, finalised", self.gameid)
+        logging.debug("gameid %d, FEA %d, finalised", self.gameid, self.order)
         return afe
         # TODO: 3: need a supplementary table for individual folders
         # (to store userid, fold_ratio combos, in order, for later display)
@@ -186,6 +187,9 @@ class AnalysisReplayer(object):
             self.pot += item.call_cost
             self.contrib[item.userid] += item.call_cost
             self.stacks[item.userid] -= item.call_cost
+            if self.fea is not None:
+                logging.debug("gameid %d, FEA %d, canceling",
+                              self.fea.gameid, self.fea.order)
             self.fea = None
             self.ranges[item.userid] = self.prev_range_action.passive_range
         if item.is_aggressive:

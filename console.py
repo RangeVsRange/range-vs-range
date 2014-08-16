@@ -9,7 +9,7 @@ import logging
 from rvr.core.admin import AdminCmd
 from rvr.mail.notifications import NOTIFICATION_SETTINGS
 from rvr.app import APP
-from rvr.local_settings import _SERVER_NAME
+from rvr import local_settings
 from rvr.views import main, ajax, range_editor  # @UnusedImport pylint:disable=W0611,C0301
 import sys
 
@@ -17,10 +17,10 @@ logging.basicConfig(format="%(asctime)s: %(message)s",
                     datefmt='%Y-%m-%d %H:%M:%S')
 logging.root.setLevel(logging.DEBUG)
 
-APP.SERVER_NAME = _SERVER_NAME
+APP.SERVER_NAME = local_settings._SERVER_NAME
 
 with APP.app_context():
-    NOTIFICATION_SETTINGS.suppress_email = False
+    NOTIFICATION_SETTINGS.suppress_email = local_settings.SUPPRESS_EMAIL
     NOTIFICATION_SETTINGS.async_email = False
     
     CMD = AdminCmd()

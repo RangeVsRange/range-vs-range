@@ -619,6 +619,19 @@ def game_page():
     """
     # TODO: 2: every position should have a name
     # TODO: 3: chat
+    # TODO: 0: I got lots of emails saying analysis was ready suddenly - WHY?
+    # Because the sends emails even when analysis isn't performed.
+    # TODO: 1: Game 55 needs its analyse button refresh because the bet got
+    #   called by the first of two players (so no fold equity analysis).
+    # TODO: 1: the prod DB needs to be rebuilt:
+    # - dump out
+    # - delete rvr.db
+    # - createdb
+    # - dump in
+    # - initialise
+    # - suppress email
+    # - analyse
+    # - unsuppress email
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
