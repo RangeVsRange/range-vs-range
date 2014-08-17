@@ -35,7 +35,7 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout
 from rvr.db.creation import SESSION
 
-# TODO: 1: support dumping of analysis
+# TODO: 1: support dumping of analysis, combos
 
 #pylint:disable=C0103
 

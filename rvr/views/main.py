@@ -619,8 +619,8 @@ def game_page():
     """
     View of the specified game, authentication-aware
     """
-    # TODO: 2: every position should have a name
-    # TODO: 3: chat
+    # TODO: 3: every position should have a name
+    # TODO: 2: chat
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")

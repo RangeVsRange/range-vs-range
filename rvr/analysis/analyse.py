@@ -11,13 +11,10 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem
 from rvr.poker.handrange import HandRange
-from rvr.poker.cards import Card, RIVER
+from rvr.poker.cards import Card, RIVER, PREFLOP
+import unittest
 
 # pylint:disable=R0902,R0913,R0914,R0903
-
-# TODO: 1: unit tests for analysis; i.e. that the analysis is correct
-# This is quite important, because coming back to it later, finding that it's
-# subtly wrong, and then having to tell everyone that would be quite bad.
 
 def _range_desc_to_size(range_description):
     """
@@ -107,7 +104,7 @@ class FoldEquityAccumulator(object):
                 self.board + list(combo)))
             folder_fold_ratio = 1.0 * fold_size / (fold_size + nonfold_size)
             afei.fold_ratio *= folder_fold_ratio 
-            # product of everyone's fold ratios
+            # product of everyone's fold ratios = how often we take it down
         nonfold_ratio = 1.0 - afei.fold_ratio
         afei.immediate_result = afei.fold_ratio * self.pot_before_bet -  \
             nonfold_ratio * self.bet_cost
@@ -268,3 +265,176 @@ class AnalysisReplayer(object):
         self.remaining_userids = [rgp.userid for rgp in self.game.rgps]
         for item in child_items:
             self.process_child_item(item)
+
+class Test(unittest.TestCase):
+    """
+    Unit test class
+    """
+    # pylint:disable=W0212,C0103,R0904
+    def test_create_afei_one_folder_bet(self):
+        """ Test _create_afei for a bet against one player"""
+        # bet 10 on a pot of 10
+        # unprofitable bluff
+        fea = FoldEquityAccumulator(
+            gameid=0,
+            order=0,
+            street=PREFLOP,
+            board=[],
+            bettor=0,
+            range_action=None,
+            raise_total=10,
+            pot_before_bet=10,
+            bet_cost=10,
+            pot_if_called=30,
+            potential_folders=[])
+        fold_range = HandRange("KK")
+        nonfold_range = HandRange("AA")
+        fea.folds.append((1, fold_range, nonfold_range))
+        afei = fea._create_afei(combo=Card.many_from_text("KsQh"), is_agg=True)
+        self.assertAlmostEqual(afei.fold_ratio, 1.0 / 3.0)
+        self.assertAlmostEqual(afei.immediate_result,
+            1.0 / 3.0 * 10.0 + (2.0 / 3.0) * (-10))
+        self.assertAlmostEqual(afei.semibluff_ev, 5.0)
+        self.assertAlmostEqual(afei.semibluff_equity, 5.0 / 30.0)
+        
+    def test_create_afei_one_folder_raise(self):
+        """ Test _create_afei for a raise against one player"""
+        # raise from 10 to 30 on an original pot of 10
+        # profitable bluff
+        fea = FoldEquityAccumulator(
+            gameid=0,
+            order=0,
+            street=PREFLOP,
+            board=[],
+            bettor=0,
+            range_action=None,
+            raise_total=30,
+            pot_before_bet=20,
+            bet_cost=30,
+            pot_if_called=70,
+            potential_folders=[])
+        fold_range = HandRange("KK-JJ")
+        nonfold_range = HandRange("AA")
+        fea.folds.append((1, fold_range, nonfold_range))
+        afei = fea._create_afei(combo=Card.many_from_text("KsQh"), is_agg=True)
+        self.assertAlmostEqual(afei.fold_ratio, 2.0 / 3.0)
+        self.assertAlmostEqual(afei.immediate_result,
+            2.0 / 3.0 * 20.0 + (1.0 / 3.0) * (-30.0))  # 3.33...
+        self.assertAlmostEqual(afei.semibluff_ev, -10.0)
+        self.assertAlmostEqual(afei.semibluff_equity, -10.0 / 70.0)
+
+    def test_create_afei_one_folder_reraise(self):
+        """ Test _create_afei for a reraise against one player"""
+        # raise from 30 to 50 on an original pot of 10
+        # unprofitable bluff      
+        fea = FoldEquityAccumulator(
+            gameid=0,
+            order=0,
+            street=PREFLOP,
+            board=[],
+            bettor=0,
+            range_action=None,
+            raise_total=50,
+            pot_before_bet=50,
+            bet_cost=40,
+            pot_if_called=110,
+            potential_folders=[])
+        fold_range = HandRange("QQ")
+        nonfold_range = HandRange("AA-KK")
+        fea.folds.append((1, fold_range, nonfold_range))
+        afei = fea._create_afei(combo=Card.many_from_text("KsQh"), is_agg=True)
+        self.assertAlmostEqual(afei.fold_ratio, 1.0 / 4.0)
+        self.assertAlmostEqual(afei.immediate_result,
+            1.0 / 4.0 * 50.0 + (3.0 / 4.0) * (-40.0))  # -17.5
+        self.assertAlmostEqual(afei.semibluff_ev, 4.0 / 3.0 * 17.5)
+        self.assertAlmostEqual(afei.semibluff_equity, 4.0 / 3.0 * 17.5 / 110.0)
+    
+    def test_create_afei_two_folders_bet(self):
+        """ Test _create_afei for a bet against two players"""
+        # bet 10 on a pot of 10
+        # profitable bluff
+        fea = FoldEquityAccumulator(
+            gameid=0,
+            order=0,
+            street=RIVER,
+            board=[],
+            bettor=0,
+            range_action=None,
+            raise_total=10,
+            pot_before_bet=10,
+            bet_cost=10,
+            pot_if_called=30,
+            potential_folders=[])
+        fold_range = HandRange("KK")
+        nonfold_range = HandRange("AA")
+        fea.folds.append((1, fold_range, nonfold_range))
+        fold_range = HandRange("KK")
+        nonfold_range = HandRange("AA")
+        fea.folds.append((1, fold_range, nonfold_range))        
+        afei = fea._create_afei(combo=Card.many_from_text("AsQh"), is_agg=True)
+        self.assertAlmostEqual(afei.fold_ratio, 4.0 / 9.0)
+        self.assertAlmostEqual(afei.immediate_result,
+            4.0 / 9.0 * 10.0 + (5.0 / 9.0) * (-10))
+        self.assertEqual(afei.semibluff_ev, None)
+        self.assertEqual(afei.semibluff_equity, None)
+    
+    def test_create_afei_two_folders_raise(self):
+        """ Test _create_afei for a raise against two players"""
+        # raise from 10 to 30 on an original pot of 10
+        # unprofitable bluff
+        fea = FoldEquityAccumulator(
+            gameid=0,
+            order=0,
+            street=RIVER,
+            board=[],
+            bettor=0,
+            range_action=None,
+            raise_total=30,
+            pot_before_bet=20,
+            bet_cost=30,
+            pot_if_called=70,
+            potential_folders=[])
+        fold_range = HandRange("KK")
+        nonfold_range = HandRange("AA")
+        fea.folds.append((1, fold_range, nonfold_range))  # folds 2/3
+        fold_range = HandRange("QQ")
+        nonfold_range = HandRange("KK+")
+        fea.folds.append((1, fold_range, nonfold_range))  # folds 1/4
+        afei = fea._create_afei(combo=Card.many_from_text("AsQh"), is_agg=True)
+        self.assertAlmostEqual(afei.fold_ratio, 1.0 / 6.0)
+        self.assertAlmostEqual(afei.immediate_result,
+            1.0 / 6.0 * 20.0 + (5.0 / 6.0) * (-30))  # -21.66...
+        self.assertAlmostEqual(afei.semibluff_ev, None)
+        self.assertAlmostEqual(afei.semibluff_equity, None)
+    
+    def test_create_afei_two_fodlers_reraise(self):
+        """ Test _create_afei for a reraise against two players"""
+        # raise from 30 to 50 on an original pot of 10
+        # profitable bluff
+        fea = FoldEquityAccumulator(
+            gameid=0,
+            order=0,
+            street=RIVER,
+            board=[],
+            bettor=0,
+            range_action=None,
+            raise_total=50,
+            pot_before_bet=50,
+            bet_cost=50,
+            pot_if_called=120,  # assumes called by the raiser, not the bettor
+            potential_folders=[])
+        fold_range = HandRange("KK")
+        nonfold_range = HandRange("AA")
+        fea.folds.append((1, fold_range, nonfold_range))  # folds 2/3
+        fold_range = HandRange("KK-JJ")
+        nonfold_range = HandRange("AA")
+        fea.folds.append((1, fold_range, nonfold_range))  # folds 5/6
+        afei = fea._create_afei(combo=Card.many_from_text("AsQh"), is_agg=True)
+        self.assertAlmostEqual(afei.fold_ratio, 10.0 / 18.0)
+        self.assertAlmostEqual(afei.immediate_result,
+            10.0 / 18.0 * 50.0 + 8.0 / 18.0 * (-50.0))  # 5.55...
+        self.assertAlmostEqual(afei.semibluff_ev, None)
+        self.assertAlmostEqual(afei.semibluff_equity, None)
+
+if __name__ == '__main__':
+    unittest.main()
