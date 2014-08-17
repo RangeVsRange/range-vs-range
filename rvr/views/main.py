@@ -621,15 +621,6 @@ def game_page():
     """
     # TODO: 2: every position should have a name
     # TODO: 3: chat
-    # TODO: 1: the prod DB needs to be rebuilt:
-    # - dump out
-    # - delete rvr.db
-    # - createdb
-    # - dump in
-    # - initialise
-    # - suppress email
-    # - analyse
-    # - unsuppress email
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")

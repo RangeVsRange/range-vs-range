@@ -17,7 +17,7 @@ logging.basicConfig(format="%(asctime)s: %(message)s",
                     datefmt='%Y-%m-%d %H:%M:%S')
 logging.root.setLevel(logging.DEBUG)
 
-APP.SERVER_NAME = local_settings._SERVER_NAME
+APP.SERVER_NAME = local_settings.SERVER_NAME_
 
 with APP.app_context():
     NOTIFICATION_SETTINGS.suppress_email = local_settings.SUPPRESS_EMAIL
