@@ -365,7 +365,6 @@ class GameHistoryTimeout(BASE):
 # Record equity payments against hand history items - deals, range actions, etc.
 
 # TODO: 3: strategic analysis
-# everything written to the database must be linked to a hand history row
 # - fold equity analysis row (might be semibluff EV, or immediate profit)
 # - profitable float / bet (linked to call, and bet)
 # - profitable float / raise (linked to call, and raise)

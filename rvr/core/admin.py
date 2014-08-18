@@ -17,6 +17,16 @@ class AdminCmd(Cmd):
     def __init__(self):
         Cmd.__init__(self)
         self.api = API()
+        
+    def do_recreate_timeouts(self, _details):
+        """
+        Recreate timeouts that were accidentally lost via dump
+        """
+        # TODO: 0: They could be (somewhat) manually reconstructed
+        # for each game:
+        #   gather all hand history items
+        #   look for a gap
+        #   fill the gap with a timeout
     
     def do_createdb(self, _details):
         """
@@ -284,6 +294,18 @@ class AdminCmd(Cmd):
     def do_dump(self, params):
         """
         dump { out | in }
+        
+        dump out pickles the database to db.pkl
+        dump in unpickles it
+        
+        To restore a database from a db.pkl file:
+        1. delete the database file (rvr.db)
+        2. "createdb"
+        3. "dump in"
+        4. "initialise"
+        
+        The "initiialise" does things like refreshing open games, because open
+        games are not dumped out by "dump out".
         """
         filename = 'db.pkl'
         if params == 'out':

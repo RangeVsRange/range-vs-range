@@ -27,17 +27,51 @@ At deployment time:
 - in production:
   - backup the old database
   - copy in the new database
+- if this file was doing special things to read dump files from older versions,
+  update it to be correct
 """
 import pickle
 from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     OpenGameParticipant, RunningGame, RunningGameParticipant, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
-    GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout
+    GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
+    AnalysisFoldEquity, AnalysisFoldEquityItem
 from rvr.db.creation import SESSION
 
-# TODO: 1: support dumping of analysis, combos
-
 #pylint:disable=C0103
+
+dumpable_tables = [
+    User,
+    Situation,
+    SituationPlayer,
+    OpenGame,
+    OpenGameParticipant,
+    RunningGame,
+    RunningGameParticipant,
+    GameHistoryBase,
+    GameHistoryUserRange,
+    GameHistoryActionResult,
+    GameHistoryRangeAction,
+    GameHistoryBoard,
+    GameHistoryTimeout,
+    RangeItem,
+    AnalysisFoldEquity,
+    AnalysisFoldEquityItem]
+
+def read_range_items(session):
+    """ Read RangeItem table from DB into memory """
+    range_items = session.query(RangeItem).all()
+    return [(r.higher_card,
+             r.lower_card)
+            for r in range_items]
+    
+def write_range_items(session, range_items):
+    """ Write RangeItem table from memory into DB """
+    for higher_card, lower_card in range_items:
+        range_item = RangeItem()
+        session.add(range_item)
+        range_item.higher_card = higher_card
+        range_item.lower_card = lower_card
 
 def read_users(session):
     """ Read User table from DB into memory """
@@ -347,6 +381,71 @@ def write_game_history_timeouts(session, ghts):
         ght.order = order
         ght.userid = userid
 
+def read_analysis_fold_equities(session):
+    """ Read AnalysisFoldEquity table from DB into memory """
+    afes = session.query(AnalysisFoldEquity).all()
+    return [(afe.gameid,
+             afe.order,
+             afe.street,
+             afe.pot_before_bet,
+             afe.is_raise,
+             afe.is_check,
+             afe.bet_cost,
+             afe.raise_total,
+             afe.pot_if_called)
+            for afe in afes]
+
+def write_analysis_fold_equities(session, afes):
+    """ Write AnalysisFoldEquity table from memory into DB """
+    for gameid, order, street, pot_before_bet, is_raise, is_check, bet_cost,  \
+            raise_total, pot_if_called in afes:
+        afe = AnalysisFoldEquity()
+        session.add(afe)
+        afe.gameid = gameid
+        afe.order = order
+        afe.street = street
+        afe.pot_before_bet = pot_before_bet
+        afe.is_raise = is_raise
+        afe.is_check = is_check
+        afe.bet_cost = bet_cost
+        afe.raise_total = raise_total
+        afe.pot_if_called = pot_if_called
+
+def read_analysis_fold_equity_items(session):
+    """ Read AnalysisFoldEquityItem table from DB into memory """
+    afeis = session.query(AnalysisFoldEquityItem).all()
+    return [(afei.gameid,
+             afei.order,
+             afei.higher_card,
+             afei.lower_card,
+             afei.is_aggressive,
+             afei.is_passive,
+             afei.is_fold,
+             afei.fold_ratio,
+             afei.immediate_result,
+             afei.semibluff_ev,
+             afei.semibluff_equity)
+            for afei in afeis]
+
+def write_analysis_fold_equity_items(session, afeis):
+    """ Write AnalysisFoldEquityItem table from memory into DB """
+    for gameid, order, higher_card, lower_card, is_aggressive, is_passive,  \
+            is_fold, fold_ratio, immediate_result, semibluff_ev,  \
+            semibluff_equity in afeis:
+        afei = AnalysisFoldEquityItem()
+        session.add(afei)
+        afei.gameid = gameid
+        afei.order = order
+        afei.higher_card = higher_card
+        afei.lower_card = lower_card
+        afei.is_aggressive = is_aggressive
+        afei.is_passive = is_passive
+        afei.is_fold = is_fold
+        afei.fold_ratio = fold_ratio
+        afei.immediate_result = immediate_result
+        afei.semibluff_ev = semibluff_ev
+        afei.semibluff_equity = semibluff_equity
+
 TABLE_READERS = {User: read_users,
                  Situation: read_situations,
                  SituationPlayer: read_situation_players,
@@ -358,7 +457,11 @@ TABLE_READERS = {User: read_users,
                  GameHistoryUserRange: read_game_history_user_ranges,
                  GameHistoryActionResult: read_game_history_action_results,
                  GameHistoryRangeAction: read_game_history_range_actions,
-                 GameHistoryBoard: read_game_history_boards}
+                 GameHistoryBoard: read_game_history_boards,
+                 GameHistoryTimeout: read_game_history_timeouts,
+                 RangeItem: read_range_items,
+                 AnalysisFoldEquity: read_analysis_fold_equities,
+                 AnalysisFoldEquityItem: read_analysis_fold_equity_items}
 
 TABLE_WRITERS = {User: write_users,
                  Situation: write_situations,
@@ -371,40 +474,22 @@ TABLE_WRITERS = {User: write_users,
                  GameHistoryUserRange: write_game_history_user_ranges,
                  GameHistoryActionResult: write_game_history_action_results,
                  GameHistoryRangeAction: write_game_history_range_actions,
-                 GameHistoryBoard: write_game_history_boards}
+                 GameHistoryBoard: write_game_history_boards,
+                 GameHistoryTimeout: write_game_history_timeouts,
+                 RangeItem: write_range_items,
+                 AnalysisFoldEquity: write_analysis_fold_equities,
+                 AnalysisFoldEquityItem: write_analysis_fold_equity_items}
 
 def read_db():
     """ Read all tables from DB into memory """
     session = SESSION()
     return {table.__tablename__: TABLE_READERS[table](session)
-            for table in [User,
-                          Situation,
-                          SituationPlayer,
-                          OpenGame,
-                          OpenGameParticipant,
-                          RunningGame,
-                          RunningGameParticipant,
-                          GameHistoryBase,
-                          GameHistoryUserRange,
-                          GameHistoryActionResult,
-                          GameHistoryRangeAction,
-                          GameHistoryBoard]}
+            for table in dumpable_tables}
 
 def write_db(data):
     """ Write all tables from memory into DB """
     session = SESSION()
-    for table in [User,
-                  Situation,
-                  SituationPlayer,
-                  OpenGame,
-                  OpenGameParticipant,
-                  RunningGame,
-                  RunningGameParticipant,
-                  GameHistoryBase,
-                  GameHistoryUserRange,
-                  GameHistoryActionResult,
-                  GameHistoryRangeAction,
-                  GameHistoryBoard]:
+    for table in dumpable_tables:
         TABLE_WRITERS[table](session, data[table.__tablename__])
     session.commit()
 
