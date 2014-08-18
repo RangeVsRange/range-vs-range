@@ -9,3 +9,7 @@ local_settings.py
 /openid-store
 /server.cfg
 /db.pkl
+
+.tags
+.tags_sorted_by_file
+.DS_Store
