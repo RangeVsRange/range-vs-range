@@ -30,7 +30,7 @@ SUITS_SELECTED = 's_sel'
 
 POS_TO_SUIT = ['s', 'h', 'd', 'c']  # i.e. s.svg, h.svg, etc.
 
-class ColorMaker(object):  
+class ColorMaker(object):
     """
     Chooses a class for a cell of the range chooser
     """
@@ -44,7 +44,7 @@ class ColorMaker(object):
         self.opt_fol = set(opt_fol)
         self.opt_pas = set(opt_pas)
         self.opt_agg = set(opt_agg)
-    
+
     def get_color(self, options):
         """
         Hidden when no options in original
@@ -172,7 +172,7 @@ def get_selected_options(original, board):
 def safe_hand_range(arg_name, fallback):
     """
     Pull a HandRange object from request arg <arg_name>.
-    
+
     If there is a problem, return HandRange(fallback).
     """
     value = request.args.get(arg_name, fallback, type=str)
@@ -184,7 +184,7 @@ def safe_hand_range(arg_name, fallback):
 def safe_hand_range_form(field_name, fallback):
     """
     Pull a HandRange object from request form field <field_name>.
-    
+
     If there is a problem, return HandRange(fallback).
     """
     value = request.form.get(field_name, fallback, type=str)
@@ -196,7 +196,7 @@ def safe_hand_range_form(field_name, fallback):
 def safe_board(arg_name):
     """
     Pull a board (list of Card) from request arg <arg_name>.
-    
+
     If there is a problem, return an empty list.
     """
     value = request.args.get(arg_name, '', type=str)
@@ -208,7 +208,7 @@ def safe_board(arg_name):
 def safe_board_form(field_name):
     """
     Pull a board (list of Card) from request form field <field_name>.
-    
+
     If there is a problem, return an empty list.
     """
     value = request.form.get(field_name, '', type=str)
@@ -264,7 +264,7 @@ def rank_hover_part(name, options):
 def rank_hover(row, col, color_maker, board, is_raised, is_can_check):
     """
     Hover text for this rank combo.
-    
+
     Something like "calling As8s, Ah8h; folding Ad8d".
     """
     txt = rank_text(row, col)
@@ -284,7 +284,7 @@ def suit_text(row, col, is_left):
 
 def suit_id(row, col, table):
     """
-    Give the appropriate id for this suit combo 
+    Give the appropriate id for this suit combo
     """
     if table == SUITED:
         return "s_%s" % (POS_TO_SUIT[row])
@@ -372,7 +372,7 @@ def make_suited_table():
               'id': suit_id(row, col, SUITED),
               'class': suit_class(row, col, SUITED),
               'hover': suit_hover(row, col, SUITED)}
-             for col in range(4)] for row in range(4)] 
+             for col in range(4)] for row in range(4)]
 
 def make_pair_table():
     """
@@ -384,7 +384,7 @@ def make_pair_table():
               'class': suit_class(row, col, PAIR),
               'hover': suit_hover(row, col, PAIR)}
              for col in range(4)] for row in range(3)]
-    
+
 def make_offsuit_table():
     """
     Details for display of the offsuit table
@@ -398,6 +398,7 @@ def make_offsuit_table():
 
 NEXT_MAP = next_map()
 
+@APP.route('/range-editor', methods=['GET'])
 def range_editor_get():
     """
     An HTML range editor!
@@ -469,6 +470,7 @@ def range_editor_get():
         raised=raised, can_check=can_check, can_raise=can_raise,
         min_raise=min_raise, max_raise=max_raise)
 
+@APP.route('/range-editor', methods=['POST'])
 def range_editor_post():
     """
     Straight post-response, not using post-redirect-get because PythonAnywhere
@@ -477,12 +479,13 @@ def range_editor_post():
     a UUID as an index in the get parameter (to avoid issues with multiple
     tabs).
     """
+    template_args = get_request_args(request.form)
     raised = request.form.get('raised', '')
     can_check = request.form.get('can_check', '')
     can_raise = request.form.get('can_raise', 'true')
     min_raise = request.form.get('min_raise', '0')
     max_raise = request.form.get('max_raise', '200')
-    rng_original = request.form.get('rng_original', ANYTHING)    
+    rng_original = request.form.get('rng_original', ANYTHING)
     board_raw = request.form.get('board', '')
     board = safe_board_form('board')
     images = card_names(board_raw)
@@ -560,19 +563,58 @@ def range_editor_post():
         raised=raised, can_check=can_check, can_raise=can_raise,
         min_raise=min_raise, max_raise=max_raise)
 
-@APP.route('/range-editor', methods=['GET', 'POST'])
-def range_editor():
-    """
-    Combined these here (cf. decorating one with 'GET' and one with 'POST')
-    because Yawe suggested it was the more normal way. It didn't fix his 405
-    error though :(
-    
-    Note: I believe the 405 error is caused by excessively long (~3000 bytes)
-    referer URIs. 
-    """
-    # TODO: REVISIT: see if we can go back to decorating each method
-    # and not need this one
-    if request.method == 'GET':
-        return range_editor_get()
+def parse_request_args(request_args):
+    args = {}
+    args['embedded'] = request_args.get('embedded', 'false')
+    args['raised'] = request_args.get('raised', '')
+    args['can_check'] = request_args.get('can_check', '')
+    args['can_raise'] = request_args.get('can_raise', 'true')
+    args['min_raise'] = request_args.get('min_raise', '0')
+    args['max_raise'] = request_args.get('max_raise', '200')
+    args['rng_original'] = safe_hand_range('rng_original', ANYTHING)
+    args['rng_fold'] = safe_hand_range('rng_fold', NOTHING)
+    args['rng_passive'] = safe_hand_range('rng_passive', NOTHING)
+    args['rng_aggressive'] = safe_hand_range('rng_aggressive', NOTHING)
+    args['l_una'] = request_args.get('l_una', '') == 'checked'
+    args['l_fol'] = request_args.get('l_fol', 'checked') == 'checked'
+    args['l_pas'] = request_args.get('l_pas', 'checked') == 'checked'
+    args['l_agg'] = request_args.get('l_agg', 'checked') == 'checked'
+    args['board_raw'] = request_args.get('board', '')
+
+    return args
+
+def get_template_args(args):
+    updated_args = {}
+    updated_args['images'] = card_names(board_raw)
+    board = safe_board_form('board')
+    opt_ori = rng_original.generate_options_unweighted(board)
+    opt_fol = rng_fold.generate_options_unweighted(board)
+    opt_pas = rng_passive.generate_options_unweighted(board)
+    opt_agg = rng_aggressive.generate_options_unweighted(board)
+    opt_una = list(set(opt_ori) - set(opt_fol) - set(opt_pas) - set(opt_agg))
+    updated_args['rng_unassigned'] = HandRange(unweighted_options_to_description(opt_una))
+    color_maker = ColorMaker(opt_ori=opt_ori, opt_una=opt_una, opt_fol=opt_fol,
+                             opt_pas=opt_pas, opt_agg=opt_agg)
+    if len(opt_ori) != 0:
+        pct_unassigned = 100.0 * len(opt_una) / len(opt_ori)
+        pct_fold = 100.0 * len(opt_fol) / len(opt_ori)
+        pct_passive = 100.0 * len(opt_pas) / len(opt_ori)
+        pct_aggressive = 100.0 * len(opt_agg) / len(opt_ori)
     else:
-        return range_editor_post()
+        pct_unassigned = pct_fold = pct_passive = pct_aggressive = 0.0
+    updated_args['rank_table'] = make_rank_table(color_maker, board, can_check=can_check,
+                                 is_raised=args['raised'])
+    updated_args['suited_table'] = make_suited_table()
+    updated_args['pair_table'] = make_pair_table()
+    updated_args['offsuit_table'] = make_offsuit_table()
+    updated_args['hidden_fields'] = [("raised", args['raised']),
+                     ("can_check", args['can_check']),
+                     ("can_raise", args['can_raise']),
+                     ("min_raise", args['min_raise']),
+                     ("max_raise", args['max_raise']),
+                     ("board", args['board_raw']),
+                     ("rng_original", args['rng_original'].description),
+                     ("rng_unassigned", args['rng_unassigned'].description),
+                     ("rng_fold", args['rng_fold'].description),
+                     ("rng_passive", args['rng_passive'].description),
+                     ("rng_aggressive", args['rng_aggressive'].description)]
