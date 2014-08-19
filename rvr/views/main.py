@@ -34,7 +34,11 @@ def is_logged_in():
 
 def ensure_user():
     """
-    Commit user to database and determine userid
+    Commit user to database and determine userid.
+    
+    May return a complete web response (e.g. in case of error).
+    
+    May flash messages.
     """
     # TODO: REVISIT: automagically hook this into AUTH.required 
     if not is_authenticated():
@@ -97,9 +101,9 @@ def change_screenname():
     Without the user being logged in, give the user the option to change their
     screenname from what Google OpenID gave us.
     """
-    alt = ensure_user()
-    if alt:
-        return alt
+    alternate_response = ensure_user()
+    if alternate_response:
+        return alternate_response
     form = ChangeForm()
     if form.validate_on_submit():
         new_screenname = form.change.data
@@ -215,9 +219,9 @@ def home_page():
     """
     if not is_authenticated():
         return render_template('web/landing.html')
-    alt = ensure_user()
-    if alt:
-        return alt
+    alternate_response = ensure_user()
+    if alternate_response:
+        return alternate_response
     api = API()
     userid = session['userid']
     screenname = session['screenname']
@@ -256,9 +260,9 @@ def join_game():
     """
     Join game, flash status, redirect back to /home
     """
-    alt = ensure_user()
-    if alt:
-        return alt
+    alternate_response = ensure_user()
+    if alternate_response:
+        return alternate_response
     api = API()
     gameid = request.args.get('gameid', None)
     if gameid is None:
@@ -299,9 +303,9 @@ def leave_game():
     """
     Leave game, flash status, redirect back to /home
     """
-    alt = ensure_user()
-    if alt:
-        return alt
+    alternate_response = ensure_user()
+    if alternate_response:
+        return alternate_response
     api = API()
     gameid = request.args.get('gameid', None)
     if gameid is None:
@@ -573,9 +577,9 @@ def authenticated_game_page(gameid):
     """
     Game page when user is not authenticated (i.e. the public view)
     """
-    alt = ensure_user()
-    if alt:
-        return alt
+    alternate_response = ensure_user()
+    if alternate_response:
+        return alternate_response
     userid = session['userid']
 
     api = API()
