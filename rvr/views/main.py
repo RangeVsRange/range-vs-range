@@ -625,6 +625,10 @@ def game_page():
     """
     # TODO: 3: every position should have a name
     # TODO: 2: chat
+    # TODO: 1: special url for running game for email to force login
+    # (otherwise if you're not logged in, you go to game page with no way to
+    # play, and it's not obvious it's because you're not logged in.)
+    # Or perhaps flash "You are not logged in" (perhaps not as elegant) 
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -645,6 +649,10 @@ def analysis_page():
     """
     Analysis of a particular hand history item.
     """
+    # TODO: 3: a basic summary of fold equity for the bet on the analysis page
+    # TODO: 3: the range viewer on the analysis page, with each combo's
+    # fold equity as a popover?
+    # TODO: 0: BUG: showing "N/A (a bluff is already successful)" on river
     gameid = request.args.get('gameid', None)
     if gameid is None:
         return error("Invalid game ID.")

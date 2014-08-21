@@ -917,6 +917,44 @@ class API(object):
                 self._timeout(game)
                 count += 1
         return count
+    
+    @api
+    def recreate_timeouts(self):
+        """
+        Temporary function to recreate lost timeout rows.
+        """
+        count = 0
+        subs = [tables.GameHistoryActionResult,
+                tables.GameHistoryBoard,
+                tables.GameHistoryRangeAction,
+                tables.GameHistoryTimeout,
+                tables.GameHistoryUserRange]
+        games = self.session.query(tables.RunningGame).all()
+        for game in games:
+            bases = self.session.query(tables.GameHistoryBase)  \
+                .filter(tables.GameHistoryBase.gameid == game.gameid).all()
+            bases.sort(key=lambda b: b.order)
+            for base in bases:
+                for sub in subs:                        
+                    if self.session.query(sub)  \
+                            .filter(sub.gameid == base.gameid)  \
+                            .filter(sub.order == base.order).all():
+                        break
+                else:
+                    logging.info("recreating timeout gameid %d, order %d",
+                                 base.gameid, base.order)
+                    ghra = self.session.query(tables.GameHistoryRangeAction)  \
+                        .filter(tables.GameHistoryRangeAction.gameid ==
+                                base.gameid)  \
+                        .filter(tables.GameHistoryRangeAction.order ==
+                                base.order + 1).one()
+                    element = tables.GameHistoryTimeout()
+                    self.session.add(element)
+                    element.userid = ghra.userid
+                    element.gameid = base.gameid
+                    element.order = base.order                    
+                    count += 1
+        return count
 
 def _create_hu():
     """

@@ -22,11 +22,11 @@ class AdminCmd(Cmd):
         """
         Recreate timeouts that were accidentally lost via dump
         """
-        # TODO: 0: They could be (somewhat) manually reconstructed
-        # for each game:
-        #   gather all hand history items
-        #   look for a gap
-        #   fill the gap with a timeout
+        result = self.api.recreate_timeouts()
+        if isinstance(result, APIError):
+            print "Error:", result
+        else:
+            print "%d timeouts recreated" % (result,)
     
     def do_createdb(self, _details):
         """

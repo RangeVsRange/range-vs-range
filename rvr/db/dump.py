@@ -490,7 +490,8 @@ def write_db(data):
     """ Write all tables from memory into DB """
     session = SESSION()
     for table in dumpable_tables:
-        TABLE_WRITERS[table](session, data[table.__tablename__])
+        if data.has_key(table.__tablename__):
+            TABLE_WRITERS[table](session, data[table.__tablename__])
     session.commit()
 
 def dump(filename):
