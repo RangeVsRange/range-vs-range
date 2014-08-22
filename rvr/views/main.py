@@ -175,19 +175,6 @@ def log_in():
     """
     Does what /login does, but in a way that I can get a URL for with url_for!
     """
-    # TODO: 0: test the following
-    # game finished
-    # [x] - simple game url
-    # game started
-    #  - relative login url
-    # [x]   - when logged in
-    # [x]   - when not logged in
-    # your turn
-    #  - relative login url
-    # [x]   - when logged in
-    # [x]   - when not logged in
-    # [x]open redirect attempt
-    # [x]login link    
     # TODO: REVISIT: get a relative URL for /login, instead of this.
     req = request.args.get('next', url_for('home_page'))
     nxt = urlparse.urlparse(req)
