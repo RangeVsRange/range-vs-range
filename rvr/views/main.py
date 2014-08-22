@@ -657,7 +657,6 @@ def analysis_page():
     # TODO: 3: a basic summary of fold equity for the bet on the analysis page
     # TODO: 3: the range viewer on the analysis page, with each combo's
     # fold equity as a popover?
-    # TODO: 0: BUG: showing "N/A (a bluff is already successful)" on river
     gameid = request.args.get('gameid', None)
     if gameid is None:
         return error("Invalid game ID.")
@@ -719,7 +718,7 @@ def analysis_page():
     # "bad bluff" = -EV on river
     # "possible semibluff" = -EV on river
     return render_template('web/analysis.html', gameid=gameid,
-        street_text=street_text, screenname=item.user.screenname,
+        screenname=item.user.screenname, street_text=street_text,
         action_text=action_text,
         items_aggressive=items_aggressive,
         items_passive=items_passive,
