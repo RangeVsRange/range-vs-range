@@ -657,6 +657,7 @@ def game_page():
     if is_authenticated():
         return authenticated_game_page(gameid)
     else:
+        flash("You are not logged in. You are viewing this page anonymously.")
         return unauthenticated_game_page(gameid)        
 
 @APP.route('/analysis', methods=['GET'])

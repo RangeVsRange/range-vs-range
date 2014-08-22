@@ -361,8 +361,7 @@ class GameHistoryChat(BASE):
     """
     Player <userid> says <message>.
     """
-    # TODO: 0: Figure out if messing with the order is okay...
-    # ... specifically analysis
+    # TODO: 0: Chat entry (with action, or independent of action?)
     __tablename__ = "game_history_chat"
     
     gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
