@@ -343,9 +343,10 @@ class GameItem(object):
             return MAP_TABLE_DTO[class_].from_history_item(child)
         raise TypeError("Object is not a GameHistoryItem associated object")
     
-    def should_include_for(self, _userid):
+    def should_include_for(self, _userid, _all_userids, _is_finished):
         """
-        Should this item be included in the hand history for user <userid>?
+        Should this item be included in the hand history for user <userid>,
+        in a game with users <all_userids> and finished status <is_finished>?
         """
         # pylint:disable=R0201
         return True
@@ -377,11 +378,11 @@ class GameItemUserRange(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(user_details, item.range_raw)
         
-    def should_include_for(self, userid):
+    def should_include_for(self, userid, _all_userids, is_finished):
         """
         Ranges are only shown to the current user (while the game is running).
         """
-        return self.user.userid == userid
+        return is_finished or self.user.userid == userid
 
 class GameItemRangeAction(GameItem):
     """
@@ -418,12 +419,12 @@ class GameItemRangeAction(GameItem):
             raise_total=item.raise_total)
         return cls(user_details, range_action, item.is_check, item.is_raise)
     
-    def should_include_for(self, userid):
+    def should_include_for(self, userid, _all_userids, is_finished):
         """
         Range actions are only shown to the user who makes them
         (while the game is running)
         """
-        return self.user.userid == userid
+        return is_finished or self.user.userid == userid
     
 class GameItemActionResult(GameItem):
     """
@@ -504,10 +505,10 @@ class GameItemTimeout(GameItem):
 
     def __repr__(self):
         return ("GameItemTimeout(user=%r)") %  \
-            (self.user)
+            (self.user,)
     
     def __str__(self):
-        return "%s has timed out" % (self.user)
+        return "%s has timed out" % (self.user,)
     
     @classmethod
     def from_history_item(cls, item):
@@ -516,6 +517,38 @@ class GameItemTimeout(GameItem):
         """
         user_details = UserDetails.from_user(item.user)
         return cls(user_details)
+    
+class GameItemChat(GameItem):
+    """
+    User chats message.
+    """
+    def __init__(self, user, message):
+        """
+        user is a UserDetails
+        """
+        self.user = user
+        self.message = message
+        
+    def __repr__(self):
+        return "GameItemChat(user=%r, message=%r)" %  \
+            (self.user, self.message)
+    
+    def __str__(self):
+        return "%s chats: %s" % (self.user, self.message)
+    
+    @classmethod
+    def from_history_item(cls, item):
+        """
+        Create from a GameHistoryChat
+        """
+        user_details = UserDetails.from_user(item.user)
+        return cls(user_details, item.message)
+
+    def should_include_for(self, userid, all_userids, _is_finished):
+        """
+        Private to game, even when game is finished
+        """
+        return userid in all_userids
 
 class AnalysisItemFoldEquityItem(object):
     """
@@ -600,7 +633,8 @@ MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryRangeAction: GameItemRangeAction,
                  tables.GameHistoryActionResult: GameItemActionResult,
                  tables.GameHistoryBoard: GameItemBoard,
-                 tables.GameHistoryTimeout: GameItemTimeout}
+                 tables.GameHistoryTimeout: GameItemTimeout,
+                 tables.GameHistoryChat: GameItemChat}
 
 class RunningGameHistory(object):
     """

@@ -35,7 +35,7 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     OpenGameParticipant, RunningGame, RunningGameParticipant, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
-    AnalysisFoldEquity, AnalysisFoldEquityItem
+    AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat
 from rvr.db.creation import SESSION
 
 #pylint:disable=C0103
@@ -54,6 +54,7 @@ dumpable_tables = [
     GameHistoryRangeAction,
     GameHistoryBoard,
     GameHistoryTimeout,
+    GameHistoryChat,
     RangeItem,
     AnalysisFoldEquity,
     AnalysisFoldEquityItem]
@@ -380,6 +381,25 @@ def write_game_history_timeouts(session, ghts):
         ght.gameid = gameid
         ght.order = order
         ght.userid = userid
+        
+def read_game_history_chats(session):
+    """ Read GameHistoryChat table from DB into memory """
+    ghcs = session.query(GameHistoryChat).all()
+    return [(ghc.gameid,
+             ghc.order,
+             ghc.userid,
+             ghc.message)
+            for ghc in ghcs]
+    
+def write_game_history_chats(session, ghcs):
+    """ Write GamehistoryChat table from memory into DB """
+    for gameid, order, userid, message in ghcs:
+        ghc = GameHistoryChat()
+        session.add(ghc)
+        ghc.gameid = gameid
+        ghc.order = order
+        ghc.userid = userid
+        ghc.message = message
 
 def read_analysis_fold_equities(session):
     """ Read AnalysisFoldEquity table from DB into memory """
@@ -459,6 +479,7 @@ TABLE_READERS = {User: read_users,
                  GameHistoryRangeAction: read_game_history_range_actions,
                  GameHistoryBoard: read_game_history_boards,
                  GameHistoryTimeout: read_game_history_timeouts,
+                 GameHistoryChat: read_game_history_chats,
                  RangeItem: read_range_items,
                  AnalysisFoldEquity: read_analysis_fold_equities,
                  AnalysisFoldEquityItem: read_analysis_fold_equity_items}
@@ -476,6 +497,7 @@ TABLE_WRITERS = {User: write_users,
                  GameHistoryRangeAction: write_game_history_range_actions,
                  GameHistoryBoard: write_game_history_boards,
                  GameHistoryTimeout: write_game_history_timeouts,
+                 GameHistoryChat: write_game_history_chats,
                  RangeItem: write_range_items,
                  AnalysisFoldEquity: write_analysis_fold_equities,
                  AnalysisFoldEquityItem: write_analysis_fold_equity_items}

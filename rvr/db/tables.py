@@ -13,6 +13,8 @@ from sqlalchemy.orm.session import object_session
 
 # TODO: REVISIT: do strings need fixed lengths?
 
+MAX_CHAT = 10000
+
 class User(BASE):
     """
     A user of the application.
@@ -354,13 +356,32 @@ class GameHistoryTimeout(BASE):
         "and_(GameHistoryBase.gameid==GameHistoryTimeout.gameid," +  \
         " GameHistoryBase.order==GameHistoryTimeout.order)")
     user = relationship("User")
+    
+class GameHistoryChat(BASE):
+    """
+    Player <userid> says <message>.
+    """
+    # TODO: 0: Figure out if messing with the order is okay...
+    # ... specifically analysis
+    __tablename__ = "game_history_chat"
+    
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_base.order"),
+                   primary_key=True)
+    userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
+    message = Column(String(MAX_CHAT), nullable=False)
+    
+    hh_base = relationship("GameHistoryBase", primaryjoin=  \
+        "and_(GameHistoryBase.gameid==GameHistoryChat.gameid," +  \
+        " GameHistoryBase.order==GameHistoryChat.order)")
+    user = relationship("User")
 
 # TODO: HAND HISTORY: the following hand history items:
 #  - analysis of a fold, bet, call
 #  - equity payment (fold equity, board card equity, etc.)
 #  - showdown equities
 #  - showdown result
-#  - chat
 # Record analysis against specific hand history (range action) items.
 # Record equity payments against hand history items - deals, range actions, etc.
 

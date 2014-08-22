@@ -8,7 +8,7 @@ from rvr.core.api import API, APIError
 from rvr.app import AUTH
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,  \
     GameItemUserRange, GameItemBoard, GameItemActionResult,  \
-    GameItemRangeAction, GameItemTimeout
+    GameItemRangeAction, GameItemTimeout, GameItemChat
 import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
@@ -488,6 +488,14 @@ def _timeout_to_vars(timeout, index):
     return {"screenname": timeout.user.screenname,
             "index": index}
 
+def _chat_to_vars(chat, index):
+    """
+    Summarises a chat.
+    """
+    return {"screenname": chat.user.screenname,
+            "message": chat.message,
+            "index": index}
+
 def _make_history_list(game_history):
     """
     Hand history items provide a basic to-text function. This function adds a
@@ -523,6 +531,8 @@ def _make_history_list(game_history):
             results.append(("BOARD", _board_to_vars(item, index)))
         elif isinstance(item, GameItemTimeout):
             results.append(("TIMEOUT", _timeout_to_vars(item, index)))
+        elif isinstance(item, GameItemChat):
+            results.append(("CHAT", _chat_to_vars(item, index)))
         else:
             logging.debug("unrecognised type of hand history item: %s", item)
             results.append(("UNKNOWN", (str(item),)))

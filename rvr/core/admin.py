@@ -232,6 +232,25 @@ class AdminCmd(Cmd):
         else:
             print "Oops. This isn't right."
             
+    def do_chat(self, details):
+        """
+        chat <gameid> <userid> <message>
+        """
+        params = details.split(None, 2)
+        if len(params) != 3:
+            print "Need exactly 3 parameters."
+            print "For more info: help chat"
+            return
+        gameid = int(params[0])
+        userid = int(params[1])
+        message = params[2]
+        response = self.api.chat(gameid, userid, message)
+        if isinstance(response, APIError):
+            print "Error:", response.description  # pylint:disable=E1101
+            return
+        print "Chatted in game %d, for userid %d, message %r" %  \
+            (gameid, userid, message)
+    
     def do_update(self, _details):
         """
         The kind of updates a background process would normally do. Currently

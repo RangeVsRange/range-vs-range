@@ -23,7 +23,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player, \
     notify_finished
 from rvr.analysis.analyse import AnalysisReplayer, already_analysed
-from rvr.db.tables import AnalysisFoldEquity, RangeItem
+from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT
 import datetime
 
 def exception_mapper(fun):
@@ -102,6 +102,7 @@ class API(object):
     ERR_DELETE_USER_PLAYING = APIError("User is playing")
     ERR_USER_NOT_IN_GAME = APIError("User is not in the specified game")
     ERR_DUPLICATE_SITUATION = APIError("Duplicate situation")
+    ERR_CHAT_TOO_LONG = APIError("Chat too long, max %d chars" % (MAX_CHAT,))
     
     def __init__(self):
         self.session = None  # required for @create_session
@@ -489,12 +490,21 @@ class API(object):
         element.cards = game.board_raw
         self._record_hand_history_item(game, element)
         
-    def _record_timeoout(self, rgp):
+    def _record_timeout(self, rgp):
         """
         Record timeout
         """
         element = tables.GameHistoryTimeout()
         element.user = rgp.user
+        self._record_hand_history_item(rgp.game, element)
+
+    def _record_chat(self, rgp, message):
+        """
+        Record chat message
+        """
+        element = tables.GameHistoryChat()
+        element.user = rgp.user
+        element.message = message
         self._record_hand_history_item(rgp.game, element)
 
     @api
@@ -749,6 +759,34 @@ class API(object):
             return API.ERR_INVALID_RANGES
         result = self._perform_action(game, rgp, range_action, current_options)
         return result
+    
+    @api
+    def chat(self, gameid, userid, message):
+        """
+        User chats message in specified game.
+        """
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.gameid == gameid).all()
+        if not games:
+            return self.ERR_NO_SUCH_RUNNING_GAME
+        game = games[0]
+        
+        # check that they're in the game
+        for rgp_ in game.rgps:
+            if rgp_.userid == userid:
+                rgp = rgp_
+                break
+        else:
+            return self.ERR_USER_NOT_IN_GAME
+        
+        # check that their message is short enough (clobber if not, sorry)
+        if len(message) > MAX_CHAT:
+            logging.debug("chat failing, gameid=%r, userid=%r, message=%r",
+                          gameid, userid, message)
+            return API.ERR_CHAT_TOO_LONG
+        
+        result = self._record_chat(rgp, message)
+        return result
         
     def _get_history_items(self, game, userid=None):
         """
@@ -764,8 +802,10 @@ class API(object):
                                  key=lambda c: c.order)
         child_dtos = [dtos.GameItem.from_game_history_child(child)
                       for child in all_child_items]
+        all_userids = [rgp.userid for rgp in game.rgps]
         return [dto for dto in child_dtos
-                if game.is_finished or dto.should_include_for(userid)]
+                if dto.should_include_for(userid, all_userids,
+                                          game.is_finished)]
 
     def _get_analysis_items(self, game):
         """
@@ -896,7 +936,7 @@ class API(object):
             passive_raw=NOTHING, aggressive_raw=NOTHING, raise_total=0)
         logging.debug("gameid %d, userid %d being timed out", game.gameid,
                       rgp.userid)
-        self._record_timeoout(rgp)
+        self._record_timeout(rgp)
         self._perform_action(game, rgp, range_action, current_options)
 
     @api
@@ -927,7 +967,8 @@ class API(object):
                 tables.GameHistoryBoard,
                 tables.GameHistoryRangeAction,
                 tables.GameHistoryTimeout,
-                tables.GameHistoryUserRange]
+                tables.GameHistoryUserRange,
+                tables.GameHistoryChat]
         games = self.session.query(tables.RunningGame).all()
         for game in games:
             bases = self.session.query(tables.GameHistoryBase)  \
