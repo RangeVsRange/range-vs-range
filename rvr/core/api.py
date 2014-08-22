@@ -1,3 +1,4 @@
+#pylint:disable=R0903,R0904,C0302
 """
 Core API for Range vs. Range backend.
 """
@@ -24,8 +25,6 @@ from rvr.mail.notifications import notify_current_player, notify_first_player, \
 from rvr.analysis.analyse import AnalysisReplayer, already_analysed
 from rvr.db.tables import AnalysisFoldEquity, RangeItem
 import datetime
-
-#pylint:disable=R0903,R0904
 
 def exception_mapper(fun):
     """

@@ -17,6 +17,7 @@ from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
+import urlparse
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -174,8 +175,29 @@ def log_in():
     """
     Does what /login does, but in a way that I can get a URL for with url_for!
     """
+    # TODO: 0: test the following
+    # game finished
+    # [x] - simple game url
+    # game started
+    #  - relative login url
+    # [x]   - when logged in
+    # [x]   - when not logged in
+    # your turn
+    #  - relative login url
+    # [x]   - when logged in
+    # [x]   - when not logged in
+    # [x]open redirect attempt
+    # [x]login link    
     # TODO: REVISIT: get a relative URL for /login, instead of this.
-    return redirect(url_for('home_page'))
+    req = request.args.get('next', url_for('home_page'))
+    nxt = urlparse.urlparse(req)
+    cur = urlparse.urlparse(request.url)
+    if ((nxt.scheme and nxt.scheme != cur.scheme) or
+        (nxt.netloc and nxt.netloc != cur.netloc)):
+        # Avoid open redirect - a minor security vulnerability
+        flash("Invalid redirect.")
+        return redirect(url_for('home_page'))
+    return redirect(req)
 
 @APP.route('/error', methods=['GET'])
 def error_page():
@@ -625,10 +647,6 @@ def game_page():
     """
     # TODO: 3: every position should have a name
     # TODO: 2: chat
-    # TODO: 1: special url for running game for email to force login
-    # (otherwise if you're not logged in, you go to game page with no way to
-    # play, and it's not obvious it's because you're not logged in.)
-    # Or perhaps flash "You are not logged in" (perhaps not as elegant) 
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")

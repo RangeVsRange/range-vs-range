@@ -77,10 +77,8 @@ def _your_turn(recipient, screenname, identity, game):
                   (game.gameid,))
     msg.add_recipient(recipient)
     msg.html = render_template('email/your_turn.html', recipient=recipient,
-                               screenname=screenname,
-                               unsubscribe=make_unsubscribe_url(identity),
-                               game_url=make_game_url(str(game.gameid)),
-                               gameid=game.gameid)
+       screenname=screenname, unsubscribe=make_unsubscribe_url(identity),
+       game_url=make_game_url(str(game.gameid), login=True), gameid=game.gameid)
     send_email(msg)
 
 @web_only
@@ -95,7 +93,8 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting,
     msg.html = render_template('email/game_started.html',
         recipient=recipient, screenname=screenname, is_starter=is_starter,
         is_acting=is_acting, unsubscribe=make_unsubscribe_url(identity),
-        game_url=make_game_url(str(game.gameid)), gameid=game.gameid)
+        game_url=make_game_url(str(game.gameid), login=True),
+        gameid=game.gameid)
     send_email(msg)
 
 @web_only
