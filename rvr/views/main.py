@@ -18,6 +18,7 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 from flask_googleauth import logout
 import urlparse
+from rvr.forms.chat import ChatForm
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -498,8 +499,8 @@ def _chat_to_vars(chat, index):
 
 def _make_history_list(game_history):
     """
-    Hand history items provide a basic to-text function. This function adds a
-    little extra HTML where necessary, to make them prettier.
+    Return a details list of each hand history item, as needed to display in
+    HTML.
     """
     results = []
     # There is always a range action and an action before a user range
@@ -567,29 +568,33 @@ def _running_game(game, gameid, userid, api):
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
     is_me = (userid == game.game_details.current_player.user.userid)
+    is_mine = (userid in [rgp.user.userid
+                          for rgp in game.game_details.rgp_details])
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/game.html', title=title, form=form,
         board=board, game_details=game.game_details, history=history,
         current_options=game.current_options,
-        is_me=is_me, is_running=True,
+        is_me=is_me, is_mine=is_mine, is_running=True,
         range_editor_url=range_editor_url,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
-def _finished_game(game, gameid):
+def _finished_game(game, gameid, userid):
     """
     Response from game page when the requested game is finished.
     """
     title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history)
-    analyses = game.analysis.keys() 
+    analyses = game.analysis.keys()
+    is_mine = (userid in [rgp.user.userid
+                          for rgp in game.game_details.rgp_details])
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+                    ('', url_for('faq_page'), 'FAQ')]    
     return render_template('web/game.html', title=title,
         game_details=game.game_details, history=history, analyses=analyses,
-        is_running=False,
+        is_running=False, is_mine=is_mine,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 def authenticated_game_page(gameid):
@@ -613,7 +618,7 @@ def authenticated_game_page(gameid):
         return redirect(url_for('error_page'))
     
     if response.is_finished():
-        return _finished_game(response, gameid)
+        return _finished_game(response, gameid, userid)
     else:
         return _running_game(response, gameid, userid, api)
 
@@ -633,7 +638,7 @@ def unauthenticated_game_page(gameid):
         return redirect(url_for('error_page'))
     
     if response.is_finished():
-        return _finished_game(response, gameid)
+        return _finished_game(response, gameid, None)
     else:
         return _running_game(response, gameid, None, api)
 
@@ -643,7 +648,7 @@ def game_page():
     View of the specified game, authentication-aware
     """
     # TODO: 3: every position should have a name
-    # TODO: 2: chat
+    # TODO: 2: chat page as tab in iframe
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -658,7 +663,59 @@ def game_page():
         return authenticated_game_page(gameid)
     else:
         flash("You are not logged in. You are viewing this page anonymously.")
-        return unauthenticated_game_page(gameid)        
+        return unauthenticated_game_page(gameid)
+
+def _chat_page(game, gameid, userid, api):
+    """
+    Post-validation chat page functionality.
+    """
+    form = ChatForm()
+    if form.validate_on_submit():
+        response = api.chat(gameid, userid, form.message.data)
+        if isinstance(response, APIError):
+            # No further info, because none of the errors should ever happen
+            flash(str(response))
+        else:
+            # Success, refresh
+            return redirect(url_for('chat_page', gameid=gameid))
+    # First load, OR something's wrong with their data.
+    all_chats = [h[1] for h in _make_history_list(game.history)
+                 if h[0] == 'CHAT']    
+    return render_template('web/chat.html', gameid=gameid, form=form,
+        all_chats=all_chats)
+
+@APP.route('/chat', methods=['GET', 'POST'])
+@AUTH.required
+def chat_page():
+    """
+    Chat history for game, and a text field to chat into game.
+    
+    Requires that user is registered in game.
+    """
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        flash("Invalid game ID.")
+        return redirect(url_for('error_page'))
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        flash("Invalid game ID.")
+        return redirect(url_for('error_page'))
+
+    userid = session['userid']
+    
+    api = API()
+    response = api.get_private_game(gameid, userid)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+            msg = "Invalid game ID."
+        else:
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
+        flash(msg)
+        return redirect(url_for('error_page'))
+    
+    return _chat_page(response, gameid, userid, api)
 
 @APP.route('/analysis', methods=['GET'])
 def analysis_page():

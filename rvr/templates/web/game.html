@@ -66,6 +66,9 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
   {% endif %}
 {% endif %}
   <li{% if not is_running %} class="active"{% endif %}><a id="heading-history" href="#history" data-toggle="tab">History</a></li>
+{% if is_mine %}
+  <li><a id="heading-chat" href="#chat" data-toggle="tab">Chat</a></li>
+{% endif %}
 </ul>
 
 <div class="tab-content pad-above">
@@ -191,6 +194,10 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
   </tr>
 </table>
 {% endif %}
+</div>
+
+<div class="tab-pane" id="chat">
+  <iframe src="{{url_for('chat_page', gameid=game_details.gameid)}}" min-width="100%" width="100%" height="1200px"></iframe>
 </div>
 
 {% if not is_running %}{{ share_buttons() }}{% endif %}
