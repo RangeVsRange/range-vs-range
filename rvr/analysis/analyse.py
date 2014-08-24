@@ -139,8 +139,6 @@ class FoldEquityAccumulator(object):
             session.add(afei)
         logging.debug("gameid %d, FEA %d, finalised", self.gameid, self.order)
         return afe
-        # TODO: 3: need a supplementary table for individual folders
-        # (to store userid, fold_ratio combos, in order, for later display)
 
 class AnalysisReplayer(object):
     """

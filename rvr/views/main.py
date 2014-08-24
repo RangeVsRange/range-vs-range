@@ -404,14 +404,14 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
         flash(msg)
         return True
 
-def _board_to_vars(item, _index):
+def _board_to_vars(item):
     """
     Replace little images into it
     """
     cards = [item.cards[i:i+2] for i in range(0, len(item.cards), 2)]
     return item.street, cards
 
-def _range_action_to_vars(item, index):
+def _range_action_to_vars(item):
     """
     Convert to percentages (relative), and such.
     
@@ -442,10 +442,10 @@ def _range_action_to_vars(item, index):
             "fold": item.range_action.fold_range.description,
             "passive": item.range_action.passive_range.description,
             "aggressive": item.range_action.aggressive_range.description,
-            "index": index}
+            "index": item.order}
 
 def _action_summary_to_vars(range_action, action_result, action_result_index,
-                            user_range, index):
+                            user_range):
     """
     Summarise an action result and user range in the context of the most recent
     range action.
@@ -471,31 +471,31 @@ def _action_summary_to_vars(range_action, action_result, action_result_index,
             "fold": fol,
             "passive": pas,
             "aggressive": agg,
-            "index": index}
+            "index": user_range.order}
     
-def _action_result_to_vars(action_result, index):
+def _action_result_to_vars(action_result):
     """
     Summarises action result for the case where the hand is in progress, and
     the user is not allowed to view the other players' ranges.
     """
     return {"screenname": action_result.user.screenname,
             "action_result": action_result.action_result,
-            "index": index}
+            "index": action_result.order}
     
-def _timeout_to_vars(timeout, index):
+def _timeout_to_vars(timeout):
     """
     Summarises a timeout.
     """
     return {"screenname": timeout.user.screenname,
-            "index": index}
+            "index": timeout.order}
 
-def _chat_to_vars(chat, index):
+def _chat_to_vars(chat):
     """
     Summarises a chat.
     """
     return {"screenname": chat.user.screenname,
             "message": chat.message,
-            "index": index}
+            "index": chat.order}
 
 def _make_history_list(game_history):
     """
@@ -507,7 +507,7 @@ def _make_history_list(game_history):
     most_recent_range_action = None
     most_recent_action_result = None
     pending_action_result = None
-    for index, item in enumerate(game_history):
+    for item in game_history:
         if isinstance(item, GameItemUserRange):
             if pending_action_result is not None:
                 results.remove(pending_action_result)
@@ -517,23 +517,23 @@ def _make_history_list(game_history):
                             _action_summary_to_vars(most_recent_range_action,
                                                     most_recent_action_result,
                                                     action_result_index,
-                                                    item, index)))
+                                                    item)))
         elif isinstance(item, GameItemRangeAction):
             most_recent_range_action = item
             results.append(("RANGE_ACTION",
-                            _range_action_to_vars(item, index)))
+                            _range_action_to_vars(item)))
         elif isinstance(item, GameItemActionResult):
             most_recent_action_result = item
             pending_action_result = ("ACTION_RESULT",
-                                     _action_result_to_vars(item, index))
+                                     _action_result_to_vars(item))
             results.append(pending_action_result)
             # This will be removed if there is a following user range
         elif isinstance(item, GameItemBoard):
-            results.append(("BOARD", _board_to_vars(item, index)))
+            results.append(("BOARD", _board_to_vars(item)))
         elif isinstance(item, GameItemTimeout):
-            results.append(("TIMEOUT", _timeout_to_vars(item, index)))
+            results.append(("TIMEOUT", _timeout_to_vars(item)))
         elif isinstance(item, GameItemChat):
-            results.append(("CHAT", _chat_to_vars(item, index)))
+            results.append(("CHAT", _chat_to_vars(item)))
         else:
             logging.debug("unrecognised type of hand history item: %s", item)
             results.append(("UNKNOWN", (str(item),)))
@@ -574,7 +574,8 @@ def _running_game(game, gameid, userid, api):
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/game.html', title=title, form=form,
-        board=board, game_details=game.game_details, history=history,
+        board=board, game_details=game.game_details,
+        num_players=len(game.game_details.rgp_details), history=history,
         current_options=game.current_options,
         is_me=is_me, is_mine=is_mine, is_running=True,
         range_editor_url=range_editor_url,
@@ -591,9 +592,10 @@ def _finished_game(game, gameid, userid):
                           for rgp in game.game_details.rgp_details])
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]    
+                    ('', url_for('faq_page'), 'FAQ')] 
     return render_template('web/game.html', title=title,
-        game_details=game.game_details, history=history, analyses=analyses,
+        game_details=game.game_details, history=history,
+        num_players=len(game.game_details.rgp_details), analyses=analyses,
         is_running=False, is_mine=is_mine,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
@@ -648,7 +650,7 @@ def game_page():
     View of the specified game, authentication-aware
     """
     # TODO: 3: every position should have a name
-    # TODO: 2: chat page as tab in iframe
+    # TODO: 1: ranges as expanding view buttons on situation tab
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -723,6 +725,7 @@ def analysis_page():
     Analysis of a particular hand history item.
     """
     # TODO: 3: a basic summary of fold equity for the bet on the analysis page
+    # E.g. bets had X1 to Y1 EV, checks had X2 to Y2, folds had X3 to Y3
     # TODO: 3: the range viewer on the analysis page, with each combo's
     # fold equity as a popover?
     gameid = request.args.get('gameid', None)
@@ -752,9 +755,11 @@ def analysis_page():
     except ValueError:
         return error("Invalid order (not a number).")
 
-    try:
-        item = game.history[order]
-    except IndexError:
+    item = None
+    for item in game.history:
+        if item.order == order:
+            break
+    else:
         return error("Invalid order (not in game).")
 
     if not isinstance(item, dtos.GameItemActionResult):
@@ -768,8 +773,7 @@ def analysis_page():
     except KeyError:
         return error("Analysis for this action is not ready yet.")
 
-    street = game.game_details.situation.current_round
-    street_text = aife.STREET_DESCRIPTIONS[street]
+    street_text = aife.STREET_DESCRIPTIONS[aife.street]
     if item.action_result.is_raise:
         action_text = "raises to %d" % (item.action_result.raise_total,)
     else:

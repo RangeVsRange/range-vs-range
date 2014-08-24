@@ -147,7 +147,6 @@ class RunningGame(BASE, object):
     current_factor = Column(Float, nullable=False)
     # keeping track of timeouts
     last_action_time = Column(DateTime, nullable=False)  # or game start time
-    # TODO: 3: a flag to mark completed game as "completed with no timeouts"
     # in lieu of a relationship...
     # TODO: REVISIT: can we do this with a one-to-one relationship?
     # ... and not cause circular reference issues?!

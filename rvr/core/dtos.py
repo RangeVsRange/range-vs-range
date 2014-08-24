@@ -355,17 +355,18 @@ class GameItemUserRange(GameItem):
     """
     user has range
     """
-    def __init__(self, user, range_raw):
+    def __init__(self, order, user, range_raw):
         """
         user is a UserDetails
         range is a string describing the range
         """
+        self.order = order
         self.user = user
         self.range_raw = range_raw
     
     def __repr__(self):
-        return "GameItemUserRange(user=%r, range=%r)" %  \
-            (self.user, self.range_raw)
+        return "GameItemUserRange(order=%r, user=%r, range=%r)" %  \
+            (self.order, self.user, self.range_raw)
     
     def __str__(self):
         return "%s's range is: %s" % (self.user.screenname, self.range_raw)
@@ -376,7 +377,7 @@ class GameItemUserRange(GameItem):
         Create from a GameHistoryUserRange
         """
         user_details = UserDetails.from_user(item.user)
-        return cls(user_details, item.range_raw)
+        return cls(item.order, user_details, item.range_raw)
         
     def should_include_for(self, userid, _all_userids, is_finished):
         """
@@ -389,19 +390,21 @@ class GameItemRangeAction(GameItem):
     user folds fold_range, checks or calls passive_range, bets or raises
     aggressive_range
     """
-    def __init__(self, user, range_action, is_check, is_raise):
+    def __init__(self, order, user, range_action, is_check, is_raise):
         """
         user is a UserDetails
         """
+        self.order = order
         self.user = user
         self.range_action = range_action
         self.is_check = is_check
         self.is_raise = is_raise
     
     def __repr__(self):
-        return ("GameItemRangeAction(user=%r, range_action=%r, " +
+        return ("GameItemRangeAction(order=%r, user=%r, range_action=%r, " +
                 "is_check=%r, is_raise=%r)") %  \
-            (self.user, self.range_action, self.is_check, self.is_raise)
+            (self.order, self.user, self.range_action, self.is_check,
+             self.is_raise)
     
     def __str__(self):
         return "%s performs range-based action: %s" % (self.user,
@@ -417,7 +420,8 @@ class GameItemRangeAction(GameItem):
             passive_raw=item.passive_range,
             aggressive_raw=item.aggressive_range,
             raise_total=item.raise_total)
-        return cls(user_details, range_action, item.is_check, item.is_raise)
+        return cls(item.order, user_details, range_action, item.is_check,
+                   item.is_raise)
     
     def should_include_for(self, userid, _all_userids, is_finished):
         """
@@ -430,16 +434,18 @@ class GameItemActionResult(GameItem):
     """
     User's range action results in an action
     """
-    def __init__(self, user, action_result):
+    def __init__(self, order, user, action_result):
         """
         user is a UserDetails
         """
+        self.order = order
         self.user = user
         self.action_result = action_result
     
     def __repr__(self):
-        return ("GameItemActionResult(user=%r, action_result=%r)") %  \
-            (self.user, self.action_result)
+        return ("GameItemActionResult(order=%r, user=%r, " +
+                "action_result=%r)") %  \
+            (self.order, self.user, self.action_result)
     
     def __str__(self):
         return "%s performs action: %s" % (self.user,
@@ -457,22 +463,23 @@ class GameItemActionResult(GameItem):
                                      call_cost=item.call_cost,
                                      raise_total=item.raise_total,
                                      is_raise=item.is_raise)
-        return cls(user_details, action_result)
+        return cls(item.order, user_details, action_result)
 
 class GameItemBoard(GameItem):
     """
     The board at street is cards
     """
-    def __init__(self, street, cards):
+    def __init__(self, order, street, cards):
         """
         they're both strings
         """
+        self.order = order
         self.street = street
         self.cards = cards
     
     def __repr__(self):
-        return "GameItemBoard(street=%r, cards=%r)" %  \
-            (self.street, self.cards)
+        return "GameItemBoard(order=%r, street=%r, cards=%r)" %  \
+            (self.order, self.street, self.cards)
     
     def __str__(self):
         if self.street == FLOP:
@@ -491,21 +498,22 @@ class GameItemBoard(GameItem):
         """
         Create from a GameHistoryBoard
         """
-        return cls(item.street, item.cards)
+        return cls(item.order, item.street, item.cards)
 
 class GameItemTimeout(GameItem):
     """
     User has timed out.
     """
-    def __init__(self, user):
+    def __init__(self, order, user):
         """
         user is a UserDetails
         """
+        self.order = order
         self.user = user
 
     def __repr__(self):
-        return ("GameItemTimeout(user=%r)") %  \
-            (self.user,)
+        return ("GameItemTimeout(order=%r, user=%r)") %  \
+            (self.order, self.user,)
     
     def __str__(self):
         return "%s has timed out" % (self.user,)
@@ -516,22 +524,23 @@ class GameItemTimeout(GameItem):
         Create from a GameHistoryTimeout
         """
         user_details = UserDetails.from_user(item.user)
-        return cls(user_details)
+        return cls(item.order, user_details)
     
 class GameItemChat(GameItem):
     """
     User chats message.
     """
-    def __init__(self, user, message):
+    def __init__(self, order, user, message):
         """
         user is a UserDetails
         """
+        self.order = order
         self.user = user
         self.message = message
         
     def __repr__(self):
-        return "GameItemChat(user=%r, message=%r)" %  \
-            (self.user, self.message)
+        return "GameItemChat(order=%r, user=%r, message=%r)" %  \
+            (self.order, self.user, self.message)
     
     def __str__(self):
         return "%s chats: %s" % (self.user, self.message)
@@ -542,7 +551,7 @@ class GameItemChat(GameItem):
         Create from a GameHistoryChat
         """
         user_details = UserDetails.from_user(item.user)
-        return cls(user_details, item.message)
+        return cls(item.order, user_details, item.message)
 
     def should_include_for(self, userid, all_userids, _is_finished):
         """

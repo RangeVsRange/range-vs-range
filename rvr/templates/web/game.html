@@ -74,8 +74,22 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 <div class="tab-content pad-above">
 
 <div class="tab-pane" id="situation">
-<p>Situation: <strong>{{game_details.situation.description}}</strong></p>
-<p>Players: {% set pipe = joiner() %}{% for rgp in game_details.rgp_details %}{{pipe()}}<strong>{{rgp.user.screenname}}</strong>{% endfor %}</p>
+<p><strong>Situation description:</strong> {{game_details.situation.description}}</p>
+<table class="table table-bordered">
+<thead>
+<tr><td><strong>Player</strong></td><td><strong>Starting range</strong></td></tr>
+</thead>
+<tbody>
+{% for i in range(num_players) %}
+{% set rgp = game_details.rgp_details[i] %}
+{% set position = game_details.situation.players[i] %}
+<tr>
+  <td><strong>{{rgp.user.screenname}}</strong>{% if i == 0 %} <em>{# (first to act post-flop) #}</em>{% elif i == num_players - 1 %} <em>(in position)</em>{% endif %}</td>
+  <td>{{position.range_raw}}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
 </div>
 
 {% if is_running %}
