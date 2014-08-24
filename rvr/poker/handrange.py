@@ -491,7 +491,7 @@ class HandRange(object):
         """
         option is a list of (hand, weight)
         """
-        # TODO: 1: remove the concept of weighted options from HandRange
+        # TODO: 2: remove the concept of weighted options from HandRange
         # It might still be worth having a WeightedHandRange, specifically for
         # situations, but then convert to (unweighted) HandRange when the game
         # starts.

@@ -442,9 +442,9 @@ def _range_action_to_vars(item):
             "fold": item.range_action.fold_range.description,
             "passive": item.range_action.passive_range.description,
             "aggressive": item.range_action.aggressive_range.description,
-            "index": item.order}
+            "order": item.order}
 
-def _action_summary_to_vars(range_action, action_result, action_result_index,
+def _action_summary_to_vars(range_action, action_result, action_result_order,
                             user_range):
     """
     Summarise an action result and user range in the context of the most recent
@@ -462,7 +462,7 @@ def _action_summary_to_vars(range_action, action_result, action_result_index,
     # NOTE: some of this is necessarily common with RANGE_ACTION
     return {"screenname": user_range.user.screenname,
             "action_result": action_result.action_result,
-            "action_result_index": action_result_index,
+            "action_result_order": action_result_order,
             "percent": 100.0 * new_total / len(SET_ANYTHING_OPTIONS),
             "combos": new_total,
             "is_check": range_action.is_check,
@@ -471,7 +471,7 @@ def _action_summary_to_vars(range_action, action_result, action_result_index,
             "fold": fol,
             "passive": pas,
             "aggressive": agg,
-            "index": user_range.order}
+            "order": user_range.order}
     
 def _action_result_to_vars(action_result):
     """
@@ -480,14 +480,14 @@ def _action_result_to_vars(action_result):
     """
     return {"screenname": action_result.user.screenname,
             "action_result": action_result.action_result,
-            "index": action_result.order}
+            "order": action_result.order}
     
 def _timeout_to_vars(timeout):
     """
     Summarises a timeout.
     """
     return {"screenname": timeout.user.screenname,
-            "index": timeout.order}
+            "order": timeout.order}
 
 def _chat_to_vars(chat):
     """
@@ -495,7 +495,7 @@ def _chat_to_vars(chat):
     """
     return {"screenname": chat.user.screenname,
             "message": chat.message,
-            "index": chat.order}
+            "order": chat.order}
 
 def _make_history_list(game_history):
     """
@@ -511,12 +511,12 @@ def _make_history_list(game_history):
         if isinstance(item, GameItemUserRange):
             if pending_action_result is not None:
                 results.remove(pending_action_result)
-                action_result_index = pending_action_result[1]['index']
+                action_result_order = pending_action_result[1]['order']
                 pending_action_result = None
             results.append(("ACTION_SUMMARY",
                             _action_summary_to_vars(most_recent_range_action,
                                                     most_recent_action_result,
-                                                    action_result_index,
+                                                    action_result_order,
                                                     item)))
         elif isinstance(item, GameItemRangeAction):
             most_recent_range_action = item
@@ -727,7 +727,6 @@ def analysis_page():
     # TODO: 3: a basic summary of fold equity for the bet on the analysis page
     # E.g. bets had X1 to Y1 EV, checks had X2 to Y2, folds had X3 to Y3
     # TODO: 3: the range viewer on the analysis page, with each combo's
-    # fold equity as a popover?
     gameid = request.args.get('gameid', None)
     if gameid is None:
         return error("Invalid game ID.")

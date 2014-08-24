@@ -146,7 +146,7 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 {% if history %}
 <table class="table table-condensed">
   {% for hint, item in history %}
-    <tr id="history-table-{{item.index}}">
+    <tr id="history-table-{{item.order}}">
       <td>
         {% if hint == "ACTION_SUMMARY" %}
           <strong>{{item.screenname}}
@@ -185,14 +185,13 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
         {% else %}
           {{item[0]}}
         {% endif %}
-      </td>
-      <td>
+
         <div class="pull-right">
-          {% if not is_running and hint == "ACTION_SUMMARY" and item.action_result.is_aggressive and item.action_result_index in analyses %}
-          <a class="btn btn-primary" href="{{url_for('analysis_page', gameid=game_details.gameid, order=item.action_result_index)}}">Analyse</a>
+          {% if not is_running and hint == "ACTION_SUMMARY" and item.action_result.is_aggressive and item.action_result_order in analyses %}
+          <a class="btn btn-primary" href="{{url_for('analysis_page', gameid=game_details.gameid, order=item.action_result_order)}}">Analyse</a>
           {% endif %}
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
-          <button class="btn btn-primary" type=button id="view-action-{{item.index}}" onclick="range_view('view-action-{{item.index}}', 'history-table-{{item.index}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
           {% elif hint == "ACTION_RESULT" %}
           <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
           {% endif %}
