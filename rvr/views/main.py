@@ -250,6 +250,8 @@ def home_page():
                if any([u.userid == userid for u in og.users])]
     others_open = [og for og in open_games
                    if not any([u.userid == userid for u in og.users])]
+    my_finished_games = sorted(my_games.finished_details,
+                               key=lambda g: g.gameid, reverse=True)
     form = ChangeForm()
     navbar_items = [('active', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
@@ -259,7 +261,7 @@ def home_page():
         r_games=my_games,
         my_open=my_open,
         others_open=others_open,
-        my_finished_games=my_games.finished_details,
+        my_finished_games=my_finished_games,
         navbar_items=navbar_items,
         selected_heading=selected_heading,
         is_logged_in=is_logged_in())
