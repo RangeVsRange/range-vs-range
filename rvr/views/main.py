@@ -272,6 +272,7 @@ def join_game():
     """
     Join game, flash status, redirect back to /home
     """
+    # TODO: REVISIT: vulnerable to cross-site request forgery
     alternate_response = ensure_user()
     if alternate_response:
         return alternate_response
@@ -315,6 +316,7 @@ def leave_game():
     """
     Leave game, flash status, redirect back to /home
     """
+    # TODO: REVISIT: vulnerable to cross-site request forgery
     alternate_response = ensure_user()
     if alternate_response:
         return alternate_response
@@ -652,7 +654,9 @@ def game_page():
     View of the specified game, authentication-aware
     """
     # TODO: 3: every position should have a name
-    # TODO: 1: ranges as expanding view buttons on situation tab
+    # TODO: 2: ranges as expanding view buttons on situation tab
+    # TODO: 1: popover for new chat, if new chat
+    # TODO: 0: BUG: showing bluffs in the wrong order (bets and non-bets)
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -783,9 +787,12 @@ def analysis_page():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
-    items_aggressive = [i for i in reversed(aife.items) if i.is_aggressive]
+    items_aggressive = [i for i in aife.items if i.is_aggressive]
     items_passive = [i for i in aife.items if i.is_passive]
     items_fold = [i for i in aife.items if i.is_fold]
+    items_aggressive.sort(key=lambda i: i.immediate_result)  # most negative 1st
+    items_passive.sort(key=lambda i: i.immediate_result, reverse=True)
+    items_fold.sort(key=lambda i: i.immediate_result, reverse=True)
     # Could also have a status column or popover or similar:
     # "good bluff" = +EV
     # "bad bluff" = -EV on river
