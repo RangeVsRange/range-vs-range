@@ -656,7 +656,6 @@ def game_page():
     # TODO: 3: every position should have a name
     # TODO: 2: ranges as expanding view buttons on situation tab
     # TODO: 1: popover for new chat, if new chat
-    # TODO: 0: BUG: showing bluffs in the wrong order (bets and non-bets)
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -730,9 +729,10 @@ def analysis_page():
     """
     Analysis of a particular hand history item.
     """
-    # TODO: 3: a basic summary of fold equity for the bet on the analysis page
-    # E.g. bets had X1 to Y1 EV, checks had X2 to Y2, folds had X3 to Y3
-    # TODO: 3: the range viewer on the analysis page, with each combo's
+    # TODO: 3: the range viewer on the analysis page
+    # This can simply display each rank combo and allow selection of suit
+    # combos. Then it can display, for each rank combo, the average EV of the
+    # selected suit combos, as hover text. I'm not sure about colours.
     gameid = request.args.get('gameid', None)
     if gameid is None:
         return error("Invalid game ID.")
