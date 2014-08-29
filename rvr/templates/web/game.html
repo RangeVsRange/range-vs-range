@@ -15,8 +15,8 @@
 {{super()}}
 <script type=text/javascript>
 $CURRENT_BUTTON = null;
-range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise) {
-    $('#current-viewer-row').remove(); // if any
+range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, is_raise) {
+    $('#' + new_id).remove(); // if any
     if (button_id == $CURRENT_BUTTON) {
         $CURRENT_BUTTON = null;
         return;
@@ -29,7 +29,7 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
     iframe.text('Sorry, your browser does not support iframes.');
     td = $('<td>');
     td.append(iframe);
-    tr = $('<tr>').attr('id', 'current-viewer-row');
+    tr = $('<tr>').attr('id', new_id);
     tr.append(td);
     $('#' + row_id).after(tr);
 };
@@ -77,15 +77,19 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
 <p><strong>Situation description:</strong> {{game_details.situation.description}}</p>
 <table class="table table-bordered">
 <thead>
-<tr><td><strong>Player</strong></td><td><strong>Starting range</strong></td></tr>
+<tr><td><strong>Seating</strong></td></tr>
 </thead>
 <tbody>
 {% for i in range(num_players) %}
 {% set rgp = game_details.rgp_details[i] %}
 {% set position = game_details.situation.players[i] %}
-<tr>
-  <td><strong>{{rgp.user.screenname}}</strong>{% if i == 0 %} <em>{# (first to act post-flop) #}</em>{% elif i == num_players - 1 %} <em>(in position)</em>{% endif %}</td>
-  <td>{{position.range_raw}}</td>
+<tr id='position-table-{{i}}'>
+  <td>
+    {{rgp.user.screenname}}{% if i == 0 %} <em>{# (first to act post-flop) #}</em>{% elif i == num_players - 1 %} <em>(in position)</em>{% endif %}
+    <div class="pull-right">
+      <button class="btn btn-primary" type=button id="view-position-{{i}}" onclick="range_view('current-position-row', 'view-position-{{i}}', 'position-table-{{i}}', '{{position.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View starting range</button>
+    </div>
+  </td>
 </tr>
 {% endfor %}
 </tbody>
@@ -191,7 +195,7 @@ range_view = function(button_id, row_id, ori, fol, pas, agg, is_check, is_raise)
           <a class="btn btn-primary" href="{{url_for('analysis_page', gameid=game_details.gameid, order=item.action_result_order)}}">Analyse</a>
           {% endif %}
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
-          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
           {% elif hint == "ACTION_RESULT" %}
           <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
           {% endif %}

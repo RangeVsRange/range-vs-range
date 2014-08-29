@@ -22,6 +22,8 @@ from rvr.forms.chat import ChatForm
 
 # pylint:disable=R0911,R0912,R0914
 
+# TODO: 3: a 'situation' page that describes the situation
+
 def is_authenticated():
     """
     Is the user authenticated with OpenID?
@@ -654,7 +656,6 @@ def game_page():
     View of the specified game, authentication-aware
     """
     # TODO: 3: every position should have a name
-    # TODO: 2: ranges as expanding view buttons on situation tab
     # TODO: 1: popover for new chat, if new chat
     gameid = request.args.get('gameid', None)
     if gameid is None:

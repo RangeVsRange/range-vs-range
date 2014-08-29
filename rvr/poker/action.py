@@ -203,7 +203,12 @@ def finish_game(game):
     return game
 
 # TODO: EQUITY PAYMENT: fold equity
+
 # TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
+# Or instead of making an equity payment based on the difference in equity, pay
+# out the equity of the non-played line and reduce the current factor.
+# (Still controversial, of course.)
+
 # TODO: STRATEGY: profitable float
 # - hero bets one flop (etc.), villain calls
 # - hero checks turn (etc.), villain bets
