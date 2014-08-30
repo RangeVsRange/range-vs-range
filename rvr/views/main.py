@@ -656,7 +656,7 @@ def game_page():
     View of the specified game, authentication-aware
     """
     # TODO: 3: every position should have a name
-    # TODO: 1: popover for new chat, if new chat
+    # TODO: 1: popover for new chat,  if new chat
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
