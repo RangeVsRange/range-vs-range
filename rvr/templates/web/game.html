@@ -34,6 +34,11 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
     $('#' + row_id).after(tr);
 };
 </script>
+{% if is_new_chat and is_mine %}
+  <script>
+  $('#heading-chat').popover('show')
+  </script>
+{% endif %}
 {% endblock %}
 
 {% block styles %}
@@ -67,7 +72,7 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
 {% endif %}
   <li{% if not is_running %} class="active"{% endif %}><a id="heading-history" href="#history" data-toggle="tab">History</a></li>
 {% if is_mine %}
-  <li><a id="heading-chat" href="#chat" data-toggle="tab">Chat</a></li>
+  <li><a id="heading-chat" href="#chat" data-trigger="hover focus" data-toggle="tab" data-container="body" data-placement="right" data-content="New!">Chat</a></li>
 {% endif %}
 </ul>
 

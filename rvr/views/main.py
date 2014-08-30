@@ -545,6 +545,21 @@ def _make_history_list(game_history):
             results.append(("UNKNOWN", (str(item),)))
     return results
 
+def _calc_is_new_chat(game_history, userid):
+    """
+    Determine if there is new chat, from userid's perspective.
+    
+    Specifically, if there is a chat more recent than userid's last action.
+    """
+    is_new_chat = False
+    for item in game_history:
+        if isinstance(item, GameItemChat):
+            is_new_chat = True
+        if isinstance(item, (GameItemActionResult, GameItemChat)) and  \
+                item.user.userid == userid:
+            is_new_chat = False
+    return is_new_chat
+
 def _running_game(game, gameid, userid, api):
     """
     Response from game page when the requested game is still running.
@@ -571,6 +586,7 @@ def _running_game(game, gameid, userid, api):
         max_raise=game.current_options.max_raise)
     title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history)
+    is_new_chat = _calc_is_new_chat(game.history, userid)
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
     is_me = (userid == game.game_details.current_player.user.userid)
@@ -583,7 +599,7 @@ def _running_game(game, gameid, userid, api):
         board=board, game_details=game.game_details,
         num_players=len(game.game_details.rgp_details), history=history,
         current_options=game.current_options,
-        is_me=is_me, is_mine=is_mine, is_running=True,
+        is_me=is_me, is_mine=is_mine, is_new_chat=is_new_chat, is_running=True,
         range_editor_url=range_editor_url,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
@@ -593,6 +609,7 @@ def _finished_game(game, gameid, userid):
     """
     title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history)
+    is_new_chat = _calc_is_new_chat(game.history, userid)
     analyses = game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
@@ -602,7 +619,7 @@ def _finished_game(game, gameid, userid):
     return render_template('web/game.html', title=title,
         game_details=game.game_details, history=history,
         num_players=len(game.game_details.rgp_details), analyses=analyses,
-        is_running=False, is_mine=is_mine,
+        is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 def authenticated_game_page(gameid):
@@ -656,7 +673,6 @@ def game_page():
     View of the specified game, authentication-aware
     """
     # TODO: 3: every position should have a name
-    # TODO: 1: popover for new chat,  if new chat
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
