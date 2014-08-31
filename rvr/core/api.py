@@ -380,7 +380,6 @@ class API(object):
         """
         situation = open_game.situation
         all_ogps = open_game.ogps + [final_ogp]
-        all_ogps.sort(key=lambda ogp: ogp.order)
         running_game = tables.RunningGame()
         running_game.next_hh = 0
         # Maintain game ids from open games, essentially hijacking the

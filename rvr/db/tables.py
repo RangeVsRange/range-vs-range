@@ -115,9 +115,11 @@ class OpenGameParticipant(BASE):
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("open_game.gameid"), primary_key=True)
     order = Column(Integer)
-    user = relationship("User", backref="ogps")
-    game = relationship("OpenGame", backref=backref("ogps", cascade="all"))
-    # TODO: 0: BUG: order is not dicating display order on open games page.
+    user = relationship("User",
+        backref=backref("ogps", order_by="OpenGameParticipant.order"))
+    game = relationship("OpenGame",
+        backref=backref("ogps", cascade="all",
+                        order_by="OpenGameParticipant.order"))
 
 class RunningGame(BASE, object):
     """
