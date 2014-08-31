@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
 from sqlalchemy.types import Float, Numeric, DateTime
 from rvr.poker.cards import Card
-from rvr.poker.handrange import HandRange, weighted_options_to_description
+from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from sqlalchemy.orm.session import object_session
 
 #pylint:disable=W0232,R0903
@@ -62,7 +62,7 @@ class SituationPlayer(BASE, object):
         Set range, from HandRange instance
         """
         self.range_raw =  \
-            weighted_options_to_description(range_.generate_options())
+            unweighted_options_to_description(range_.generate_options())
     range = property(get_range, set_range)    
 
 class Situation(BASE):
@@ -225,7 +225,7 @@ class RunningGameParticipant(BASE, object):
         """
         Set range, from HandRange instance
         """
-        self.range_raw = weighted_options_to_description(
+        self.range_raw = unweighted_options_to_description(
             range_.generate_options())
     range = property(get_range, set_range)
     def get_cards_dealt(self):

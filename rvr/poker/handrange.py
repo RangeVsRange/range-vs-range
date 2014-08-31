@@ -62,21 +62,16 @@ def weighted_choice(items):
 
 def subrange(part):
     """
-    Interprets a weighted subrange, e.g. 'AQo+(3)' -> ('AQo+', 3)
+    Interprets an unweighted subrange, e.g. 'AQo+' -> 'AQo+'
     """
     match = RE_SUBRANGE.match(part)
     if not match:
         raise ValueError('Hand range part ' + part + ' is invalid')
     if match.group(3) is not None:
-        weight = int(match.group(3))
-        if weight <= 0:
-            raise ValueError('Hand range part ' + part
-                             + ' is invalid. Bad weight: '
-                             + match.group(3))
-    else:
-        weight = 1
-    cards = match.group(1)
-    return (cards, weight)
+        raise ValueError('Hand range part ' + part
+                         + ' is invalid. Bad weight: '
+                         + match.group(3))
+    return match.group(1)
 
 def hands_in_subrange(cards):
     """
@@ -346,10 +341,10 @@ def _unweighted_mnemonics_to_parts(mnemonics):
         results.extend(_colate_group(g))  # AKo, AKo-AQo, etc.
     return results
 
-def weighted_options_to_description(options):
+def unweighted_options_to_description(options):
     """
     convert options to a minimal description, a la PokerStove
-    options is list of (hand, weight)
+    options is list of hand
     where a hand is a set of two Card
     """
     # Okay, this isn't going to be easy.
@@ -359,22 +354,14 @@ def weighted_options_to_description(options):
         return NOTHING
     if set(options) == SET_ANYTHING_OPTIONS:
         return ANYTHING
-    groups = {}
-    for hand, weight in options:
-        if not groups.has_key(weight):
-            groups[weight] = []
+    group = []
+    for hand in options:
         try:
             cards = list(hand)  # was set of two Card, now list of two Card
         except TypeError:
             pass
-        groups[weight].append([cards[0].to_mnemonic(), cards[1].to_mnemonic()])
-    parts = []
-    for weight, group in groups.iteritems():
-        for part in _unweighted_mnemonics_to_parts(group):
-            if weight != 1:
-                parts.append("%s(%d)" % (part, weight))
-            else:
-                parts.append(part)
+        group.append([cards[0].to_mnemonic(), cards[1].to_mnemonic()])
+    parts = _unweighted_mnemonics_to_parts(group)
     # sort them too, for standardisation
     def key_part(part):
         """
@@ -400,18 +387,12 @@ def weighted_options_to_description(options):
     parts.sort(key=key_part, reverse=True)
     return ",".join(parts)
 
-def unweighted_options_to_description(options):
-    """
-    Per weighted_options_to_description, except unweighted.
-    """
-    return weighted_options_to_description([(o, 1) for o in options])
-
 def remove_board_from_range(hand_range, board):
     """
     returns a new hand_range, with no options that contain any hand in board
     """
     options = hand_range.generate_options(board)
-    description = weighted_options_to_description(options)
+    description = unweighted_options_to_description(options)
     return HandRange(description)
 
 def _cmp_options(a, b):
@@ -419,38 +400,6 @@ def _cmp_options(a, b):
     compare unweighted options
     """
     return cmp(sorted(a), sorted(b))
-
-def _cmp_weighted_options(a, b):
-    """
-    compare weighted options
-    """
-    return _cmp_options(a[0], b[0]) or cmp(a[1], b[1])
-
-def reweight(new, old):
-    """
-    Give everything in new the weight it hand in old
-    New and old are HandRange objects
-    """
-    # do this based on options for both
-    # iterate through all options of new and set the weight of each to the
-    # weight of the corresponding option in old
-    options_new = new.generate_options()
-    options_old = old.generate_options()
-    options_new.sort(cmp=_cmp_weighted_options)
-    options_old.sort(cmp=_cmp_weighted_options)
-    results = []
-    for o in options_old:
-        if not options_new:
-            break
-        # o is of form (set([Card(),Card()], weight)
-        if o[0] == options_new[0][0]:
-            n = options_new.pop(0)
-            results.append((n[0], o[1]))
-    if options_new:
-        raise RuntimeError("reweight: option in new that isn't in old: %s" %
-                           str(options_new[0]))
-    description = weighted_options_to_description(results)
-    return HandRange(description)
 
 class HandRange(object):
     """
@@ -475,58 +424,14 @@ class HandRange(object):
         """
         return not self.subranges
     
-    def polarised(self, board = None):
-        """
-        Returns an unweighted equivalent of this hand range.
-        """
-        original = self.generate_options(board)
-        maxweight = max([o[1] for o in original])
-        results = []
-        for o in original:
-            if random.randrange(0, maxweight) < o[1]:
-                results.append((o[0], 1))
-        return HandRange(weighted_options_to_description(results))
-
     def generate_options(self, board=None):
         """
-        option is a list of (hand, weight)
-        """
-        # TODO: 2: remove the concept of weighted options from HandRange
-        # It might still be worth having a WeightedHandRange, specifically for
-        # situations, but then convert to (unweighted) HandRange when the game
-        # starts.
-        excluded_cards = board or []
-        excluded_mnemonics = [card.to_mnemonic() for card in excluded_cards]
-        # it's really nice for this to be a list, for self.polarise_weights
-        options = []
-        for part, weight in self.subranges:
-            option_mnemonics = hands_in_subrange(part)  # list of e.g. "AhKh"
-            not_excluded = lambda hand: (hand[0:2] not in excluded_mnemonics
-                and hand[2:4] not in excluded_mnemonics)
-            option_mnemonics = [o for o in option_mnemonics if not_excluded(o)]
-            hands = [frozenset(Card.many_from_text(txt))
-                     for txt in option_mnemonics]
-            options.extend([(hand, weight) for hand in hands])
-        if self.is_strict:
-            return options
-        else:
-            return list(set(options))
-    
-    def generate_options_unweighted(self, board=None):
-        """
-        just hand, no weight
-        error if weights are not all the same
+        option is a list of hand
         """
         excluded_cards = board or []
         excluded_mnemonics = [card.to_mnemonic() for card in excluded_cards]
-        # it's really nice for this to be a list, for self.polarise_weights
         options = []
-        first_weight = None
-        for part, weight in self.subranges:
-            if first_weight == None:
-                first_weight = weight
-            elif weight != first_weight:
-                raise ValueError("range is not evenly weighted")
+        for part in self.subranges:
             option_mnemonics = hands_in_subrange(part)  # list of e.g. "AhKh"
             not_excluded = lambda hand: (hand[0:2] not in excluded_mnemonics
                 and hand[2:4] not in excluded_mnemonics)
@@ -538,7 +443,7 @@ class HandRange(object):
             return options
         else:
             return list(set(options))
-        
+    
     def generate_hand(self, board = None):
         """
         Generate a pair of pocket cards for Holdem, based on self.description
@@ -553,8 +458,8 @@ class HandRange(object):
         options = self.generate_options(board)
         if not options:
             raise ValueError("No valid options to generate hand from")
-        pick = list(weighted_choice(options))
-        random.shuffle(pick)
+        pick = list(random.choice(options))
+        random.shuffle(pick)  # TODO: revisit: any point to this?
         return pick
     
     def subtract(self, other, board=None):
@@ -567,8 +472,7 @@ class HandRange(object):
         mine = set(self.generate_options(board))
         other = set(other.generate_options(board))
         mine.difference_update(other)
-        # Note that this will only remove options with the same weight.
-        return HandRange(weighted_options_to_description(mine))
+        return HandRange(unweighted_options_to_description(mine))
     
     def add(self, other, board=None):
         """
@@ -579,8 +483,7 @@ class HandRange(object):
         mine = set(self.generate_options(board))
         other = set(other.generate_options(board))
         mine.update(other)
-        # Note that this will duplicate options with different weights.
-        return HandRange(weighted_options_to_description(mine))
+        return HandRange(unweighted_options_to_description(mine))
         
     def validate(self):
         """
@@ -588,8 +491,7 @@ class HandRange(object):
         
         Throw ValueError if not.
         """
-        options = self.generate_options()
-        hands = [hand for hand, _weight in options]
+        hands = self.generate_options()
         if len(hands) != len(set(hands)):
             raise ValueError("Duplicate hands in range: %s" % self.description)
     
@@ -673,54 +575,12 @@ class Test(unittest.TestCase):
         parts = ["AKs", "AsAd", "KK", "72o"]
         self.assertEqual(set(_unweighted_mnemonics_to_parts(options)),
                          set(parts))
-        
-    def test_weighted_options_to_description(self):
-        """ Test _weighted_options_to_description """
-        valid = ["KK+(2),99,5s5h,5s5c,5h5c,5d5c,44,22,A4s,KJs,K8s-K6s," +
-                    "Ks4s,Kh4h,Q4s,J4s,T4s+,94s,84s,74s,64s,54s,Q9o,T7o,Ts6h," +
-                    "Ts6d,Ts6c,Th6s,Th6d,Th6c,Td6s,Td6c,Tc6s,Tc6h,T5o-T2o," +
-                    "42o+,32o",
-                 "AsKs(2),AhKh(2),AdKd,AcKc(2)"]
-        for v in valid:
-            handrange = HandRange(v)
-            options = handrange.generate_options()
-            final = weighted_options_to_description(options)
-            self.assertEqual(v, final)
-        convert = {
-            "KK(1)": "KK",
-            "AsKs(2),KcAc(2),KhAh(2),AdKd(2)": "AKs(2)",
-            "AsKs(2),KcAc(2),KhAh(2),AdKd(1)": "AsKs(2),AhKh(2),AdKd,AcKc(2)"}
-        for k, v in convert.iteritems():
-            handrange = HandRange(k)
-            options = handrange.generate_options()
-            final = weighted_options_to_description(options)
-            self.assertEqual(v, final, "expected '%s', got '%s" % (v, final))
-    
-    def test_generate_options_unweighted(self):
-        """ Test HandRange.generate_options_unweighted """
-        valid = HandRange("AA(3),AKo(3)")
-        invalid = HandRange("AA(3),AKo(2)")
-        options = valid.generate_options_unweighted()
+            
+    def test_generate_options(self):
+        """ Test HandRange.generate_options """
+        valid = HandRange("AA,AKo")
+        options = valid.generate_options()
         self.assertEqual(len(options), 18)
-        try:
-            options = invalid.generate_options_unweighted()
-            self.assert_(False, "should raise ValueError")
-        except ValueError as _ex:
-            pass
-    
-    def test_reweight(self):
-        """ Test reweight """
-        # tuples of old, new, result
-        inputs = [("AA", "AA", "AA"),
-                  ("AA,KK", "KK", "KK"),
-                  ("AA", "AA(2)", "AA"),
-                  ("AA(2),KK(3)", "KK(2)", "KK(3)"),
-                  ("AsKs(2),AhKh(3),AdKd(2),AcKc(2),72o(2)", "AKs",
-                   "AsKs(2),AhKh(3),AdKd(2),AcKc(2)"),
-                  ("AKs,72o", "AsKs(2),AhKh(3),AdKd(2),AcKc(2)", "AKs")]
-        for old, new, result in inputs:
-            self.assertEqual(reweight(HandRange(new),
-                                      HandRange(old)).description, result)
     
     def test_subtract(self):
         """ Test subtract """

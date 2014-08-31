@@ -425,11 +425,11 @@ def _range_action_to_vars(item):
              fold_pct, passive_pct, aggressive_pct, raise_total)
     """
     fold_options = item.range_action.fold_range  \
-        .generate_options_unweighted()
+        .generate_options()
     passive_options = item.range_action.passive_range  \
-        .generate_options_unweighted()
+        .generate_options()
     aggressive_options = item.range_action.aggressive_range  \
-        .generate_options_unweighted()
+        .generate_options()
     all_options = fold_options + passive_options + aggressive_options
     combined_range = unweighted_options_to_description(all_options)
     fold_total = len(fold_options)
@@ -457,7 +457,7 @@ def _action_summary_to_vars(range_action, action_result, action_result_order,
     range action.
     """
     new_total = len(HandRange(user_range.range_raw).  \
-        generate_options_unweighted())
+        generate_options())
     fol = pas = agg = NOTHING
     if action_result.action_result.is_fold:
         original = fol = range_action.range_action.fold_range.description

@@ -34,8 +34,6 @@ def range_subtract():
     
     Returns two values, difference (string) and size (float), where size is the
     relative size of the difference compared to original.
-    
-    This method does not work with weighted ranges!
     """
     # Actually, board is not needed, because we already subtract board from
     # range before sending to the client.
@@ -47,8 +45,8 @@ def range_subtract():
     result = original.subtract(subtract_1)
     result = result.subtract(subtract_2)
     result = result.subtract(subtract_3)
-    original_size = len(original.generate_options_unweighted(board))
-    result_size = len(result.generate_options_unweighted(board))
+    original_size = len(original.generate_options(board))
+    result_size = len(result.generate_options(board))
     return jsonify(difference=result.description,
                    size=1.0 * result_size / original_size)
 

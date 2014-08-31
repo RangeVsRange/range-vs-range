@@ -98,9 +98,9 @@ class FoldEquityAccumulator(object):
         afei.is_fold = is_fol
         afei.fold_ratio = 1.0
         for _folder, fold_range, nonfold_range in self.folds:
-            fold_size = len(fold_range.generate_options_unweighted(
+            fold_size = len(fold_range.generate_options(
                 self.board + list(combo)))
-            nonfold_size = len(nonfold_range.generate_options_unweighted(
+            nonfold_size = len(nonfold_range.generate_options(
                 self.board + list(combo)))
             folder_fold_ratio = 1.0 * fold_size / (fold_size + nonfold_size)
             afei.fold_ratio *= folder_fold_ratio 
@@ -126,15 +126,15 @@ class FoldEquityAccumulator(object):
         afe = self._create_afe()
         session.add(afe)
         for combo in HandRange(self.range_action.aggressive_range)  \
-                .generate_options_unweighted(self.board):
+                .generate_options(self.board):
             afei = self._create_afei(combo, is_agg=True)
             session.add(afei)
         for combo in HandRange(self.range_action.passive_range)  \
-                .generate_options_unweighted(self.board):
+                .generate_options(self.board):
             afei = self._create_afei(combo, is_pas=True)
             session.add(afei)
         for combo in HandRange(self.range_action.fold_range)  \
-                .generate_options_unweighted(self.board):
+                .generate_options(self.board):
             afei = self._create_afei(combo, is_fol=True)
             session.add(afei)
         logging.debug("gameid %d, FEA %d, finalised", self.gameid, self.order)

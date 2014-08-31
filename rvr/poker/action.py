@@ -3,8 +3,7 @@ action functionality, imported from the previous versions
 """
 from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN
 import unittest
-from rvr.poker.handrange import HandRange,  \
-    _cmp_weighted_options, _cmp_options
+from rvr.poker.handrange import HandRange, _cmp_options
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import random
@@ -31,9 +30,9 @@ def range_sum_equal(fold_range, passive_range, aggressive_range,
     original_hand_options = original_range.generate_options()
     all_ranges_hand_options = concatenate([r.generate_options()
                                            for r in all_ranges])
-    original_hand_options.sort(cmp=_cmp_weighted_options)
-    all_ranges_hand_options.sort(cmp=_cmp_weighted_options)
-    prev = (None, -1)
+    original_hand_options.sort(cmp=_cmp_options)
+    all_ranges_hand_options.sort(cmp=_cmp_options)
+    prev = None
     # pylint:disable=W0141
     for ori, new in map(None, original_hand_options, all_ranges_hand_options):
         # we compare two hands, each of which is a set of two Card
@@ -48,31 +47,26 @@ def range_sum_equal(fold_range, passive_range, aggressive_range,
             if new is None:
                 message =  \
                     "hand in original range but not in action ranges: %s" %  \
-                    _option_to_text(ori[0])
+                    _option_to_text(ori)
             elif ori is None:
                 message =  \
                     "hand in action ranges but not in original range: %s" %  \
-                    _option_to_text(new[0])
+                    _option_to_text(new)
             else:
-                newh, neww = new
-                orih, oriw = ori
-                if newh == prev[0]:
+                if new == prev:
                     message = "hand in multiple ranges: %s" %  \
-                        _option_to_text(newh)
-                elif _cmp_options(newh, orih) > 0:
+                        _option_to_text(new)
+                elif _cmp_options(new, ori) > 0:
                     message = "hand in original range but not in " +  \
-                        "action ranges: %s" % _option_to_text(orih)
-                elif _cmp_options(newh, orih) < 0:
+                        "action ranges: %s" % _option_to_text(ori)
+                elif _cmp_options(new, ori) < 0:
                     message = "hand in action ranges but not in " +  \
-                        "original range: %s" % _option_to_text(newh)
-                elif neww != oriw:
-                    message = "weight changed from %d to %d for hand %s" %  \
-                        (oriw, neww, _option_to_text(orih))
+                        "original range: %s" % _option_to_text(new)
                 else:
                     raise RuntimeError("hands not equal, but can't " +  \
                                        "figure out why: %s, %s" % \
-                                       (_option_to_text(orih),
-                                        _option_to_text(newh)))
+                                       (_option_to_text(ori),
+                                        _option_to_text(new)))
             return False, message
         prev = new
     return True, None
@@ -85,8 +79,6 @@ def range_action_fits(range_action, options, original_range):
     - weights for each option are the same as original
     - raise size should be within the band specified in options
     - if there is no aggressive option, the raise range should be empty, and the raise size will be ignored
-    (also, weights can be ignored here - we don't support weighted actions yet
-    this means that carving AA(2) up into AA(1) and AA(1) is not valid)
     """
     # Four possible reasons to fail validity checks:
     # 1. hand W is in both X and Y
@@ -124,9 +116,7 @@ def range_contains_hand(range_, hand):
     """
     Is hand in range?
     """
-    options = range_.generate_options()
-    unweighted = [option[0] for option in options]
-    return set(hand) in unweighted
+    return set(hand) in range_.generate_options()
 
 def calculate_current_options(game, rgp):
     """
@@ -318,11 +308,11 @@ class WhatCouldBe(object):
         dead_cards.extend(concatenate([v for k, v in cards_dealt.iteritems()
                                        if k is not self.rgp]))
         fold_options = self.range_action.fold_range  \
-            .generate_options_unweighted(dead_cards)
+            .generate_options(dead_cards)
         passive_options = self.range_action.passive_range  \
-            .generate_options_unweighted(dead_cards)
+            .generate_options(dead_cards)
         aggressive_options = self.range_action.aggressive_range  \
-            .generate_options_unweighted(dead_cards)
+            .generate_options(dead_cards)
         # Consider fold
         fold_action = ActionResult.fold()
         if len(fold_options) > 0:
@@ -443,16 +433,14 @@ class Test(unittest.TestCase):
         # - hand in two or more ranges should fail
         # - raise size within band should succeed
         # - raise size outside band should fail
-        # - should work the same with weights as without
-        range_original = HandRange("AA(5),22,72o")
-        range_aa = HandRange("AA(5)")
+        range_original = HandRange("AA,22,72o")
+        range_aa = HandRange("AA")
         range_kk = HandRange("KK")
         range_22 = HandRange("22")
         range_72o = HandRange("72o")
         range_22_72o = HandRange("22,72o")
-        range_aa_22 = HandRange("AA(5),22")
+        range_aa_22 = HandRange("AA,22")
         range_empty = HandRange("nothing")
-        range_22_weighted = HandRange("22(3)")
         
         #options = [FoldOption(), CheckOption(), RaiseOption(2, 194)]
         options = ActionOptions(0, False, 2, 194)
@@ -507,12 +495,6 @@ class Test(unittest.TestCase):
         #options = [FoldOption(), CallOption(10), RaiseOption(20, 194)]
         options = ActionOptions(10, True, 20, 194)
         
-        # invalid, re-weighted
-        range_action = ActionDetails(range_72o, range_22_weighted, range_aa, 20)
-        val, rsn = range_action_fits(range_action, options, range_original)
-        self.assertFalse(val)
-        self.assertEqual(rsn, "weight changed from 1 to 3 for hand 2d2c")
-
         # valid, empty raise range (still has a raise size, which is okay)
         range_action = ActionDetails(range_aa, range_22_72o, range_empty, 20)
         val, rsn = range_action_fits(range_action, options, range_original)
@@ -568,7 +550,7 @@ class Test(unittest.TestCase):
         Test range_contains_hand
         """
         from rvr.poker import cards
-        range_ = HandRange("AA(5),KK")
+        range_ = HandRange("AA,KK")
         hands_in = [
             [Card(cards.ACE, cards.SPADES), Card(cards.ACE, cards.HEARTS)],
             [Card(cards.KING, cards.CLUBS), Card(cards.KING, cards.DIAMONDS)]

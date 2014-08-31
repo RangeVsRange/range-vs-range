@@ -163,7 +163,7 @@ def get_selected_options(original, board):
             field = "sel_" + desc
             is_sel = request.form.get(field, "false") == "true"
             if is_sel:
-                new = set(HandRange(desc).generate_options_unweighted(board))
+                new = set(HandRange(desc).generate_options(board))
                 new.intersection(original)
                 options.update([option for option in new
                                 if is_suit_selected(option)])
@@ -242,7 +242,7 @@ def rank_class(row, col, color_maker, board):
     Give the appropriate class for this rank combo
     """
     txt = rank_text(row, col)
-    options = HandRange(txt).generate_options_unweighted(board)
+    options = HandRange(txt).generate_options(board)
     return color_maker.get_color(options)
 
 def options_to_mnemonics(options):
@@ -268,7 +268,7 @@ def rank_hover(row, col, color_maker, board, is_raised, is_can_check):
     Something like "calling As8s, Ah8h; folding Ad8d".
     """
     txt = rank_text(row, col)
-    options = HandRange(txt).generate_options_unweighted(board)
+    options = HandRange(txt).generate_options(board)
     inputs = [("unassigned", color_maker.opt_una),
               ("folding", color_maker.opt_fol),
               ("checking" if is_can_check else "calling", color_maker.opt_pas),
@@ -419,10 +419,10 @@ def range_editor_get():
     board_raw = request.args.get('board', '')
     images = card_names(board_raw)
     board = safe_board_form('board')
-    opt_ori = rng_original.generate_options_unweighted(board)
-    opt_fol = rng_fold.generate_options_unweighted(board)
-    opt_pas = rng_passive.generate_options_unweighted(board)
-    opt_agg = rng_aggressive.generate_options_unweighted(board)
+    opt_ori = rng_original.generate_options(board)
+    opt_fol = rng_fold.generate_options(board)
+    opt_pas = rng_passive.generate_options(board)
+    opt_agg = rng_aggressive.generate_options(board)
     opt_una = list(set(opt_ori) - set(opt_fol) - set(opt_pas) - set(opt_agg))
     rng_unassigned = HandRange(unweighted_options_to_description(opt_una))
     color_maker = ColorMaker(opt_ori=opt_ori, opt_una=opt_una, opt_fol=opt_fol,
@@ -487,15 +487,15 @@ def range_editor_post():
     board = safe_board_form('board')
     images = card_names(board_raw)
     opt_ori = safe_hand_range_form('rng_original', ANYTHING)  \
-        .generate_options_unweighted(board)
+        .generate_options(board)
     opt_una = safe_hand_range_form('rng_unassigned', rng_original)  \
-        .generate_options_unweighted(board)
+        .generate_options(board)
     opt_fol = safe_hand_range_form('rng_fold', NOTHING)  \
-        .generate_options_unweighted(board)
+        .generate_options(board)
     opt_pas = safe_hand_range_form('rng_passive', NOTHING)  \
-        .generate_options_unweighted(board)
+        .generate_options(board)
     opt_agg = safe_hand_range_form('rng_aggressive', NOTHING)  \
-        .generate_options_unweighted(board)
+        .generate_options(board)
     l_una = 'l_una' in request.form
     l_fol = 'l_fol' in request.form
     l_pas = 'l_pas' in request.form
@@ -513,7 +513,7 @@ def range_editor_post():
     elif not option_mover.did_move:
         flash("Nothing was moved, because the selected hands were already in the target range.")  # pylint:disable=C0301
     opt_ori = safe_hand_range_form('rng_original', ANYTHING)  \
-        .generate_options_unweighted(board)
+        .generate_options(board)
     opt_una = option_mover.opt_una
     opt_fol = option_mover.opt_fol
     opt_pas = option_mover.opt_pas
