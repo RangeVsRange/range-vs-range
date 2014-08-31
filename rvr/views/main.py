@@ -747,9 +747,13 @@ def analysis_page():
     Analysis of a particular hand history item.
     """
     # TODO: 3: the range viewer on the analysis page
+    
     # This can simply display each rank combo and allow selection of suit
     # combos. Then it can display, for each rank combo, the average EV of the
     # selected suit combos, as hover text. I'm not sure about colours.
+    
+    # Or more simply, display EV of each combo in hover text, and colour squares
+    # like a normal range viewer (green / yellow / red / blue).
     gameid = request.args.get('gameid', None)
     if gameid is None:
         return error("Invalid game ID.")

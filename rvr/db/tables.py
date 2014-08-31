@@ -116,6 +116,11 @@ class OpenGameParticipant(BASE):
     gameid = Column(Integer, ForeignKey("open_game.gameid"), primary_key=True)
     user = relationship("User", backref="ogps")
     game = relationship("OpenGame", backref=backref("ogps", cascade="all"))
+    # TODO: 0: BUG: low userid players can't be in middle position, 3-way
+    # I can't believe it took me this long to notice I was never in middle pos.
+    # TODO: 1: an order column for OpenGameParticipant
+    # earlier registration -> lower order
+    # lower order -> earlier position postflop
 
 class RunningGame(BASE, object):
     """

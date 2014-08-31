@@ -186,6 +186,10 @@ def finish_game(game):
     Game is finished. Calculate results, record in hand history,
     perform analysis.
     """
+    # TODO: 2: results, in the form of EV compared to starting stack (fold=0EV)
+    # including fold equity, board equity, choice equity, showdowns
+    # TODO: RESULTS: calculate results in analysis, not real time
+    # TODO: RESULTS: in fact, maintaining current_factor like we do is pointless
     # TODO: RESULTS: finish game
     # There may be a winner: one person with left_to_act True. Or there may be a
     # range-based showdown (river, or all in)
@@ -198,18 +202,6 @@ def finish_game(game):
 # Or instead of making an equity payment based on the difference in equity, pay
 # out the equity of the non-played line and reduce the current factor.
 # (Still controversial, of course.)
-
-# TODO: STRATEGY: profitable float
-# - hero bets one flop (etc.), villain calls
-# - hero checks turn (etc.), villain bets
-# - if hero doesn't bet big enough on the flop (etc.), checks too much
-#   on the turn (etc.), and folds too much to the bet, villain has
-#   a profitable float
-# (villain will often have a profitable float anyway due to equity,
-#  i.e. a semi-float, but that's impossible to quantify.) 
-# (it's also okay to be profitably floated sometimes, e.g. when a
-#  flush draw comes off, because that doesn't happen 100% of the
-#  time.)
 
 Branch = namedtuple("Branch",  # pylint:disable=C0103
                     ["is_continue",  # For this option, does play continue?

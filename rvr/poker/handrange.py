@@ -459,7 +459,7 @@ class HandRange(object):
         if not options:
             raise ValueError("No valid options to generate hand from")
         pick = list(random.choice(options))
-        random.shuffle(pick)  # TODO: revisit: any point to this?
+        random.shuffle(pick)  # This is a hangover from when you could see cards
         return pick
     
     def subtract(self, other, board=None):
