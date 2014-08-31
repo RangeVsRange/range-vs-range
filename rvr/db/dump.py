@@ -174,16 +174,18 @@ def read_open_game_participants(session):
     """ Read GameParticipant table from DB into memory """
     ogps = session.query(OpenGameParticipant).all()
     return [(ogp.userid,
-             ogp.gameid)
+             ogp.gameid,
+             ogp.order)
             for ogp in ogps]
 
 def write_open_game_participants(session, ogps):
     """ Write GameParticipant from memory into DB """
-    for userid, gameid in ogps:
+    for userid, gameid, order in ogps:
         ogp = OpenGameParticipant()
         session.add(ogp)
         ogp.userid = userid
         ogp.gameid = gameid
+        ogp.order = order
 
 def read_running_games(session):
     """ Read RunningGame table from DB into memory """
