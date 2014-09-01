@@ -177,7 +177,7 @@ def read_open_game_participants(session):
              ogp.gameid,
              ogp.order)
             for ogp in ogps]
-
+    
 def write_open_game_participants(session, ogps):
     """ Write GameParticipant from memory into DB """
     for userid, gameid, order in ogps:

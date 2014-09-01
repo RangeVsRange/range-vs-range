@@ -186,7 +186,7 @@ def finish_game(game):
     Game is finished. Calculate results, record in hand history,
     perform analysis.
     """
-    # TODO: 2: results, in the form of EV compared to starting stack (fold=0EV)
+    # TODO: 1: results, in the form of EV compared to starting stack (fold=0EV)
     # including fold equity, board equity, choice equity, showdowns
     # TODO: RESULTS: calculate results in analysis, not real time
     # TODO: RESULTS: in fact, maintaining current_factor like we do is pointless
@@ -194,6 +194,13 @@ def finish_game(game):
     # There may be a winner: one person with left_to_act True. Or there may be a
     # range-based showdown (river, or all in)
     # TODO: RESULTS: need final showdown sometimes (rarely) ...
+    # I think it means when there is a bet, then a call, then a fold
+    # TODO: 1: 1: fold equity payments (just a record off-row like analysis)
+    # TODO: 1: 2: board equity payments
+    # TODO: 1: 3: choice equity payments
+    # TODO: 1: 4: pre-river showdown payments
+    # TODO: 1: 5: river showdown payments
+    # TODO: 1: 6: results, being the sum of all payments
     return game
 
 # TODO: EQUITY PAYMENT: fold equity
