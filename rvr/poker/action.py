@@ -186,7 +186,7 @@ def finish_game(game):
     Game is finished. Calculate results, record in hand history,
     perform analysis.
     """
-    # TODO: 1: results, in the form of EV compared to starting stack (fold=0EV)
+    # TODO: 1: 0: results: EV compared to starting stack, fold=0
     # including fold equity, board equity, choice equity, showdowns
     # TODO: RESULTS: calculate results in analysis, not real time
     # TODO: RESULTS: in fact, maintaining current_factor like we do is pointless
