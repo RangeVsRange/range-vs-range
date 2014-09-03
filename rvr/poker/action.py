@@ -185,30 +185,20 @@ def finish_game(game):
     """
     Game is finished. Calculate results, record in hand history,
     perform analysis.
-    """
+    """    
     # TODO: 1: 0: results: EV compared to starting stack, fold=0
-    # including fold equity, board equity, choice equity, showdowns
-    # TODO: RESULTS: calculate results in analysis, not real time
-    # TODO: RESULTS: in fact, maintaining current_factor like we do is pointless
-    # TODO: RESULTS: finish game
-    # There may be a winner: one person with left_to_act True. Or there may be a
-    # range-based showdown (river, or all in)
-    # TODO: RESULTS: need final showdown sometimes (rarely) ...
-    # I think it means when there is a bet, then a call, then a fold
-    # TODO: 1: 1: fold equity payments (just a record off-row like analysis)
-    # TODO: 1: 2: board equity payments
-    # TODO: 1: 3: choice equity payments
+    # TODO: 1: 1: results weighted by size of ranges in starting situation?
+    # TODO: 1: 2: fold equity payments (just a record off-row like analysis)
+    # TODO: 1: 3: support P1 check, P2 fold, i.e. payout on folds, not bets
     # TODO: 1: 4: pre-river showdown payments
     # TODO: 1: 5: river showdown payments
-    # TODO: 1: 6: results, being the sum of all payments
+    # TODO: 1: 6: support situations like P1 bet, P2 call, P3 fold/call/raise
+    # (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.)
+    # TODO: 1: 7: results, being the sum of all payments
+    # TODO: 2: remove current_factor from RunningGame table in DB
+    # TODO: 2: board equity payments
+    # TODO: 3: choice equity payments and current factor reduction
     return game
-
-# TODO: EQUITY PAYMENT: fold equity
-
-# TODO: EQUITY PAYMENT: (controversial!) redeal equity (call vs. raise)
-# Or instead of making an equity payment based on the difference in equity, pay
-# out the equity of the non-played line and reduce the current factor.
-# (Still controversial, of course.)
 
 Branch = namedtuple("Branch",  # pylint:disable=C0103
                     ["is_continue",  # For this option, does play continue?
