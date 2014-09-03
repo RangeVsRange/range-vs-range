@@ -6,8 +6,8 @@ rank_set = function(_id, _val) {
   $('#' + _id).toggleClass('r_sel', _val);
   $('#sel_' + _id).val(_val);
 }
-rank_click = function(_id) {
-  if (window.event.ctrlKey) {
+rank_click = function(e, _id) {
+  if (e.ctrlKey) {
     rank_select(_id);
     var _val = $('#' + _id).hasClass('r_sel')
     while (_id in $NEXT_MAP) {
@@ -18,7 +18,7 @@ rank_click = function(_id) {
     rank_select(_id);
   }
 };
-suit_click = function(_id) {
+suit_click = function(e, _id) {
   $('.id_' + _id).toggleClass('s_sel');
   var is_sel = $('.id_' + _id).hasClass('s_sel');
   $('#sel_' + _id).val(is_sel);

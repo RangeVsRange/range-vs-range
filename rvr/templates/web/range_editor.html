@@ -43,7 +43,7 @@
    {% for row in suited_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click(event, '{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -58,7 +58,7 @@
    {% for row in pair_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click(event, '{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}
@@ -73,7 +73,7 @@
    {% for row in offsuit_table %}
    <tr>
     {% for details in row %}
-    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click('{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
+    <td>{% if details.class != "s_hdn" %}<div title="{{details.hover}}"><a class="{{details.class}} suit-button btn btn-default btn-md id_{{details.id}}" onclick="suit_click(event, '{{details.id}}');"><img alt="" style="vertical-align:middle" src="/static/suits/{{details.left}}.svg" width=20 height=20><img alt="" style="vertical-align:middle" src="/static/suits/{{details.right}}.svg" width=20 height=20></a></div>{% endif %}</td>
     {% endfor %}
    </tr>
    {% endfor %}

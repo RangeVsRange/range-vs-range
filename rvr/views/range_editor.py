@@ -11,8 +11,6 @@ from rvr.poker.cards import Card, SUIT_INVERT, SUITS_HIGH_TO_LOW
 
 # pylint:disable=R0903,R0913,R0914
 
-# TODO: 0: The Range Editor doesn't work in Firefox.
-
 RANKS_HIDDEN = 'r_hdn'
 RANKS_SELECTED = 'r_sel'
 RANKS_UNASSIGNED = 'r_una'
