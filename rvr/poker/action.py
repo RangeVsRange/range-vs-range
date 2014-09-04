@@ -185,19 +185,39 @@ def finish_game(game):
     """
     Game is finished. Calculate results, record in hand history,
     perform analysis.
-    """    
-    # TODO: 1: 0: results: EV compared to starting stack, fold=0
-    # TODO: 1: 1: results weighted by size of ranges in starting situation?
-    # TODO: 1: 2: fold equity payments (just a record off-row like analysis)
-    # TODO: 1: 3: support P1 check, P2 fold, i.e. payout on folds, not bets
-    # TODO: 1: 4: pre-river showdown payments
-    # TODO: 1: 5: river showdown payments
-    # TODO: 1: 6: support situations like P1 bet, P2 call, P3 fold/call/raise
+    """
+    # TODO: 0: create showdown records:
+    # - which range action triggered the showdown
+    # - what the current factor was
+    # - who showed down
+    # - equity of each player
+    # - pot size
+    # E.g. P1 bet 5 on a pot of 5, P2 call, P3 fold 50% call 50%, we have:
+    # - Showdown 1
+    #   - P1 and P2
+    #   - pot 15
+    #   - current factor whatever it currently is
+    #   - equity per P1 vs P2 ranges
+    # - Showdown 2
+    #   - P1, P2 and P3
+    #   - pot 20
+    #   - current factor whatever it currently is
+    #   - equity per P1 vs P2 vs P3 ranges
+    
+    
+    # TODO: 1: 0: results: EV compared to starting stack, fold=0EV
+    # TODO: 1: 1: fold equity payments (just a record off-row like analysis)
+    # TODO: 1: 2: pre-river showdown payments
+    # TODO: 1: 3: river showdown payments
+    # TODO: 1: 4: support P1 check, P2 fold, i.e. pay out on folds, not bets
+    # TODO: 1: 5: support situations like P1 bet, P2 call, P3 fold/call/raise
     # (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.)
-    # TODO: 1: 7: results, being the sum of all payments
+    # TODO: 1: 6: results, being the sum of all payments
+ 
     # TODO: 2: remove current_factor from RunningGame table in DB
     # TODO: 2: board equity payments
     # TODO: 3: choice equity payments and current factor reduction
+    # TODO: 3: results weighted by size of ranges in starting situation?
     return game
 
 Branch = namedtuple("Branch",  # pylint:disable=C0103

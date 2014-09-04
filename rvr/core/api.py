@@ -120,8 +120,9 @@ class API(object):
         Add all situations
         """
         err = None
-        err = err or self._add_situation(_create_hu())
-        err = err or self._add_situation(_create_three())
+        err = self._add_situation(_create_hu()) or err
+        err = self._add_situation(_create_three()) or err
+        err = self._add_situation(_create_cap()) or err
         return err
     
     def _add_card_combo(self, higher_card, lower_card):
@@ -165,8 +166,8 @@ class API(object):
                         
         # Each of these also commits.
         err = None
-        err = err or self._add_card_combos()
-        err = err or self._add_all_situations()
+        err = self._add_card_combos() or err
+        err = self._add_all_situations() or err
         return err
     
     @api
@@ -1039,7 +1040,7 @@ def _create_three():
         contributed=0,
         left_to_act=True,
         range_raw="88-22,AJs-A2s,KTs-K7s,Q9s,J9s,T8s+,97s+,86s+,75s+,64s+,54s,A8o+,KTo+,QJo")
-    three_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+    three_bb = dtos.SituationPlayerDetails(
         stack=195,
         contributed=0,
         left_to_act=True,
@@ -1056,3 +1057,51 @@ def _create_three():
         increment=2,
         bet_count=0)
     return three_situation
+
+def _create_cap():
+    """
+    Create a 6-max full hand CAP situation
+    """
+    cap_sb = dtos.SituationPlayerDetails(
+        stack=39,
+        contributed=1,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    cap_bb = dtos.SituationPlayerDetails(
+        stack=38,
+        contributed=2,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    cap_utg = dtos.SituationPlayerDetails(
+        stack=40,
+        contributed=0,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    cap_mp = dtos.SituationPlayerDetails(
+        stack=40,
+        contributed=0,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    cap_co = dtos.SituationPlayerDetails(
+        stack=40,
+        contributed=0,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    cap_btn = dtos.SituationPlayerDetails(
+        stack=40,
+        contributed=0,
+        left_to_act=True,
+        range_raw=ANYTHING)
+    cap_situation = dtos.SituationDetails(
+        description="6-max CAP, 20 BB",
+        players=[cap_sb, cap_bb, cap_utg,
+                 cap_mp, cap_co, cap_btn],  # SB is first to act
+        current_player=2,  # UTG is next to act
+        is_limit=False,
+        big_blind=2,
+        board_raw='',
+        current_round=PREFLOP,
+        pot_pre=0,
+        increment=2,
+        bet_count=1)
+    return cap_situation
