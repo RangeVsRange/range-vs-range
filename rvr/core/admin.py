@@ -7,6 +7,7 @@ from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
 from rvr.core import dtos
 from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
+from rvr import local_settings
 
 #pylint:disable=R0201,R0904,E1103
 
@@ -290,6 +291,13 @@ class AdminCmd(Cmd):
         if details == "":
             result = self.api.run_pending_analysis()
         elif details == "refresh":
+            print "This will re-email everyone for analysis they have already" \
+                " had analysis for. If you don't want to do that, turn off" \
+                " email in local_settings.py first. If you are okay with" \
+                " re-emailing everyone, the command is 'analyse refresh" \
+                " confirm'."
+            return
+        elif details == "refresh confirm":
             result = self.api.reanalyse_all()
         else:
             print "Bad syntax. See 'help analyse'."
@@ -298,7 +306,10 @@ class AdminCmd(Cmd):
             print "Error:", result.description
         else:
             print "Analysis run."
-            
+        if local_settings.SUPPRESS_EMAIL:
+            print "Email is turned off in local_settings.py. You may now"  \
+                " want to turn it back on."
+
     def do_timeout(self, _details):
         """
         timeout
