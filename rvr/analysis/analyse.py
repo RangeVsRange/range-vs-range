@@ -13,6 +13,7 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
+from rvr.poker.action import game_continues
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -41,7 +42,8 @@ class FoldEquityAccumulator(object):
         self.gameid = gameid
         self.order = order
         self.street = street
-        self.board = Card.many_from_text(board)
+        self.current_factor = 1.0  # TODO: 0: get rid of this eventually
+        self.board = board
         self.bettor = bettor
         self.range_action = range_action
         self.raise_total = raise_total
@@ -158,7 +160,7 @@ class AnalysisReplayer(object):
         self.pot = self.game.situation.pot_pre +  \
             sum([p.contributed for p in self.game.situation.players])
         self.street = self.game.situation.current_round
-        self.board = self.game.situation.board_raw
+        self.board = Card.many_from_text(self.game.situation.board_raw)
         self.fea = None  # current fold equity accumulator
         self.prev_range_action = None
 
@@ -167,9 +169,10 @@ class AnalysisReplayer(object):
         Process a GameHistoryBoard
         """
         self.contrib = {u:0 for u in self.remaining_userids}
+        self.left_to_act = self.remaining_userids[:]
         assert self.fea is None
         self.street = item.street
-        self.board = item.cards
+        self.board = Card.many_from_text(item.cards)
 
     def process_action_result(self, item):
         """
@@ -187,7 +190,15 @@ class AnalysisReplayer(object):
                               self.fea.gameid, self.fea.order)
             self.fea = None
             self.ranges[item.userid] = self.prev_range_action.passive_range
+            if not self.fold_continues:
+                fold_size = len(HandRange(self.prev_range_action.fold_range).generate_options(self.board))
+                passive_size = len(HandRange(self.prev_range_action.passive_range).generate_options(self.board))
+                aggressive_size = len(HandRange(self.prev_range_action.aggressive_range).generate_options(self.board))
+                all_size = fold_size + passive_size + aggressive_size
+                fold_ratio = 1.0 * fold_size / all_size
+                self._reduce_current_factor(1.0 - fold_ratio)
         if item.is_aggressive:
+            self.left_to_act = self.remaining_userids[:]
             amount_raised = item.raise_total - max(self.contrib.values())
             bet_cost = item.raise_total - self.contrib[item.userid]
             self.contrib[item.userid] = item.raise_total
@@ -209,10 +220,28 @@ class AnalysisReplayer(object):
                     u is not item.userid])
             self.pot += bet_cost
             self.ranges[item.userid] = self.prev_range_action.aggressive_range
+            if not self.passive_continues:
+                # TODO: 0: if they weren't allowed to call, reduce self.current_factor by fold+passive percentage
+                fold_size = len(HandRange(self.prev_range_action.fold_range).generate_options(self.board))
+                passive_size = len(HandRange(self.prev_range_action.passive_range).generate_options(self.board))
+                aggressive_size = len(HandRange(self.prev_range_action.aggressive_range).generate_options(self.board))
+                all_size = fold_size + passive_size + aggressive_size
+                aggressive_ratio = 1.0 * (aggressive_size) / all_size
+                self._reduce_current_factor(aggressive_ratio)
+            elif not self.fold_continues:
+                # TODO: 0: if they were allowed to call but not fold, reduce self.current_factor by fold percentage
+                fold_size = len(HandRange(self.prev_range_action.fold_range).generate_options(self.board))
+                passive_size = len(HandRange(self.prev_range_action.passive_range).generate_options(self.board))
+                aggressive_size = len(HandRange(self.prev_range_action.aggressive_range).generate_options(self.board))
+                all_size = fold_size + passive_size + aggressive_size
+                fold_ratio = 1.0 * fold_size / all_size
+                self._reduce_current_factor(1.0 - fold_ratio)
+            
+        self.left_to_act.remove(item.userid)
 
-    def process_range_action(self, item):
+    def range_action_fea(self, item):
         """
-        Process a GameItemRangeAction
+        Apply range action to fold equity analysis.
         """
         if self.fea is not None:
             # We have a folder (assuming this fea qualifies).
@@ -222,6 +251,144 @@ class AnalysisReplayer(object):
             if fea_complete:
                 self.fea.finalise(self.session)
                 self.fea = None
+
+    def create_showdown(self, order, factor, userids):
+        """
+        Create a showdown with given userids. Pre-river if pre-river.
+        """
+        # TODO: 0: create showdown with given userids.
+        
+        # TODO: 0: record current factor against showdown, for results
+        # (Shit, where do we get current factor from?! We should have been
+        #  recording it against the history - specifically range actions and
+        #  action results.)
+        # (Well, conceptually it's pretty simple - current factor goes down when
+        #  there are terminal options that are avoided and play on is forced.)
+        # (But the *right* thing to do is to change the database to include
+        #  current factor for all game history items, and to retrospectively
+        #  calculate and inject that data for running and finished games.)
+        # (Perhaps this is a candidate for making a nullable column, then using
+        #  the code here to backfill the data, then make the column
+        #  non-nullable.)
+        # TODO: 0: recalculate and inject current factor into all games' history
+        # TODO: 0: note that showdown results must be scaled down by the...
+        # TODO: 0: ... current factor and by the unlikeliness of the action...
+        # TODO: 0: ... being chosen from the range action.
+        # If possible, handle pre-river and river showdowns together.
+        # (perhaps river showdown is a special case of pre-river showdown?)
+        logging.debug('gameid %d, order %d, factor %0.8f, creating showdown '
+                      'with userids: %r',
+                      self.game.gameid, order, factor, userids)
+    
+    def _reduce_current_factor(self, factor):
+        """
+        Factor is the proportion of combos that were allowed to continue play
+        """
+        new_current_factor = self.current_factor * factor
+        logging.debug('gameid %d, reducing factor from %0.8f by %0.4f to %0.8f',
+                      self.game.gameid, self.current_factor, factor,
+                      new_current_factor)
+        self.current_factor = new_current_factor
+    
+    def _get_current_factor(self, item):
+        """
+        Return or calculate current factor
+        """
+        if item.factor is None:
+            logging.debug('gameid %d, order %d, updating factor to %r',
+                          item.gameid, item.order, self.current_factor)
+            item.factor = self.current_factor
+            self.session.commit()
+        if item.factor != self.current_factor:
+            logging.error('gameid %d, cf %r; order %d, cf %r',
+                          item.gameid, self.current_factor, item.order,
+                          item.factor)
+            item.factor = self.current_factor
+            self.session.commit()
+        return item.factor
+    
+    def range_action_showdown(self, item):
+        """
+        Consider showdowns based on this range action resulting in a fold, and
+        another based on this resulting in a check or call.
+        """
+        prev_contrib = None
+        last_stack = None
+        for userid in self.remaining_userids:
+            if userid == item.userid:
+                continue
+            if userid in self.left_to_act:
+                return
+            if prev_contrib is not None and  \
+                    self.contrib[userid] != prev_contrib:
+                return
+            prev_contrib = self.contrib[userid]
+            last_stack = self.stacks[userid]
+        if last_stack > 0 and self.street != RIVER:
+            # end of betting round, but not showdown
+            return
+        size_fold = _range_desc_to_size(item.fold_range)
+        size_passive = _range_desc_to_size(item.passive_range)
+        size_aggressive = _range_desc_to_size(item.aggressive_range)
+        size_all = size_fold + size_passive + size_aggressive
+        if len(self.remaining_userids) > 2:
+            # this player folds, but the pot is contested, so we have a showdown
+            factor = self._get_current_factor(item) * size_fold / size_all
+            self.create_showdown(order=item.order,
+                factor=factor,
+                userids=[userid for userid in self.remaining_userids
+                         if userid != item.userid])
+        factor = self._get_current_factor(item) * size_passive / size_all
+        self.create_showdown(order=item.order,
+                             factor=factor,
+                             userids=self.remaining_userids)
+
+    def process_range_action(self, item):
+        """
+        Process a GameItemRangeAction
+        """
+        self.range_action_fea(item)
+        self.range_action_showdown(item)
+        # TODO: 0: would play continue? we'll need to know later, to update c.f.
+        will_act = set(self.left_to_act).difference({item.userid})
+        fold_will_remain = set(self.remaining_userids).difference({item.userid})
+        all_in = any([stack == 0 for stack in self.stacks.values()])
+        self.fold_continues = game_continues(
+            current_round=self.street,
+            all_in=all_in,
+            will_remain=fold_will_remain,
+            will_act=will_act)
+        passive_will_remain = set(self.remaining_userids)
+        self.passive_continues = game_continues(
+            current_round=self.street,
+            all_in=all_in,
+            will_remain=passive_will_remain,
+            will_act=will_act)
+        
+
+        # TODO: 0: range actions create showdowns
+        
+        # TODO: 0: track who remains
+        # -> self.remaining_userids
+        # TODO: 0: track who has acted (note that situation has 'left to act')
+        # -> self.left_to_act
+        # TODO: 0: track how much each player have contributed
+        # -> self.contrib
+        
+        # Consider the fold option, the passive option, the aggressive option.
+        # An aggressive option can't create a showdown, but the other two can.
+        # It's also possible for both fold and passive to create showdowns.
+        # A showdown is when the option terminates a betting round with two or
+        # more players remaining. An option terminates when it is non-aggressive
+        # and all players have either folded or put in the same amount of money
+        # and all players have had a chance to act. The showdown is between all
+        # players who have not folded.
+        
+        # The above applies on any street, but it's only a showdown if they are
+        # all in - or on the river.
+        
+        
+
 
     def process_child_item(self, item):
         """
@@ -241,6 +408,21 @@ class AnalysisReplayer(object):
         
         If you need to reanalyse the game, delete the existing analysis first.
         """
+        self.ranges = {self.game.rgps[i].userid:
+                       self.game.situation.players[i].range_raw
+                       for i in range(len(self.game.situation.players))}
+        self.stacks = {self.game.rgps[i].userid:
+                       self.game.situation.players[i].stack
+                       for i in range(len(self.game.situation.players))}
+        self.contrib = {self.game.rgps[i].userid:
+                        self.game.situation.players[i].contributed 
+                        for i in range(len(self.game.situation.players))}
+        self.remaining_userids = [rgp.userid for rgp in self.game.rgps]
+        self.left_to_act = [self.game.rgps[i].userid
+                            for i in range(len(self.game.situation.players))
+                            if self.game.situation.players[i].left_to_act]
+        self.current_factor = 1.0
+
         gameid = self.game.gameid
         logging.debug("gameid %d, AnalysisReplayer, analyse", gameid)
         items = [self.session.query(table)
@@ -251,17 +433,8 @@ class AnalysisReplayer(object):
                                GameHistoryRangeAction]]
         child_items = sorted(concatenate(items),
                              key=lambda c: c.order)
-        self.ranges = {self.game.rgps[i].userid:
-                  self.game.situation.players[i].range_raw
-                  for i in range(len(self.game.situation.players))}
-        self.stacks = {self.game.rgps[i].userid:
-                  self.game.situation.players[i].stack
-                  for i in range(len(self.game.situation.players))}
-        self.contrib = {self.game.rgps[i].userid:
-                   self.game.situation.players[i].contributed 
-                   for i in range(len(self.game.situation.players))}
-        self.remaining_userids = [rgp.userid for rgp in self.game.rgps]
         for item in child_items:
+            self._get_current_factor(item)
             self.process_child_item(item)
 
 class Test(unittest.TestCase):

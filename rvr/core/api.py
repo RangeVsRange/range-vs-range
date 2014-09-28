@@ -434,6 +434,7 @@ class API(object):
         base = tables.GameHistoryBase()
         base.gameid = game.gameid
         base.order = game.next_hh
+        base.factor = game.current_factor
         base.time = datetime.datetime.utcnow()
         game.next_hh += 1
         item.gameid = base.gameid

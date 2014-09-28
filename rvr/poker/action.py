@@ -144,6 +144,22 @@ def calculate_current_options(game, rgp):
     else:
         return ActionOptions(call_amount, is_raise=raised_to != 0)
 
+def game_continues(current_round, all_in, will_remain, will_act):
+    """
+    Given a list of players remaining in the hand, and a list of players
+    remaining to act, will the game continue? (Or is it over, contested or
+    otherwise.)
+    """
+    if current_round == RIVER or all_in:
+        # On the river, game continues if there are at least two players,
+        # and at least one left to act.
+        # Similarly, if one player is all in, game continues if there are
+        # at least two players, and at least one left to act.
+        return len(will_remain) >= 2 and len(will_act) >= 1
+    else:
+        # Pre-river, game continues if there are at least two players
+        return len(will_remain) >= 2
+
 def act_fold(rgp):
     """
     Fold rgp
@@ -186,25 +202,6 @@ def finish_game(game):
     Game is finished. Calculate results, record in hand history,
     perform analysis.
     """
-    # TODO: 0: create showdown records:
-    # - which range action triggered the showdown
-    # - what the current factor was
-    # - who showed down
-    # - equity of each player
-    # - pot size
-    # E.g. P1 bet 5 on a pot of 5, P2 call, P3 fold 50% call 50%, we have:
-    # - Showdown 1
-    #   - P1 and P2
-    #   - pot 15
-    #   - current factor whatever it currently is
-    #   - equity per P1 vs P2 ranges
-    # - Showdown 2
-    #   - P1, P2 and P3
-    #   - pot 20
-    #   - current factor whatever it currently is
-    #   - equity per P1 vs P2 vs P3 ranges
-    
-    
     # TODO: 1: 0: results: EV compared to starting stack, fold=0EV
     # TODO: 1: 1: fold equity payments (just a record off-row like analysis)
     # TODO: 1: 2: pre-river showdown payments
@@ -240,22 +237,6 @@ class WhatCouldBe(object):
         self.bough = []  # list of Branch
         self.action_result = None
 
-    def game_continues(self, will_remain, will_act):
-        """
-        Given a list of players remaining in the hand, and a list of players
-        remaining to act, will the game continue? (Or is it over, contested or
-        otherwise.)
-        """
-        if self.game.current_round == RIVER or self.all_in:
-            # On the river, game continues if there are at least two players,
-            # and at least one left to act.
-            # Similarly, if one player is all in, game continues if there are
-            # at least two players, and at least one left to act.
-            return len(will_remain) >= 2 and len(will_act) >= 1
-        else:
-            # Pre-river, game continues if there are at least two players
-            return len(will_remain) >= 2
-
     def fold_continue(self):
         """
         If current player folds here, will the hand continue?
@@ -266,7 +247,8 @@ class WhatCouldBe(object):
         # to act is everyone else who's to act
         will_act = [r for r in self.game.rgps
                     if r.left_to_act and r is not self.rgp]
-        return self.game_continues(will_remain, will_act)
+        return game_continues(self.game.current_round, self.all_in,
+                              will_remain, will_act)
     
     def passive_continue(self):
         """
@@ -277,7 +259,8 @@ class WhatCouldBe(object):
         # to act is everyone else who's to act
         will_act = [r for r in self.game.rgps
                     if r.left_to_act and r is not self.rgp]
-        return self.game_continues(will_remain, will_act)
+        return game_continues(self.game.current_round, self.all_in,
+                              will_remain, will_act)
     
     def aggressive_continue(self):
         """
@@ -290,7 +273,8 @@ class WhatCouldBe(object):
         # to act is everyone else who hasn't folded
         will_act = [r for r in self.game.rgps
                     if not r.folded and r is not self.rgp]
-        return self.game_continues(will_remain, will_act)
+        return game_continues(self.game.current_round, self.all_in,
+                              will_remain, will_act)
         
     def consider_all(self):
         """

@@ -255,10 +255,27 @@ class GameHistoryBase(BASE):
                     primary_key=True)
     order = Column(Integer, primary_key=True)
     time = Column(DateTime, nullable=False)
+    factor = Column(Float, nullable=True)
     game = relationship("RunningGame",
                         backref=backref("history", cascade="all"))
 
-class GameHistoryUserRange(BASE):
+class FactorMixin(object):
+    """
+    Mixin to proxy to GameHistoryBase.factor
+    """
+    def get_factor(self):
+        """
+        Get factor from associated GameHistoryBase
+        """
+        return self.hh_base.factor
+    def set_factor(self, factor):
+        """
+        Set factor on associated GameHistoryBase
+        """
+        self.hh_base.factor = factor
+    factor = property(get_factor, set_factor)        
+
+class GameHistoryUserRange(BASE, FactorMixin):
     """
     User has range. We have one of these for each user at the start of a hand,
     and after each range action.
@@ -278,7 +295,7 @@ class GameHistoryUserRange(BASE):
         " GameHistoryBase.order==GameHistoryUserRange.order)")
     user = relationship("User")
     
-class GameHistoryActionResult(BASE):
+class GameHistoryActionResult(BASE, FactorMixin):
     """
     User's range action results in this action result (fold, call, etc.)
     """
@@ -301,7 +318,7 @@ class GameHistoryActionResult(BASE):
         " GameHistoryBase.order==GameHistoryActionResult.order)")
     user = relationship("User")
     
-class GameHistoryRangeAction(BASE):
+class GameHistoryRangeAction(BASE, FactorMixin):
     """
     User folds part of range, checks or calls part of range, and bets or raises
     part of range.
@@ -326,7 +343,7 @@ class GameHistoryRangeAction(BASE):
         " GameHistoryBase.order==GameHistoryRangeAction.order)")
     user = relationship("User")
 
-class GameHistoryBoard(BASE):
+class GameHistoryBoard(BASE, FactorMixin):
     """
     The board at <street> is <cards>.
     """
@@ -343,7 +360,7 @@ class GameHistoryBoard(BASE):
         "and_(GameHistoryBase.gameid==GameHistoryBoard.gameid," +  \
         " GameHistoryBase.order==GameHistoryBoard.order)")
 
-class GameHistoryTimeout(BASE):
+class GameHistoryTimeout(BASE, FactorMixin):
     """
     Player <userid> has timed out.
     """
@@ -360,7 +377,7 @@ class GameHistoryTimeout(BASE):
         " GameHistoryBase.order==GameHistoryTimeout.order)")
     user = relationship("User")
     
-class GameHistoryChat(BASE):
+class GameHistoryChat(BASE, FactorMixin):
     """
     Player <userid> says <message>.
     """
