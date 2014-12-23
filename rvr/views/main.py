@@ -22,6 +22,11 @@ from rvr.forms.chat import ChatForm
 
 # pylint:disable=R0911,R0912,R0914
 
+# TODO: *** URGENT ***: upgrade to OpenID Connect...
+# https://developers.google.com/accounts/docs/OpenID#openid-connect
+# I asked "How can pyOIDC be installed on Windows?"...
+# http://stackoverflow.com/q/27613747/2434902
+
 # TODO: 3: a 'situation' page that describes the situation
 
 def is_authenticated():

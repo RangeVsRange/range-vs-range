@@ -263,13 +263,13 @@ def read_game_history_bases(session):
 
 def write_game_history_bases(session, ghbs):
     """ Write GameHistoryBase from memory into DB """
-    for gameid, order, time in ghbs:
+    for gameid, order, time, factor in ghbs:
         ghb = GameHistoryBase()
         session.add(ghb)
         ghb.gameid = gameid
         ghb.order = order
         ghb.time = time
-        ghb.factor = None  # TODO: 0: GameHistoryBase.factor
+        ghb.factor = factor
 
 def read_game_history_user_ranges(session):
     """ Read GameHistoryUserRange table from DB into memory """

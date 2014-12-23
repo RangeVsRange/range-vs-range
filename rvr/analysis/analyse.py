@@ -191,9 +191,15 @@ class AnalysisReplayer(object):
             self.fea = None
             self.ranges[item.userid] = self.prev_range_action.passive_range
             if not self.fold_continues:
-                fold_size = len(HandRange(self.prev_range_action.fold_range).generate_options(self.board))
-                passive_size = len(HandRange(self.prev_range_action.passive_range).generate_options(self.board))
-                aggressive_size = len(HandRange(self.prev_range_action.aggressive_range).generate_options(self.board))
+                fold_size = len(
+                    HandRange(self.prev_range_action.fold_range)
+                    .generate_options(self.board))
+                passive_size = len(
+                    HandRange(self.prev_range_action.passive_range)
+                    .generate_options(self.board))
+                aggressive_size = len(
+                    HandRange(self.prev_range_action.aggressive_range)
+                    .generate_options(self.board))
                 all_size = fold_size + passive_size + aggressive_size
                 fold_ratio = 1.0 * fold_size / all_size
                 self._reduce_current_factor(1.0 - fold_ratio)
@@ -221,18 +227,32 @@ class AnalysisReplayer(object):
             self.pot += bet_cost
             self.ranges[item.userid] = self.prev_range_action.aggressive_range
             if not self.passive_continues:
-                # TODO: 0: if they weren't allowed to call, reduce self.current_factor by fold+passive percentage
-                fold_size = len(HandRange(self.prev_range_action.fold_range).generate_options(self.board))
-                passive_size = len(HandRange(self.prev_range_action.passive_range).generate_options(self.board))
-                aggressive_size = len(HandRange(self.prev_range_action.aggressive_range).generate_options(self.board))
+                # TODO: 0: if they weren't allowed to call, reduce
+                # self.current_factor by fold+passive percentage
+                fold_size = len(
+                    HandRange(self.prev_range_action.fold_range)
+                    .generate_options(self.board))
+                passive_size = len(
+                    HandRange(self.prev_range_action.passive_range)
+                    .generate_options(self.board))
+                aggressive_size = len(
+                    HandRange(self.prev_range_action.aggressive_range)
+                    .generate_options(self.board))
                 all_size = fold_size + passive_size + aggressive_size
                 aggressive_ratio = 1.0 * (aggressive_size) / all_size
                 self._reduce_current_factor(aggressive_ratio)
             elif not self.fold_continues:
-                # TODO: 0: if they were allowed to call but not fold, reduce self.current_factor by fold percentage
-                fold_size = len(HandRange(self.prev_range_action.fold_range).generate_options(self.board))
-                passive_size = len(HandRange(self.prev_range_action.passive_range).generate_options(self.board))
-                aggressive_size = len(HandRange(self.prev_range_action.aggressive_range).generate_options(self.board))
+                # TODO: 0: if they were allowed to call but not fold,
+                # reduce self.current_factor by fold percentage
+                fold_size = len(
+                    HandRange(self.prev_range_action.fold_range)
+                    .generate_options(self.board))
+                passive_size = len(
+                    HandRange(self.prev_range_action.passive_range)
+                    .generate_options(self.board))
+                aggressive_size = len(
+                    HandRange(self.prev_range_action.aggressive_range)
+                    .generate_options(self.board))
                 all_size = fold_size + passive_size + aggressive_size
                 fold_ratio = 1.0 * fold_size / all_size
                 self._reduce_current_factor(1.0 - fold_ratio)
