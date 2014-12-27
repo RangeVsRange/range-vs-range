@@ -14,7 +14,8 @@ from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
-    act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe
+    act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe,\
+    generate_excluded_cards
 from rvr.core.dtos import MAP_TABLE_DTO
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
@@ -413,7 +414,7 @@ class API(object):
             rgp.range_raw = s_p.range_raw
             rgp.left_to_act = s_p.left_to_act
             rgp.folded = False
-            rgp.cards_dealt = player_to_dealt[s_p]
+            rgp.cards_dealt = player_to_dealt[s_p]  # TODO: 0: remove
             if situation.current_player_num == order:
                 assert running_game.current_userid == ogp.userid
             self.session.add(rgp)
@@ -652,8 +653,7 @@ class API(object):
         """
         total = TOTAL_COMMUNITY_CARDS[game.current_round]
         current = len(game.board)
-        excluded_cards = concatenate(rgp.cards_dealt for rgp in game.rgps)
-        excluded_cards.extend(game.board)
+        excluded_cards = generate_excluded_cards(game)
         new_board = game.board + deal_cards(excluded_cards, total - current)
         game.board = new_board
         if total > current:

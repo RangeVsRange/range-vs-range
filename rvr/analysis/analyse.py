@@ -42,27 +42,6 @@ class FoldEquityAccumulator(object):
         self.gameid = gameid
         self.order = order
         self.street = street
-        
-        # TODO: 0: bug with current_factor...
-        # It's calculated differently by the web app and the analysis:
-        #
-        # analysis:
-        # 0.4260 to 0.42602041
-        # 0.4260 to 0.18149339
-        #
-        # web app:
-        # 0.4089 to 0.4089
-        # 0.4006 to 0.1638
-        #
-        # This likely is attributable to subjective vs. objective range size.
-        # 
-        # So, question: should current factor, for analysis and payment
-        # purposes, be subjective or objective? Secondly: should it be different
-        # for analysis and payment?
-        #
-        # In conclusion, I think the right fix is to remove cards_dealt entirely
-        
-        self.current_factor = 1.0  # TODO: 1: get rid of this eventually
         self.board = board
         self.bettor = bettor
         self.range_action = range_action
@@ -210,19 +189,6 @@ class AnalysisReplayer(object):
                               self.fea.gameid, self.fea.order)
             self.fea = None
             self.ranges[item.userid] = self.prev_range_action.passive_range
-            if not self.fold_continues:
-                fold_size = len(
-                    HandRange(self.prev_range_action.fold_range)
-                    .generate_options(self.board))
-                passive_size = len(
-                    HandRange(self.prev_range_action.passive_range)
-                    .generate_options(self.board))
-                aggressive_size = len(
-                    HandRange(self.prev_range_action.aggressive_range)
-                    .generate_options(self.board))
-                all_size = fold_size + passive_size + aggressive_size
-                fold_ratio = 1.0 * fold_size / all_size
-                self._reduce_current_factor(1.0 - fold_ratio)
         if item.is_aggressive:
             self.left_to_act = self.remaining_userids[:]
             amount_raised = item.raise_total - max(self.contrib.values())
@@ -246,32 +212,6 @@ class AnalysisReplayer(object):
                     u is not item.userid])
             self.pot += bet_cost
             self.ranges[item.userid] = self.prev_range_action.aggressive_range
-            if not self.passive_continues:
-                fold_size = len(
-                    HandRange(self.prev_range_action.fold_range)
-                    .generate_options(self.board))
-                passive_size = len(
-                    HandRange(self.prev_range_action.passive_range)
-                    .generate_options(self.board))
-                aggressive_size = len(
-                    HandRange(self.prev_range_action.aggressive_range)
-                    .generate_options(self.board))
-                all_size = fold_size + passive_size + aggressive_size
-                aggressive_ratio = 1.0 * (aggressive_size) / all_size
-                self._reduce_current_factor(aggressive_ratio)
-            elif not self.fold_continues:
-                fold_size = len(
-                    HandRange(self.prev_range_action.fold_range)
-                    .generate_options(self.board))
-                passive_size = len(
-                    HandRange(self.prev_range_action.passive_range)
-                    .generate_options(self.board))
-                aggressive_size = len(
-                    HandRange(self.prev_range_action.aggressive_range)
-                    .generate_options(self.board))
-                all_size = fold_size + passive_size + aggressive_size
-                fold_ratio = 1.0 * fold_size / all_size
-                self._reduce_current_factor(1.0 - fold_ratio)
             
         self.left_to_act.remove(item.userid)
 
@@ -315,33 +255,6 @@ class AnalysisReplayer(object):
                       'with userids: %r',
                       self.game.gameid, order, factor, userids)
     
-    def _reduce_current_factor(self, factor):
-        """
-        Factor is the proportion of combos that were allowed to continue play
-        """
-        new_current_factor = self.current_factor * factor
-        logging.debug(
-            'analysis gameid %d, reducing factor from %0.8f by %0.4f to %0.8f',
-            self.game.gameid, self.current_factor, factor, new_current_factor)
-        self.current_factor = new_current_factor
-    
-    def _get_current_factor(self, item):
-        """
-        Return or calculate current factor
-        """
-        if item.factor is None:
-            logging.debug('gameid %d, order %d, updating factor to %r',
-                          item.gameid, item.order, self.current_factor)
-            item.factor = self.current_factor
-            self.session.commit()
-        if item.factor != self.current_factor:
-            logging.error('INCONSISTENCY: gameid %d, cf %r; order %d, cf %r',
-                          item.gameid, self.current_factor, item.order,
-                          item.factor)
-            item.factor = self.current_factor
-            self.session.commit()
-        return item.factor
-    
     def range_action_showdown(self, item):
         """
         Consider showdowns based on this range action resulting in a fold, and
@@ -368,12 +281,12 @@ class AnalysisReplayer(object):
         size_all = size_fold + size_passive + size_aggressive
         if len(self.remaining_userids) > 2:
             # this player folds, but the pot is contested, so we have a showdown
-            factor = self._get_current_factor(item) * size_fold / size_all
+            factor = item.factor * size_fold / size_all
             self.create_showdown(order=item.order,
                 factor=factor,
                 userids=[userid for userid in self.remaining_userids
                          if userid != item.userid])
-        factor = self._get_current_factor(item) * size_passive / size_all
+        factor = item.factor * size_passive / size_all
         self.create_showdown(order=item.order,
                              factor=factor,
                              userids=self.remaining_userids)
@@ -455,7 +368,6 @@ class AnalysisReplayer(object):
         self.left_to_act = [self.game.rgps[i].userid
                             for i in range(len(self.game.situation.players))
                             if self.game.situation.players[i].left_to_act]
-        self.current_factor = 1.0
 
         gameid = self.game.gameid
         logging.debug("gameid %d, AnalysisReplayer, analyse", gameid)
@@ -468,7 +380,6 @@ class AnalysisReplayer(object):
         child_items = sorted(concatenate(items),
                              key=lambda c: c.order)
         for item in child_items:
-            self._get_current_factor(item)
             self.process_child_item(item)
 
 class Test(unittest.TestCase):

@@ -3,7 +3,7 @@ action functionality, imported from the previous versions
 """
 from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN
 import unittest
-from rvr.poker.handrange import HandRange, _cmp_options
+from rvr.poker.handrange import HandRange, _cmp_options, deal_from_ranges
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
 import random
@@ -117,6 +117,17 @@ def range_contains_hand(range_, hand):
     Is hand in range?
     """
     return set(hand) in range_.generate_options()
+
+def generate_excluded_cards(game):
+    """
+    calculate excluded cards, as if players had been dealt cards
+    """        
+    map_to_range = {rgp: rgp.range for rgp in game.rgps}
+    player_to_dealt = deal_from_ranges(map_to_range, game.board)
+    # note: this catches cards dealt to folded RGPs - as it should!
+    excluded_cards = concatenate(player_to_dealt.values())
+    excluded_cards.extend(game.board)
+    return excluded_cards
 
 def calculate_current_options(game, rgp):
     """
@@ -295,11 +306,8 @@ class WhatCouldBe(object):
          - (later) equity payments and such
         """
         # note that we only consider the possible
-        # mostly copied from the old re_deal
-        cards_dealt = {rgp: rgp.cards_dealt for rgp in self.game.rgps}
-        dead_cards = [card for card in self.game.board if card is not None]
-        dead_cards.extend(concatenate([v for k, v in cards_dealt.iteritems()
-                                       if k is not self.rgp]))
+        # mostly copied from the old re_deal (originally!)
+        dead_cards = generate_excluded_cards(self.game)
         fold_options = self.range_action.fold_range  \
             .generate_options(dead_cards)
         passive_options = self.range_action.passive_range  \
@@ -366,7 +374,14 @@ class WhatCouldBe(object):
                       self.game.gameid, len(non_terminal), len(terminal),
                       reduction, self.game.current_factor,
                       self.game.current_factor * reduction)
-        # the more non-terminal, the less effect on current factor
+        # TODO: REVISIT: use true probability of play continuing
+        # (This uses a statistically unbiased approximation, by actually dealing
+        # cards to the other players. It's normally very accurate, but for small
+        # ranges against tight ranges, it can give significant - but
+        # statistically unbiased - errors.)
+        # (But it's really hard to accurately answer the question "Given player
+        # X continues with subrange A of original range B, while player Y holds
+        # range C, what is the probability that play continues?)
         self.game.current_factor *= reduction
         if non_terminal:
             chosen_option = random.choice(non_terminal)
