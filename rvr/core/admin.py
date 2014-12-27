@@ -291,11 +291,11 @@ class AdminCmd(Cmd):
         if details == "":
             result = self.api.run_pending_analysis()
         elif details == "refresh":
-            print "This will re-email everyone for analysis they have already" \
+            print "This may re-email everyone for games they have already" \
                 " had analysis for. If you don't want to do that, turn off" \
                 " email in local_settings.py first. If you are okay with" \
-                " re-emailing everyone, the command is 'analyse refresh" \
-                " confirm'."
+                " re-emailing everyone, or you have checked local_settings.py" \
+                " the command is 'analyse refresh confirm'."
             return
         elif details == "refresh confirm":
             result = self.api.reanalyse_all()

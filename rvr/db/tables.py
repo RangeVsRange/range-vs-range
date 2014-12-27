@@ -255,7 +255,7 @@ class GameHistoryBase(BASE):
                     primary_key=True)
     order = Column(Integer, primary_key=True)
     time = Column(DateTime, nullable=False)
-    factor = Column(Float, nullable=True)
+    factor = Column(Float, nullable=False)
     game = relationship("RunningGame",
                         backref=backref("history", cascade="all"))
 
@@ -403,7 +403,7 @@ class GameHistoryChat(BASE, FactorMixin):
 # Record analysis against specific hand history (range action) items.
 # Record equity payments against hand history items - deals, range actions, etc.
 
-# TODO: 3: strategic analysis
+# TODO: 5: strategic analysis
 # - fold equity analysis row (might be semibluff EV, or immediate profit)
 # - profitable float / bet (linked to call, and bet)
 # - profitable float / raise (linked to call, and raise)

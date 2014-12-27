@@ -227,8 +227,6 @@ class AnalysisReplayer(object):
             self.pot += bet_cost
             self.ranges[item.userid] = self.prev_range_action.aggressive_range
             if not self.passive_continues:
-                # TODO: 0: if they weren't allowed to call, reduce
-                # self.current_factor by fold+passive percentage
                 fold_size = len(
                     HandRange(self.prev_range_action.fold_range)
                     .generate_options(self.board))
@@ -242,8 +240,6 @@ class AnalysisReplayer(object):
                 aggressive_ratio = 1.0 * (aggressive_size) / all_size
                 self._reduce_current_factor(aggressive_ratio)
             elif not self.fold_continues:
-                # TODO: 0: if they were allowed to call but not fold,
-                # reduce self.current_factor by fold percentage
                 fold_size = len(
                     HandRange(self.prev_range_action.fold_range)
                     .generate_options(self.board))
@@ -276,9 +272,9 @@ class AnalysisReplayer(object):
         """
         Create a showdown with given userids. Pre-river if pre-river.
         """
-        # TODO: 0: create showdown with given userids.
+        # TODO: 1: create showdown with given userids.
         
-        # TODO: 0: record current factor against showdown, for results
+        # TODO: 1: record current factor against showdown, for results
         # (Shit, where do we get current factor from?! We should have been
         #  recording it against the history - specifically range actions and
         #  action results.)
@@ -290,10 +286,9 @@ class AnalysisReplayer(object):
         # (Perhaps this is a candidate for making a nullable column, then using
         #  the code here to backfill the data, then make the column
         #  non-nullable.)
-        # TODO: 0: recalculate and inject current factor into all games' history
-        # TODO: 0: note that showdown results must be scaled down by the...
-        # TODO: 0: ... current factor and by the unlikeliness of the action...
-        # TODO: 0: ... being chosen from the range action.
+        # TODO: 1: note that showdown results must be scaled down by the...
+        # ... current factor and by the unlikeliness of the action...
+        # ... being chosen from the range action.
         # If possible, handle pre-river and river showdowns together.
         # (perhaps river showdown is a special case of pre-river showdown?)
         logging.debug('gameid %d, order %d, factor %0.8f, creating showdown '
@@ -305,9 +300,9 @@ class AnalysisReplayer(object):
         Factor is the proportion of combos that were allowed to continue play
         """
         new_current_factor = self.current_factor * factor
-        logging.debug('gameid %d, reducing factor from %0.8f by %0.4f to %0.8f',
-                      self.game.gameid, self.current_factor, factor,
-                      new_current_factor)
+        logging.debug(
+            'analysis gameid %d, reducing factor from %0.8f by %0.4f to %0.8f',
+            self.game.gameid, self.current_factor, factor, new_current_factor)
         self.current_factor = new_current_factor
     
     def _get_current_factor(self, item):
@@ -320,7 +315,7 @@ class AnalysisReplayer(object):
             item.factor = self.current_factor
             self.session.commit()
         if item.factor != self.current_factor:
-            logging.error('gameid %d, cf %r; order %d, cf %r',
+            logging.error('INCONSISTENCY: gameid %d, cf %r; order %d, cf %r',
                           item.gameid, self.current_factor, item.order,
                           item.factor)
             item.factor = self.current_factor
@@ -369,7 +364,6 @@ class AnalysisReplayer(object):
         """
         self.range_action_fea(item)
         self.range_action_showdown(item)
-        # TODO: 0: would play continue? we'll need to know later, to update c.f.
         will_act = set(self.left_to_act).difference({item.userid})
         fold_will_remain = set(self.remaining_userids).difference({item.userid})
         all_in = any([stack == 0 for stack in self.stacks.values()])
@@ -386,13 +380,13 @@ class AnalysisReplayer(object):
             will_act=will_act)
         
 
-        # TODO: 0: range actions create showdowns
+        # TODO: 1: range actions create showdowns
         
-        # TODO: 0: track who remains
+        # TODO: 1: track who remains
         # -> self.remaining_userids
-        # TODO: 0: track who has acted (note that situation has 'left to act')
+        # TODO: 1: track who has acted (note that situation has 'left to act')
         # -> self.left_to_act
-        # TODO: 0: track how much each player have contributed
+        # TODO: 1: track how much each player have contributed
         # -> self.contrib
         
         # Consider the fold option, the passive option, the aggressive option.

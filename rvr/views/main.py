@@ -27,7 +27,7 @@ from rvr.forms.chat import ChatForm
 # I asked "How can pyOIDC be installed on Windows?"...
 # http://stackoverflow.com/q/27613747/2434902
 
-# TODO: 3: a 'situation' page that describes the situation
+# TODO: 5: a 'situation' page that describes the situation
 
 def is_authenticated():
     """
@@ -677,7 +677,7 @@ def game_page():
     """
     View of the specified game, authentication-aware
     """
-    # TODO: 3: every position should have a name
+    # TODO: 5: every position should have a name
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -751,8 +751,8 @@ def analysis_page():
     """
     Analysis of a particular hand history item.
     """
-    # TODO: 3: the range viewer on the analysis page
-    
+    # TODO: 5: the range viewer on the analysis page
+
     # This can simply display each rank combo and allow selection of suit
     # combos. Then it can display, for each rank combo, the average EV of the
     # selected suit combos, as hover text. I'm not sure about colours.
