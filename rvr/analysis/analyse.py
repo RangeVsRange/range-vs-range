@@ -247,7 +247,9 @@ class AnalysisReplayer(object):
         #   - link to range action that created showdown
         #   - whether action was a fold, passive or aggressive
         #     (it's possible to have three showdowns for a range action) 
-        # - showdown participant: equity
+        # - showdown participant:
+        #   - link to showdown
+        #   - equity for participant
         # TODO: 1: new tables for payments (separate from showdown details)
         # - generic payment to user: raw payment, factor, resultant payment
     
