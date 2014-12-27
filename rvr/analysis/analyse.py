@@ -233,19 +233,6 @@ class AnalysisReplayer(object):
         Create a showdown with given userids. Pre-river if pre-river.
         """
         # TODO: 2: create showdown with given userids.
-        
-        # TODO: 2: record current factor against showdown, for results
-        # (Shit, where do we get current factor from?! We should have been
-        #  recording it against the history - specifically range actions and
-        #  action results.)
-        # (Well, conceptually it's pretty simple - current factor goes down when
-        #  there are terminal options that are avoided and play on is forced.)
-        # (But the *right* thing to do is to change the database to include
-        #  current factor for all game history items, and to retrospectively
-        #  calculate and inject that data for running and finished games.)
-        # (Perhaps this is a candidate for making a nullable column, then using
-        #  the code here to backfill the data, then make the column
-        #  non-nullable.)
         # TODO: 2: note that showdown results must be scaled down by the...
         # ... current factor and by the unlikeliness of the action...
         # ... being chosen from the range action.
@@ -254,6 +241,15 @@ class AnalysisReplayer(object):
         logging.debug('gameid %d, order %d, factor %0.8f, creating showdown '
                       'with userids: %r',
                       self.game.gameid, order, factor, userids)
+        # TODO: 0: new tables for showdown (payments separate):
+        # - showdown:
+        #   - factor
+        #   - link to range action that created showdown
+        #   - whether action was a fold, passive or aggressive
+        #     (it's possible to have three showdowns for a range action) 
+        # - showdown participant: equity
+        # TODO: 1: new tables for payments (separate from showdown details)
+        # - generic payment to user: raw payment, factor, resultant payment
     
     def range_action_showdown(self, item):
         """
@@ -311,7 +307,6 @@ class AnalysisReplayer(object):
             all_in=all_in,
             will_remain=passive_will_remain,
             will_act=will_act)
-        
 
         # TODO: 2: range actions create showdowns
         
@@ -334,9 +329,6 @@ class AnalysisReplayer(object):
         # The above applies on any street, but it's only a showdown if they are
         # all in - or on the river.
         
-        
-
-
     def process_child_item(self, item):
         """
         Process a single history item, as part of the broader analysis.

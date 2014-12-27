@@ -9,7 +9,7 @@ from functools import wraps
 import logging
 from sqlalchemy.exc import IntegrityError
 import traceback
-from rvr.poker.handrange import deal_from_ranges, remove_board_from_range,  \
+from rvr.poker.handrange import remove_board_from_range,  \
     ANYTHING, NOTHING
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
@@ -401,8 +401,6 @@ class API(object):
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
-        map_to_range = {p: p.range for p in situation.players}
-        player_to_dealt = deal_from_ranges(map_to_range, running_game.board)
         for order, (ogp, s_p) in enumerate(zip(all_ogps, situation_players)):
             # create rgps in the order they will act in future rounds
             rgp = tables.RunningGameParticipant()

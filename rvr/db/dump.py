@@ -37,7 +37,6 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
     AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat
 from rvr.db.creation import SESSION
-import logging
 
 #pylint:disable=C0103
 
