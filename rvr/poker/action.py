@@ -362,7 +362,7 @@ class WhatCouldBe(object):
         total = len(non_terminal) + len(terminal)
         reduction = float(len(non_terminal)) / total
         logging.debug("gameid %d, with %d non-terminal and %d terminal, " +
-                      "multiplying current factor by %0.2f from %0.2f to %0.2f",
+                      "multiplying current factor by %0.4f from %0.4f to %0.4f",
                       self.game.gameid, len(non_terminal), len(terminal),
                       reduction, self.game.current_factor,
                       self.game.current_factor * reduction)

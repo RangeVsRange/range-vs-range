@@ -42,7 +42,27 @@ class FoldEquityAccumulator(object):
         self.gameid = gameid
         self.order = order
         self.street = street
-        self.current_factor = 1.0  # TODO: 0: get rid of this eventually
+        
+        # TODO: 0: bug with current_factor...
+        # It's calculated differently by the web app and the analysis:
+        #
+        # analysis:
+        # 0.4260 to 0.42602041
+        # 0.4260 to 0.18149339
+        #
+        # web app:
+        # 0.4089 to 0.4089
+        # 0.4006 to 0.1638
+        #
+        # This likely is attributable to subjective vs. objective range size.
+        # 
+        # So, question: should current factor, for analysis and payment
+        # purposes, be subjective or objective? Secondly: should it be different
+        # for analysis and payment?
+        #
+        # In conclusion, I think the right fix is to remove cards_dealt entirely
+        
+        self.current_factor = 1.0  # TODO: 1: get rid of this eventually
         self.board = board
         self.bettor = bettor
         self.range_action = range_action
@@ -272,9 +292,9 @@ class AnalysisReplayer(object):
         """
         Create a showdown with given userids. Pre-river if pre-river.
         """
-        # TODO: 1: create showdown with given userids.
+        # TODO: 2: create showdown with given userids.
         
-        # TODO: 1: record current factor against showdown, for results
+        # TODO: 2: record current factor against showdown, for results
         # (Shit, where do we get current factor from?! We should have been
         #  recording it against the history - specifically range actions and
         #  action results.)
@@ -286,7 +306,7 @@ class AnalysisReplayer(object):
         # (Perhaps this is a candidate for making a nullable column, then using
         #  the code here to backfill the data, then make the column
         #  non-nullable.)
-        # TODO: 1: note that showdown results must be scaled down by the...
+        # TODO: 2: note that showdown results must be scaled down by the...
         # ... current factor and by the unlikeliness of the action...
         # ... being chosen from the range action.
         # If possible, handle pre-river and river showdowns together.
@@ -380,13 +400,13 @@ class AnalysisReplayer(object):
             will_act=will_act)
         
 
-        # TODO: 1: range actions create showdowns
+        # TODO: 2: range actions create showdowns
         
-        # TODO: 1: track who remains
+        # TODO: 2: track who remains
         # -> self.remaining_userids
-        # TODO: 1: track who has acted (note that situation has 'left to act')
+        # TODO: 2: track who has acted (note that situation has 'left to act')
         # -> self.left_to_act
-        # TODO: 1: track how much each player have contributed
+        # TODO: 2: track how much each player have contributed
         # -> self.contrib
         
         # Consider the fold option, the passive option, the aggressive option.
