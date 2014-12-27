@@ -37,6 +37,7 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
     AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat
 from rvr.db.creation import SESSION
+import logging
 
 #pylint:disable=C0103
 
@@ -232,14 +233,13 @@ def read_running_game_participants(session):
              rgp.contributed,
              rgp.range_raw,
              rgp.left_to_act,
-             rgp.folded,
-             rgp.cards_dealt_raw)
+             rgp.folded)
             for rgp in rgps]
 
 def write_running_game_participants(session, rgps):
     """ Write RunningGameParticipant from memory into DB """
     for userid, gameid, order, stack, contributed, range_raw, left_to_act, \
-            folded, cards_dealt_raw in rgps:
+            folded in rgps:
         rgp = RunningGameParticipant()
         session.add(rgp)
         rgp.userid = userid
@@ -250,7 +250,6 @@ def write_running_game_participants(session, rgps):
         rgp.range_raw = range_raw
         rgp.left_to_act = left_to_act
         rgp.folded = folded
-        rgp.cards_dealt_raw = cards_dealt_raw
 
 def read_game_history_bases(session):
     """ Read GameHistoryBase table from DB into memory """

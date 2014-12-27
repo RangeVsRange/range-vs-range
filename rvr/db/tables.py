@@ -213,8 +213,6 @@ class RunningGameParticipant(BASE, object):
     range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     folded = Column(Boolean, nullable=False)
-    # note importantly, this is a secret from the user!
-    cards_dealt_raw = Column(String, nullable=False)
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"),
@@ -232,17 +230,6 @@ class RunningGameParticipant(BASE, object):
         self.range_raw = unweighted_options_to_description(
             range_.generate_options())
     range = property(get_range, set_range)
-    def get_cards_dealt(self):
-        """
-        Get cards dealt, as list of two Card
-        """
-        return Card.many_from_text(self.cards_dealt_raw)
-    def set_cards_dealt(self, cards):
-        """
-        Set cards dealt, from list of two Card
-        """
-        self.cards_dealt_raw = ''.join([card.to_mnemonic() for card in cards])
-    cards_dealt = property(get_cards_dealt, set_cards_dealt)
 
 class GameHistoryBase(BASE):
     """
