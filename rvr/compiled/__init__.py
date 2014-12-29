@@ -1,3 +1,4 @@
+#@PydevCodeAnalysisIgnore
 import eval7
 
 py_n_bits_table = [
