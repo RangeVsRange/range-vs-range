@@ -12,7 +12,7 @@ from rvr.compiled.eval7 import py_wh_randint  # @UnresolvedImport
 from rvr.compiled.eval7 import py_hand_to_mask  # @UnresolvedImport
 from rvr.compiled import eval7
 
-#pylint:disable=C0301,C0103,E1101,C0111
+#pylint:disable=C0301,C0103,E1101,C0111,R0904
 
 CLUB_OFFSET = 13 * 0
 DIAMOND_OFFSET = 13 * 1

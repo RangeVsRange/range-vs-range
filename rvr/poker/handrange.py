@@ -44,22 +44,6 @@ def between(rank1, rank2):
         raise ValueError("Bad cards for between(): " + rank1 + "," + rank2)
     return [ALL_RANKS[i] for i in range(indeces[0], indeces[1] + 1)]
 
-def weighted_choice(items):
-    """items is a list in the form [(option, weight), ...]"""
-    weight_total = sum((item[1] for item in items))
-    invalids = [item[1] for item in items if item[1] < 0]
-    if invalids:
-        raise ValueError("weighted_choice() invalid weights: " + str(invalids))
-    if weight_total < 1:
-        raise ValueError("weighted_choice() needs at least"
-                         "one positive weight")
-    count = random.randint(0, weight_total - 1)
-    for item, weight in items:
-        if count < weight:
-            return item
-        count = count - weight
-    return item
-
 def subrange(part):
     """
     Interprets an unweighted subrange, e.g. 'AQo+' -> 'AQo+'

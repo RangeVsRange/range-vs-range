@@ -1,5 +1,8 @@
-#@PydevCodeAnalysisIgnore
-import eval7
+#pylint:disable=C0103,C0302
+"""
+Initialisation for eval7.py
+"""
+from rvr.compiled import eval7
 
 py_n_bits_table = [
     0x00 ,
@@ -32831,5 +32834,7 @@ py_card_masks_table = [
     0x4000000000000,
     0x8000000000000]  # _card_masks_table
 
-eval7.load_tables(py_n_bits_table, py_straight_table, py_top_five_cards_table, py_top_card_table, py_card_masks_table)
-eval7.init_card_names()
+eval7.load_tables(py_n_bits_table, py_straight_table,   # @UndefinedVariable
+                  py_top_five_cards_table, py_top_card_table,
+                  py_card_masks_table)
+eval7.init_card_names()  # @UndefinedVariable
