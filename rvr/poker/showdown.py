@@ -62,16 +62,16 @@ def _simulate_showdown(wins_by_player, options_by_player, board, memo):
         for player, options in options_by_player.iteritems():
             selected[player] = random.choice(options)
         fixed = {player: hand for player, hand in selected.iteritems()}
-        if not _impossible_deal(fixed.values() +
-                [[c for c in board if c is not None]]):
+        if not _impossible_deal(fixed.values() + [board]):
             break
     excluded = concatenate(fixed.values())
     fixed_board = []
-    for card in board:
-        if card is None:
-            card = cards.deal_card(excluded)  # extends excluded
-        else:
+    for i in range(5):
+        if i < len(board):
+            card = board[i]
             excluded.append(card)
+        else:
+            card = cards.deal_card(excluded)  # extends excluded
         fixed_board.append(card)
     _shown_down, winners = showdown(fixed_board, fixed, memo)
     for player in selected.keys():
@@ -92,19 +92,20 @@ def _estimate_showdown_equity(options_by_player, board, iterations):
         i += 1
     return wins_by_player
 
-def showdown_equity(ranges, board, hard_limit):
+MAX_ITERATIONS = 10000
+
+def showdown_equity(ranges, board, hard_limit=MAX_ITERATIONS):
     """
     ranges: maps player to range
     board: community cards (may have Nones if not river)
     
     returns a dict mapping player to equity (between 0.0 and 1.0)
     """
-    options_by_player = {player: range_.generate_options(
-                            [c for c in board if c is not None])
+    options_by_player = {player: range_.generate_options(board)
                          for player, range_ in ranges.iteritems()}
     total_combos = reduce(operator.mul,
                           [len(o) for o in options_by_player.values()])
-    if total_combos <= hard_limit and None not in board:
+    if total_combos <= hard_limit and len(board) == 5:
         # We only do exact equity for river showdowns
         # (Because we don't yet have functionality to iterate over all combos
         # of turn, river etc.)
@@ -119,7 +120,7 @@ def showdown_equity(ranges, board, hard_limit):
     return {player: wins / total
             for player, wins in wins_by_player.iteritems()}, iterations
 
-def showdown(board, players_cards, memo = None):
+def showdown(board, players_cards, memo=None):
     """
     board is a list of five board cards
     
@@ -127,8 +128,8 @@ def showdown(board, players_cards, memo = None):
     order of this list is the order in which players will show down
     
     returns a list of tuples: (player, hand shown down), and a list of winners
-    will return a hand for every player, with None representing a fold (because the player did not
-    show down a hand)
+    will return a hand for every player, with None representing a fold (because
+    the player did not show down a hand)
     """
     shown_down = []  # list of: (player, hand or None)
     best = None  # best hand shown down so far
@@ -153,50 +154,6 @@ def showdown(board, players_cards, memo = None):
             shown_down.append((player, None))
     winners = [player for player, hand in shown_down if hand == best]
     return shown_down, winners
-
-def distribution(winners, pot):
-    """
-    Determines how much of the pot each player should be awarded.
-    Returns a dict, mapping players from parameter winners to amounts.
-    The sum of all such amount should be equal to the pot parameter.
-    At present, this function does very little, dividing the pot equally and giving remaining chips
-    to players in position order. In future, this function must also cover side pots (and so of
-    course it will require additional input parameters).
-    """
-    result = {player: pot / len(winners) for player in winners}
-    for i in range(pot % len(winners)):
-        result[winners[i]] += 1
-    return result
-
-def equity_showdown(ranges, board, player_order, pot, max_iterations):
-    """
-    ranges: maps player to HandRange
-    board: cards on the board (possibly before the river, i.e. some None)
-    player_order: the order of players, because odd remaining chips will be
-                  awarded to the earliest players
-    
-    returns a dict mapping player to winnings (whole chips),
-    in proportion to their range-vs-range equity,
-    summing to pot.
-    
-    also return a dict mapping player to equity,
-    
-    and the count of iterations
-    """
-    # give each player their share of the pot (rounding down)
-    all_equity, iterations = showdown_equity(ranges, board, max_iterations)
-    results = {player: int(equity * pot)
-               for player, equity in all_equity.iteritems()}
-    remain = pot - sum(results.values())
-    while remain > 0:
-        # find the player owed most, and give them a chip
-        most_deserving = lambda a, b: a if a[1] > b[1] else b
-        owed = [(player, all_equity[player] - results[player])
-                for player in player_order]
-        player, _diff = reduce(most_deserving, owed)
-        results[player] += 1
-        remain = pot - sum(results.values())
-    return results, all_equity, iterations
 
 class Test(unittest.TestCase):
     #pylint:disable=C0111
@@ -288,10 +245,6 @@ class Test(unittest.TestCase):
         ranges = {"Player %d" % i: HandRange(ranges_txt[i])
                   for i in range(len(ranges_txt))}
         board = Card.many_from_text(board_txt)
-        if len(board) < 5:
-            long_board = board + [None] * (5 - len(board))
-        else:
-            long_board = board
         expected_results = {"Player %d" % i: expect[i]
                             for i in range(len(expect))}
         delta_by_player = {"Player %d" % i: delta[i]
@@ -299,7 +252,7 @@ class Test(unittest.TestCase):
         options_by_player = {p: r.generate_options(board)
                              for p, r in ranges.iteritems()}
         wins_by_player = _estimate_showdown_equity(options_by_player,
-                                                   long_board, iterations)
+                                                   board, iterations)
         print "\nwins_by_player: %r\n" % wins_by_player
         self.assert_wins_almost_equal(wins_by_player, expected_results,
                                       delta_by_player)
@@ -311,10 +264,6 @@ class Test(unittest.TestCase):
         ranges = {"Player %d" % i: HandRange(ranges_txt[i])
                   for i in range(len(ranges_txt))}
         board = Card.many_from_text(board_txt)
-        if len(board) < 5:
-            long_board = board + [None] * (5 - len(board))
-        else:
-            long_board = board
         sdev = [stddev_one(prob) for prob in expect]  # e.g. p=0.05, sdev=0.2179
         expected_results = {"Player %d" % i: expect[i] * iterations
                             for i in range(len(expect))}
@@ -323,7 +272,7 @@ class Test(unittest.TestCase):
         options_by_player = {p: r.generate_options(board)
                              for p, r in ranges.iteritems()}
         wins_by_player = _estimate_showdown_equity(options_by_player,
-                                                   long_board, iterations)
+                                                   board, iterations)
         print "\nwins_by_player: %r\n" % wins_by_player
         self.assert_wins_almost_equal(wins_by_player, expected_results,
                                       delta_by_player)
@@ -384,5 +333,5 @@ class Test(unittest.TestCase):
 
 if __name__ == "__main__":
     # 262 seconds at 2013-02-10 (old version)
-    # 174 seconds at 2014-12-19 (fewer tests though, because no weighted ranges)
+    # 175 seconds at 2014-12-19 (fewer tests though, because no weighted ranges)
     unittest.main()

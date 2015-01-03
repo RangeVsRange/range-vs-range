@@ -27,6 +27,8 @@ from rvr.forms.chat import ChatForm
 # I asked "How can pyOIDC be installed on Windows?"...
 # http://stackoverflow.com/q/27613747/2434902
 
+# TODO: 4: BUG: when new player's Google name is someone's screenname
+# (it shouldn't matter because we auto-assign screennames, e.g. "Player 1")
 # TODO: 5: a 'situation' page that describes the situation
 
 def is_authenticated():

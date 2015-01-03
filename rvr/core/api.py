@@ -425,14 +425,14 @@ class API(object):
         logging.debug("Started game %d", open_game.gameid)
         return running_game
     
-    def _record_hand_history_item(self, game, item):
+    def _record_hand_history_item(self, game, item, factor=None):
         """
         Create a GameHistoryBase, and add it and item to the session.
         """
         base = tables.GameHistoryBase()
         base.gameid = game.gameid
         base.order = game.next_hh
-        base.factor = game.current_factor
+        base.factor = game.current_factor if factor is None else factor
         base.time = datetime.datetime.utcnow()
         game.next_hh += 1
         item.gameid = base.gameid
@@ -506,6 +506,17 @@ class API(object):
         element.user = rgp.user
         element.message = message
         self._record_hand_history_item(rgp.game, element)
+        
+    def _record_showdown(self, game, is_passive, pot, factor):
+        """
+        Record showdown (but not participants / equity)
+        
+        Note that the factor is no the game's current factor!
+        """
+        element = tables.GameHistoryShowdown()
+        element.is_passive = is_passive
+        element.pot = pot
+        self._record_hand_history_item(game, element, factor=factor)
 
     @api
     def join_game(self, userid, gameid):
@@ -680,6 +691,77 @@ class API(object):
                 continue
             rgp.left_to_act = True
     
+    def _create_showdown(self, game, participants, is_passive, pot, factor):
+        # pylint:disable=R0913
+        """
+        Create a showdown in the game history
+        
+        game is a RunningGame
+        participants is a list of RGPs showing down
+        is_passive signals that this showdown was created by a call
+        pot is the hypothetical pot
+        factor is the hypothetical current factor
+        """
+        logging.debug('gameid %d, is_passive %r, factor %0.8f, pot %d, '
+                      'creating showdown with userids: %r',
+                      game.gameid, is_passive, factor, pot,
+                      [rgp.userid for rgp in participants])
+        self._record_showdown(game, is_passive, pot, factor)
+        # equity is handled by analysis (because it takes time to calculate)
+    
+    def _range_action_showdown(self, game, actor, range_action,
+                               current_options):
+        # pylint:disable=R0914
+        """
+        Consider showdowns based on this range action resulting in a fold, and
+        another based on this resulting in a check or call.
+        """
+        remain = []
+        # check if betting round has finished
+        prev_contrib = None
+        any_stack = None
+        for rgp in game.rgps:
+            if not rgp.folded:
+                remain.append(rgp)
+            if rgp.userid == actor.userid:
+                continue
+            if rgp.left_to_act:
+                return  # no showdown yet
+            if prev_contrib is not None and rgp.contributed != prev_contrib:
+                return  # no showdown yet
+            prev_contrib = rgp.contributed
+            any_stack = rgp.stack
+        if any_stack > 0 and game.current_round != RIVER:
+            # not all in, nor river showdown
+            return
+        size_fold = len(range_action.fold_range.generate_options())
+        size_passive = len(range_action.passive_range.generate_options())
+        size_aggressive = len(range_action.aggressive_range.generate_options())
+        size_all = size_fold + size_passive + size_aggressive
+        pot = game.pot_pre + sum(rgp.contributed for rgp in game.rgps)
+        # arbitrarily, we call the showdown created by a fold "first"
+        if len(remain) > 2 and size_fold > 0:
+            # this player folds, but leave 2 or more players to a showdown
+            factor = game.current_factor * size_fold / size_all
+            participants = [rgp for rgp in game.rgps
+                if rgp in remain and rgp.userid != actor.userid]
+            self._create_showdown(game=game,
+                participants=participants,
+                is_passive=False,
+                pot=pot,
+                factor=factor)
+        if size_passive > 0:
+            # this player calls and creates a showdown
+            pot += current_options.call_cost
+            factor = game.current_factor * size_passive / size_all
+            participants = [rgp for rgp in game.rgps
+                if rgp in remain]
+            self._create_showdown(game=game,
+                participants=participants,
+                is_passive=True,
+                pot=pot,
+                factor=factor)
+             
     def _perform_action(self, game, rgp, range_action, current_options):
         """
         Inputs:
@@ -709,6 +791,7 @@ class API(object):
         """
         self._record_range_action(rgp, range_action,
             current_options.can_check(), current_options.is_raise)
+        self._range_action_showdown(game, rgp, range_action, current_options)
         what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
         what_could_be.consider_all()
         action_result = what_could_be.calculate_what_will_be()
@@ -923,6 +1006,7 @@ class API(object):
         """
         self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
+        self.session.query(tables.GameHistoryShowdown).delete()
         self.session.commit()
         return self._run_pending_analysis()
 

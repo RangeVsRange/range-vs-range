@@ -382,6 +382,68 @@ class GameHistoryChat(BASE, FactorMixin):
         " GameHistoryBase.order==GameHistoryChat.order)")
     user = relationship("User")
 
+class GameHistoryShowdown(BASE, FactorMixin):
+    """
+    Users <list of user> have showdown with equities <equity map>
+    
+    Note that a showdown will always have the same order as a range action.
+    """
+    __tablename__ = "game_history_showdown"
+    
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+        ForeignKey("game_history_range_action.gameid"), primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_base.order"),
+        ForeignKey("game_history_range_action.order"), primary_key=True)
+    # Was this showdown created by a call/check, or by a fold?
+    is_passive = Column(Boolean, primary_key=True)
+    pot = Column(Integer, nullable=False)
+    
+    hh_base = relationship("GameHistoryBase", primaryjoin=  \
+        "and_(GameHistoryBase.gameid==GameHistoryShowdown.gameid," +  \
+        " GameHistoryBase.order==GameHistoryShowdown.order)")
+    # Range action that created this showdown
+    range_action = relationship("GameHistoryRangeAction", primaryjoin=  \
+        "and_(GameHistoryRangeAction.gameid==GameHistoryShowdown.gameid," +  \
+        "GameHistoryRangeAction.order==GameHistoryShowdown.order)")
+
+class GameHistoryShowdownEquity(BASE):
+    """
+    User <userid> has equity <equity> in showdown <gameid, order, is_passive>
+    """
+    __tablename__ = "game_history_showdown_equity"
+    
+    gameid = Column(Integer, ForeignKey("game_history_showdown.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_showdown.order"),
+                   primary_key=True)
+    is_passive = Column(Boolean,
+                        ForeignKey("game_history_showdown.is_passive"),
+                        primary_key=True)
+    # ordering within equity rows for this showdown
+    showdown_order = Column(Integer, primary_key=True)
+    userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
+    equity = Column(Float, nullable=False)
+    
+    showdown = relationship("GameHistoryShowdown", primaryjoin="and_(" +
+        "GameHistoryShowdown.gameid==GameHistoryShowdownEquity.gameid," +
+        "GameHistoryShowdown.order==GameHistoryShowdownEquity.order," +
+        "GameHistoryShowdown.is_passive==" +
+        "GameHistoryShowdownEquity.is_passive)",
+        backref=backref("participants", cascade="all",
+            order_by="GameHistoryShowdownEquity.showdown_order"))
+    user = relationship("User")
+    
+GAME_HISTORY_TABLES = [
+    GameHistoryUserRange,
+    GameHistoryActionResult,
+    GameHistoryRangeAction,
+    GameHistoryBoard,
+    GameHistoryTimeout,
+    GameHistoryChat,
+    GameHistoryShowdown  # while GHSEquity is more of an analysis table
+    ]
+
+
 # TODO: HAND HISTORY: the following hand history items:
 #  - analysis of a fold, bet, call
 #  - equity payment (fold equity, board card equity, etc.)

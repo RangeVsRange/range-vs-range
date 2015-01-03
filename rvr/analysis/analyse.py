@@ -9,11 +9,13 @@ import logging
 from rvr.infrastructure.util import concatenate
 from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
-    AnalysisFoldEquityItem
+    AnalysisFoldEquityItem, GameHistoryShowdown,  \
+    GameHistoryShowdownEquity, GAME_HISTORY_TABLES, GameHistoryBase
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
+from rvr.poker.showdown import showdown_equity
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -27,8 +29,40 @@ def already_analysed(session, game):
     """
     Is this game already analysed?
     """
-    return bool(session.query(AnalysisFoldEquity)  \
-        .filter(AnalysisFoldEquity.gameid == game.gameid).all())
+    feas = session.query(AnalysisFoldEquity)  \
+        .filter(AnalysisFoldEquity.gameid == game.gameid).all()
+    showdowns = session.query(GameHistoryShowdown)  \
+        .filter(GameHistoryShowdown.gameid == game.gameid).all()
+    return bool(feas) or bool(showdowns)
+
+def insert_showdown(session, game, showdown):
+    """
+    Insert showdown at appropriate order, and increase order of other items
+    """
+    # increase order of all later items, then insert
+    update_items = []
+    update_bases = []
+    order = showdown.order
+    showdown.order = None
+    for table in GAME_HISTORY_TABLES:
+        items = session.query(table)  \
+            .filter(table.gameid == game.gameid)  \
+            .filter(table.order >= order).all()
+        for item in items:
+            base = session.query(GameHistoryBase)  \
+                .filter(GameHistoryBase.gameid == game.gameid)  \
+                .filter(GameHistoryBase.order == item.order).one()
+            update_items.append(item)
+            update_bases.append(base)
+    # process these without an intermediate flush
+    update_items.sort(key=lambda i:i.order, reverse=True)
+    update_bases.sort(key=lambda i:i.order, reverse=True)
+    for item, base in zip(update_items, update_bases):
+        item.order += 1
+        base.order += 1
+        session.commit()
+    showdown.order = order
+    session.add(showdown)
 
 class FoldEquityAccumulator(object):
     """
@@ -212,7 +246,6 @@ class AnalysisReplayer(object):
                     u is not item.userid])
             self.pot += bet_cost
             self.ranges[item.userid] = self.prev_range_action.aggressive_range
-            
         self.left_to_act.remove(item.userid)
 
     def range_action_fea(self, item):
@@ -228,7 +261,7 @@ class AnalysisReplayer(object):
                 self.fea.finalise(self.session)
                 self.fea = None
 
-    def create_showdown(self, order, factor, userids):
+    def create_showdown(self, ranges, order, is_passive, pot, factor, userids):
         """
         Create a showdown with given userids. Pre-river if pre-river.
         """
@@ -238,38 +271,66 @@ class AnalysisReplayer(object):
         # ... being chosen from the range action.
         # If possible, handle pre-river and river showdowns together.
         # (perhaps river showdown is a special case of pre-river showdown?)
-        logging.debug('gameid %d, order %d, factor %0.8f, creating showdown '
-                      'with userids: %r',
-                      self.game.gameid, order, factor, userids)
-        # TODO: 0: new tables for showdown (payments separate):
-        # - showdown:
-        #   - factor
-        #   - link to range action that created showdown
-        #   - whether action was a fold, passive or aggressive
-        #     (it's possible to have three showdowns for a range action) 
-        # - showdown participant:
-        #   - link to showdown
-        #   - equity for participant
+        range_map = dict(ranges)
+        equity_map, iterations = showdown_equity(range_map, self.game.board)
+        logging.debug('gameid %d, order %d, is_passive %r, factor %0.8f, '
+                      'creating showdown with userids: %r, equity: %r '
+                      '(iterations %d)',
+                      self.game.gameid, order, is_passive, factor, userids,
+                      equity_map, iterations)
+        showdown = GameHistoryShowdown()
+        showdown.gameid = self.game.gameid
+        showdown.order = order
+        showdown.is_passive = is_passive
+        showdown.pot = pot
+        insert_showdown(self.session, self.game, showdown)
+        return
+        # TODO: 0.1: turn this code into a consistency check, not creation
+        # TODO: 0.2: release the showdown creation code to prod
+        # TODO: 0.3: query showdown table before doing equity, for consistency
+        for showdown_order, userid in enumerate(userids):
+            participant = GameHistoryShowdownEquity()
+            participant.gameid = self.game.gameid
+            participant.order = order
+            participant.is_passive = is_passive
+            participant.showdown_order = showdown_order
+            participant.userid = userid
+            participant.equity = equity_map[userid]
+            self.session.add(participant)
         # TODO: 1: new tables for payments (separate from showdown details)
         # - generic payment to user: raw payment, factor, resultant payment
+    
+    def _calculate_call_cost(self, userid):
+        """
+        It would have been convenient if this was stored in
+        GameHistoryRangeAction... but it's easy enough to calculate based on
+        this object's state.
+        """
+        return max(self.contrib.values()) - self.contrib[userid]
     
     def range_action_showdown(self, item):
         """
         Consider showdowns based on this range action resulting in a fold, and
         another based on this resulting in a check or call.
         """
+        # TODO: 2: recreate this functionality mid-game, with create-if-needed,
+        # then delete this eventually. (In the mean time, we will actually
+        # change following items order, to recreate as if injected initially!) 
         prev_contrib = None
         last_stack = None
         for userid in self.remaining_userids:
             if userid == item.userid:
                 continue
             if userid in self.left_to_act:
+                # no showdowns because the betting round hasn't finished
                 return
             if prev_contrib is not None and  \
                     self.contrib[userid] != prev_contrib:
+                # no showdowns because the betting round hasn't finished
                 return
             prev_contrib = self.contrib[userid]
             last_stack = self.stacks[userid]
+        # betting round is over
         if last_stack > 0 and self.street != RIVER:
             # end of betting round, but not showdown
             return
@@ -277,17 +338,35 @@ class AnalysisReplayer(object):
         size_passive = _range_desc_to_size(item.passive_range)
         size_aggressive = _range_desc_to_size(item.aggressive_range)
         size_all = size_fold + size_passive + size_aggressive
+        pot = self.pot
         if len(self.remaining_userids) > 2:
             # this player folds, but the pot is contested, so we have a showdown
             factor = item.factor * size_fold / size_all
-            self.create_showdown(order=item.order,
+            ranges = {key: HandRange(txt)
+                      for key, txt in self.ranges.iteritems()}
+            # They (temporarily) fold
+            ranges.pop(item.userid)
+            self.create_showdown(ranges=ranges,
+                order=item.order,
+                is_passive=False,
+                pot=pot,
                 factor=factor,
                 userids=[userid for userid in self.remaining_userids
                          if userid != item.userid])
         factor = item.factor * size_passive / size_all
-        self.create_showdown(order=item.order,
-                             factor=factor,
-                             userids=self.remaining_userids)
+        ranges = {key: HandRange(txt)
+                  for key, txt in self.ranges.iteritems()}
+        pot += self._calculate_call_cost(item.userid)
+        # They (temporarily) call
+        ranges[item.userid] = HandRange(item.passive_range)
+        if not ranges[item.userid].is_empty():
+            # It's a real call, not a fold 100%
+            self.create_showdown(ranges=ranges,
+                                 order=item.order,
+                                 is_passive=True,
+                                 pot=pot,
+                                 factor=factor,
+                                 userids=self.remaining_userids)
 
     def process_range_action(self, item):
         """
@@ -364,6 +443,7 @@ class AnalysisReplayer(object):
                             if self.game.situation.players[i].left_to_act]
 
         gameid = self.game.gameid
+        
         logging.debug("gameid %d, AnalysisReplayer, analyse", gameid)
         items = [self.session.query(table)
                  .filter(table.gameid == gameid).all()
