@@ -739,6 +739,12 @@ class API(object):
         size_aggressive = len(range_action.aggressive_range.generate_options())
         size_all = size_fold + size_passive + size_aggressive
         pot = game.pot_pre + sum(rgp.contributed for rgp in game.rgps)
+        # TODO: REVISIT: use true probability of fold or call
+        # (This assumes that each option in a user's range is as likely to be
+        # held, but that is not the case.)
+        # (Example, {AA,KK} vs. {A2o+} on a board of "AsAc7h", the first range
+        # never has AA. If that player is folding KK, they are folding 100% of
+        # the time.)
         # arbitrarily, we call the showdown created by a fold "first"
         if len(remain) > 2 and size_fold > 0:
             # this player folds, but leave 2 or more players to a showdown

@@ -20,6 +20,9 @@ import datetime
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
+# TODO: 0.0: BUG: no fold equity analysis of turn bet in game 399
+# 3 way all in on the turn
+
 def _range_desc_to_size(range_description):
     """
     Given a range description, determine the number of combos it represents.
@@ -242,6 +245,8 @@ class AnalysisReplayer(object):
             self.contrib[item.userid] += item.call_cost
             self.stacks[item.userid] -= item.call_cost
             if self.fea is not None:
+                # because they call, we will never know how much the other
+                # players would have folded 
                 logging.debug("gameid %d, FEA %d, canceling",
                               self.fea.gameid, self.fea.order)
             self.fea = None
@@ -311,9 +316,11 @@ class AnalysisReplayer(object):
             logging.debug("gameid %d, confirmed existing showdown, order %d",
                           self.game.gameid, order)
         return
-        # TODO: 0.0: test this with analysis and re-analysis
+        # TODO: 0.0: test this with analysis, re-analysis, and in-game
         # TODO: 0.1: release the showdown creation code to prod
-        # (using current DB)
+        # TODO: 0.2: showdowns in game history
+        # TODO: 0.3: link to a showdown page for each showdown in history
+        # e.g. "Showdown between X, Y and Z for 432 chips"
         range_map = dict(ranges)
         equity_map, iterations = showdown_equity(range_map, self.game.board)
         logging.debug('gameid %d, order %d, is_passive %r, factor %0.8f, '
