@@ -511,7 +511,7 @@ class API(object):
         """
         Record showdown (but not participants / equity)
         
-        Note that the factor is no the game's current factor!
+        Note that the factor is not the game's current factor!
         """
         element = tables.GameHistoryShowdown()
         element.is_passive = is_passive
@@ -985,7 +985,7 @@ class API(object):
             .filter(tables.RunningGame.current_userid == None).all()
         for game in games:
             if not already_analysed(self.session, game):
-                replayer = AnalysisReplayer(self.session, game)
+                replayer = AnalysisReplayer(self, self.session, game)
                 replayer.analyse()
                 if already_analysed(self.session, game):
                     # Don't tell them if there's no analysis!
@@ -1006,7 +1006,6 @@ class API(object):
         """
         self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
-        self.session.query(tables.GameHistoryShowdown).delete()
         self.session.commit()
         return self._run_pending_analysis()
 

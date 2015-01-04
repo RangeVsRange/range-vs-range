@@ -16,6 +16,7 @@ from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
 from rvr.poker.showdown import showdown_equity
+import datetime
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -31,19 +32,17 @@ def already_analysed(session, game):
     """
     feas = session.query(AnalysisFoldEquity)  \
         .filter(AnalysisFoldEquity.gameid == game.gameid).all()
-    showdowns = session.query(GameHistoryShowdown)  \
-        .filter(GameHistoryShowdown.gameid == game.gameid).all()
-    return bool(feas) or bool(showdowns)
+    # TODO: 1: this, but with GameHistoryShowdownEquity 
+    #showdowns = session.query(GameHistoryShowdown)  \
+    #    .filter(GameHistoryShowdown.gameid == game.gameid).all()
+    return bool(feas)  # or bool(showdowns)
 
-def insert_showdown(session, game, showdown):
+def _make_space(session, game, order):
     """
-    Insert showdown at appropriate order, and increase order of other items
+    Move all history items by one, to make space for a new one 
     """
-    # increase order of all later items, then insert
     update_items = []
     update_bases = []
-    order = showdown.order
-    showdown.order = None
     for table in GAME_HISTORY_TABLES:
         items = session.query(table)  \
             .filter(table.gameid == game.gameid)  \
@@ -61,7 +60,30 @@ def insert_showdown(session, game, showdown):
         item.order += 1
         base.order += 1
         session.commit()
-    showdown.order = order
+    game.next_hh += 1
+    session.commit()
+    # now there is a gap in the history
+
+def _record_showdown(session, game, order, is_passive, pot, factor):
+    """
+    Similar to API._record_showdown, but in the middle of the history
+
+    Requires that a gap has been created by _make_space
+    """
+    base = GameHistoryBase()
+    base.gameid = game.gameid
+    base.order = order
+    base.factor = factor
+    base.time = datetime.datetime.utcnow()
+    # TODO: REVISIT: out-of-order history items (chronologically)
+    
+    showdown = GameHistoryShowdown()
+    showdown.is_passive = is_passive
+    showdown.pot = pot
+    showdown.gameid = base.gameid
+    showdown.order = base.order
+    
+    session.add(base)
     session.add(showdown)
 
 class FoldEquityAccumulator(object):
@@ -181,13 +203,14 @@ class AnalysisReplayer(object):
     database.
     """
     #pylint:disable=W0201
-    def __init__(self, session, game):
+    def __init__(self, api, session, game):
         logging.debug("gameid %d, AnalysisReplayer, initialising",
                       game.gameid)
         if not game.is_finished:
             raise ValueError("Can't analyse game until finished.")
         if already_analysed(session, game):
             raise ValueError("Game is already analysed.")
+        self.api = api
         self.session = session
         self.game = game
         self.pot = self.game.situation.pot_pre +  \
@@ -271,6 +294,26 @@ class AnalysisReplayer(object):
         # ... being chosen from the range action.
         # If possible, handle pre-river and river showdowns together.
         # (perhaps river showdown is a special case of pre-river showdown?)
+        showdowns = self.session.query(GameHistoryShowdown)  \
+            .filter(GameHistoryShowdown.gameid == self.game.gameid)  \
+            .filter(GameHistoryShowdown.order == order)  \
+            .filter(GameHistoryShowdown.is_passive == is_passive).all()
+        if len(showdowns) == 0:
+            _make_space(self.session, self.game, order)
+            _record_showdown(self.session, self.game, order, is_passive,
+                             pot, factor)
+            logging.debug("gameid %d, confirmed existing showdown, order %d",
+                          self.game.gameid, order)
+            self.session.commit()
+        else:
+            assert len(showdowns) == 1
+            assert showdowns[0].pot == pot and showdowns[0].factor == factor
+            logging.debug("gameid %d, confirmed existing showdown, order %d",
+                          self.game.gameid, order)
+        return
+        # TODO: 0.0: test this with analysis and re-analysis
+        # TODO: 0.1: release the showdown creation code to prod
+        # (using current DB)
         range_map = dict(ranges)
         equity_map, iterations = showdown_equity(range_map, self.game.board)
         logging.debug('gameid %d, order %d, is_passive %r, factor %0.8f, '
@@ -278,16 +321,6 @@ class AnalysisReplayer(object):
                       '(iterations %d)',
                       self.game.gameid, order, is_passive, factor, userids,
                       equity_map, iterations)
-        showdown = GameHistoryShowdown()
-        showdown.gameid = self.game.gameid
-        showdown.order = order
-        showdown.is_passive = is_passive
-        showdown.pot = pot
-        insert_showdown(self.session, self.game, showdown)
-        return
-        # TODO: 0.1: turn this code into a consistency check, not creation
-        # TODO: 0.2: release the showdown creation code to prod
-        # TODO: 0.3: query showdown table before doing equity, for consistency
         for showdown_order, userid in enumerate(userids):
             participant = GameHistoryShowdownEquity()
             participant.gameid = self.game.gameid
