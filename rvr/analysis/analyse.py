@@ -20,9 +20,6 @@ import datetime
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
-# TODO: 0.0: BUG: no fold equity analysis of turn bet in game 399
-# 3 way all in on the turn
-
 def _range_desc_to_size(range_description):
     """
     Given a range description, determine the number of combos it represents.
@@ -316,7 +313,6 @@ class AnalysisReplayer(object):
             logging.debug("gameid %d, confirmed existing showdown, order %d",
                           self.game.gameid, order)
         return
-        # TODO: 0.0: test this with analysis, re-analysis, and in-game
         # TODO: 0.1: release the showdown creation code to prod
         # TODO: 0.2: showdowns in game history
         # TODO: 0.3: link to a showdown page for each showdown in history
