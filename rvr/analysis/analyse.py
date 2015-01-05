@@ -301,18 +301,20 @@ class AnalysisReplayer(object):
             .filter(GameHistoryShowdown.order == order)  \
             .filter(GameHistoryShowdown.is_passive == is_passive).all()
         if len(showdowns) == 0:
+            # TODO: 0.0: BUG: this isn't finding existing showdowns!
             _make_space(self.session, self.game, order)
             _record_showdown(self.session, self.game, order, is_passive,
                              pot, factor)
-            logging.debug("gameid %d, confirmed existing showdown, order %d",
+            logging.debug("gameid %d, order %d, created showdown",
                           self.game.gameid, order)
             self.session.commit()
         else:
             assert len(showdowns) == 1
             assert showdowns[0].pot == pot and showdowns[0].factor == factor
-            logging.debug("gameid %d, confirmed existing showdown, order %d",
+            logging.debug("gameid %d, order %d, confirmed existing showdown",
                           self.game.gameid, order)
         return
+        # TODO: 0.0: check (by dumping) that re-analysis doesn't change anything
         # TODO: 0.1: release the showdown creation code to prod
         # TODO: 0.2: showdowns in game history
         # TODO: 0.3: link to a showdown page for each showdown in history
@@ -383,7 +385,7 @@ class AnalysisReplayer(object):
             # They (temporarily) fold
             ranges.pop(item.userid)
             self.create_showdown(ranges=ranges,
-                order=item.order,
+                order=item.order + 1,
                 is_passive=False,
                 pot=pot,
                 factor=factor,
@@ -398,7 +400,7 @@ class AnalysisReplayer(object):
         if not ranges[item.userid].is_empty():
             # It's a real call, not a fold 100%
             self.create_showdown(ranges=ranges,
-                                 order=item.order,
+                                 order=item.order + 1,
                                  is_passive=True,
                                  pot=pot,
                                  factor=factor,

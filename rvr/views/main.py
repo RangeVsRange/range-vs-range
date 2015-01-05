@@ -29,6 +29,7 @@ from rvr.forms.chat import ChatForm
 
 # TODO: 4: BUG: when new player's Google name is someone's screenname
 # (it shouldn't matter because we auto-assign screennames, e.g. "Player 1")
+# (also after it asks them for a new screenname, it doesn't apply it)
 # TODO: 5: a 'situation' page that describes the situation
 
 def is_authenticated():

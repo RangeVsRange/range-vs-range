@@ -35,7 +35,8 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     OpenGameParticipant, RunningGame, RunningGameParticipant, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
-    AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat
+    AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat,\
+    GameHistoryShowdown
 from rvr.db.creation import SESSION
 
 #pylint:disable=C0103
@@ -55,6 +56,7 @@ dumpable_tables = [
     GameHistoryBoard,
     GameHistoryTimeout,
     GameHistoryChat,
+    GameHistoryShowdown,
     RangeItem,
     AnalysisFoldEquity,
     AnalysisFoldEquityItem]
@@ -394,7 +396,7 @@ def read_game_history_chats(session):
             for ghc in ghcs]
     
 def write_game_history_chats(session, ghcs):
-    """ Write GamehistoryChat table from memory into DB """
+    """ Write GameHistoryChat table from memory into DB """
     for gameid, order, userid, message in ghcs:
         ghc = GameHistoryChat()
         session.add(ghc)
@@ -402,6 +404,25 @@ def write_game_history_chats(session, ghcs):
         ghc.order = order
         ghc.userid = userid
         ghc.message = message
+
+def read_game_history_showdowns(session):
+    """ Read GameHistoryShowdown table from DB into memory """
+    ghss = session.query(GameHistoryShowdown).all()
+    return [(ghs.gameid,
+             ghs.order,
+             ghs.is_passive,
+             ghs.pot)
+            for ghs in ghss]
+
+def write_game_history_showdowns(session, ghss):
+    """ Write GameHistoryShowdown table from memory into DB """
+    for gameid, order, is_passive, pot in ghss:
+        ghs = GameHistoryShowdown()
+        session.add(ghs)
+        ghs.gameid = gameid
+        ghs.order = order
+        ghs.is_passive = is_passive
+        ghs.pot = pot
 
 def read_analysis_fold_equities(session):
     """ Read AnalysisFoldEquity table from DB into memory """
@@ -482,6 +503,7 @@ TABLE_READERS = {User: read_users,
                  GameHistoryBoard: read_game_history_boards,
                  GameHistoryTimeout: read_game_history_timeouts,
                  GameHistoryChat: read_game_history_chats,
+                 GameHistoryShowdown: read_game_history_showdowns,
                  RangeItem: read_range_items,
                  AnalysisFoldEquity: read_analysis_fold_equities,
                  AnalysisFoldEquityItem: read_analysis_fold_equity_items}
@@ -500,6 +522,7 @@ TABLE_WRITERS = {User: write_users,
                  GameHistoryBoard: write_game_history_boards,
                  GameHistoryTimeout: write_game_history_timeouts,
                  GameHistoryChat: write_game_history_chats,
+                 GameHistoryShowdown: write_game_history_showdowns,
                  RangeItem: write_range_items,
                  AnalysisFoldEquity: write_analysis_fold_equities,
                  AnalysisFoldEquityItem: write_analysis_fold_equity_items}
