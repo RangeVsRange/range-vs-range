@@ -401,10 +401,6 @@ class GameHistoryShowdown(BASE, FactorMixin):
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryShowdown.gameid," +  \
         " GameHistoryBase.order==GameHistoryShowdown.order)")
-    # Range action that created this showdown
-    range_action = relationship("GameHistoryRangeAction", primaryjoin=  \
-        "and_(GameHistoryRangeAction.gameid==GameHistoryShowdown.gameid," +  \
-        "GameHistoryRangeAction.order==GameHistoryShowdown.order)")
 
 class GameHistoryShowdownEquity(BASE):
     """

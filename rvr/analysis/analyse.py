@@ -377,7 +377,10 @@ class AnalysisReplayer(object):
         size_aggressive = _range_desc_to_size(item.aggressive_range)
         size_all = size_fold + size_passive + size_aggressive
         pot = self.pot
+        order = item.order
+        # Note that fold is arbitrarily considered to be before call
         if len(self.remaining_userids) > 2:
+            order += 1
             # this player folds, but the pot is contested, so we have a showdown
             factor = item.factor * size_fold / size_all
             ranges = {key: HandRange(txt)
@@ -385,7 +388,7 @@ class AnalysisReplayer(object):
             # They (temporarily) fold
             ranges.pop(item.userid)
             self.create_showdown(ranges=ranges,
-                order=item.order + 1,
+                order=order,
                 is_passive=False,
                 pot=pot,
                 factor=factor,
@@ -398,9 +401,10 @@ class AnalysisReplayer(object):
         # They (temporarily) call
         ranges[item.userid] = HandRange(item.passive_range)
         if not ranges[item.userid].is_empty():
-            # It's a real call, not a fold 100%
+            order += 1
+            # It's a real call, not folding 100%
             self.create_showdown(ranges=ranges,
-                                 order=item.order + 1,
+                                 order=order,
                                  is_passive=True,
                                  pot=pot,
                                  factor=factor,
