@@ -1012,6 +1012,7 @@ class API(object):
         """
         self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
+        self.session.query(tables.GameHistoryShowdownEquity).delete()
         self.session.commit()
         return self._run_pending_analysis()
 

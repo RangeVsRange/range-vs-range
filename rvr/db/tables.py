@@ -386,7 +386,7 @@ class GameHistoryShowdown(BASE, FactorMixin):
     """
     Users <list of user> have showdown with equities <equity map>
     
-    Note that a showdown will always have the same order as a range action.
+    Note that showdowns always follow the range action that creates them.
     """
     __tablename__ = "game_history_showdown"
     

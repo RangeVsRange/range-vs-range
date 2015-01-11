@@ -11,6 +11,9 @@ from rvr.poker.cards import Card, SUIT_INVERT, SUITS_HIGH_TO_LOW
 
 # pylint:disable=R0903,R0913,R0914
 
+# TODO: REVISIT: PythonAnywhere doesn't support long URLs (need to go to POST)
+# (for viewing in hand history - range editing already works)
+
 RANKS_HIDDEN = 'r_hdn'
 RANKS_SELECTED = 'r_sel'
 RANKS_UNASSIGNED = 'r_una'

@@ -32,10 +32,9 @@ def already_analysed(session, game):
     """
     feas = session.query(AnalysisFoldEquity)  \
         .filter(AnalysisFoldEquity.gameid == game.gameid).all()
-    # TODO: 1: this, but with GameHistoryShowdownEquity 
-    #showdowns = session.query(GameHistoryShowdown)  \
-    #    .filter(GameHistoryShowdown.gameid == game.gameid).all()
-    return bool(feas)  # or bool(showdowns)
+    equities = session.query(GameHistoryShowdownEquity)  \
+        .filter(GameHistoryShowdownEquity.gameid == game.gameid).all()
+    return bool(feas) or bool(equities)
 
 def _make_space(session, game, order):
     """
@@ -301,7 +300,6 @@ class AnalysisReplayer(object):
             .filter(GameHistoryShowdown.order == order)  \
             .filter(GameHistoryShowdown.is_passive == is_passive).all()
         if len(showdowns) == 0:
-            # TODO: 0.0: BUG: this isn't finding existing showdowns!
             _make_space(self.session, self.game, order)
             _record_showdown(self.session, self.game, order, is_passive,
                              pot, factor)
@@ -313,20 +311,23 @@ class AnalysisReplayer(object):
             assert showdowns[0].pot == pot and showdowns[0].factor == factor
             logging.debug("gameid %d, order %d, confirmed existing showdown",
                           self.game.gameid, order)
-        return
-        # TODO: 0.0: check (by dumping) that re-analysis doesn't change anything
-        # TODO: 0.1: release the showdown creation code to prod
-        # TODO: 0.2: showdowns in game history
+        # TODO: 0.2: showdowns in game history DTO
         # TODO: 0.3: link to a showdown page for each showdown in history
         # e.g. "Showdown between X, Y and Z for 432 chips"
-        range_map = dict(ranges)
+        # TODO: REVISIT: this ignores ranges of folded players
+        # it might make a difference is situations where a player has (for
+        # example) limited their range to Ax and later folded, hence surely
+        # removing an ace from the deck for the other players (significantly
+        # changing their equities)
+        range_map = {k: v for k, v in ranges.iteritems() if k in userids}
         equity_map, iterations = showdown_equity(range_map, self.game.board)
         logging.debug('gameid %d, order %d, is_passive %r, factor %0.8f, '
-                      'creating showdown with userids: %r, equity: %r '
+                      'showdown with userids: %r, equity: %r '
                       '(iterations %d)',
                       self.game.gameid, order, is_passive, factor, userids,
                       equity_map, iterations)
         for showdown_order, userid in enumerate(userids):
+            # ordered by situation player order
             participant = GameHistoryShowdownEquity()
             participant.gameid = self.game.gameid
             participant.order = order
