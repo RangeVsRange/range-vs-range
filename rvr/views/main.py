@@ -23,9 +23,13 @@ from rvr.forms.chat import ChatForm
 # pylint:disable=R0911,R0912,R0914
 
 # TODO: *** URGENT ***: upgrade to OpenID Connect...
+# try this: http://www.microsoft.com/en-au/download/details.aspx?id=44266
+# and this: http://stackoverflow.com/a/27327236/2434902
+# No dice. I emailed the guy.
 # https://developers.google.com/accounts/docs/OpenID#openid-connect
 # I asked "How can pyOIDC be installed on Windows?"...
 # http://stackoverflow.com/q/27613747/2434902
+# looks like we're stuck on package 'cffi'
 
 # TODO: 4: BUG: when new player's Google name is someone's screenname
 # (it shouldn't matter because we auto-assign screennames, e.g. "Player 1")

@@ -394,7 +394,7 @@ def read_game_history_chats(session):
              ghc.userid,
              ghc.message)
             for ghc in ghcs]
-   
+  
 def write_game_history_chats(session, ghcs):
     """ Write GameHistoryChat table from memory into DB """
     for gameid, order, userid, message in ghcs:

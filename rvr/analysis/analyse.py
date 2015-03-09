@@ -311,9 +311,11 @@ class AnalysisReplayer(object):
             assert showdowns[0].pot == pot and showdowns[0].factor == factor
             logging.debug("gameid %d, order %d, confirmed existing showdown",
                           self.game.gameid, order)
-        # TODO: 0.2: showdowns in game history DTO
+        # TODO: 0.2: showdowns and equity in game history DTO
         # TODO: 0.3: link to a showdown page for each showdown in history
         # e.g. "Showdown between X, Y and Z for 432 chips"
+        # and the page /showdown?blah=foo with expandable range viewers and
+        # equities
         # TODO: REVISIT: this ignores ranges of folded players
         # it might make a difference is situations where a player has (for
         # example) limited their range to Ax and later folded, hence surely
