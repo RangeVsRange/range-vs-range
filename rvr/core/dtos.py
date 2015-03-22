@@ -22,18 +22,12 @@ class LoginRequest(object):
     """
     Details to record (or ensure) a user in the database.
     """
-    def __init__(self, identity, email, screenname):
+    def __init__(self, identity, email):
         """
-        If the screenname is already taken, then error, ask user for new
-        screenname, and try again.
-        
-        Response will be an error only when BOTH:
-         - this user doesn't exist, AND
-         - another user has this screenname
+        Note that we default screenname to "Player N"
         """
         self.identity = identity
         self.email = email
-        self.screenname = screenname
 
 class ChangeScreennameRequest(object):
     """

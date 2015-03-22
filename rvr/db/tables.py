@@ -24,15 +24,35 @@ class User(BASE):
     __tablename__ = 'user'
     userid = Column(Integer, Sequence('user_seq'), primary_key=True)
     identity = Column(String(120), nullable=False)
-    screenname = Column(String(20), nullable=False, unique=True)
+    screenname_raw = Column(String, nullable=True, unique=True)
     email = Column(String(256), nullable=False, unique=True)
     unsubscribed = Column(Boolean, nullable=False)
     
-    def __repr__(self):
-        return ("User(userid='%r', screenname='%r', email='%r', " +  \
-            "identity='%r', unsubscribed='%r')") %  \
-            (self.userid, self.screenname, self.email, self.identity,
-             self.unsubscribed)
+    # attributes
+    def get_screenname(self):
+        """
+        Screenname of None means screenname is "Player <userid>"
+        """
+        if self.screenname_raw is not None:
+            return self.screenname_raw
+        else:
+            return 'Player %d' % (self.userid,)
+    def set_screenname(self, screenname):
+        """
+        Screenname of None means screenname is "Player <userid>"
+        """
+        if screenname is None:
+            self.screenname_raw = None
+        elif self.userid is None:
+            self.screenname_raw = None
+        elif screenname.startswith('Player ') and  \
+                screenname != 'Player %d' % (self.userid,):
+            # TODO: REVISIT: silent error, unexpected behaviour
+            self.screenname_raw = None
+        else:
+            self.screenname_raw = screenname
+    screenname = property(get_screenname, set_screenname)        
+    
 
 class SituationPlayer(BASE, object):
     """

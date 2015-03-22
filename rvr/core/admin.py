@@ -57,15 +57,14 @@ class AdminCmd(Cmd):
     def do_login(self, params):
         """
         Calls the login API function
-        login(identity, email, screenname)
+        login(identity, email)
         """
-        params = params.split(None, 2)
-        if len(params) == 3:
+        params = params.split(None, 1)
+        if len(params) == 2:
             request = LoginRequest(identity=params[0],
-                                   email=params[1],
-                                   screenname=params[2])
+                                   email=params[1])
         else:
-            print "Need exactly 3 parameters."
+            print "Need exactly 2 parameters."
             print "For more info, help login"
             return
         response = self.api.login(request)

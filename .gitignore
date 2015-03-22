@@ -9,3 +9,4 @@ local_settings.py
 /openid-store
 /server.cfg
 /db.pkl
+/client_secrets.json

@@ -5,7 +5,7 @@ from flask import render_template, redirect, url_for
 from rvr.app import APP
 from rvr.forms.change import ChangeForm
 from rvr.core.api import API, APIError
-from rvr.app import AUTH
+from rvr.app import OIDC
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,  \
     GameItemUserRange, GameItemBoard, GameItemActionResult,  \
     GameItemRangeAction, GameItemTimeout, GameItemChat
@@ -16,31 +16,25 @@ from rvr.forms.action import action_form
 from rvr.core import dtos
 from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
-from flask_googleauth import logout
 import urlparse
 from rvr.forms.chat import ChatForm
 
 # pylint:disable=R0911,R0912,R0914
 
 # TODO: *** URGENT ***: upgrade to OpenID Connect...
-# try this: http://www.microsoft.com/en-au/download/details.aspx?id=44266
-# and this: http://stackoverflow.com/a/27327236/2434902
-# No dice. I emailed the guy.
-# https://developers.google.com/accounts/docs/OpenID#openid-connect
-# I asked "How can pyOIDC be installed on Windows?"...
-# http://stackoverflow.com/q/27613747/2434902
-# looks like we're stuck on package 'cffi'
+# TODO: 0: dump.py, changed screenname to screenname_raw, upgrade production
 
-# TODO: 4: BUG: when new player's Google name is someone's screenname
-# (it shouldn't matter because we auto-assign screennames, e.g. "Player 1")
-# (also after it asks them for a new screenname, it doesn't apply it)
 # TODO: 5: a 'situation' page that describes the situation
 
 def is_authenticated():
     """
-    Is the user authenticated with OpenID?
+    Is the user authenticated with OpenID Connect?
     """
-    return g.user and 'identity' in g.user
+    if request.cookies.get(OIDC.id_token_cookie_name, None) is None:
+        # Otherwise OIDC gets a little confused
+        return False
+    else:
+        return OIDC.authenticate_or_redirect() is None
 
 def is_logged_in():
     """
@@ -56,52 +50,24 @@ def ensure_user():
     
     May flash messages.
     """
-    # TODO: REVISIT: automagically hook this into AUTH.required 
+    # TODO: REVISIT: automagically hook this into OIDC.check 
     if not is_authenticated():
         # user is not authenticated yet
         return
     if is_logged_in():
         # user is authenticated and authorised (logged in)
         return
-    if 'screenname' in session:
-        # user had changed screenname but not yet logged in
-        screenname = session['screenname']
-    else:
-        # regular login
-        screenname = g.user['name']
     api = API()
-    req = LoginRequest(identity=g.user['identity'],  # @UndefinedVariable
-                       email=g.user['email'],  # @UndefinedVariable
-                       screenname=screenname)
+    req = LoginRequest(identity=g.oidc_id_token['sub'],
+                       email=g.oidc_id_token['email'])
     result = api.login(req)
-    if result == API.ERR_DUPLICATE_SCREENNAME:
-        session['screenname'] = g.user['name']
-        # User is authenticated with OpenID, but not yet authorised (logged
-        # in). We redirect them to a page that allows them to choose a
-        # different screenname.
-        if request.endpoint != 'change_screenname':
-            flash("The screenname '%s' is already taken." % (screenname,))
-            return redirect(url_for('change_screenname'))
-    elif isinstance(result, APIError):
+    if isinstance(result, APIError):
         flash("Error registering user details.")
         logging.debug("login error: %s", result)
         return redirect(url_for('error_page'))
-    else:
-        # If their Google name is "Player <X>", they will not be able to have
-        # their Google name as their screenname. Unless their login errors.
-        session['userid'] = result.userid
-        session['screenname'] = result.screenname
-        req2 = ChangeScreennameRequest(result.userid,
-                                       "Player %d" % (result.userid,))
-        if not result.existed and result.screenname != req2.screenname:
-            result2 = api.change_screenname(req2)
-            if isinstance(result2, APIError):
-                flash("Couldn't give you screenname '%s', "
-                      "you are stuck with '%s' until you change it." %
-                      (req2.screenname, result.screenname))
-            else:
-                session['screenname'] = req2.screenname
-        flash("You have logged in as '%s'" % (session['screenname'],))
+    session['userid'] = result.userid
+    session['screenname'] = result.screenname
+    flash("You have logged in as '%s'" % (session['screenname'],))
 
 def error(message):
     """
@@ -111,11 +77,11 @@ def error(message):
     return redirect(url_for('error_page'))
 
 @APP.route('/change', methods=['GET','POST'])
-@AUTH.required
+@OIDC.check
 def change_screenname():
     """
     Without the user being logged in, give the user the option to change their
-    screenname from what Google OpenID gave us.
+    screenname from what Google OpenID Connect gave us.
     """
     alternate_response = ensure_user()
     if alternate_response:
@@ -123,29 +89,20 @@ def change_screenname():
     form = ChangeForm()
     if form.validate_on_submit():
         new_screenname = form.change.data
-        if 'userid' in session:
-            # Having a userid means they're in the database.
-            req = ChangeScreennameRequest(session['userid'],
-                                          new_screenname)
-            resp = API().change_screenname(req)
-            if resp == API.ERR_DUPLICATE_SCREENNAME:
-                flash("That screenname is already taken.")
-            elif isinstance(resp, APIError):
-                logging.debug("change_screenname error: %s", resp)
-                flash("An error occurred.")
-            else:
-                session['screenname'] = new_screenname
-                flash("Your screenname has been changed to '%s'." %
-                      (new_screenname, ))
-                return redirect(url_for('home_page'))
+        req = ChangeScreennameRequest(session['userid'],
+                                      new_screenname)
+        resp = API().change_screenname(req)
+        if resp == API.ERR_DUPLICATE_SCREENNAME:
+            flash("That screenname is already taken.")
+        elif isinstance(resp, APIError):
+            logging.debug("change_screenname error: %s", resp)
+            flash("An error occurred.")
         else:
-            # User is not logged in. Changing screenname in session is enough.
-            # Now when they go to the home page, ensure_user() will create their
-            # account.
             session['screenname'] = new_screenname
+            flash("Your screenname has been changed to '%s'." %
+                  (new_screenname, ))
             return redirect(url_for('home_page'))
-    current = session['screenname'] if 'screenname' in session  \
-        else g.user['name']
+    current = session['screenname']
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
@@ -176,21 +133,23 @@ def unsubscribe():
     flash(msg)
     return render_template('web/flash.html', title='Unsubscribe')
 
-@logout.connect_via(APP)
-def on_logout(_source, **_kwargs):
+@APP.route('/logout', methods=['GET'])
+def logout():
     """
-    I prefer to be explicit about what we remove on logout. 
+    Explicit logout
     """
     session.pop('userid', None)
     session.pop('screenname', None)
+    response = redirect(url_for('home_page'))
+    response.set_cookie(OIDC.id_token_cookie_name, expires=0)
+    return response
 
-@APP.route('/log-in', methods=['GET'])
-@AUTH.required
-def log_in():
+@APP.route('/login', methods=['GET'])
+@OIDC.check
+def login():
     """
-    Does what /login does, but in a way that I can get a URL for with url_for!
+    Log user in and redirect to some target page
     """
-    # TODO: REVISIT: get a relative URL for /login, instead of this.
     req = request.args.get('next', url_for('home_page'))
     nxt = urlparse.urlparse(req)
     cur = urlparse.urlparse(request.url)
@@ -281,7 +240,7 @@ def home_page():
         is_logged_in=is_logged_in())
 
 @APP.route('/join', methods=['GET'])
-@AUTH.required
+@OIDC.check
 def join_game():
     """
     Join game, flash status, redirect back to /home
@@ -325,7 +284,7 @@ def join_game():
     return redirect(url_for('error_page'))
 
 @APP.route('/leave', methods=['GET'])
-@AUTH.required
+@OIDC.check
 def leave_game():
     """
     Leave game, flash status, redirect back to /home
@@ -721,7 +680,7 @@ def _chat_page(game, gameid, userid, api):
         all_chats=all_chats)
 
 @APP.route('/chat', methods=['GET', 'POST'])
-@AUTH.required
+@OIDC.check
 def chat_page():
     """
     Chat history for game, and a text field to chat into game.

@@ -114,7 +114,7 @@ class API(object):
         Create and seed the database
         """
         #pylint:disable=R0201
-        BASE.metadata.create_all(ENGINE)
+        BASE.metadata.create_all(ENGINE)  # @UndefinedVariable
     
     def _add_all_situations(self):
         """
@@ -174,37 +174,30 @@ class API(object):
     @api
     def login(self, request):
         """
-        1. Create or validate OpenID-based account
-        inputs: identity, email, screenname
+        1. Create or validate OpenID Connect-based account
+        inputs: identity, email
         outputs: existed, user_details
         """
         matches = self.session.query(tables.User)  \
-            .filter(tables.User.identity == request.identity)  \
             .filter(tables.User.email == request.email).all()
         if matches:
             # return user from database
             user = matches[0]
             user.unsubscribed = False
+            user.identity = request.identity
+            self.session.commit()
+            logging.debug("Updated user %d with identity '%s'", user.userid,
+                          user.identity)
             return dtos.LoginResponse.from_user(user, True)
         else:
             # create user in database
             user = tables.User()
+            self.session.add(user)
             user.identity = request.identity
             user.email = request.email
-            user.screenname = request.screenname
+            user.screenname = None
             user.unsubscribed = False
-            self.session.add(user)
-            try:
-                self.session.flush()
-            except IntegrityError:
-                self.session.rollback()
-                # special error if it's just screenname (most likely cause)
-                matches = self.session.query(tables.User)  \
-                    .filter(tables.User.screenname == request.screenname).all()
-                if matches:
-                    return self.ERR_DUPLICATE_SCREENNAME
-                else:
-                    raise
+            self.session.commit()
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
             return dtos.LoginResponse.from_user(user, False)

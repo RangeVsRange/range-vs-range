@@ -81,19 +81,19 @@ def read_users(session):
     users = session.query(User).all()
     return [(u.userid,
              u.identity,
-             u.screenname,
+             u.screenname_raw,
              u.email,
              u.unsubscribed)
             for u in users]
 
 def write_users(session, users):
     """ Write User table from memory into DB """
-    for userid, identity, screenname, email, unsubscribed in users:
+    for userid, identity, screenname_raw, email, unsubscribed in users:
         user = User()
         session.add(user)
         user.userid = userid
         user.identity = identity
-        user.screenname = screenname
+        user.screenname_raw = screenname_raw
         user.email = email
         user.unsubscribed = unsubscribed
 
