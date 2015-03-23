@@ -36,7 +36,7 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
     AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat,\
-    GameHistoryShowdown
+    GameHistoryShowdown, GameHistoryShowdownEquity
 from rvr.db.creation import SESSION
 
 #pylint:disable=C0103
@@ -57,6 +57,7 @@ dumpable_tables = [
     GameHistoryTimeout,
     GameHistoryChat,
     GameHistoryShowdown,
+    GameHistoryShowdownEquity,
     RangeItem,
     AnalysisFoldEquity,
     AnalysisFoldEquityItem]
@@ -423,6 +424,29 @@ def write_game_history_showdowns(session, ghss):
         ghs.order = order
         ghs.is_passive = is_passive
         ghs.pot = pot
+        
+def read_game_history_showdown_equities(session):
+    """ Read GameHistoryShowdownEquity table from DB into memory """
+    ghses = session.query(GameHistoryShowdownEquity).all()
+    return [(ghse.gameid,
+             ghse.order,
+             ghse.is_passive,
+             ghse.showdown_order,
+             ghse.userid,
+             ghse.equity)
+            for ghse in ghses]
+
+def write_game_history_showdown_equities(session, ghses):
+    """ Write GameHistoryShowdownEquity table from memory into DB """
+    for gameid, order, is_passive, showdown_order, userid, equity in ghses:
+        ghse = GameHistoryShowdownEquity()
+        session.add(ghse)
+        ghse.gameid = gameid
+        ghse.order = order
+        ghse.is_passive = is_passive
+        ghse.showdown_order = showdown_order
+        ghse.userid = userid
+        ghse.equity = equity
 
 def read_analysis_fold_equities(session):
     """ Read AnalysisFoldEquity table from DB into memory """
@@ -504,6 +528,7 @@ TABLE_READERS = {User: read_users,
                  GameHistoryTimeout: read_game_history_timeouts,
                  GameHistoryChat: read_game_history_chats,
                  GameHistoryShowdown: read_game_history_showdowns,
+                 GameHistoryShowdownEquity: read_game_history_showdown_equities,
                  RangeItem: read_range_items,
                  AnalysisFoldEquity: read_analysis_fold_equities,
                  AnalysisFoldEquityItem: read_analysis_fold_equity_items}
@@ -523,18 +548,23 @@ TABLE_WRITERS = {User: write_users,
                  GameHistoryTimeout: write_game_history_timeouts,
                  GameHistoryChat: write_game_history_chats,
                  GameHistoryShowdown: write_game_history_showdowns,
+                 GameHistoryShowdownEquity: write_game_history_showdown_equities,
                  RangeItem: write_range_items,
                  AnalysisFoldEquity: write_analysis_fold_equities,
                  AnalysisFoldEquityItem: write_analysis_fold_equity_items}
 
 def read_db():
     """ Read all tables from DB into memory """
+    if len(dumpable_tables) != len(TABLE_READERS):
+        raise Exception("dumpable_tables inconsistent with TABLE_READERS")
     session = SESSION()
     return {table.__tablename__: TABLE_READERS[table](session)
             for table in dumpable_tables}
 
 def write_db(data):
     """ Write all tables from memory into DB """
+    if len(dumpable_tables) != len(TABLE_WRITERS):
+        raise Exception("dumpable_tables inconsistent with TABLE_WRITERS")
     session = SESSION()
     for table in dumpable_tables:
         if data.has_key(table.__tablename__):
