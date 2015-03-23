@@ -153,7 +153,7 @@ class FoldEquityAccumulator(object):
         afei.is_passive = is_pas
         afei.is_fold = is_fol
         afei.fold_ratio = 1.0
-        for _folder, fold_range, nonfold_range in self.folds:
+        for _, fold_range, nonfold_range in self.folds:
             fold_size = len(fold_range.generate_options(
                 self.board + list(combo)))
             nonfold_size = len(nonfold_range.generate_options(
@@ -311,6 +311,7 @@ class AnalysisReplayer(object):
             assert showdowns[0].pot == pot and showdowns[0].factor == factor
             logging.debug("gameid %d, order %d, confirmed existing showdown",
                           self.game.gameid, order)
+        # TODO: 0.1: showdown items into dump.py?
         # TODO: 0.2: showdowns and equity in game history DTO
         # TODO: 0.3: link to a showdown page for each showdown in history
         # e.g. "Showdown between X, Y and Z for 432 chips"

@@ -21,9 +21,6 @@ from rvr.forms.chat import ChatForm
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: *** URGENT ***: upgrade to OpenID Connect...
-# TODO: 0: dump.py, changed screenname to screenname_raw, upgrade production
-
 # TODO: 5: a 'situation' page that describes the situation
 
 def is_authenticated():

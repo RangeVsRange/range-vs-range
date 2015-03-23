@@ -329,7 +329,7 @@ def card_names(board_raw):
     Converts, e.g. "AhKhQc" -> ["Ah", "Kh", "Qc"]
     """
     result = []
-    for _index in range(5):
+    for _ in range(5):
         if len(board_raw) >= 2:
             result.append(board_raw[:2])
             board_raw = board_raw[2:]
