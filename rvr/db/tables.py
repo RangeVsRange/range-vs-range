@@ -441,7 +441,7 @@ class GameHistoryShowdownEquity(BASE):
     # ordering within equity rows for this showdown
     showdown_order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
-    equity = Column(Float, nullable=False)
+    equity = Column(Float, nullable=True)  # populated by analysis
     
     showdown = relationship("GameHistoryShowdown", primaryjoin="and_(" +
         "GameHistoryShowdown.gameid==GameHistoryShowdownEquity.gameid," +

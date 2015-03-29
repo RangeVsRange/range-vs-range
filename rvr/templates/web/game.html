@@ -191,20 +191,30 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
           {{item.screenname}} has timed out.
         {% elif hint == "CHAT" %}
           {{item.screenname}}: <em>{{item.message}}</em>
+        {% elif hint == "SHOWDOWN" %}
+          Showdown between {{item.players}} for {{item.pot}} chips.
         {% else %}
           {{item[0]}}
         {% endif %}
 
         <div class="pull-right">
+          {# link to analysis #}
           {% if not is_running and hint == "ACTION_SUMMARY" and item.action_result.is_aggressive and item.action_result_order in analyses %}
-          <a class="btn btn-primary" href="{{url_for('analysis_page', gameid=game_details.gameid, order=item.action_result_order)}}">Analyse</a>
+          <a class="btn btn-primary" href="{{url_for('analysis_page', gameid=game_details.gameid, order=item.action_result_order)}}">Analysis</a>
           {% endif %}
+  
+          {# link to showdown page #}
+          {% if hint == "SHOWDOWN" %}
+          <a class="btn btn-primary" href="{{url_for('showdown_page', gameid=game_details.gameid, order=item.order, is_passive=item.is_passive)}}">Showdown</a>
+          {% endif %}
+          
+          {# button for inline range viewing #}
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
           <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
           {% elif hint == "ACTION_RESULT" %}
           <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
           {% endif %}
-        </div>
+          </div>
       </td>
     </tr>
   {% endfor %}

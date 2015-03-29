@@ -340,12 +340,12 @@ class GameItem(object):
             return MAP_TABLE_DTO[class_].from_history_item(child)
         raise TypeError("Object is not a GameHistoryItem associated object")
     
-    def should_include_for(self, _userid, _all_userids, _is_finished):
+    def should_include_for(self, userid, all_userids, is_finished):
         """
         Should this item be included in the hand history for user <userid>,
         in a game with users <all_userids> and finished status <is_finished>?
         """
-        # pylint:disable=R0201
+        # pylint:disable=unused-argument
         return True
 
 class GameItemUserRange(GameItem):
@@ -378,10 +378,11 @@ class GameItemUserRange(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details, item.range_raw)
         
-    def should_include_for(self, userid, _all_userids, is_finished):
+    def should_include_for(self, userid, all_userids, is_finished):
         """
         Ranges are only shown to the current user (while the game is running).
         """
+        # pylint:disable=unused-argument
         return is_finished or self.user.userid == userid
 
 class GameItemRangeAction(GameItem):
@@ -423,11 +424,12 @@ class GameItemRangeAction(GameItem):
         return cls(item.order, item.factor, user_details, range_action,
                    item.is_check, item.is_raise)
     
-    def should_include_for(self, userid, _all_userids, is_finished):
+    def should_include_for(self, userid, all_userids, is_finished):
         """
         Range actions are only shown to the user who makes them
         (while the game is running)
         """
+        # pylint:disable=unused-argument
         return is_finished or self.user.userid == userid
     
 class GameItemActionResult(GameItem):
@@ -557,11 +559,73 @@ class GameItemChat(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details, item.message)
 
-    def should_include_for(self, userid, all_userids, _is_finished):
+    def should_include_for(self, userid, all_userids, is_finished):
         """
         Private to game, even when game is finished
         """
+        # pylint:disable=unused-argument
         return userid in all_userids
+
+class GameItemShowdown(GameItem):
+    """
+    Showdown, including pot size, players, and equities.
+    """
+    def __init__(self, order, factor, is_passive, pot, equities):
+        self.order = order
+        self.factor = factor
+        self.is_passive = is_passive
+        self.pot = pot
+        self.equities = equities
+
+    def __repr__(self):
+        return "GameItemShowdown(order=%r, factor=%r, is_passive=%r, "  \
+            "pot=%r, equities=%r)" %  \
+            (self.order, self.factor, self.is_passive, self.pot, self.equities)
+    
+    def __str__(self):
+        return "Showdown between %s for %d chips" %  \
+            (self.players_desc(), self.pot)
+    
+    def players_desc(self):
+        """
+        Return a string like "Player A, Player B and Player C".
+        """
+        if len(self.equities) == 0:
+            return "(unknown players)"
+        first_showdowners = ", ".join([str(eq.user)
+                                       for eq in self.equities[:-1]])
+        return " and ".join([first_showdowners,
+                                    str(self.equities[-1].user)])
+        
+    
+    @classmethod
+    def from_history_item(cls, item):
+        """
+        Create from a GameHistoryShowdown, and its GameHistoryShowdownItems
+        """
+        # participants naturally sorted by showdown order
+        equities = [GameItemShowdownEquity(participant)
+                    for participant in item.participants]
+        return cls(item.order, item.factor, item.is_passive, item.pot, equities)
+    
+    def should_include_for(self, userid, all_userids, is_finished):
+        """
+        We should include showdowns in hand histories only once the hand is
+        over.
+        """
+        # pylint:disable=unused-argument
+        return is_finished
+
+class GameItemShowdownEquity(object):
+    """
+    Equity for a player at showdown
+    """
+    def __init__(self, equity_item):
+        """
+        Create from a GameHistoryShowdownEquity
+        """
+        self.user = UserDetails.from_user(equity_item.user)
+        self.equity = equity_item.equity    
 
 class AnalysisItemFoldEquityItem(object):
     """
@@ -647,7 +711,8 @@ MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryActionResult: GameItemActionResult,
                  tables.GameHistoryBoard: GameItemBoard,
                  tables.GameHistoryTimeout: GameItemTimeout,
-                 tables.GameHistoryChat: GameItemChat}
+                 tables.GameHistoryChat: GameItemChat,
+                 tables.GameHistoryShowdown: GameItemShowdown}
 
 class RunningGameHistory(object):
     """

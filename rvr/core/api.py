@@ -432,6 +432,20 @@ class API(object):
         item.order = base.order
         self.session.add(base)
         self.session.add(item)
+        
+    def _record_showdown_participant(self, gameid, order, is_passive,
+                                     showdown_order, userid):
+        """
+        Create a GameHistoryShowdownEquity, and add it to the session.
+        """
+        equity = tables.GameHistoryShowdownEquity()
+        equity.gameid = gameid
+        equity.order = order
+        equity.is_passive = is_passive
+        equity.showdown_order = showdown_order
+        equity.userid = userid
+        equity.equity = None  # will be populated by analysis
+        self.session.add(equity)
     
     def _record_action_result(self, rgp, action_result):
         """
@@ -500,7 +514,7 @@ class API(object):
         element.message = message
         self._record_hand_history_item(rgp.game, element)
         
-    def _record_showdown(self, game, is_passive, pot, factor):
+    def _record_showdown(self, game, is_passive, pot, factor, participants):
         """
         Record showdown (but not participants / equity)
         
@@ -510,6 +524,13 @@ class API(object):
         element.is_passive = is_passive
         element.pot = pot
         self._record_hand_history_item(game, element, factor=factor)
+        for showdown_order, rgp in enumerate(participants):
+            self._record_showdown_participant(
+                gameid=game.gameid,
+                order=element.order,
+                is_passive=is_passive,
+                showdown_order=showdown_order,
+                userid=rgp.userid)
 
     @api
     def join_game(self, userid, gameid):
@@ -694,13 +715,14 @@ class API(object):
         is_passive signals that this showdown was created by a call
         pot is the hypothetical pot
         factor is the hypothetical current factor
+
+        equity is handled by analysis (because it takes time to calculate)
         """
         logging.debug('gameid %d, is_passive %r, factor %0.8f, pot %d, '
                       'creating showdown with userids: %r',
                       game.gameid, is_passive, factor, pot,
                       [rgp.userid for rgp in participants])
-        self._record_showdown(game, is_passive, pot, factor)
-        # equity is handled by analysis (because it takes time to calculate)
+        self._record_showdown(game, is_passive, pot, factor, participants)
     
     def _range_action_showdown(self, game, actor, range_action,
                                current_options):
@@ -876,7 +898,6 @@ class API(object):
         additional details from child tables), with private data only for
         <userid>, if specified.
         """
-        # pylint:disable=W0142
         child_items = [self.session.query(table)
                        .filter(table.gameid == game.gameid).all()
                        for table in MAP_TABLE_DTO.keys()]

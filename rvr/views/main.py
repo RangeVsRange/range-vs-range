@@ -8,7 +8,7 @@ from rvr.core.api import API, APIError
 from rvr.app import OIDC
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,  \
     GameItemUserRange, GameItemBoard, GameItemActionResult,  \
-    GameItemRangeAction, GameItemTimeout, GameItemChat
+    GameItemRangeAction, GameItemTimeout, GameItemChat, GameItemShowdown
 import logging
 from flask.helpers import flash
 from flask.globals import request, session, g
@@ -471,6 +471,15 @@ def _chat_to_vars(chat):
             "message": chat.message,
             "order": chat.order}
 
+def _showdown_to_vars(showdown):
+    """
+    Summarises a showdown.
+    """
+    return {"order": showdown.order,
+            "is_passive": showdown.is_passive,
+            "pot": showdown.pot,
+            "players": showdown.players_desc()}
+
 def _make_history_list(game_history):
     """
     Return a details list of each hand history item, as needed to display in
@@ -508,6 +517,8 @@ def _make_history_list(game_history):
             results.append(("TIMEOUT", _timeout_to_vars(item)))
         elif isinstance(item, GameItemChat):
             results.append(("CHAT", _chat_to_vars(item)))
+        elif isinstance(item, GameItemShowdown):
+            results.append(("SHOWDOWN", _showdown_to_vars(item)))
         else:
             logging.debug("unrecognised type of hand history item: %s", item)
             results.append(("UNKNOWN", (str(item),)))
@@ -794,3 +805,62 @@ def analysis_page():
         items_fold=items_fold,
         is_raise=aife.is_raise, is_check=aife.is_check,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
+
+@APP.route('/showdown', methods=['GET'])
+def showdown_page():
+    """
+    A showdown.
+    """
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        return error("Invalid game ID.")
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        return error("Invalid game ID (not a number).")
+
+    api = API()
+    response = api.get_public_game(gameid)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+            msg = "Invalid game ID."
+        else:
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
+        return error(msg)
+    game = response
+    
+    order = request.args.get('order', None)
+    if order is None:
+        return error("Invalid order.")
+    try:
+        order = int(order)
+    except ValueError:
+        return error("Invalid order (not a number).")
+    
+    is_passive = request.args.get('is_passive', None)
+    if is_passive is None:
+        return error("Invalid is_passive.")
+    if is_passive == str(True):
+        is_passive = True
+    elif is_passive == str(False):
+        is_passive = False
+    else:
+        return error("Invalid is_passive (not a bool).")
+
+    item = None
+    for item in game.history:
+        if item.order == order:
+            break
+    else:
+        return error("Invalid order (not in game).")
+
+    if not isinstance(item, dtos.GameItemShowdown):
+        return error("Invalid order (not a showdown).") 
+    
+    if item.is_passive != is_passive:
+        return error("Invalid is_passive (mismatch).")
+
+    # TODO: 0.1: showdown page
+    # TODO: 0.1: note that equities might be NULL
+    return "This will be the showdown page, once written."

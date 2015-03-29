@@ -84,6 +84,7 @@ def _record_showdown(session, game, order, is_passive, pot, factor):
     
     session.add(base)
     session.add(showdown)
+    return showdown
 
 class FoldEquityAccumulator(object):
     """
@@ -301,8 +302,8 @@ class AnalysisReplayer(object):
             .filter(GameHistoryShowdown.is_passive == is_passive).all()
         if len(showdowns) == 0:
             _make_space(self.session, self.game, order)
-            _record_showdown(self.session, self.game, order, is_passive,
-                             pot, factor)
+            showdown = _record_showdown(self.session, self.game, order,
+                                        is_passive, pot, factor)
             logging.debug("gameid %d, order %d, created showdown",
                           self.game.gameid, order)
             self.session.commit()
@@ -311,13 +312,9 @@ class AnalysisReplayer(object):
             assert showdowns[0].pot == pot and showdowns[0].factor == factor
             logging.debug("gameid %d, order %d, confirmed existing showdown",
                           self.game.gameid, order)
-        # TODO: 0.1: showdowns and equity in game history DTO
-        # TODO: 0.2: link to a showdown page for each showdown in history
-        # e.g. "Showdown between X, Y and Z for 432 chips"
-        # and the page /showdown?blah=foo with expandable range viewers and
-        # equities
+            showdown = showdowns[0]
         # TODO: REVISIT: this ignores ranges of folded players
-        # it might make a difference is situations where a player has (for
+        # it might make a difference in situations where a player has (for
         # example) limited their range to Ax and later folded, hence surely
         # removing an ace from the deck for the other players (significantly
         # changing their equities)
@@ -328,16 +325,23 @@ class AnalysisReplayer(object):
                       '(iterations %d)',
                       self.game.gameid, order, is_passive, factor, userids,
                       equity_map, iterations)
+        existing_equities = {p.showdown_order: p
+            for p in showdown.participants}  #pylint:disable=no-member
         for showdown_order, userid in enumerate(userids):
-            # ordered by situation player order
-            participant = GameHistoryShowdownEquity()
-            participant.gameid = self.game.gameid
-            participant.order = order
-            participant.is_passive = is_passive
-            participant.showdown_order = showdown_order
-            participant.userid = userid
+            # create if not exist, otherwise update
+            if showdown_order in existing_equities:
+                participant = existing_equities[showdown_order]
+            else:
+                # TODO: REVISIT: this is ordered by situation player order,
+                # not showdown order
+                participant = GameHistoryShowdownEquity()
+                self.session.add(participant)
+                participant.gameid = self.game.gameid
+                participant.order = order
+                participant.is_passive = is_passive
+                participant.showdown_order = showdown_order
+                participant.userid = userid
             participant.equity = equity_map[userid]
-            self.session.add(participant)
         # TODO: 1: new tables for payments (separate from showdown details)
         # - generic payment to user: raw payment, factor, resultant payment
     
