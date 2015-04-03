@@ -567,6 +567,11 @@ class GameItemChat(GameItem):
         return userid in all_userids
 
 class GameItemShowdown(GameItem):
+    STREET_DESCRIPTIONS = {PREFLOP: "Preflop",
+                           FLOP: "On the flop",
+                           TURN: "On the turn",
+                           RIVER: "On the river",
+                           None: "After the hand"}
     """
     Showdown, including pot size, players, and equities.
     """

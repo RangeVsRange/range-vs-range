@@ -290,7 +290,7 @@ class AnalysisReplayer(object):
         """
         Create a showdown with given userids. Pre-river if pre-river.
         """
-        # TODO: 2: create showdown with given userids.
+        # TODO: 2: showdown results
         # TODO: 2: note that showdown results must be scaled down by the...
         # ... current factor and by the unlikeliness of the action...
         # ... being chosen from the range action.
@@ -342,7 +342,7 @@ class AnalysisReplayer(object):
                 participant.showdown_order = showdown_order
                 participant.userid = userid
             participant.equity = equity_map[userid]
-        # TODO: 1: new tables for payments (separate from showdown details)
+        # TODO: 1: payments - with detailed explanations!
         # - generic payment to user: raw payment, factor, resultant payment
     
     def _calculate_call_cost(self, userid):
@@ -437,27 +437,6 @@ class AnalysisReplayer(object):
             all_in=all_in,
             will_remain=passive_will_remain,
             will_act=will_act)
-
-        # TODO: 2: range actions create showdowns
-        
-        # TODO: 2: track who remains
-        # -> self.remaining_userids
-        # TODO: 2: track who has acted (note that situation has 'left to act')
-        # -> self.left_to_act
-        # TODO: 2: track how much each player have contributed
-        # -> self.contrib
-        
-        # Consider the fold option, the passive option, the aggressive option.
-        # An aggressive option can't create a showdown, but the other two can.
-        # It's also possible for both fold and passive to create showdowns.
-        # A showdown is when the option terminates a betting round with two or
-        # more players remaining. An option terminates when it is non-aggressive
-        # and all players have either folded or put in the same amount of money
-        # and all players have had a chance to act. The showdown is between all
-        # players who have not folded.
-        
-        # The above applies on any street, but it's only a showdown if they are
-        # all in - or on the river.
         
     def process_child_item(self, item):
         """

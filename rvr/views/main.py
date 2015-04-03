@@ -18,6 +18,7 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 import urlparse
 from rvr.forms.chat import ChatForm
+from rvr.poker.cards import PREFLOP
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -796,7 +797,7 @@ def analysis_page():
     # Could also have a status column or popover or similar:
     # "good bluff" = +EV
     # "bad bluff" = -EV on river
-    # "possible semibluff" = -EV on river
+    # "possible semibluff" = -EV not on river
     return render_template('web/analysis.html', gameid=gameid,
         screenname=item.user.screenname, street_text=street_text,
         action_text=action_text,
@@ -849,18 +850,43 @@ def showdown_page():
         return error("Invalid is_passive (not a bool).")
 
     item = None
+    street_text = PREFLOP
+    action_text = None
     for item in game.history:
+        if isinstance(item, GameItemBoard):
+            street_text = item.street
+        if isinstance(item, GameItemRangeAction):
+            if is_passive and item.is_check:
+                action_text = "%s checks" % (item.user.screenname,)
+            elif is_passive:
+                action_text = "%s calls" % (item.user.screenname,) 
+            else:
+                action_text = "%s folds" % (item.user.screenname,)
         if item.order == order:
             break
     else:
         return error("Invalid order (not in game).")
+    if action_text is None:
+        return error("Couldn't find range action corresponding to showdown")
 
     if not isinstance(item, dtos.GameItemShowdown):
-        return error("Invalid order (not a showdown).") 
+        return error("Invalid order (not a showdown).")
+    showdown = item
     
     if item.is_passive != is_passive:
         return error("Invalid is_passive (mismatch).")
 
-    # TODO: 0.1: showdown page
-    # TODO: 0.1: note that equities might be NULL
-    return "This will be the showdown page, once written."
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+
+    # TODO: 1: remove 3-handed and 6-handed situations
+    # TODO: 1.1: poll /r/poker for the most common/important/profitable postflop
+    # TODO: 1.2: ... two-handed situation and create that as a second situation
+    #return "This will be the showdown page, once written."
+
+    return render_template('web/showdown.html', gameid=gameid,
+        street_text=showdown.STREET_DESCRIPTIONS[street_text],  # e.g. "On the flop"
+        action_text=action_text,  # e.g. "Guy Upstairs folds" / "Guy Upstairs calls 120"
+        showdown=showdown,  # GameItemShowdown, linked to equity items
+        navbar_items=navbar_items, is_logged_in=is_logged_in())

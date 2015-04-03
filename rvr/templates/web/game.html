@@ -192,7 +192,7 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
         {% elif hint == "CHAT" %}
           {{item.screenname}}: <em>{{item.message}}</em>
         {% elif hint == "SHOWDOWN" %}
-          Showdown between {{item.players}} for {{item.pot}} chips.
+          <strong>Showdown between {{item.players}} for {{item.pot}} chips.</strong>
         {% else %}
           {{item[0]}}
         {% endif %}

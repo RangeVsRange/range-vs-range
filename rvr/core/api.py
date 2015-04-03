@@ -1011,6 +1011,7 @@ class API(object):
                     # Don't tell them if there's no analysis!
                     logging.debug("gameid %d, notifying", game.gameid)
                     notify_finished(game)
+                    self.session.commit()  # also a reasonable time to commit
 
     @api
     def run_pending_analysis(self):

@@ -131,9 +131,9 @@ class OpenGameParticipant(BASE):
     Association object for the many-to-many relationship between users and open
     games.
     """
-    # TODO: 1: OpenGameParticipants should time out, e.g. at 1 week
+    # TODO: 1: OpenGameParticipants should time out, e.g. at 1 day
     # (or perhaps players should time out, and when they do, auto-fold current
-    # games
+    # games and leave open games)
     __tablename__ = 'open_game_participant'
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("open_game.gameid"), primary_key=True)
@@ -471,7 +471,7 @@ GAME_HISTORY_TABLES = [
 # Record analysis against specific hand history (range action) items.
 # Record equity payments against hand history items - deals, range actions, etc.
 
-# TODO: 5: strategic analysis
+# TODO: 5: further strategic analysis:
 # - fold equity analysis row (might be semibluff EV, or immediate profit)
 # - profitable float / bet (linked to call, and bet)
 # - profitable float / raise (linked to call, and raise)
