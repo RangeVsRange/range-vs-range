@@ -26,6 +26,7 @@ from rvr.mail.notifications import notify_current_player, notify_first_player, \
 from rvr.analysis.analyse import AnalysisReplayer, already_analysed
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT
 import datetime
+from rvr.local_settings import SUPPRESSED_SITUATIONS
 
 def exception_mapper(fun):
     """
@@ -581,7 +582,7 @@ class API(object):
             # below. This is important so that there are never duplicate game
             # ids.
             self.session.commit()  # explicitly check that it commits okay
-        except IntegrityError as _ex:
+        except IntegrityError as _:
             # An error will occur if game no longer exists, or user no longer
             # exists, or user has already been added to game, or game has
             # already been filled, or problems with starting the game!
@@ -984,7 +985,8 @@ class API(object):
                     logging.debug("Deleted open game %d for situation %d",
                                   game.gameid, situation.situationid)
                     self.session.delete(game)
-            elif len(empty_open) == 0:
+            elif len(empty_open) == 0 and  \
+                    situation.situationid not in SUPPRESSED_SITUATIONS:
                 # add one!
                 new_game = tables.OpenGame()
                 new_game.situationid = situation.situationid
@@ -1116,6 +1118,7 @@ def _create_hu():
         left_to_act=True,
         range_raw=ANYTHING)
     hu_situation = dtos.SituationDetails(
+        situationid=None,
         description="Heads-up preflop, 100 BB",
         players=[hu_bb, hu_btn],  # BB acts first in future rounds
         current_player=1,  # BTN acts next (this round)
@@ -1149,6 +1152,7 @@ def _create_three():
         left_to_act=True,
         range_raw="88-22,AJs-A2s,K7s+,Q9s+,J8s+,T7s+,96s+,86s+,75s+,64s+,54s,A8o+,KTo+,QTo+,J9o+,T9o,98o,87o")
     three_situation = dtos.SituationDetails(
+        situationid=None,
         description="Three-way flop. CO minraised, BTN cold called, BB called. BB to act first on the flop.",
         players=[three_bb, three_co, three_btn],  # BB is first to act
         current_player=0,  # BB is next to act
@@ -1196,6 +1200,7 @@ def _create_cap():
         left_to_act=True,
         range_raw=ANYTHING)
     cap_situation = dtos.SituationDetails(
+        situationid=None,
         description="6-max CAP, 20 BB",
         players=[cap_sb, cap_bb, cap_utg,
                  cap_mp, cap_co, cap_btn],  # SB is first to act

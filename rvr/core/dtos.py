@@ -122,9 +122,9 @@ class SituationDetails(object):
     A training situation. If we ever allow custom situations, this should be
     enough to specify a new one.
     """
-    def __init__(self, description, players, current_player, is_limit,
-                 big_blind, board_raw, current_round, pot_pre, increment,
-                 bet_count):
+    def __init__(self, situationid, description, players, current_player,
+                 is_limit, big_blind, board_raw, current_round, pot_pre,
+                 increment, bet_count):
         """
         Note that board_raw can contain fewer cards than current_round would
         suggest (e.g. to allow flop situations with random flops), but it can't
@@ -134,6 +134,7 @@ class SituationDetails(object):
         
         current_player is an index into the players list.
         """
+        self.situationid = situationid
         self.description = description
         self.players = players
         self.current_player = current_player
@@ -146,12 +147,12 @@ class SituationDetails(object):
         self.bet_count = bet_count
     
     def __repr__(self):
-        return ("SituationDetails(description=%r, players=%r, " +
-            "current_player=%r, is_limit=%r, big_blind=%r, board_raw=%r, " + 
+        return ("SituationDetails(situationid=%r, description=%r, players=%r, "
+            "current_player=%r, is_limit=%r, big_blind=%r, board_raw=%r, "
             "current_round=%r, pot_pre=%r, increment=%r, bet_count=%r)") %  \
-            (self.description, self.players, self.current_player, self.is_limit,
-             self.big_blind, self.board_raw, self.current_round, self.pot_pre,
-             self.increment, self.bet_count)
+            (self.situationid, self.description, self.players,
+             self.current_player, self.is_limit, self.big_blind, self.board_raw,
+             self.current_round, self.pot_pre, self.increment, self.bet_count)
         
     @classmethod
     def from_situation(cls, situation):
@@ -164,7 +165,8 @@ class SituationDetails(object):
                                           left_to_act=player.left_to_act,
                                           range_raw=player.range_raw)
                    for player in ordered]
-        return cls(description=situation.description,
+        return cls(situationid=situation.situationid,
+                   description=situation.description,
                    players=players,
                    current_player=situation.current_player_num,
                    is_limit=situation.is_limit,

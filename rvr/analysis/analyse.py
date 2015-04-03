@@ -344,6 +344,14 @@ class AnalysisReplayer(object):
             participant.equity = equity_map[userid]
         # TODO: 1: payments - with detailed explanations!
         # - generic payment to user: raw payment, factor, resultant payment
+        # Each payment will link to a history item (i.e. gameid and order),
+        # being one of:
+        #  - fold equity payment / range action
+        #  - board equity payment / board
+        #  - choice equity payment / range action
+        #  - showdown equity payment / showdown
+        #  (note that winning a pot uncontested is covered by fold equity)
+        # Each payment will be made to all players
     
     def _calculate_call_cost(self, userid):
         """

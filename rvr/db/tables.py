@@ -15,7 +15,7 @@ from sqlalchemy.orm.session import object_session
 
 MAX_CHAT = 10000
 
-class User(BASE):
+class User(BASE, object):
     """
     A user of the application.
     
