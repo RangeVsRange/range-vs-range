@@ -880,7 +880,6 @@ def showdown_page():
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
 
-    # TODO: 1: remove 3-handed and 6-handed situations
     # TODO: 1.1: poll /r/poker for the most common/important/profitable postflop
     # TODO: 1.2: ... two-handed situation and create that as a second situation
     #return "This will be the showdown page, once written."

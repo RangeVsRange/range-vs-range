@@ -131,9 +131,10 @@ class OpenGameParticipant(BASE):
     Association object for the many-to-many relationship between users and open
     games.
     """
-    # TODO: 1: OpenGameParticipants should time out, e.g. at 1 day
+    # TODO: 5: OpenGameParticipants should time out, e.g. at 1 day
     # (or perhaps players should time out, and when they do, auto-fold current
     # games and leave open games)
+    # (this is particularly important when we allow more players)
     __tablename__ = 'open_game_participant'
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("open_game.gameid"), primary_key=True)
