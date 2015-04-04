@@ -26,17 +26,6 @@ def _range_desc_to_size(range_description):
     """
     return len(HandRange(range_description).generate_options()) 
 
-def already_analysed(session, game):
-    """
-    Is this game already analysed?
-    """
-    feas = session.query(AnalysisFoldEquity)  \
-        .filter(AnalysisFoldEquity.gameid == game.gameid).all()
-    equities = session.query(GameHistoryShowdownEquity)  \
-        .filter(GameHistoryShowdownEquity.gameid == game.gameid)  \
-        .filter(GameHistoryShowdownEquity.equity != None).all()
-    return bool(feas) or bool(equities)
-
 def _make_space(session, game, order):
     """
     Move all history items by one, to make space for a new one 
@@ -209,7 +198,7 @@ class AnalysisReplayer(object):
                       game.gameid)
         if not game.is_finished:
             raise ValueError("Can't analyse game until finished.")
-        if already_analysed(session, game):
+        if game.analysis_performed:
             raise ValueError("Game is already analysed.")
         self.api = api
         self.session = session

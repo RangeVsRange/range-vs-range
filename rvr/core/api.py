@@ -23,7 +23,7 @@ from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player, \
     notify_finished
-from rvr.analysis.analyse import AnalysisReplayer, already_analysed
+from rvr.analysis.analyse import AnalysisReplayer
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT
 import datetime
 from rvr.local_settings import SUPPRESSED_SITUATIONS
@@ -392,6 +392,7 @@ class API(object):
         running_game.bet_count = situation.bet_count
         running_game.current_factor = 1.0
         running_game.last_action_time = datetime.datetime.utcnow()
+        running_game.analysis_performed = False
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
@@ -1005,14 +1006,14 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid == None).all()
         for game in games:
-            if not already_analysed(self.session, game):
+            if not game.analysis_performed:
                 replayer = AnalysisReplayer(self, self.session, game)
                 replayer.analyse()
-                if already_analysed(self.session, game):
-                    # Don't tell them if there's no analysis!
-                    logging.debug("gameid %d, notifying", game.gameid)
-                    notify_finished(game)
-                    self.session.commit()  # also a reasonable time to commit
+                game.analysis_performed = True
+                self.session.commit()  # ensure it can only happen once
+                logging.debug("gameid %d, notifying", game.gameid)
+                notify_finished(game)
+                self.session.commit()  # also a reasonable time to commit
 
     @api
     def run_pending_analysis(self):
@@ -1029,6 +1030,9 @@ class API(object):
         self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
         self.session.query(tables.GameHistoryShowdownEquity).delete()
+        games = self.session.query(tables.RunningGame).all()
+        for game in games:
+            game.analysis_performed = False
         self.session.commit()
         return self._run_pending_analysis()
 

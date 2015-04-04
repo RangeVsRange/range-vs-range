@@ -175,6 +175,8 @@ class RunningGame(BASE, object):
     current_factor = Column(Float, nullable=False)
     # keeping track of timeouts
     last_action_time = Column(DateTime, nullable=False)  # or game start time
+    # shortcut to know if analysis has been done
+    analysis_performed = Column(Boolean, nullable=False)
     # in lieu of a relationship...
     # TODO: REVISIT: can we do this with a one-to-one relationship?
     # ... and not cause circular reference issues?!
