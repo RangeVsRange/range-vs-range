@@ -286,33 +286,19 @@ class AnalysisReplayer(object):
                 self.fea.finalise(self.session)
                 self.fea = None
 
-    def create_showdown(self, ranges, order, is_passive, pot, factor, userids):
+    def analyse_showdown(self, ranges, order, is_passive, pot, factor, userids):
         """
         Create a showdown with given userids. Pre-river if pre-river.
         """
-        # TODO: 2: showdown results
-        # TODO: 2: note that showdown results must be scaled down by the...
-        # ... current factor and by the unlikeliness of the action...
-        # ... being chosen from the range action.
-        # If possible, handle pre-river and river showdowns together.
-        # (perhaps river showdown is a special case of pre-river showdown?)
         showdowns = self.session.query(GameHistoryShowdown)  \
             .filter(GameHistoryShowdown.gameid == self.game.gameid)  \
             .filter(GameHistoryShowdown.order == order)  \
             .filter(GameHistoryShowdown.is_passive == is_passive).all()
-        if len(showdowns) == 0:
-            _make_space(self.session, self.game, order)
-            showdown = _record_showdown(self.session, self.game, order,
-                                        is_passive, pot, factor)
-            logging.debug("gameid %d, order %d, created showdown",
-                          self.game.gameid, order)
-            self.session.commit()
-        else:
-            assert len(showdowns) == 1
-            assert showdowns[0].pot == pot and showdowns[0].factor == factor
-            logging.debug("gameid %d, order %d, confirmed existing showdown",
-                          self.game.gameid, order)
-            showdown = showdowns[0]
+        assert len(showdowns) == 1
+        assert showdowns[0].pot == pot and showdowns[0].factor == factor
+        logging.debug("gameid %d, order %d, confirmed existing showdown",
+                      self.game.gameid, order)
+        showdown = showdowns[0]
         # TODO: REVISIT: this ignores ranges of folded players
         # it might make a difference in situations where a player has (for
         # example) limited their range to Ax and later folded, hence surely
@@ -342,8 +328,11 @@ class AnalysisReplayer(object):
                 participant.showdown_order = showdown_order
                 participant.userid = userid
             participant.equity = equity_map[userid]
+        
         # TODO: 1: payments - with detailed explanations!
+        
         # - generic payment to user: raw payment, factor, resultant payment
+        
         # Each payment will link to a history item (i.e. gameid and order),
         # being one of:
         #  - fold equity payment / range action
@@ -351,7 +340,13 @@ class AnalysisReplayer(object):
         #  - choice equity payment / range action
         #  - showdown equity payment / showdown
         #  (note that winning a pot uncontested is covered by fold equity)
+        
         # Each payment will be made to all players
+        
+        # Note that showdown results must be scaled down by the...
+        # ... current factor and by the unlikeliness of the action...
+        # ... being chosen from the range action.
+
     
     def _calculate_call_cost(self, userid):
         """
@@ -366,9 +361,6 @@ class AnalysisReplayer(object):
         Consider showdowns based on this range action resulting in a fold, and
         another based on this resulting in a check or call.
         """
-        # TODO: 2: recreate this functionality mid-game, with create-if-needed,
-        # then delete this eventually. (In the mean time, we will actually
-        # change following items order, to recreate as if injected initially!) 
         prev_contrib = None
         last_stack = None
         for userid in self.remaining_userids:
@@ -402,7 +394,7 @@ class AnalysisReplayer(object):
                       for key, txt in self.ranges.iteritems()}
             # They (temporarily) fold
             ranges.pop(item.userid)
-            self.create_showdown(ranges=ranges,
+            self.analyse_showdown(ranges=ranges,
                 order=order,
                 is_passive=False,
                 pot=pot,
@@ -418,12 +410,12 @@ class AnalysisReplayer(object):
         if not ranges[item.userid].is_empty():
             order += 1
             # It's a real call, not folding 100%
-            self.create_showdown(ranges=ranges,
-                                 order=order,
-                                 is_passive=True,
-                                 pot=pot,
-                                 factor=factor,
-                                 userids=self.remaining_userids)
+            self.analyse_showdown(ranges=ranges,
+                order=order,
+                is_passive=True,
+                pot=pot,
+                factor=factor,
+                userids=self.remaining_userids)
 
     def process_range_action(self, item):
         """

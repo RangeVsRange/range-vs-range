@@ -33,6 +33,16 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
     tr.append(td);
     $('#' + row_id).after(tr);
 };
+showdown_view = function(criterion) {
+    // toggle this one, hide all others
+	was_visible = $(criterion).is(':visible');
+	$('.showdown').hide();
+	if (was_visible) {
+		$(criterion).hide();
+	} else {
+		$(criterion).show();
+	}
+};
 </script>
 {% if is_new_chat and is_mine %}
   <script>
@@ -205,7 +215,7 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
   
           {# link to showdown page #}
           {% if hint == "SHOWDOWN" %}
-          <a class="btn btn-primary" href="{{url_for('showdown_page', gameid=game_details.gameid, order=item.order, is_passive=item.is_passive)}}">Showdown</a>
+          <button class="btn btn-primary" type=button onclick="showdown_view('#showdown-{{item.order}}');">Details</a>
           {% endif %}
           
           {# button for inline range viewing #}
@@ -214,9 +224,33 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
           {% elif hint == "ACTION_RESULT" %}
           <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
           {% endif %}
-          </div>
+        </div>
       </td>
     </tr>
+    {% if hint == "SHOWDOWN" %}
+    <tr style="display:none;" class=showdown id="showdown-{{item.order}}">
+    <td>
+		<table class="table table-condensed">
+		<thead>
+		<tr>
+		  <td><strong>Player</strong></td>
+		  <td><strong>Equity</strong></td>
+		  <td><strong>Payout</strong></td>
+		</tr>
+		</thead>
+		<tbody>
+		{% for equity in item.equities %}
+		<tr>
+		  <td>{{equity.user.screenname}}</td>
+		  <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity}}{% endif %}</td>
+		  <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity * item.pot}}{% endif %}</td>
+		</td>
+		{% endfor %}
+		</tbody>
+		</table>
+    </td>
+    </tr>
+    {% endif %}
   {% endfor %}
 </table>
 {% else %}

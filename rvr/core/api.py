@@ -683,7 +683,6 @@ class API(object):
             self._record_board(game)
         for rgp in game.rgps:
             rgp.range = remove_board_from_range(rgp.range, game.board)
-        # TODO: EQUITY PAYMENT: cards dealt to board
     
     def _finish_betting_round(self, game, remain):
         """

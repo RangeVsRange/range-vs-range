@@ -463,15 +463,6 @@ GAME_HISTORY_TABLES = [
     GameHistoryShowdown  # while GHSEquity is more of an analysis table
     ]
 
-
-# TODO: HAND HISTORY: the following hand history items:
-#  - analysis of a fold, bet, call
-#  - equity payment (fold equity, board card equity, etc.)
-#  - showdown equities
-#  - showdown result
-# Record analysis against specific hand history (range action) items.
-# Record equity payments against hand history items - deals, range actions, etc.
-
 # TODO: 5: further strategic analysis:
 # - fold equity analysis row (might be semibluff EV, or immediate profit)
 # - profitable float / bet (linked to call, and bet)

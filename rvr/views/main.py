@@ -18,7 +18,6 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 import urlparse
 from rvr.forms.chat import ChatForm
-from rvr.poker.cards import PREFLOP
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -479,7 +478,8 @@ def _showdown_to_vars(showdown):
     return {"order": showdown.order,
             "is_passive": showdown.is_passive,
             "pot": showdown.pot,
-            "players": showdown.players_desc()}
+            "players": showdown.players_desc(),
+            "equities": showdown.equities}
 
 def _make_history_list(game_history):
     """
@@ -807,85 +807,5 @@ def analysis_page():
         is_raise=aife.is_raise, is_check=aife.is_check,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
-@APP.route('/showdown', methods=['GET'])
-def showdown_page():
-    """
-    A showdown.
-    """
-    gameid = request.args.get('gameid', None)
-    if gameid is None:
-        return error("Invalid game ID.")
-    try:
-        gameid = int(gameid)
-    except ValueError:
-        return error("Invalid game ID (not a number).")
-
-    api = API()
-    response = api.get_public_game(gameid)
-    if isinstance(response, APIError):
-        if response is api.ERR_NO_SUCH_RUNNING_GAME:
-            msg = "Invalid game ID."
-        else:
-            msg = "An unknown error occurred retrieving game %d, sorry." %  \
-                (gameid,)
-        return error(msg)
-    game = response
-    
-    order = request.args.get('order', None)
-    if order is None:
-        return error("Invalid order.")
-    try:
-        order = int(order)
-    except ValueError:
-        return error("Invalid order (not a number).")
-    
-    is_passive = request.args.get('is_passive', None)
-    if is_passive is None:
-        return error("Invalid is_passive.")
-    if is_passive == str(True):
-        is_passive = True
-    elif is_passive == str(False):
-        is_passive = False
-    else:
-        return error("Invalid is_passive (not a bool).")
-
-    item = None
-    street_text = PREFLOP
-    action_text = None
-    for item in game.history:
-        if isinstance(item, GameItemBoard):
-            street_text = item.street
-        if isinstance(item, GameItemRangeAction):
-            if is_passive and item.is_check:
-                action_text = "%s checks" % (item.user.screenname,)
-            elif is_passive:
-                action_text = "%s calls" % (item.user.screenname,) 
-            else:
-                action_text = "%s folds" % (item.user.screenname,)
-        if item.order == order:
-            break
-    else:
-        return error("Invalid order (not in game).")
-    if action_text is None:
-        return error("Couldn't find range action corresponding to showdown")
-
-    if not isinstance(item, dtos.GameItemShowdown):
-        return error("Invalid order (not a showdown).")
-    showdown = item
-    
-    if item.is_passive != is_passive:
-        return error("Invalid is_passive (mismatch).")
-
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
-
-    # TODO: 1.1: poll /r/poker for the most common/important/profitable postflop
-    # TODO: 1.2: ... two-handed situation and create that as a second situation
-    #return "This will be the showdown page, once written."
-
-    return render_template('web/showdown.html', gameid=gameid,
-        street_text=showdown.STREET_DESCRIPTIONS[street_text],  # e.g. "On the flop"
-        action_text=action_text,  # e.g. "Guy Upstairs folds" / "Guy Upstairs calls 120"
-        showdown=showdown,  # GameItemShowdown, linked to equity items
-        navbar_items=navbar_items, is_logged_in=is_logged_in())
+# TODO: 2.1: poll /r/poker for the most common/important/profitable postflop
+# TODO: 2.2: ... two-handed situation and create that as a second situation
