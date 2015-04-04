@@ -632,7 +632,11 @@ class GameItemShowdownEquity(object):
         Create from a GameHistoryShowdownEquity
         """
         self.user = UserDetails.from_user(equity_item.user)
-        self.equity = equity_item.equity    
+        self.equity = equity_item.equity
+        
+    def __repr__(self):
+        return "GameItemShowdownEquity(user=%r, equity=%r)" %  \
+            (self.user, self.equity)
 
 class AnalysisItemFoldEquityItem(object):
     """

@@ -33,7 +33,8 @@ def already_analysed(session, game):
     feas = session.query(AnalysisFoldEquity)  \
         .filter(AnalysisFoldEquity.gameid == game.gameid).all()
     equities = session.query(GameHistoryShowdownEquity)  \
-        .filter(GameHistoryShowdownEquity.gameid == game.gameid).all()
+        .filter(GameHistoryShowdownEquity.gameid == game.gameid)  \
+        .filter(GameHistoryShowdownEquity.equity != None).all()
     return bool(feas) or bool(equities)
 
 def _make_space(session, game, order):
