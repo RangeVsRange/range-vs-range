@@ -10,13 +10,13 @@ from rvr.infrastructure.util import concatenate
 from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem, GameHistoryShowdown,  \
-    GameHistoryShowdownEquity, GAME_HISTORY_TABLES, GameHistoryBase
+    GameHistoryShowdownEquity, GAME_HISTORY_TABLES, GameHistoryBase, \
+    PaymentToPlayer
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
 from rvr.poker.showdown import showdown_equity
-import datetime
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -53,29 +53,6 @@ def _make_space(session, game, order):
     session.commit()
     # now there is a gap in the history
 
-def _record_showdown(session, game, order, is_passive, pot, factor):
-    """
-    Similar to API._record_showdown, but in the middle of the history
-
-    Requires that a gap has been created by _make_space
-    """
-    base = GameHistoryBase()
-    base.gameid = game.gameid
-    base.order = order
-    base.factor = factor
-    base.time = datetime.datetime.utcnow()
-    # TODO: REVISIT: out-of-order history items (chronologically)
-    
-    showdown = GameHistoryShowdown()
-    showdown.is_passive = is_passive
-    showdown.pot = pot
-    showdown.gameid = base.gameid
-    showdown.order = base.order
-    
-    session.add(base)
-    session.add(showdown)
-    return showdown
-
 class FoldEquityAccumulator(object):
     """
     Holds the data needed to calculate and create an AnalysisFoldEquity.
@@ -83,7 +60,7 @@ class FoldEquityAccumulator(object):
     def __init__(self, gameid, order, street, board, bettor, range_action,
                  raise_total, pot_before_bet, bet_cost,
                  pot_if_called, potential_folders):
-        logging.debug("gameid %d, FEA %d, initialising",
+        logging.debug("gameid %d, order %d, FEA initialising",
                       gameid, order)
         self.gameid = gameid
         self.order = order
@@ -184,7 +161,8 @@ class FoldEquityAccumulator(object):
                 .generate_options(self.board):
             afei = self._create_afei(combo, is_fol=True)
             session.add(afei)
-        logging.debug("gameid %d, FEA %d, finalised", self.gameid, self.order)
+        logging.debug("gameid %d, FEA %d, finalised",
+                      self.gameid, self.order)
         return afe
 
 class AnalysisReplayer(object):
@@ -231,6 +209,7 @@ class AnalysisReplayer(object):
             self.pot += item.call_cost
             self.contrib[item.userid] += item.call_cost
             self.stacks[item.userid] -= item.call_cost
+            self.pot_payment(item, item.call_cost)
             if self.fea is not None:
                 # because they call, we will never know how much the other
                 # players would have folded 
@@ -244,6 +223,7 @@ class AnalysisReplayer(object):
             bet_cost = item.raise_total - self.contrib[item.userid]
             self.contrib[item.userid] = item.raise_total
             self.stacks[item.userid] -= bet_cost
+            self.pot_payment(item, bet_cost)
             # we assume the person who has contributed the most calls
             pot_if_called = self.pot + bet_cost + amount_raised
             self.fea = FoldEquityAccumulator(
@@ -275,8 +255,110 @@ class AnalysisReplayer(object):
             if fea_complete:
                 self.fea.finalise(self.session)
                 self.fea = None
+                
+    def pot_payment(self, action_item, contribution):
+        """
+        A simple payment from a player to the pot.
+        """
+        if contribution == 0:
+            return
+        amount = -action_item.factor * contribution
+        logging.debug('gameid %d, order %d, userid %d, pot payment: '
+                      'factor %0.4f * contribution %d = amount %0.8f',
+                      action_item.gameid, action_item.order, action_item.userid,
+                      action_item.factor, contribution, amount)
+        payment = PaymentToPlayer()
+        payment.reason = PaymentToPlayer.REASON_POT
+        payment.gameid = action_item.gameid
+        payment.order = action_item.order
+        payment.userid = action_item.userid
+        payment.amount = amount
+        self.session.add(payment)
 
-    def analyse_showdown(self, ranges, order, is_passive, pot, factor, userids):
+    def fold_equity_payments(self, range_action, fold_ratio):
+        """
+        Fold equity payment occurs for every range action with only two players
+        remaining, and is a payment equal to the current pot multiplied by the
+        current factor multiplied by the fold ratio (up to and including 100% of
+        the pot, e.g. when in a HU situation BTN open folds 100%).
+        
+        This is not a payment from one player to the other. It is a payment
+        the pot to the player who bet. The bettor gains a portion of the pot
+        equal to the fold ratio, and the pot loses this by virtue of a reduction
+        in the current factor.
+        """
+        if len(self.remaining_userids) != 2:
+            return
+        # Note that this includes the bet amount from the betting player, an as-
+        # yet unmatched bet. This is correct, because this is (for example) the
+        # amount the betting player will win if this player folds 100% - no
+        # more, no less.
+        if not fold_ratio:
+            logging.debug('gameid %d, order %d, fold ratio 0.0, '
+                          'skipping fold equity payments',
+                          range_action.gameid, range_action.order)
+            return
+        amount = self.pot * range_action.factor * fold_ratio
+        assert range_action.userid in self.remaining_userids
+        if self.remaining_userids[0] == range_action.userid:
+            nonfolder = self.remaining_userids[1]
+        else:
+            nonfolder = self.remaining_userids[0]
+        logging.debug('gameid %d, order %d, userid %d, fold equity payment: '
+                      'pot %d * factor %0.4f * fold ratio %0.4f = amount %0.8f',
+                      range_action.gameid, range_action.order,
+                      nonfolder,
+                      self.pot, range_action.factor, fold_ratio, amount)
+        nonfolder_payment = PaymentToPlayer()
+        nonfolder_payment.reason = PaymentToPlayer.REASON_FOLD_EQUITY
+        nonfolder_payment.gameid = range_action.gameid
+        nonfolder_payment.order = range_action.order
+        nonfolder_payment.userid = nonfolder
+        nonfolder_payment.amount = amount
+        self.session.add(nonfolder_payment)
+
+    def showdown_payments(self, showdown, equities):
+        """
+        Create showdown payments for all participants of this showdown.
+        """
+        logging.debug('gameid %d, order %d, creating showdown payments',
+                      showdown.gameid, showdown.order)
+        for participant in equities:
+            payment = PaymentToPlayer()
+            payment.reason = PaymentToPlayer.REASON_SHOWDOWN
+            payment.gameid = showdown.gameid
+            payment.order = showdown.order
+            payment.userid = participant.userid
+            payment.amount = showdown.factor * showdown.pot * participant.equity
+            logging.debug('gameid %d, order %d, userid %d, showdown payment: '
+                          'factor %0.4f * pot %d * equity %0.4f = '
+                          'amount %0.8f',
+                          showdown.gameid, showdown.order, participant.userid,
+                          showdown.factor, showdown.pot, participant.equity,
+                          payment.amount)
+            self.session.add(payment)
+
+    def showdown_call(self, gameid, order, caller, call_cost, call_ratio,
+                      factor):
+        """
+        This is a call that doesn't really happen (it's not in the game tree
+        main branch), but it's terminal (like a fold), and we pay out showdowns,
+        but to do so we also need to charge for the call that doesn't happen.
+        """
+        payment = PaymentToPlayer()
+        payment.reason = PaymentToPlayer.REASON_SHOWDOWN_CALL
+        payment.gameid = gameid
+        payment.order = order
+        payment.userid = caller
+        payment.amount = -call_cost * factor * call_ratio
+        logging.debug('gameid %d, order %d, userid %d, showdown call payment: '
+            'call cost %d * factor %0.4f * call ratio %0.4f = '
+            'amount %0.8f',
+            gameid, order, caller, call_cost, factor, call_ratio,
+            payment.amount)
+        self.session.add(payment)
+    
+    def analyse_showdown(self, ranges, order, is_passive, userids):
         """
         Create a showdown with given userids. Pre-river if pre-river.
         """
@@ -285,7 +367,6 @@ class AnalysisReplayer(object):
             .filter(GameHistoryShowdown.order == order)  \
             .filter(GameHistoryShowdown.is_passive == is_passive).all()
         assert len(showdowns) == 1
-        assert showdowns[0].pot == pot and showdowns[0].factor == factor
         logging.debug("gameid %d, order %d, confirmed existing showdown",
                       self.game.gameid, order)
         showdown = showdowns[0]
@@ -299,8 +380,8 @@ class AnalysisReplayer(object):
         logging.debug('gameid %d, order %d, is_passive %r, factor %0.8f, '
                       'showdown with userids: %r, equity: %r '
                       '(iterations %d)',
-                      self.game.gameid, order, is_passive, factor, userids,
-                      equity_map, iterations)
+                      self.game.gameid, order, is_passive, showdown.factor,
+                      userids, equity_map, iterations)
         existing_equities = {p.showdown_order: p
             for p in showdown.participants}  #pylint:disable=no-member
         for showdown_order, userid in enumerate(userids):
@@ -312,31 +393,15 @@ class AnalysisReplayer(object):
                 # not showdown order
                 participant = GameHistoryShowdownEquity()
                 self.session.add(participant)
+                existing_equities[showdown_order] = participant
                 participant.gameid = self.game.gameid
                 participant.order = order
                 participant.is_passive = is_passive
                 participant.showdown_order = showdown_order
                 participant.userid = userid
             participant.equity = equity_map[userid]
-        
-        # TODO: 1: payments - with detailed explanations!
-        
-        # - generic payment to user: raw payment, factor, resultant payment
-        
-        # Each payment will link to a history item (i.e. gameid and order),
-        # being one of:
-        #  - fold equity payment / range action
-        #  - board equity payment / board
-        #  - choice equity payment / range action
-        #  - showdown equity payment / showdown
-        #  (note that winning a pot uncontested is covered by fold equity)
-        
-        # Each payment will be made to all players
-        
-        # Note that showdown results must be scaled down by the...
-        # ... current factor and by the unlikeliness of the action...
-        # ... being chosen from the range action.
-
+        self.showdown_payments(showdown=showdown,
+                               equities=existing_equities.values())
     
     def _calculate_call_cost(self, userid):
         """
@@ -344,9 +409,9 @@ class AnalysisReplayer(object):
         GameHistoryRangeAction... but it's easy enough to calculate based on
         this object's state.
         """
-        return max(self.contrib.values()) - self.contrib[userid]
+        return max(self.contrib.values()) - self.contrib[userid]    
     
-    def range_action_showdown(self, item):
+    def range_action_showdown(self, item, call_ratio):
         """
         Consider showdowns based on this range action resulting in a fold, and
         another based on this resulting in a check or call.
@@ -369,17 +434,11 @@ class AnalysisReplayer(object):
         if last_stack > 0 and self.street != RIVER:
             # end of betting round, but not showdown
             return
-        size_fold = _range_desc_to_size(item.fold_range)
-        size_passive = _range_desc_to_size(item.passive_range)
-        size_aggressive = _range_desc_to_size(item.aggressive_range)
-        size_all = size_fold + size_passive + size_aggressive
-        pot = self.pot
         order = item.order
         # Note that fold is arbitrarily considered to be before call
         if len(self.remaining_userids) > 2:
             order += 1
             # this player folds, but the pot is contested, so we have a showdown
-            factor = item.factor * size_fold / size_all
             ranges = {key: HandRange(txt)
                       for key, txt in self.ranges.iteritems()}
             # They (temporarily) fold
@@ -387,32 +446,40 @@ class AnalysisReplayer(object):
             self.analyse_showdown(ranges=ranges,
                 order=order,
                 is_passive=False,
-                pot=pot,
-                factor=factor,
                 userids=[userid for userid in self.remaining_userids
                          if userid != item.userid])
-        factor = item.factor * size_passive / size_all
         ranges = {key: HandRange(txt)
                   for key, txt in self.ranges.iteritems()}
-        pot += self._calculate_call_cost(item.userid)
         # They (temporarily) call
         ranges[item.userid] = HandRange(item.passive_range)
         if not ranges[item.userid].is_empty():
-            order += 1
             # It's a real call, not folding 100%
+            order += 1
+            self.showdown_call(gameid=item.gameid, order=order,
+                caller=item.userid,
+                call_cost=self._calculate_call_cost(item.userid),
+                call_ratio=call_ratio,
+                factor=item.factor)
             self.analyse_showdown(ranges=ranges,
                 order=order,
                 is_passive=True,
-                pot=pot,
-                factor=factor,
                 userids=self.remaining_userids)
 
     def process_range_action(self, item):
         """
         Process a GameItemRangeAction
         """
+        fol = len(HandRange(item.fold_range).generate_options(self.board))
+        pas = len(HandRange(item.passive_range).generate_options(self.board))
+        agg = len(HandRange(item.aggressive_range).generate_options(self.board))
+        total = fol + pas + agg
+        fold_ratio = 1.0 * fol / total if item.fold_ratio is None  \
+            else item.fold_ratio
+        call_ratio = 1.0 * pas / total if item.passive_ratio is None  \
+            else item.passive_ratio
+        self.fold_equity_payments(range_action=item, fold_ratio=fold_ratio)
         self.range_action_fea(item)
-        self.range_action_showdown(item)
+        self.range_action_showdown(item, call_ratio=call_ratio)
         will_act = set(self.left_to_act).difference({item.userid})
         fold_will_remain = set(self.remaining_userids).difference({item.userid})
         all_in = any([stack == 0 for stack in self.stacks.values()])

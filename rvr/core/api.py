@@ -476,7 +476,8 @@ class API(object):
         element.range_raw = range_raw
         self._record_hand_history_item(rgp.game, element)
         
-    def _record_range_action(self, rgp, range_action, is_check, is_raise):
+    def _record_range_action(self, rgp, range_action, is_check, is_raise,
+                             range_ratios):
         """
         Record that this user has made this range-based action
         """
@@ -488,6 +489,9 @@ class API(object):
         element.raise_total = range_action.raise_total
         element.is_check = is_check
         element.is_raise = is_raise
+        element.fold_ratio = range_ratios['fold']
+        element.passive_ratio = range_ratios['passive']
+        element.aggressive_ratio = range_ratios['aggressive']
         self._record_hand_history_item(rgp.game, element)
         
     def _record_board(self, game):
@@ -726,7 +730,7 @@ class API(object):
         self._record_showdown(game, is_passive, pot, factor, participants)
     
     def _range_action_showdown(self, game, actor, range_action,
-                               current_options):
+                               current_options, range_ratios):
         # pylint:disable=R0914
         """
         Consider showdowns based on this range action resulting in a fold, and
@@ -750,10 +754,8 @@ class API(object):
         if any_stack > 0 and game.current_round != RIVER:
             # not all in, nor river showdown
             return
-        size_fold = len(range_action.fold_range.generate_options())
-        size_passive = len(range_action.passive_range.generate_options())
-        size_aggressive = len(range_action.aggressive_range.generate_options())
-        size_all = size_fold + size_passive + size_aggressive
+        fold_ratio = range_ratios['fold']
+        passive_ratio = range_ratios['passive']
         pot = game.pot_pre + sum(rgp.contributed for rgp in game.rgps)
         # TODO: REVISIT: use true probability of fold or call
         # (This assumes that each option in a user's range is as likely to be
@@ -762,9 +764,9 @@ class API(object):
         # never has AA. If that player is folding KK, they are folding 100% of
         # the time.)
         # arbitrarily, we call the showdown created by a fold "first"
-        if len(remain) > 2 and size_fold > 0:
+        if len(remain) > 2 and fold_ratio > 0:
             # this player folds, but leave 2 or more players to a showdown
-            factor = game.current_factor * size_fold / size_all
+            factor = game.current_factor * fold_ratio
             participants = [rgp for rgp in game.rgps
                 if rgp in remain and rgp.userid != actor.userid]
             self._create_showdown(game=game,
@@ -772,10 +774,10 @@ class API(object):
                 is_passive=False,
                 pot=pot,
                 factor=factor)
-        if size_passive > 0:
+        if passive_ratio > 0:
             # this player calls and creates a showdown
             pot += current_options.call_cost
-            factor = game.current_factor * size_passive / size_all
+            factor = game.current_factor * passive_ratio
             participants = [rgp for rgp in game.rgps
                 if rgp in remain]
             self._create_showdown(game=game,
@@ -811,11 +813,14 @@ class API(object):
         but instead of redealing based on can_call and can_fold, we'll play out
         each option, and terminate only when all options are terminal.
         """
-        self._record_range_action(rgp, range_action,
-            current_options.can_check(), current_options.is_raise)
-        self._range_action_showdown(game, rgp, range_action, current_options)
         what_could_be = WhatCouldBe(game, rgp, range_action, current_options)
-        what_could_be.consider_all()
+        range_ratios = what_could_be.consider_all()
+        self._record_range_action(rgp, range_action,
+            current_options.can_check(), current_options.is_raise,
+            range_ratios)
+        self._range_action_showdown(game, rgp, range_action, current_options,
+                                    range_ratios)
+        # this also changes game's current factor
         action_result = what_could_be.calculate_what_will_be()
         if action_result.is_terminate:
             logging.debug("gameid %r, determined to terminate", game.gameid)
@@ -1029,9 +1034,11 @@ class API(object):
         """
         self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
-        self.session.query(tables.GameHistoryShowdownEquity).delete()
-        games = self.session.query(tables.RunningGame).all()
-        for game in games:
+        for equity in self.session.query(tables.GameHistoryShowdownEquity)  \
+                .all():
+            equity.equity = None
+        self.session.query(tables.PaymentToPlayer).delete()
+        for game in self.session.query(tables.RunningGame).all():
             game.analysis_performed = False
         self.session.commit()
         return self._run_pending_analysis()

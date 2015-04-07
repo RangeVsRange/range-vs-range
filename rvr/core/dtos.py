@@ -392,7 +392,8 @@ class GameItemRangeAction(GameItem):
     user folds fold_range, checks or calls passive_range, bets or raises
     aggressive_range
     """
-    def __init__(self, order, factor, user, range_action, is_check, is_raise):
+    def __init__(self, order, factor, user, range_action, is_check, is_raise,
+                 fold_ratio, passive_ratio, aggressive_ratio):
         """
         user is a UserDetails
         """
@@ -402,12 +403,17 @@ class GameItemRangeAction(GameItem):
         self.range_action = range_action
         self.is_check = is_check
         self.is_raise = is_raise
+        self.fold_ratio = fold_ratio
+        self.passive_ratio = passive_ratio
+        self.aggressive_ratio = aggressive_ratio
     
     def __repr__(self):
         return ("GameItemRangeAction(order=%r, factor=%r, user=%r,"
-                " range_action=%r, is_check=%r, is_raise=%r)") %  \
+                " range_action=%r, is_check=%r, is_raise=%r,"
+                " fold_ratio=%r, passive_ratio=%r, aggressive_ratio=%r)") %  \
             (self.order, self.factor, self.user, self.range_action,
-             self.is_check, self.is_raise)
+             self.is_check, self.is_raise,
+             self.fold_ratio, self.passive_ratio, self.aggressive_ratio)
     
     def __str__(self):
         return "%s performs range-based action: %s" % (self.user,
@@ -417,14 +423,15 @@ class GameItemRangeAction(GameItem):
     def from_history_item(cls, item):
         """
         Create from a GameHistoryRangeAction
-        """        
+        """
         user_details = UserDetails.from_user(item.user)
         range_action = ActionDetails(fold_raw=item.fold_range,
             passive_raw=item.passive_range,
             aggressive_raw=item.aggressive_range,
             raise_total=item.raise_total)
         return cls(item.order, item.factor, user_details, range_action,
-                   item.is_check, item.is_raise)
+                   item.is_check, item.is_raise,
+                   item.fold_ratio, item.passive_ratio, item.aggressive_ratio)
     
     def should_include_for(self, userid, all_userids, is_finished):
         """

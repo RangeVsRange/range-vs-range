@@ -350,6 +350,10 @@ class GameHistoryRangeAction(BASE, FactorMixin):
     # For syntactical context, call or check, bet or raise:
     is_check = Column(Boolean, nullable=False)
     is_raise = Column(Boolean, nullable=False)
+    # Objective (considering cards_dealt) range sizes
+    fold_ratio = Column(Float, nullable=True)
+    passive_ratio = Column(Float, nullable=True)
+    aggressive_ratio = Column(Float, nullable=True)
     
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryRangeAction.gameid," +  \
@@ -464,6 +468,37 @@ GAME_HISTORY_TABLES = [
     GameHistoryChat,
     GameHistoryShowdown  # while GHSEquity is more of an analysis table
     ]
+
+class PaymentToPlayer(BASE):
+    """
+    A single player's part of a payment for something.
+    """
+    __tablename__ = 'payment_to_player'
+    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+                    primary_key=True)
+    order = Column(Integer, ForeignKey("game_history_base.order"),
+                   primary_key=True)
+    userid = Column(Integer, ForeignKey("user.userid"),
+                    primary_key=True)
+    reason = Column(String, primary_key=True)
+    amount = Column(Float, nullable=False)
+    history_base = relationship("GameHistoryBase",
+        primaryjoin="and_(GameHistoryBase.gameid==PaymentToPlayer.gameid,"
+            "GameHistoryBase.order==PaymentToPlayer.order)",
+        backref=backref("payments_to_players", cascade="all"))
+    user = relationship("User")
+    # Putting chips in the pot
+    REASON_POT = 'pot'
+    # Player doesn't fold, even though they have a fold range
+    REASON_FOLD_EQUITY = 'fold-equity'
+    # Showdowns never actually happen, because the calls that precede them never
+    # actually happen, because play goes on. Like a fold, a showdown and the
+    # call that precedes it are a leaf in the game tree, and play continues in
+    # the main branch. Hence, like a fold equity payment, and a showdown
+    # payment, we also need a showdown call payment.
+    REASON_SHOWDOWN_CALL = 'showdown-call'
+    # Getting money from the pot at showdown
+    REASON_SHOWDOWN = 'showdown'
 
 # TODO: 5: further strategic analysis:
 # - fold equity analysis row (might be semibluff EV, or immediate profit)

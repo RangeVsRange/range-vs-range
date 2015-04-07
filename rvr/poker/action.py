@@ -298,12 +298,10 @@ class WhatCouldBe(object):
         
         Inputs: see __init__
         
-        Outputs: an ActionResult: fold, passive, aggressive, or terminate
+        Outputs: range ratios
         
         Side effects:
-         - reduce current factor based on non-playing ranges
-         - redeal rgp's cards based on new range
-         - (later) equity payments and such
+         - analyse effects of a fold, a passive play, or an aggressive play
         """
         # note that we only consider the possible
         # mostly copied from the old re_deal (originally!)
@@ -336,6 +334,14 @@ class WhatCouldBe(object):
                                      aggressive_options,
                                      aggressive_action,
                                      self.range_action.aggressive_range))
+        len_fol = len(fold_options)
+        len_pas = len(passive_options)
+        len_agg = len(aggressive_options)
+        total = len_fol + len_pas + len_agg
+        return {
+            'fold': 1.0 * len_fol / total,
+            'passive': 1.0 * len_pas / total,
+            'aggressive': 1.0 * len_agg / total}        
 
     def re_range(self, branch):
         """
@@ -349,7 +355,7 @@ class WhatCouldBe(object):
     def calculate_what_will_be(self):
         """
         Choose one of the non-terminal actions, or return termination if they're
-        all terminal. Also update game's current_factor. 
+        all terminal. Also update game's current_factor.
         """
         # reduce current factor by the ratio of non-terminal-to-terminal options
         non_terminal = []

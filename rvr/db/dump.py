@@ -334,13 +334,17 @@ def read_game_history_range_actions(session):
              ghra.aggressive_range,
              ghra.raise_total,
              ghra.is_check,
-             ghra.is_raise)
+             ghra.is_raise,
+             ghra.fold_ratio,
+             ghra.passive_ratio,
+             ghra.aggressive_ratio)
             for ghra in ghras]
 
 def write_game_history_range_actions(session, ghras):
     """ Write HandHistoryRangeAction from memory into DB """
     for gameid, order, userid, fold_range, passive_range, aggressive_range,  \
-            raise_total, is_check, is_raise in ghras:
+            raise_total, is_check, is_raise, \
+            fold_ratio, passive_ratio, aggressive_ratio in ghras:
         ghra = GameHistoryRangeAction()
         session.add(ghra)
         ghra.gameid = gameid
@@ -352,6 +356,9 @@ def write_game_history_range_actions(session, ghras):
         ghra.raise_total = raise_total
         ghra.is_check = is_check
         ghra.is_raise = is_raise
+        ghra.fold_ratio = fold_ratio
+        ghra.passive_ratio = passive_ratio
+        ghra.aggressive_ratio = aggressive_ratio
 
 def read_game_history_boards(session):
     """ Read GameHistoryBoard table from DB into memory """
