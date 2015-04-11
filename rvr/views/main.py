@@ -726,7 +726,6 @@ def analysis_page():
     """
     Analysis of a particular hand history item.
     """
-    # TODO: 0.1: link back to game page from analysis page!
     # TODO: 5: the range viewer on the analysis page
 
     # This can simply display each rank combo and allow selection of suit

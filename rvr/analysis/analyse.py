@@ -20,6 +20,8 @@ from rvr.poker.showdown import showdown_equity
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
+# TODO: 0: results, being the sum of all payments
+
 def _range_desc_to_size(range_description):
     """
     Given a range description, determine the number of combos it represents.

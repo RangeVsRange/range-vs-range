@@ -254,6 +254,7 @@ def write_running_game_participants(session, rgps):
         rgp.range_raw = range_raw
         rgp.left_to_act = left_to_act
         rgp.folded = folded
+        rgp.result = None
 
 def read_game_history_bases(session):
     """ Read GameHistoryBase table from DB into memory """

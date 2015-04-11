@@ -213,18 +213,10 @@ def finish_game(game):
     Game is finished. Calculate results, record in hand history,
     perform analysis.
     """
-    # TODO: 3: 0: results: EV compared to starting stack, fold=0EV
-    # TODO: 3: 1: fold equity payments (just a record off-row like analysis)
-    # TODO: 3: 2: pre-river showdown payments
-    # TODO: 3: 3: river showdown payments
-    # TODO: 3: 4: support P1 check, P2 fold, i.e. pay out on folds, not bets
-    # TODO: 3: 5: support situations like P1 bet, P2 call, P3 fold/call/raise
-    # (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.)
-    # TODO: 3: 6: results, being the sum of all payments
- 
-    # TODO: 4: remove current_factor from RunningGame table in DB
-    # TODO: 4: board equity payments
-    # TODO: 5: choice equity payments and current factor reduction
+    # TODO: 5: test situations like P1 bet, P2 call, P3 fold/call/raise
+    # (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.) 
+    # TODO: 5: board equity payments?
+    # TODO: 5: choice equity payments and current factor reduction?
     # TODO: 5: results weighted by size of ranges in starting situation?
     return game
 

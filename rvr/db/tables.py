@@ -239,6 +239,8 @@ class RunningGameParticipant(BASE, object):
     range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     folded = Column(Boolean, nullable=False)
+    # sum of all payments
+    result = Column(Float, nullable=True)
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"),
