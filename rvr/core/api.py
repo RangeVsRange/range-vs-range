@@ -407,6 +407,7 @@ class API(object):
             rgp.range_raw = s_p.range_raw
             rgp.left_to_act = s_p.left_to_act
             rgp.folded = False
+            rgp.result = None
             if situation.current_player_num == order:
                 assert running_game.current_userid == ogp.userid
             self.session.add(rgp)
