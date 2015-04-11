@@ -280,12 +280,21 @@ class AdminCmd(Cmd):
         if isinstance(result, APIError):
             print "Error:", result.description  # pylint:disable=E1101
             return
+        print "(suppressing analysis)"
+        # There's just so damn much of it, the best way to see it is on the web.
+        result.analysis = None
         print result
         
     def do_analyse(self, details):
         """
+        analyse
+        Run pending analysis
+        
+        analyse <gameid>
+        Re/analyse gameid
+        
         analyse [refresh]
-        Run all analysis. If refresh, reanalyse everything. 
+        Reanalyse everything. 
         """
         if details == "":
             result = self.api.run_pending_analysis()
@@ -299,8 +308,12 @@ class AdminCmd(Cmd):
         elif details == "refresh confirm":
             result = self.api.reanalyse_all()
         else:
-            print "Bad syntax. See 'help analyse'."
-            return
+            try:
+                gameid = int(details)
+            except ValueError:                
+                print "Bad syntax. See 'help analyse'."
+                return
+            result = self.api.reanalyse(gameid)
         if isinstance(result, APIError):
             print "Error:", result.description
         else:

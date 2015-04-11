@@ -751,7 +751,7 @@ class RunningGameHistory(object):
         
     def __repr__(self):
         return "RunningGameHistory(game_details=%r, current_options=%r, "  \
-            "history=%r, analysis_items=%r)" %  \
+            "history=%r, analysis=%r)" %  \
             (self.game_details, self.current_options, self.history,
              self.analysis)
         

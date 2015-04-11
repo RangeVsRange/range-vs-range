@@ -344,7 +344,7 @@ def write_game_history_range_actions(session, ghras):
     """ Write HandHistoryRangeAction from memory into DB """
     for gameid, order, userid, fold_range, passive_range, aggressive_range,  \
             raise_total, is_check, is_raise, \
-            fold_ratio, passive_ratio, aggressive_ratio in ghras:
+            fold_ratio, passive_ratio, aggressive_ratio in ghras:        
         ghra = GameHistoryRangeAction()
         session.add(ghra)
         ghra.gameid = gameid

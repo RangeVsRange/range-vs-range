@@ -47,7 +47,7 @@
 {% block content %}
 <div class="container">
   <div class="page-header">
-    <h1>Analysis of Game {{gameid}}<br><small>{{street_text}}, {{screenname}} {{action_text}}</small></h1>
+    <h1>Analysis of a {% if is_raise %}raise{% else %}bet{% endif %} in <a href="{{url_for('game_page', gameid=gameid)}}">Game {{gameid}}</a><br><small>{{street_text}}, {{screenname}} {{action_text}}</small></h1>
   </div>
 </div>
 <div class="container">

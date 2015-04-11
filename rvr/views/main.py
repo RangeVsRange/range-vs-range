@@ -604,7 +604,7 @@ def _finished_game(game, gameid, userid):
 
 def authenticated_game_page(gameid):
     """
-    Game page when user is not authenticated (i.e. the public view)
+    Game page when user is authenticated (i.e. the private view)
     """
     alternate_response = ensure_user()
     if alternate_response:
@@ -629,7 +629,7 @@ def authenticated_game_page(gameid):
 
 def unauthenticated_game_page(gameid):
     """
-    Game page when user is authenticated (i.e. the private view)
+    Game page when user is not authenticated (i.e. the public view)
     """
     api = API()
     response = api.get_public_game(gameid)
@@ -726,6 +726,7 @@ def analysis_page():
     """
     Analysis of a particular hand history item.
     """
+    # TODO: 0.1: link back to game page from analysis page!
     # TODO: 5: the range viewer on the analysis page
 
     # This can simply display each rank combo and allow selection of suit

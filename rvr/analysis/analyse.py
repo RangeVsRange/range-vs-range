@@ -238,7 +238,7 @@ class AnalysisReplayer(object):
                 bet_cost=bet_cost, 
                 pot_if_called=pot_if_called, 
                 potential_folders=[u for u in self.remaining_userids if 
-                    u is not item.userid])
+                    u != item.userid])
             self.pot += bet_cost
             self.ranges[item.userid] = self.prev_range_action.aggressive_range
         self.left_to_act.remove(item.userid)
