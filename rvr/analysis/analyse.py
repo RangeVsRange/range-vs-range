@@ -11,7 +11,7 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem, GameHistoryShowdown,  \
     GameHistoryShowdownEquity, GAME_HISTORY_TABLES, GameHistoryBase, \
-    PaymentToPlayer
+    PaymentToPlayer, RunningGameParticipant
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
@@ -27,33 +27,6 @@ def _range_desc_to_size(range_description):
     Given a range description, determine the number of combos it represents.
     """
     return len(HandRange(range_description).generate_options()) 
-
-def _make_space(session, game, order):
-    """
-    Move all history items by one, to make space for a new one 
-    """
-    update_items = []
-    update_bases = []
-    for table in GAME_HISTORY_TABLES:
-        items = session.query(table)  \
-            .filter(table.gameid == game.gameid)  \
-            .filter(table.order >= order).all()
-        for item in items:
-            base = session.query(GameHistoryBase)  \
-                .filter(GameHistoryBase.gameid == game.gameid)  \
-                .filter(GameHistoryBase.order == item.order).one()
-            update_items.append(item)
-            update_bases.append(base)
-    # process these without an intermediate flush
-    update_items.sort(key=lambda i:i.order, reverse=True)
-    update_bases.sort(key=lambda i:i.order, reverse=True)
-    for item, base in zip(update_items, update_bases):
-        item.order += 1
-        base.order += 1
-        session.commit()
-    game.next_hh += 1
-    session.commit()
-    # now there is a gap in the history
 
 class FoldEquityAccumulator(object):
     """
@@ -509,6 +482,18 @@ class AnalysisReplayer(object):
             self.process_range_action(item)
             self.prev_range_action = item
 
+    def finalise_results(self):
+        """
+        Calculate RunningGameParticipant.result
+        """
+        for rgp in self.game.rgps:
+            payments = self.session.query(PaymentToPlayer)  \
+                .filter(PaymentToPlayer.gameid == self.game.gameid)  \
+                .filter(PaymentToPlayer.userid == rgp.userid).all()
+            rgp.result = sum(payment.amount for payment in payments)
+            logging.debug("gameid %d, userid %d: result %0.4f",
+                          rgp.gameid, rgp.userid, rgp.result)
+
     def analyse(self):
         """
         Perform all analysis on game that has not been done.
@@ -542,6 +527,8 @@ class AnalysisReplayer(object):
                              key=lambda c: c.order)
         for item in child_items:
             self.process_child_item(item)
+            
+        self.finalise_results()
 
 class Test(unittest.TestCase):
     """
