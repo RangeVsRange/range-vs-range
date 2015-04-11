@@ -237,7 +237,8 @@ def read_running_game_participants(session):
              rgp.contributed,
              rgp.range_raw,
              rgp.left_to_act,
-             rgp.folded)
+             rgp.folded,
+             rgp.result)
             for rgp in rgps]
 
 def write_running_game_participants(session, rgps):
