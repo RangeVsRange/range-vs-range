@@ -10,4 +10,3 @@ local_settings.py
 /server.cfg
 /db.pkl
 /client_secrets.json
-/pylintrc
