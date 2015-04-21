@@ -105,10 +105,12 @@ def _game_finished(recipient, screenname, identity, game):
     msg = Message("Analysis for Game %d on Range vs. Range" %
                   (game.gameid,))
     msg.add_recipient(recipient)
+    results = [(rgp.user.screenname, rgp.result) for rgp in game.rgps]
     msg.html = render_template('email/game_complete.html',
         recipient=recipient, screenname=screenname,
         unsubscribe=make_unsubscribe_url(identity),
-        game_url=make_game_url(str(game.gameid)), gameid=game.gameid)
+        game_url=make_game_url(str(game.gameid)), gameid=game.gameid,
+        results=results)
     send_email(msg)
 
 def notify_current_player(game):
