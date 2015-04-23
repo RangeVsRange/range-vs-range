@@ -1,0 +1,26 @@
+{% extends "web/base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>Authentication backdoor</h1>
+  </div>
+</div>
+
+{{ flash_messages() }}
+
+<div class="container">
+    <p>Congratulations, you found our authentication backdoor. This page lets you be anyone.</p>
+    <p>Backdoor access is currently <strong>{% if is_enabled %}enabled{% else %}disabled{% endif %}.</strong></p>
+    <p>backdoor_sub cookie = <strong>{{backdoor_sub}}</strong></p>
+    <p>backdoor_email cookie = <strong>{{backdoor_email}}</strong></p>    
+    <form method="post" name="backdoor">
+    <p>
+      {{form.hidden_tag()}}
+      {{form.backdoor_sub.label}} {{form.backdoor_sub}}<br>
+      {{form.backdoor_email.label}} {{form.backdoor_email}}<br>    
+      <input type="submit" value="Go!" /><br>
+    </p>
+    </form>
+</div>
+{% endblock %}

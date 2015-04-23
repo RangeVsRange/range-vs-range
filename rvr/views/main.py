@@ -10,7 +10,7 @@ from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,  \
     GameItemUserRange, GameItemBoard, GameItemActionResult,  \
     GameItemRangeAction, GameItemTimeout, GameItemChat, GameItemShowdown
 import logging
-from flask.helpers import flash
+from flask.helpers import flash, make_response
 from flask.globals import request, session, g
 from rvr.forms.action import action_form
 from rvr.core import dtos
@@ -18,12 +18,23 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 import urlparse
 from rvr.forms.chat import ChatForm
+import local_settings
+from forms.backdoor import BackdoorForm
 
 # pylint:disable=R0911,R0912,R0914
 
 # TODO: 5: a 'situation' page that describes the situation
 
-def is_authenticated():
+def auth_check(wrapee):
+    """
+    Like OIDC.check, but respects the backdoor
+    """
+    if local_settings.ALLOW_BACKDOOR:
+        return wrapee
+    else:
+        return OIDC.check(wrapee)
+
+def is_authenticated_oidc():
     """
     Is the user authenticated with OpenID Connect?
     """
@@ -33,11 +44,44 @@ def is_authenticated():
     else:
         return OIDC.authenticate_or_redirect() is None
 
+def is_authenticated():
+    """
+    Is the user authenticated (OIDC or backdoor)?
+    """
+    if is_authenticated_oidc():
+        return True
+    if not local_settings.ALLOW_BACKDOOR:
+        return False
+    return 'backdoor_sub' in request.cookies  \
+        and 'backdoor_email' in request.cookies
+
 def is_logged_in():
     """
     Is the user logged in (i.e. they've been to the database)
     """
     return 'userid' in session and 'screenname' in session
+
+def get_backdoor_details():
+    """
+    They're not authenticated by OIDC. We allow self-identification.
+    """
+    # TODO: REVISIT: Obviously, this needs a security review
+    return request.cookies.get('backdoor_sub'),  \
+        request.cookies.get('backdoor_email')
+
+def get_oidc_token_details():
+    """
+    Implements a backdoor login alternative, for use in development only ldo.
+    
+    Returns (subject identifier, subject email)
+    """
+    if not local_settings.ALLOW_BACKDOOR:
+        return g.oidc_id_token['sub'], g.oidc_id_token['email']
+    try:
+        return g.oidc_id_token['sub'], g.oidc_id_token['email']
+    except AttributeError:
+        pass
+    return get_backdoor_details()
 
 def ensure_user():
     """
@@ -54,9 +98,10 @@ def ensure_user():
     if is_logged_in():
         # user is authenticated and authorised (logged in)
         return
+    identity, email = get_oidc_token_details()
     api = API()
-    req = LoginRequest(identity=g.oidc_id_token['sub'],
-                       email=g.oidc_id_token['email'])
+    req = LoginRequest(identity=identity,
+                       email=email)
     result = api.login(req)
     if isinstance(result, APIError):
         flash("Error registering user details.")
@@ -73,8 +118,34 @@ def error(message):
     flash(message)
     return redirect(url_for('error_page'))
 
+@APP.route('/backdoor', methods=['GET', 'POST'])
+def backdoor_page():
+    """
+    Let user declare their subject identifier, email address. While we're at it,
+    let them know whether or not backdoor is enabled.
+    """
+    # TODO: 0.0: test this as an effective backdoor
+    logging.error("/backdoor requested")
+    is_enabled = local_settings.ALLOW_BACKDOOR
+    # TODO: 0: very basic form to set backdoor_sub, backdoor_email cookies
+    # Also show the values of these on the page.
+    form = BackdoorForm()
+    if form.validate_on_submit():
+        backdoor_sub = form.backdoor_sub.data
+        backdoor_email = form.backdoor_email.data
+    else:
+        backdoor_sub, backdoor_email = get_backdoor_details()
+    response = make_response(render_template('web/backdoor.html', form=form,
+        backdoor_sub=backdoor_sub, backdoor_email=backdoor_email,
+        is_enabled=is_enabled))
+    if backdoor_sub is not None:
+        response.set_cookie('backdoor_sub', backdoor_sub)
+    if backdoor_email is not None:
+        response.set_cookie('backdoor_email', backdoor_email)
+    return response
+
 @APP.route('/change', methods=['GET','POST'])
-@OIDC.check
+@auth_check
 def change_screenname():
     """
     Without the user being logged in, give the user the option to change their
@@ -142,7 +213,7 @@ def logout():
     return response
 
 @APP.route('/login', methods=['GET'])
-@OIDC.check
+@auth_check
 def login():
     """
     Log user in and redirect to some target page
@@ -237,7 +308,7 @@ def home_page():
         is_logged_in=is_logged_in())
 
 @APP.route('/join', methods=['GET'])
-@OIDC.check
+@auth_check
 def join_game():
     """
     Join game, flash status, redirect back to /home
@@ -281,7 +352,7 @@ def join_game():
     return redirect(url_for('error_page'))
 
 @APP.route('/leave', methods=['GET'])
-@OIDC.check
+@auth_check
 def leave_game():
     """
     Leave game, flash status, redirect back to /home
@@ -689,7 +760,7 @@ def _chat_page(game, gameid, userid, api):
         all_chats=all_chats)
 
 @APP.route('/chat', methods=['GET', 'POST'])
-@OIDC.check
+@auth_check
 def chat_page():
     """
     Chat history for game, and a text field to chat into game.

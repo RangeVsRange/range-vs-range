@@ -22,6 +22,21 @@ from rvr.poker.showdown import showdown_equity
 
 # TODO: 0: results, being the sum of all payments
 
+# TODO: 1: multiple methods / schemes of calculating results:
+# (generically, of course)
+
+# TODO: 1.1: EV results (pot payments, showdowns, fold equity, showdown calls)
+# This is pure EV, as accurate as possible, but high variance
+
+# TODO: 1.2: EV + board equity (include board equity payments)
+# This is lower variance, and good play should always yield +ve results
+
+# TODO: 1.3: EV + board equity + range change equity
+# This yields a result that is (in some sense) the sum of all branches
+
+# TODO: 1.4: EV + range change, no board (?)
+# Because why not?! If we're doing the other three.
+
 def _range_desc_to_size(range_description):
     """
     Given a range description, determine the number of combos it represents.
