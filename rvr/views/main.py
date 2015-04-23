@@ -124,10 +124,8 @@ def backdoor_page():
     Let user declare their subject identifier, email address. While we're at it,
     let them know whether or not backdoor is enabled.
     """
-    # TODO: 0.0: test this as an effective backdoor
     logging.error("/backdoor requested")
     is_enabled = local_settings.ALLOW_BACKDOOR
-    # TODO: 0: very basic form to set backdoor_sub, backdoor_email cookies
     # Also show the values of these on the page.
     form = BackdoorForm()
     if form.validate_on_submit():
