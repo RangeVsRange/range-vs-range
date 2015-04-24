@@ -173,6 +173,14 @@ class API(object):
         return err
     
     @api
+    def add_situation(self, situation):
+        """
+        Add a new situation to the database. Return situation id, or APIError.
+        """
+        self.session.commit()  # any errors are our own
+        return self._add_situation(situation)
+    
+    @api
     def login(self, request):
         """
         1. Create or validate OpenID Connect-based account
@@ -285,6 +293,8 @@ class API(object):
         """
         Add a dtos.SituationDetails to the database, as a tables.Situation and
         associated tables.SituationPlayer objects.
+        
+        Returns situation id, or APIError
         """
         situation = tables.Situation()
         situation.description = dto.description
@@ -310,6 +320,7 @@ class API(object):
         try:
             self.session.commit()
             logging.debug("Added situation: %s", dto.description)
+            return situation.situationid
         except IntegrityError:
             self.session.rollback()
             return self.ERR_DUPLICATE_SITUATION            

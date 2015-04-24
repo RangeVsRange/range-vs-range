@@ -18,8 +18,8 @@ from rvr.poker.handrange import NOTHING, SET_ANYTHING_OPTIONS,  \
     HandRange, unweighted_options_to_description
 import urlparse
 from rvr.forms.chat import ChatForm
-import local_settings
-from forms.backdoor import BackdoorForm
+from rvr import local_settings
+from rvr.forms.backdoor import BackdoorForm
 
 # pylint:disable=R0911,R0912,R0914
 
