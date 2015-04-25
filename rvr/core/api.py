@@ -910,7 +910,7 @@ class API(object):
         result = self._record_chat(rgp, message)
         return result
         
-    def _get_history_items(self, game, userid=None):
+    def _get_history_items(self, game, userid, is_learning):
         """
         Returns a list of game history items (tables.GameHistoryBase with
         additional details from child tables), with private data only for
@@ -924,9 +924,8 @@ class API(object):
         child_dtos = [dtos.GameItem.from_game_history_child(child)
                       for child in all_child_items]
         all_userids = [rgp.userid for rgp in game.rgps]
-        return [dto for dto in child_dtos
-                if dto.should_include_for(userid, all_userids,
-                                          game.is_finished)]
+        return [dto for dto in child_dtos if is_learning or
+            dto.should_include_for(userid, all_userids, game.is_finished)]
 
     def _get_analysis_items(self, game):
         """
@@ -937,7 +936,7 @@ class API(object):
         return {afe.order: dtos.AnalysisItemFoldEquity.from_afe(afe)
                 for afe in afes}
         
-    def _get_game(self, gameid, userid=None):
+    def _get_game(self, gameid, userid=None, is_learning=False):
         """
         Return game <gameid>. If <userid> is not None, return private data for
         the specified user. If the game is finished, return all private data.
@@ -956,7 +955,8 @@ class API(object):
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
-        history_items = self._get_history_items(game, userid)
+        history_items = self._get_history_items(game, userid=userid,
+                                                is_learning=is_learning)
         analysis_items = self._get_analysis_items(game)
         if game.current_userid is None:
             current_options = None
@@ -983,7 +983,14 @@ class API(object):
         inputs: userid, gameid
         outputs: hand history partially populated with ranges for userid only
         """
-        return self._get_game(gameid, userid)
+        return self._get_game(gameid, userid=userid)
+    
+    @api
+    def get_learning_game(self, gameid):
+        """
+        Implements learning mode: all ranges visible to all players.
+        """
+        return self._get_game(gameid, is_learning=True)
     
     @api
     def ensure_open_games(self):

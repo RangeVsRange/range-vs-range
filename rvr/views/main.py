@@ -671,7 +671,7 @@ def _finished_game(game, gameid, userid):
         is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
-def authenticated_game_page(gameid):
+def authenticated_game_page(gameid, is_learning_mode):
     """
     Game page when user is authenticated (i.e. the private view)
     """
@@ -681,7 +681,10 @@ def authenticated_game_page(gameid):
     userid = session['userid']
 
     api = API()
-    response = api.get_private_game(gameid, userid)
+    if is_learning_mode:
+        response = api.get_learning_game(gameid)
+    else:
+        response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_RUNNING_GAME:
             msg = "Invalid game ID."
@@ -733,7 +736,8 @@ def game_page():
         return redirect(url_for('error_page'))
 
     if is_authenticated():
-        return authenticated_game_page(gameid)
+        is_learning_mode = request.args.get('m', None) == 'l'
+        return authenticated_game_page(gameid, is_learning_mode)
     else:
         flash("You are not logged in. You are viewing this page anonymously.")
         return unauthenticated_game_page(gameid)
