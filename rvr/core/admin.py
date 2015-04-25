@@ -253,7 +253,7 @@ class AdminCmd(Cmd):
         elif response.is_aggressive:
             print "You raised to %d." % (response.raise_total,)
         else:
-            print "Oops. This isn't right."
+            print "Response:", response
             
     def do_chat(self, details):
         """
