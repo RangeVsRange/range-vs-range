@@ -121,11 +121,9 @@ class API(object):
         """
         Add all situations
         """
-        err = None
-        err = self._add_situation(_create_hu()) or err
-        err = self._add_situation(_create_three()) or err
-        err = self._add_situation(_create_cap()) or err
-        return err
+        self._add_situation(_create_hu())
+        self._add_situation(_create_three())
+        self._add_situation(_create_cap())
     
     def _add_card_combo(self, higher_card, lower_card):
         """
@@ -418,7 +416,6 @@ class API(object):
             rgp.range_raw = s_p.range_raw
             rgp.left_to_act = s_p.left_to_act
             rgp.folded = False
-            rgp.result = None
             if situation.current_player_num == order:
                 assert running_game.current_userid == ogp.userid
             self.session.add(rgp)
@@ -1058,6 +1055,9 @@ class API(object):
         for equity in self.session.query(tables.GameHistoryShowdownEquity)  \
                 .filter(tables.GameHistoryShowdownEquity.gameid == gameid).all():
             equity.equity = None
+        self.session.query(tables.RunningGameParticipantResult)  \
+            .filter(tables.RunningGameParticipantResult.gameid == gameid)  \
+            .delete()
         self.session.query(tables.PaymentToPlayer)  \
             .filter(tables.PaymentToPlayer.gameid == gameid).delete()
         self.session.query(tables.RunningGame)  \

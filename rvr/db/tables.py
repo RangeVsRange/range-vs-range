@@ -239,8 +239,6 @@ class RunningGameParticipant(BASE, object):
     range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     folded = Column(Boolean, nullable=False)
-    # sum of all payments
-    result = Column(Float, nullable=True)
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame", backref=backref("rgps", cascade="all"),
@@ -501,6 +499,55 @@ class PaymentToPlayer(BASE):
     REASON_SHOWDOWN_CALL = 'showdown-call'
     # Getting money from the pot at showdown
     REASON_SHOWDOWN = 'showdown'
+    REASON_BOARD = 'board'
+    REASON_BRANCH = 'branch'
+
+class RunningGameParticipantResult(BASE):
+    """
+    Result for a user in a game, under a result scheme
+    """
+    __tablename__ = 'running_game_participant_result'
+    gameid = Column(Integer, ForeignKey("running_game_participant.gameid"),
+                    primary_key=True)
+    userid = Column(Integer, ForeignKey("running_game_participant.userid"),
+                    primary_key=True)
+    scheme = Column(String, nullable=False)
+    result = Column(Float, nullable=False)
+    rgp = relationship("RunningGameParticipant",
+        primaryjoin="and_(RunningGameParticipant.gameid=="
+           "RunningGameParticipantResult.gameid,"
+           "RunningGameParticipant.userid=="
+           "RunningGameParticipantResult.userid)",
+        backref=backref("results", cascade="all"))
+    SCHEME_EV = 'ev'
+    SCHEME_BOARD = 'board'
+    SCHEME_ALL = 'all'
+    SCHEME_DETAILS = {
+        # This is the only pure EV scheme, totally unbiased, but high-variance
+        SCHEME_EV: {PaymentToPlayer.REASON_POT,
+                    PaymentToPlayer.REASON_FOLD_EQUITY,
+                    PaymentToPlayer.REASON_SHOWDOWN_CALL,
+                    PaymentToPlayer.REASON_SHOWDOWN},
+        # This lowers variance enough that good play should always leads to
+        # positive results
+        SCHEME_BOARD: {PaymentToPlayer.REASON_POT,
+                       PaymentToPlayer.REASON_FOLD_EQUITY,
+                       PaymentToPlayer.REASON_SHOWDOWN_CALL,
+                       PaymentToPlayer.REASON_SHOWDOWN,
+                       PaymentToPlayer.REASON_BOARD},
+        # This is the lowest variance option, but buys into the equity concept
+        # pretty heavily. Remember, equity ignores the effect of position,
+        # ignores stack size, ignores the effects of polarisation, doesn't
+        # include winning any further bets with the nuts (even though they can
+        # never lose), etc.
+        # But it is the one that everyone will look at!
+        SCHEME_ALL: {PaymentToPlayer.REASON_POT,
+                     PaymentToPlayer.REASON_FOLD_EQUITY,
+                     PaymentToPlayer.REASON_SHOWDOWN_CALL,
+                     PaymentToPlayer.REASON_SHOWDOWN,
+                     PaymentToPlayer.REASON_BOARD,
+                     PaymentToPlayer.REASON_BRANCH}
+    }
 
 # TODO: 5: further strategic analysis:
 # - fold equity analysis row (might be semibluff EV, or immediate profit)

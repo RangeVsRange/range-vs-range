@@ -36,7 +36,8 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
     AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat,\
-    GameHistoryShowdown, GameHistoryShowdownEquity
+    GameHistoryShowdown, GameHistoryShowdownEquity, PaymentToPlayer,\
+    RunningGameParticipantResult
 from rvr.db.creation import SESSION
 
 #pylint:disable=C0103
@@ -49,6 +50,8 @@ dumpable_tables = [
     OpenGameParticipant,
     RunningGame,
     RunningGameParticipant,
+    RunningGameParticipantResult,
+    PaymentToPlayer,
     GameHistoryBase,
     GameHistoryUserRange,
     GameHistoryActionResult,
@@ -237,14 +240,13 @@ def read_running_game_participants(session):
              rgp.contributed,
              rgp.range_raw,
              rgp.left_to_act,
-             rgp.folded,
-             rgp.result)
+             rgp.folded)
             for rgp in rgps]
 
 def write_running_game_participants(session, rgps):
     """ Write RunningGameParticipant from memory into DB """
     for userid, gameid, order, stack, contributed, range_raw, left_to_act, \
-            folded, result in rgps:
+            folded in rgps:
         rgp = RunningGameParticipant()
         session.add(rgp)
         rgp.userid = userid
@@ -255,7 +257,44 @@ def write_running_game_participants(session, rgps):
         rgp.range_raw = range_raw
         rgp.left_to_act = left_to_act
         rgp.folded = folded
-        rgp.result = result
+
+def read_running_game_participant_results(session):
+    """ Read RunningGameParticipantResult table from DB into memory """
+    rgprs = session.query(RunningGameParticipantResult).all()
+    return [(rgpr.gameid,
+             rgpr.userid,
+             rgpr.scheme,
+             rgpr.result) for rgpr in rgprs]
+    
+def write_running_game_participant_results(session, rgprs):
+    """ Write RunningGameParticipantResult from memory into DB """
+    for gameid, userid, scheme, result in rgprs:
+        rgpr = RunningGameParticipantResult()
+        session.add(rgpr)
+        rgpr.gameid = gameid
+        rgpr.userid = userid
+        rgpr.scheme = scheme
+        rgpr.result = result
+
+def read_payments_to_players(session):
+    """ Read PaymentToPlayer table from DB into memory """
+    ptps = session.query(PaymentToPlayer).all()
+    return [(ptp.gameid,
+             ptp.order,
+             ptp.userid,
+             ptp.reason,
+             ptp.amount) for ptp in ptps]
+
+def write_payments_to_players(session, ptps):
+    """ Write PaymentToPlayer from memory into DB """
+    for gameid, order, userid, reason, amount in ptps:
+        ptp = PaymentToPlayer()
+        session.add(ptp)
+        ptp.gameid = gameid
+        ptp.order = order
+        ptp.userid = userid
+        ptp.reason = reason
+        ptp.amount = amount
 
 def read_game_history_bases(session):
     """ Read GameHistoryBase table from DB into memory """
@@ -531,6 +570,8 @@ TABLE_READERS = {User: read_users,
                  OpenGameParticipant: read_open_game_participants,
                  RunningGame: read_running_games,
                  RunningGameParticipant: read_running_game_participants,
+                 RunningGameParticipantResult: read_running_game_participant_results,
+                 PaymentToPlayer: read_payments_to_players,
                  GameHistoryBase: read_game_history_bases,
                  GameHistoryUserRange: read_game_history_user_ranges,
                  GameHistoryActionResult: read_game_history_action_results,
@@ -551,6 +592,8 @@ TABLE_WRITERS = {User: write_users,
                  OpenGameParticipant: write_open_game_participants,
                  RunningGame: write_running_games,
                  RunningGameParticipant: write_running_game_participants,
+                 RunningGameParticipantResult: write_running_game_participant_results,
+                 PaymentToPlayer: write_payments_to_players,
                  GameHistoryBase: write_game_history_bases,
                  GameHistoryUserRange: write_game_history_user_ranges,
                  GameHistoryActionResult: write_game_history_action_results,

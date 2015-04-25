@@ -11,7 +11,7 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem, GameHistoryShowdown,  \
     GameHistoryShowdownEquity, GAME_HISTORY_TABLES, GameHistoryBase, \
-    PaymentToPlayer, RunningGameParticipant
+    PaymentToPlayer, RunningGameParticipant, RunningGameParticipantResult
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
@@ -20,10 +20,14 @@ from rvr.poker.showdown import showdown_equity
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
-# TODO: 0: results, being the sum of all payments
+# TODO: 0: display results
 
 # TODO: 1: multiple methods / schemes of calculating results:
 # (generically, of course)
+
+# The way to achieve this is to analyse and record all payments, but then
+# results are a selective summation. They'll always sum to the same amount
+# though, because the two variable ones - board and range change - are zero sum.
 
 # TODO: 1.1: EV results (pot payments, showdowns, fold equity, showdown calls)
 # This is pure EV, as accurate as possible, but high variance
@@ -499,15 +503,20 @@ class AnalysisReplayer(object):
 
     def finalise_results(self):
         """
-        Calculate RunningGameParticipant.result
+        Calculate RunningGameParticipant's result, under the 'ev' scheme for now
         """
         for rgp in self.game.rgps:
             payments = self.session.query(PaymentToPlayer)  \
                 .filter(PaymentToPlayer.gameid == self.game.gameid)  \
                 .filter(PaymentToPlayer.userid == rgp.userid).all()
-            rgp.result = sum(payment.amount for payment in payments)
+            rgpr = RunningGameParticipantResult()
+            rgpr.gameid = rgp.gameid
+            rgpr.userid = rgp.userid
+            rgpr.scheme = RunningGameParticipantResult.SCHEME_EV
+            rgpr.result = sum(payment.amount for payment in payments)
+            self.session.add(rgpr)
             logging.debug("gameid %d, userid %d: result %0.4f",
-                          rgp.gameid, rgp.userid, rgp.result)
+                          rgpr.gameid, rgpr.userid, rgpr.result)
 
     def analyse(self):
         """

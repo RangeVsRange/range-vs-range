@@ -7,6 +7,7 @@ from flask import copy_current_request_context
 from rvr.app import MAIL, make_unsubscribe_url, make_game_url
 from threading import Thread
 from functools import wraps
+from rvr.db.tables import RunningGameParticipantResult
 
 #pylint:disable=R0903,R0913
 
@@ -105,7 +106,11 @@ def _game_finished(recipient, screenname, identity, game):
     msg = Message("Analysis for Game %d on Range vs. Range" %
                   (game.gameid,))
     msg.add_recipient(recipient)
-    results = [(rgp.user.screenname, rgp.result) for rgp in game.rgps]
+    results = []
+    for rgp in game.rgps:
+        items = {rgpr.scheme: rgpr.result for rgpr in rgp.results}
+        results.append((rgp.user.screenname,
+                        items[RunningGameParticipantResult.SCHEME_EV]))
     msg.html = render_template('email/game_complete.html',
         recipient=recipient, screenname=screenname,
         unsubscribe=make_unsubscribe_url(identity),
