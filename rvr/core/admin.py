@@ -5,6 +5,7 @@ from cmd import Cmd
 from rvr.core.api import APIError, API
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
 from rvr.core import dtos
+from rvr.poker import cards
 from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
 from rvr import local_settings
@@ -53,6 +54,28 @@ class AdminCmd(Cmd):
             print "Error:", result
         else:
             print "Open games refreshed."            
+    
+    def do_situation(self, details):
+        """
+        Load situation from given python module and add it to the DB. E.g.:
+        
+        situation hu.py
+        
+        will load a situation from a method called reate_situation defined in
+        hu.py, and add it to the database.
+        
+        You can also load directly from the command line:
+        
+        python console.py situation hu.py
+        """
+        # TODO: REVISIT: this can't be used to accept user-defined situations.
+        with open(details, 'r') as handle:
+            source = handle.read()
+        exec(source)  # pylint:disable=exec-used
+        # pylint:disable=undefined-variable
+        situation = create_situation()  # @UndefinedVariable
+        result = self.api.add_situation(situation)
+        print "added situation, result", result
     
     def do_login(self, params):
         """

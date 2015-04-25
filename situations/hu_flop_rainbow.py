@@ -1,8 +1,3 @@
-from rvr.core.api import API
-from rvr.core import dtos
-from rvr.poker.cards import FLOP
-import logging
-
 def create_situation():
     """
     Create HU rainbow flop situation.
@@ -25,16 +20,8 @@ def create_situation():
         is_limit=False,
         big_blind=2,
         board_raw='6s5h4d',
-        current_round=FLOP,
+        current_round=cards.FLOP,
         pot_pre=12,  # pot at start of this betting round
         increment=2,  # minimum raise amount right now
         bet_count=0)
     return situation
-
-if __name__ == '__main__':
-    logging.basicConfig(format="%(asctime)s: %(message)s",
-                        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.root.setLevel(logging.DEBUG)
-    api = API()
-    result = api.add_situation(create_situation())
-    print "added situation, result", result

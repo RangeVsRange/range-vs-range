@@ -442,7 +442,7 @@ class AnalysisReplayer(object):
                   for key, txt in self.ranges.iteritems()}
         # They (temporarily) call
         ranges[item.userid] = HandRange(item.passive_range)
-        if not ranges[item.userid].is_empty():
+        if call_ratio > 0:
             # It's a real call, not folding 100%
             order += 1
             self.showdown_call(gameid=item.gameid, order=order,
