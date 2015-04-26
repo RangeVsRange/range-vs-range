@@ -265,6 +265,7 @@ showdown_view = function(criterion) {
 {% endif %}
 </div>
 
+{% if not is_running %}
 <div class="tab-pane" id="results">
 <table class="table table-condensed">
     <thead>
@@ -315,6 +316,7 @@ showdown_view = function(criterion) {
     </tr>
 </table>
 </div> <!-- results -->
+{% endif %}
 
 <div class="tab-pane" id="chat">
   <iframe src="{{url_for('chat_page', gameid=game_details.gameid)}}" min-width="100%" width="100%" height="1200px"></iframe>
