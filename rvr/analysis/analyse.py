@@ -10,8 +10,8 @@ from rvr.infrastructure.util import concatenate
 from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem, GameHistoryShowdown,  \
-    GameHistoryShowdownEquity, GAME_HISTORY_TABLES, GameHistoryBase, \
-    PaymentToPlayer, RunningGameParticipant, RunningGameParticipantResult
+    GameHistoryShowdownEquity, \
+    PaymentToPlayer, RunningGameParticipantResult
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest

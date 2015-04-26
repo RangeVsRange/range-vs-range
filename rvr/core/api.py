@@ -16,7 +16,7 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe,\
     generate_excluded_cards
-from rvr.core.dtos import MAP_TABLE_DTO
+from rvr.core.dtos import MAP_TABLE_DTO, GamePayment
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
@@ -24,7 +24,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player, \
     notify_finished
 from rvr.analysis.analyse import AnalysisReplayer
-from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT
+from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
+    PaymentToPlayer
 import datetime
 from rvr.local_settings import SUPPRESSED_SITUATIONS
 
@@ -738,7 +739,7 @@ class API(object):
                       [rgp.userid for rgp in participants])
         self._record_showdown(game, is_passive, pot, factor, participants)
     
-    def _range_action_showdown(self, game, actor, range_action,
+    def _range_action_showdown(self, game, actor,
                                current_options, range_ratios):
         # pylint:disable=R0914
         """
@@ -827,7 +828,7 @@ class API(object):
         self._record_range_action(rgp, range_action,
             current_options.can_check(), current_options.is_raise,
             range_ratios)
-        self._range_action_showdown(game, rgp, range_action, current_options,
+        self._range_action_showdown(game, rgp, current_options,
                                     range_ratios)
         # this also changes game's current factor
         action_result = what_could_be.calculate_what_will_be()
@@ -906,6 +907,18 @@ class API(object):
         
         result = self._record_chat(rgp, message)
         return result
+    
+    def _get_payments(self, child):
+        """
+        Return list of payment DTOs
+        """
+        results = []
+        payments = self.session.query(PaymentToPlayer)  \
+            .filter(PaymentToPlayer.gameid == child.gameid)  \
+            .filter(PaymentToPlayer.order == child.order).all()
+        for payment in payments:
+            results.append(GamePayment(payment))
+        return results
         
     def _get_history_items(self, game, userid, is_learning):
         """
@@ -921,8 +934,18 @@ class API(object):
         child_dtos = [dtos.GameItem.from_game_history_child(child)
                       for child in all_child_items]
         all_userids = [rgp.userid for rgp in game.rgps]
-        return [dto for dto in child_dtos if is_learning or
+        # TODO: 2: push is_learning into should_include_for
+        # because &m=l shouldn't let you see others' chats
+        history = [dto for dto in child_dtos if is_learning or
             dto.should_include_for(userid, all_userids, game.is_finished)]
+        payments = {} # map order to map reason to list payments
+        for child in all_child_items:
+            payments[child.order] = {}
+            for payment in self._get_payments(child):
+                if not payments[child.order].has_key(payment.reason):
+                    payments[child.order][payment.reason] = []
+                payments[child.order][payment.reason].append(payment)
+        return history, payments
 
     def _get_analysis_items(self, game):
         """
@@ -952,8 +975,8 @@ class API(object):
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
-        history_items = self._get_history_items(game, userid=userid,
-                                                is_learning=is_learning)
+        history_items, payment_items = self._get_history_items(game,
+            userid=userid, is_learning=is_learning)
         analysis_items = self._get_analysis_items(game)
         if game.current_userid is None:
             current_options = None
@@ -961,6 +984,7 @@ class API(object):
             current_options = calculate_current_options(game, game.current_rgp)
         return dtos.RunningGameHistory(game_details=game_details,
                                        history_items=history_items,
+                                       payment_items=payment_items,
                                        analysis_items=analysis_items,
                                        current_options=current_options)
 

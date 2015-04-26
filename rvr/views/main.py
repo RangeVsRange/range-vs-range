@@ -20,6 +20,7 @@ import urlparse
 from rvr.forms.chat import ChatForm
 from rvr import local_settings
 from rvr.forms.backdoor import BackdoorForm
+from rvr.db.tables import PaymentToPlayer
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -447,12 +448,18 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
         flash(msg)
         return True
 
+def __board_to_vars(street, cards):
+    """
+    Break down cards
+    """
+    cards_ = [cards[i:i+2] for i in range(0, len(cards), 2)]
+    return street, cards_
+
 def _board_to_vars(item):
     """
     Replace little images into it
     """
-    cards = [item.cards[i:i+2] for i in range(0, len(item.cards), 2)]
-    return item.street, cards
+    return __board_to_vars(item.street, item.cards)
 
 def _range_action_to_vars(item):
     """
@@ -550,7 +557,7 @@ def _showdown_to_vars(showdown):
             "players": showdown.players_desc(),
             "equities": showdown.equities}
 
-def _make_history_list(game_history):
+def _make_history_list(game_history, situation):
     """
     Return a details list of each hand history item, as needed to display in
     HTML.
@@ -560,6 +567,10 @@ def _make_history_list(game_history):
     most_recent_range_action = None
     most_recent_action_result = None
     pending_action_result = None
+    # First, inject a board if there is one in the situation
+    if situation.board_raw:
+        results.append(("BOARD", __board_to_vars(situation.current_round,
+                                                 situation.board_raw)))
     for item in game_history:
         if isinstance(item, GameItemUserRange):
             if pending_action_result is not None:
@@ -590,9 +601,36 @@ def _make_history_list(game_history):
         elif isinstance(item, GameItemShowdown):
             results.append(("SHOWDOWN", _showdown_to_vars(item)))
         else:
-            logging.debug("unrecognised type of hand history item: %s", item)
+            logging.error("unrecognised type of hand history item: %s", item)
             results.append(("UNKNOWN", (str(item),)))
     return results
+
+def _make_payments(game_history, game_payments):
+    """
+    game_payments maps order to map of reason to list of GamePayment
+
+    Return dict mapping range action order to list of payments.
+    
+    One payment includes a reason, and a dict mapping player order to payment.
+    """
+    all_payments = {}
+    writing_order = None
+    for item in game_history:
+        if isinstance(item, GameItemRangeAction):
+            writing_order = item.order
+            all_payments[writing_order] = []
+        if writing_order is None:
+            continue
+        by_reason = game_payments[item.order]  # map reason to list
+        for reason in [PaymentToPlayer.REASON_FOLD_EQUITY,
+                       PaymentToPlayer.REASON_SHOWDOWN_CALL,
+                       PaymentToPlayer.REASON_SHOWDOWN,
+                       PaymentToPlayer.REASON_POT,
+                       PaymentToPlayer.REASON_BOARD,
+                       PaymentToPlayer.REASON_BRANCH]:
+            relevant_payments = by_reason.get(reason, [])
+            all_payments[writing_order].extend(relevant_payments)
+    return all_payments
 
 def _calc_is_new_chat(game_history, userid):
     """
@@ -634,7 +672,7 @@ def _running_game(game, gameid, userid, api):
         min_raise=game.current_options.min_raise,
         max_raise=game.current_options.max_raise)
     title = 'Game %d' % (gameid,)
-    history = _make_history_list(game.history)
+    history = _make_history_list(game.history, game.game_details.situation)
     is_new_chat = _calc_is_new_chat(game.history, userid)
     board_raw = game.game_details.board_raw
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
@@ -657,7 +695,10 @@ def _finished_game(game, gameid, userid):
     Response from game page when the requested game is finished.
     """
     title = 'Game %d' % (gameid,)
-    history = _make_history_list(game.history)
+    history = _make_history_list(game.history, game.game_details.situation)
+    # map range action order to ordered list of payment
+    # payment is (type, {user order: amount or None})
+    payments = _make_payments(game.history, game.payments) 
     is_new_chat = _calc_is_new_chat(game.history, userid)
     analyses = game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
@@ -666,7 +707,7 @@ def _finished_game(game, gameid, userid):
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')] 
     return render_template('web/game.html', title=title,
-        game_details=game.game_details, history=history,
+        game_details=game.game_details, history=history, payments=payments,
         num_players=len(game.game_details.rgp_details), analyses=analyses,
         is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
@@ -756,7 +797,8 @@ def _chat_page(game, gameid, userid, api):
             # Success, refresh
             return redirect(url_for('chat_page', gameid=gameid))
     # First load, OR something's wrong with their data.
-    all_chats = [h[1] for h in _make_history_list(game.history)
+    all_chats = [h[1] for h in _make_history_list(game.history,
+                                                  game.game_details.situation)
                  if h[0] == 'CHAT']    
     return render_template('web/chat.html', gameid=gameid, form=form,
         all_chats=all_chats)

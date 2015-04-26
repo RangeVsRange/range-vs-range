@@ -60,7 +60,7 @@ def total_donated():
     url = "http://blockchain.info/rawaddr/1RvRE1XPTboTfujU9dRK9euC6TPnGHzKf?limit=0"  # pylint:disable=C0301
     try:
         response = json.load(urllib2.urlopen(url))
-    except urllib2.HTTPError as _err:
+    except urllib2.HTTPError:
         # Most recent known value
         # TODO: REVISIT: occasionally update this
         # Also, see if this call now honours cors=true

@@ -2,7 +2,8 @@ def create_situation():
     """
     Create HU rainbow flop situation.
     """
-    bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+    # pylint:disable=undefined-variable
+    bb = dtos.SituationPlayerDetails(
         stack=194,
         contributed=0,  # so far this betting round
         left_to_act=True,

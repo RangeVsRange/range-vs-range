@@ -5,7 +5,7 @@ from wtforms.fields.simple import TextField
 from wtforms.validators import Length
 from flask_wtf.form import Form
 
-class BackdoorForm(Form):  # pylint:disable=R0924,R0903
+class BackdoorForm(Form):  # pylint:disable=R0903
     """
     User declares OIDC subject identifier and email
     """

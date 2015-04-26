@@ -13,6 +13,7 @@ from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card
+from binhex import REASONABLY_LARGE
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -289,7 +290,7 @@ class RunningGameDetails(object):
         self.increment = increment
         self.bet_count = bet_count
         self.current_factor = current_factor
-        self.rgp_details = rgp_details  # RunningGameParticipantDetails
+        self.rgp_details = rgp_details  # list of RunningGameParticipantDetails
     
     def __repr__(self):
         return ("RunningGameDetails(gameid=%r, situation=%r, "
@@ -366,7 +367,7 @@ class GameItemUserRange(GameItem):
         self.factor = factor
         self.user = user
         self.range_raw = range_raw
-    
+
     def __repr__(self):
         return "GameItemUserRange(order=%r, factor=%r, user=%r, range=%r)" %  \
             (self.order, self.factor, self.user, self.range_raw)
@@ -648,6 +649,22 @@ class GameItemShowdownEquity(object):
         return "GameItemShowdownEquity(user=%r, equity=%r)" %  \
             (self.user, self.equity)
 
+class GamePayment(object):
+    """
+    A payment to a player
+    """
+    def __init__(self, payment_to_player):
+        """
+        Create from a PAymentToPlayer
+        """
+        self.user = UserDetails.from_user(payment_to_player.user)
+        self.reason = payment_to_player.reason
+        self.amount = payment_to_player.amount
+
+    def __repr__(self):
+        return "GamePayment(user=%r, reason=%r, amount=%r)" %  \
+            (self.user, self.reason, self.amount)
+
 class AnalysisItemFoldEquityItem(object):
     """
     All about the fold equity of betting a particular combo.
@@ -746,10 +763,11 @@ class RunningGameHistory(object):
     It will contain analysis only if the game is finished.
     """
     def __init__(self, game_details, current_options, history_items,
-                 analysis_items):
+                 payment_items, analysis_items):
         self.game_details = game_details
         self.current_options = current_options
         self.history = history_items
+        self.payments = payment_items
         self.analysis = analysis_items
         
     def __repr__(self):

@@ -5,12 +5,12 @@ from cmd import Cmd
 from rvr.core.api import APIError, API
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
 from rvr.core import dtos
-from rvr.poker import cards
+from rvr.poker import cards  # (for dynamic situations) @UnusedImport pylint:disable=unused-import
 from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
 from rvr import local_settings
 
-#pylint:disable=R0201,R0904,E1103
+#pylint:disable=R0201,R0904,E1103,unused-argument
 
 class AdminCmd(Cmd):
     """

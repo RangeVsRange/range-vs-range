@@ -81,6 +81,9 @@ showdown_view = function(criterion) {
   {% endif %}
 {% endif %}
   <li{% if not is_running %} class="active"{% endif %}><a id="heading-history" href="#history" data-toggle="tab">History</a></li>
+{% if not is_running %}
+  <li><a id="heading-results" href="#results" data-toggle="tab">Results</a></li>
+{% endif %}
 {% if is_mine %}
   <li><a id="heading-chat" href="#chat" data-trigger="hover focus" data-toggle="tab" data-container="body" data-placement="right" data-content="New!">Chat</a></li>
 {% endif %}
@@ -244,7 +247,7 @@ showdown_view = function(criterion) {
 		  <td>{{equity.user.screenname}}</td>
 		  <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity}}{% endif %}</td>
 		  <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity * item.pot}}{% endif %}</td>
-		</td>
+		</tr>
 		{% endfor %}
 		</tbody>
 		</table>
@@ -261,6 +264,57 @@ showdown_view = function(criterion) {
 </table>
 {% endif %}
 </div>
+
+<div class="tab-pane" id="results">
+<table class="table table-condensed">
+    <thead>
+    <tr>
+      <td><strong>Description</strong></td>
+      {% for i in range(num_players) %}<td><strong>{{game_details.rgp_details[i].user.screenname}}</strong></td>{% endfor %}
+    </tr>
+    </thead>
+    {% for hint, item in history %}
+      {% if hint in ["RANGE_ACTION", "BOARD"] %}
+      <tr id="history-table-{{item.order}}">
+        <td colspan=9>
+          {% if hint == "RANGE_ACTION" %}
+            {{item.screenname}}
+            folds {{"%0.2f" % item.fold_pct}}%,
+            {% if item.is_check %}checks{% else %}calls{% endif %} {{"%0.2f" % item.passive_pct}}%,
+            {% if item.is_raise %}raises{% else %}bets{% endif %} {{"%0.2f" % item.aggressive_pct}}%
+            (to total {{item.raise_total}})
+          {% elif hint == "BOARD" %}
+            {{item[0]}}: {% for card in item[1] %}{{card}} {% endfor %}
+          {% endif %}
+        </td>
+      </tr>
+      <!--tr style="display:none;" class=showdown id="showdown-{{item.order}}"-->
+      {% if hint == "RANGE_ACTION" %}
+      {% for p in payments[item.order] %}
+      <tr>
+        <td><strong>{{p.reason}}</strong></td>
+        {% for i in range(num_players) %}
+        {% set rgp = game_details.rgp_details[i] %}
+        <td>
+            {% if rgp.user.userid == p.user.userid %}        
+            <strong>{{"%0.4f" % p.amount}}</strong>
+            {% endif %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      {% endif %}
+      {% endif %}
+    {% endfor %}
+    <tr>
+        <td><strong>Total</strong></td>
+        {% for i in range(num_players) %}
+        {% set rgp = game_details.rgp_details[i] %}
+        <td><strong>{{"%0.4f" % rgp.results['ev']}}</strong></td>
+        {% endfor %}   
+    </tr>
+</table>
+</div> <!-- results -->
 
 <div class="tab-pane" id="chat">
   <iframe src="{{url_for('chat_page', gameid=game_details.gameid)}}" min-width="100%" width="100%" height="1200px"></iframe>
