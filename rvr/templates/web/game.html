@@ -267,14 +267,11 @@ showdown_view = function(criterion) {
 
 {% if not is_running %}
 <div class="tab-pane" id="results">
-{% if not rgp.results %}
-<p>The results are not yet calculated. Please come back later.</p>
-{% else %}
 <table class="table table-condensed">
     <thead>
     <tr>
       <td><strong>Description</strong></td>
-      {% for i in range(num_players) %}<td><strong>{{game_details.rgp_details[i].user.screenname}}</strong></td>{% endfor %}
+      {% for i in range(num_players) %}<td><strong>{{game_details.rgp_details[i].user.screenname}}</strong>{% if not rgp.results %} (not yet calculated){% endif %}</td>{% endfor %}
     </tr>
     </thead>
     {% for hint, item in history %}
@@ -314,11 +311,10 @@ showdown_view = function(criterion) {
         <td><strong>Total</strong></td>
         {% for i in range(num_players) %}
         {% set rgp = game_details.rgp_details[i] %}
-        <td><strong>{{"%0.4f" % rgp.results['ev']}}</strong></td>
+        <td><strong>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % rgp.results['ev']}}{% endif %}</strong></td>
         {% endfor %}   
     </tr>
 </table>
-{% endif %} {# not rgp.results #}
 </div> <!-- results -->
 {% endif %}
 
