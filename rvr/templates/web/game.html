@@ -271,7 +271,7 @@ showdown_view = function(criterion) {
     <thead>
     <tr>
       <td><strong>Description</strong></td>
-      {% for i in range(num_players) %}<td><strong>{{game_details.rgp_details[i].user.screenname}}</strong>{% if not rgp.results %} (not yet calculated){% endif %}</td>{% endfor %}
+      {% for i in range(num_players) %}<td><strong>{{game_details.rgp_details[i].user.screenname}}</strong>{% if not game_details.rgp_details[i].results %} (not yet calculated){% endif %}</td>{% endfor %}
     </tr>
     </thead>
     {% for hint, item in history %}
