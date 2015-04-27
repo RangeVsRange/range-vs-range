@@ -267,6 +267,9 @@ showdown_view = function(criterion) {
 
 {% if not is_running %}
 <div class="tab-pane" id="results">
+{% if not rgp.results %}
+<p>The results are not yet calculated. Please come back later.</p>
+{% else %}
 <table class="table table-condensed">
     <thead>
     <tr>
@@ -315,6 +318,7 @@ showdown_view = function(criterion) {
         {% endfor %}   
     </tr>
 </table>
+{% endif %} {# not rgp.results #}
 </div> <!-- results -->
 {% endif %}
 

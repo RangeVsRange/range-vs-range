@@ -76,13 +76,12 @@ def get_oidc_token_details():
     
     Returns (subject identifier, subject email)
     """
-    if not local_settings.ALLOW_BACKDOOR:
-        return g.oidc_id_token['sub'], g.oidc_id_token['email']
     try:
         return g.oidc_id_token['sub'], g.oidc_id_token['email']
     except AttributeError:
-        pass
-    return get_backdoor_details()
+        if local_settings.ALLOW_BACKDOOR:
+            return get_backdoor_details()
+        raise
 
 def ensure_user():
     """
