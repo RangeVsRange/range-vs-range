@@ -511,7 +511,7 @@ class RunningGameParticipantResult(BASE):
                     primary_key=True)
     userid = Column(Integer, ForeignKey("running_game_participant.userid"),
                     primary_key=True)
-    scheme = Column(String, nullable=False)
+    scheme = Column(String, primary_key=True)
     result = Column(Float, nullable=False)
     rgp = relationship("RunningGameParticipant",
         primaryjoin="and_(RunningGameParticipant.gameid=="
@@ -521,7 +521,7 @@ class RunningGameParticipantResult(BASE):
         backref=backref("results", cascade="all"))
     SCHEME_EV = 'ev'
     SCHEME_BOARD = 'board'
-    SCHEME_ALL = 'all'
+    SCHEME_EQUITY = 'equity'
     SCHEME_DETAILS = {
         # This is the only pure EV scheme, totally unbiased, but high-variance
         SCHEME_EV: {PaymentToPlayer.REASON_POT,
@@ -541,12 +541,12 @@ class RunningGameParticipantResult(BASE):
         # include winning any further bets with the nuts (even though they can
         # never lose), etc.
         # But it is the one that everyone will look at!
-        SCHEME_ALL: {PaymentToPlayer.REASON_POT,
-                     PaymentToPlayer.REASON_FOLD_EQUITY,
-                     PaymentToPlayer.REASON_SHOWDOWN_CALL,
-                     PaymentToPlayer.REASON_SHOWDOWN,
-                     PaymentToPlayer.REASON_BOARD,
-                     PaymentToPlayer.REASON_BRANCH}
+        SCHEME_EQUITY: {PaymentToPlayer.REASON_POT,
+                        PaymentToPlayer.REASON_FOLD_EQUITY,
+                        PaymentToPlayer.REASON_SHOWDOWN_CALL,
+                        PaymentToPlayer.REASON_SHOWDOWN,
+                        PaymentToPlayer.REASON_BOARD,
+                        PaymentToPlayer.REASON_BRANCH}
     }
 
 # TODO: 5: further strategic analysis:

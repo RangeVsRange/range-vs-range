@@ -20,8 +20,6 @@ from rvr.poker.showdown import showdown_equity
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
-# TODO: 0: display results
-
 # TODO: 1: multiple methods / schemes of calculating results:
 # (generically, of course)
 
@@ -190,7 +188,10 @@ class AnalysisReplayer(object):
         self.left_to_act = self.remaining_userids[:]
         assert self.fea is None
         self.street = item.street
+        board_before = self.board
         self.board = Card.many_from_text(item.cards)
+        board_after = self.board
+        self.board_payment(item, board_before, board_after)
 
     def process_action_result(self, item):
         """
@@ -268,6 +269,33 @@ class AnalysisReplayer(object):
         payment.userid = action_item.userid
         payment.amount = amount
         self.session.add(payment)
+        
+    def board_payment(self, board_item, board_before, board_after):
+        """
+        Payments in compensation of change of equity due to board cards.
+        """
+        range_map = {key: HandRange(txt) for key, txt in self.ranges.iteritems()
+                     if key in self.remaining_userids}
+        equity_map_before, _ = showdown_equity(range_map, board_before)
+        equity_map_after, _ = showdown_equity(range_map, board_after)
+        for userid in self.remaining_userids:
+            # payment equal to what was lost
+            amount = self.pot * (equity_map_before[userid] -
+                                 equity_map_after[userid]) * board_item.factor
+            logging.debug('gameid %d, order %d, userid %d, board payment: '
+                          'pot %d * (before %0.4f - after %0.4f) * factor %0.4f'
+                          ' = amount %0.8f',
+                          board_item.gameid, board_item.order, userid,
+                          self.pot, equity_map_before[userid],
+                          equity_map_after[userid], board_item.factor,
+                          amount)
+            payment = PaymentToPlayer()
+            payment.reason = PaymentToPlayer.REASON_BOARD
+            payment.gameid = board_item.gameid
+            payment.order = board_item.order
+            payment.userid = userid
+            payment.amount = amount
+            self.session.add(payment)
 
     def fold_equity_payments(self, range_action, fold_ratio):
         """
@@ -503,20 +531,23 @@ class AnalysisReplayer(object):
 
     def finalise_results(self):
         """
-        Calculate RunningGameParticipant's result, under the 'ev' scheme for now
+        Calculate RunningGameParticipant's result, under each scheme
         """
         for rgp in self.game.rgps:
             payments = self.session.query(PaymentToPlayer)  \
                 .filter(PaymentToPlayer.gameid == self.game.gameid)  \
                 .filter(PaymentToPlayer.userid == rgp.userid).all()
-            rgpr = RunningGameParticipantResult()
-            rgpr.gameid = rgp.gameid
-            rgpr.userid = rgp.userid
-            rgpr.scheme = RunningGameParticipantResult.SCHEME_EV
-            rgpr.result = sum(payment.amount for payment in payments)
-            self.session.add(rgpr)
-            logging.debug("gameid %d, userid %d: result %0.4f",
-                          rgpr.gameid, rgpr.userid, rgpr.result)
+            for scheme, include in  \
+                    RunningGameParticipantResult.SCHEME_DETAILS.iteritems():
+                rgpr = RunningGameParticipantResult()
+                rgpr.gameid = rgp.gameid
+                rgpr.userid = rgp.userid
+                rgpr.scheme = scheme
+                rgpr.result = sum(payment.amount for payment in payments
+                                  if payment.reason in include)
+                self.session.add(rgpr)
+                logging.debug("gameid %d, userid %d, scheme %s: result %0.4f",
+                    rgpr.gameid, rgpr.userid, rgpr.scheme, rgpr.result)
 
     def analyse(self):
         """

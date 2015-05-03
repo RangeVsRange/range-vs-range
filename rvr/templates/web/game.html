@@ -199,7 +199,7 @@ showdown_view = function(criterion) {
           {% if item.is_raise %}raises{% else %}bets{% endif %} {{"%0.2f" % item.aggressive_pct}}%
           (to total {{item.raise_total}})
         {% elif hint == "BOARD" %}
-          {{item[0]}}: {% for card in item[1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
+          {{item['street']}}: {% for card in item['cards'] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
         {% elif hint == "TIMEOUT" %}
           {{item.screenname}} has timed out.
         {% elif hint == "CHAT" %}
@@ -285,11 +285,10 @@ showdown_view = function(criterion) {
             {% if item.is_raise %}raises{% else %}bets{% endif %} {{"%0.2f" % item.aggressive_pct}}%
             (to total {{item.raise_total}})
           {% elif hint == "BOARD" %}
-            {{item[0]}}: {% for card in item[1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
+            {{item['street']}}: {% for card in item['cards'] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
           {% endif %}
         </td>
       </tr>
-      {% if hint == "RANGE_ACTION" %}
       {% for p in payments[item.order] %}
       <tr>
         <td>
@@ -318,13 +317,12 @@ showdown_view = function(criterion) {
       </tr>
       {% endfor %}
       {% endif %}
-      {% endif %}
     {% endfor %}
     <tr>
         <td><strong>Total</strong></td>
         {% for i in range(num_players) %}
         {% set rgp = game_details.rgp_details[i] %}
-        <td><strong>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % rgp.results['ev']}}{% endif %}</strong></td>
+        <td><strong>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % rgp.results[scheme]}}{% endif %}</strong></td>
         {% endfor %}   
     </tr>
 </table>

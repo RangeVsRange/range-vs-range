@@ -20,7 +20,7 @@ import urlparse
 from rvr.forms.chat import ChatForm
 from rvr import local_settings
 from rvr.forms.backdoor import BackdoorForm
-from rvr.db.tables import PaymentToPlayer
+from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -512,18 +512,21 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
         flash(msg)
         return True
 
-def __board_to_vars(street, cards):
+def __board_to_vars(street, cards, order):
     """
     Break down cards
     """
+    # TODO: 0: board needs an order now
     cards_ = [cards[i:i+2] for i in range(0, len(cards), 2)]
-    return street, cards_
+    return {'street': street,
+            'cards': cards_,
+            'order': order}
 
 def _board_to_vars(item):
     """
     Replace little images into it
     """
-    return __board_to_vars(item.street, item.cards)
+    return __board_to_vars(item.street, item.cards, item.order)
 
 def _range_action_to_vars(item):
     """
@@ -634,7 +637,7 @@ def _make_history_list(game_history, situation):
     # First, inject a board if there is one in the situation
     if situation.board_raw:
         results.append(("BOARD", __board_to_vars(situation.current_round,
-                                                 situation.board_raw)))
+                                                 situation.board_raw, -1)))
     for item in game_history:
         if isinstance(item, GameItemUserRange):
             if pending_action_result is not None:
@@ -669,7 +672,7 @@ def _make_history_list(game_history, situation):
             results.append(("UNKNOWN", (str(item),)))
     return results
 
-def _make_payments(game_history, game_payments):
+def _make_payments(game_history, game_payments, scheme_includes):
     """
     game_payments maps order to map of reason to list of GamePayment
 
@@ -680,10 +683,9 @@ def _make_payments(game_history, game_payments):
     all_payments = {}
     writing_order = None
     for item in game_history:
-        if isinstance(item, GameItemRangeAction):
+        if isinstance(item, (GameItemRangeAction, GameItemBoard)):
             writing_order = item.order
             all_payments[writing_order] = []
-            last_range_action = item
         if writing_order is None:
             continue
         by_reason = game_payments[item.order]  # map reason to list
@@ -693,6 +695,8 @@ def _make_payments(game_history, game_payments):
                        PaymentToPlayer.REASON_SHOWDOWN,
                        PaymentToPlayer.REASON_POT,
                        PaymentToPlayer.REASON_BOARD]:
+            if reason not in scheme_includes:
+                continue
             relevant_payments = by_reason.get(reason, [])
             for raw in relevant_payments:
                 digested = {
@@ -788,9 +792,9 @@ def _finished_game(game, gameid, userid):
     """
     title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history, game.game_details.situation)
-    # map range action order to ordered list of payment
-    # payment is (type, {user order: amount or None})
-    payments = _make_payments(game.history, game.payments) 
+    scheme = request.args.get('scheme', 'ev')
+    scheme_includes = RunningGameParticipantResult.SCHEME_DETAILS[scheme]
+    payments = _make_payments(game.history, game.payments, scheme_includes) 
     is_new_chat = _calc_is_new_chat(game.history, userid)
     analyses = game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
@@ -802,7 +806,7 @@ def _finished_game(game, gameid, userid):
         game_details=game.game_details, history=history, payments=payments,
         num_players=len(game.game_details.rgp_details), analyses=analyses,
         is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
-        navbar_items=navbar_items, is_logged_in=is_logged_in())
+        scheme=scheme, navbar_items=navbar_items, is_logged_in=is_logged_in())
 
 def authenticated_game_page(gameid, is_learning_mode):
     """
