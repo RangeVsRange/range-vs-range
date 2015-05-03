@@ -276,7 +276,7 @@ showdown_view = function(criterion) {
     </thead>
     {% for hint, item in history %}
       {% if hint in ["RANGE_ACTION", "BOARD"] %}
-      <tr id="history-table-{{item.order}}">
+      <tr>
         <td colspan=9>
           {% if hint == "RANGE_ACTION" %}
             {{item.screenname}}
@@ -285,19 +285,32 @@ showdown_view = function(criterion) {
             {% if item.is_raise %}raises{% else %}bets{% endif %} {{"%0.2f" % item.aggressive_pct}}%
             (to total {{item.raise_total}})
           {% elif hint == "BOARD" %}
-            {{item[0]}}: {% for card in item[1] %}{{card}} {% endfor %}
+            {{item[0]}}: {% for card in item[1] %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}
           {% endif %}
         </td>
       </tr>
-      <!--tr style="display:none;" class=showdown id="showdown-{{item.order}}"-->
       {% if hint == "RANGE_ACTION" %}
       {% for p in payments[item.order] %}
       <tr>
-        <td><strong>{{p.reason}}</strong></td>
+        <td>
+          {% if p.reason == 'fold-equity' %}
+            <strong>{{p.screenname}}</strong> gets paid <strong>{{"%0.4f" % (p.amount,)}}</strong> fold equity.
+          {% elif p.reason == 'branch' %}
+            <strong>{{p.screenname}}</strong> {% if p.amount >= 0.0 %}gets paid{% else %}pays{% endif %} <strong>{{"%0.4f" % (p.amount if p.amount >= 0.0 else -p.amount,)}}</strong> for a change in equity.
+          {% elif p.reason == 'board' %}
+            <strong>{{p.screenname}}</strong> {% if p.amount >= 0.0 %}gets paid{% else %}pays{% endif %} <strong>{{"%0.4f" % (p.amount if p.amount >= 0.0 else -p.amount,)}}</strong> for a change in equity.
+          {% elif p.reason == 'showdown-call' or p.reason == 'pot' %}
+            <strong>{{p.screenname}}</strong> pays <strong>{{"%0.4f" % (-p.amount,)}}</strong> to {{p.action}}.
+          {% elif p.reason == 'showdown' %}
+            <strong>{{p.screenname}}</strong> gets paid <strong>{{"%0.4f" % (p.amount,)}}</strong> at showdown.
+          {% else %}
+            <strong>Unknown type of payment '{{p.reason}}', details: {{p}}</strong> 
+          {% endif %}
+        </td>
         {% for i in range(num_players) %}
         {% set rgp = game_details.rgp_details[i] %}
         <td>
-            {% if rgp.user.userid == p.user.userid %}        
+            {% if rgp.user.screenname == p.screenname %}        
             <strong>{{"%0.4f" % p.amount}}</strong>
             {% endif %}
         </td>

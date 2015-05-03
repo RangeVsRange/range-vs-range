@@ -24,6 +24,68 @@ from rvr.db.tables import PaymentToPlayer
 
 # pylint:disable=R0911,R0912,R0914
 
+# TODO: 0: display results like this:
+#
+# (game 526)
+#
+# flop 6s 5h 4d
+# gu folds 31%, bets 69%
+# - sj gets paid fold equity 3.6187
+# - gu pays 10.4767 to bet
+# sj folds 29%, calls 71%
+# - gu gets paid fold equity 5.2383
+# - sj pays 7.5665 to call
+# turn 6s 5h 4d 3d
+# - gu gets paid X.XXXX for equity change
+# - sj gets paid Y.YYYY for equity change
+# gu folds 14%, bets 86%
+# - sj gets paid 1.4999 fold equity
+# - gu pays 21.0924 to bet
+# sj folds 42%, calls 37%, raises 21%
+# - gu gets paid 16.9625 fold equity
+# - sj pays 12.3187 to call
+# - gu gets paid X.XXXX for equity change
+# - sj gets paid Y.YYYY for equity change
+# river 6s 5h 4d 3d 3s
+# - gu gets paid X.XXXX for equity change
+# - sj gets paid Y.YYYY for equity change
+# gu checks 31%, bets 69%
+# - gu pays 36.6822 to bet
+# - gu gets paid X.XXXX for equity change
+# - sj gets paid Y.YYYY for equity change
+# sj folds 42%, calls 58%
+# - sj gets paid 31.6179 fold equity
+# - sj pays 20.7544 to call
+# - gu gets paid 39.5046 at showdown
+# - sj gets paid 22.4488 at showdown
+# - sj pays Z.ZZZZ to raise
+#
+# in summary, from a display perspective, we have:
+# - board rows
+# - range action rows
+# - the following payment rows:
+#   - equity change
+#   - fold equity (board and chosen range)
+#   - pot payment (both continuing, and showdown calls)
+#   - showdowns
+#
+# and the data they need to hold:
+# - ('equity', 'gu', X.XXXX)
+# - ('fold-equity', 'sj', 31.6179)
+# - ('pot', 'gu', -36.6822, 'bet')
+# - ('showdown', 'gu', 39.5046)
+#
+# and for a given range action, the payments should be displayed in this order:
+# - fold equity
+# - showdown call
+# - showdown
+# - equity change (mutually exclusive with showdowns I think)
+# - pot payment
+
+# TODO: 1: bug: sometimes it seems you're both logged in and not at once
+
+# TODO: 1: try the Bootstrap hover stuff for rank combos so it works on mobile
+
 # TODO: 5: a 'situation' page that describes the situation
 
 def auth_check(wrapee):
@@ -78,7 +140,7 @@ def get_oidc_token_details():
     """
     try:
         return g.oidc_id_token['sub'], g.oidc_id_token['email']
-    except AttributeError:
+    except (TypeError, AttributeError):
         if local_settings.ALLOW_BACKDOOR:
             return get_backdoor_details()
         raise
@@ -267,7 +329,10 @@ def home_page():
     Generates the unauthenticated landing page. AKA the main or home page.
     """
     if not is_authenticated():
-        return render_template('web/landing.html')
+        if local_settings.ALLOW_BACKDOOR:
+            return redirect(url_for('backdoor_page'))
+        else:
+            return render_template('web/landing.html')
     alternate_response = ensure_user()
     if alternate_response:
         return alternate_response
@@ -618,17 +683,45 @@ def _make_payments(game_history, game_payments):
         if isinstance(item, GameItemRangeAction):
             writing_order = item.order
             all_payments[writing_order] = []
+            last_range_action = item
         if writing_order is None:
             continue
         by_reason = game_payments[item.order]  # map reason to list
         for reason in [PaymentToPlayer.REASON_FOLD_EQUITY,
+                       PaymentToPlayer.REASON_BRANCH,
                        PaymentToPlayer.REASON_SHOWDOWN_CALL,
                        PaymentToPlayer.REASON_SHOWDOWN,
                        PaymentToPlayer.REASON_POT,
-                       PaymentToPlayer.REASON_BOARD,
-                       PaymentToPlayer.REASON_BRANCH]:
+                       PaymentToPlayer.REASON_BOARD]:
             relevant_payments = by_reason.get(reason, [])
-            all_payments[writing_order].extend(relevant_payments)
+            for raw in relevant_payments:
+                digested = {
+                    'reason': reason,
+                    'screenname': raw.user.screenname,
+                    'amount': raw.amount
+                }
+                # TODO: REVISIT: it'd be nice if we could include the amounts...
+                # ... but we actually don't record the call cost for range
+                # actions! (ActionDetails is probably the right DTO,
+                # corresponding to GameHistoryRangeAction in the database.)
+                # Note that it's the showdown call that's a problem, not the
+                # regular call.
+                if reason == PaymentToPlayer.REASON_POT:
+                    if item.action_result.is_passive:
+                        if item.action_result.raise_total == 0:
+                            digested['action'] = 'check'
+                        else:
+                            digested['action'] = 'call'
+                    elif item.action_result.is_aggressive:
+                        if item.action_result.is_raise:
+                            digested['action'] = 'raise to %d' %  \
+                                (item.action_result.raise_total,)
+                        else:
+                            digested['action'] = 'bet %d' %  \
+                                (item.action_result.raise_total,)
+                elif reason == PaymentToPlayer.REASON_SHOWDOWN_CALL:
+                    digested['action'] = 'call'
+                all_payments[writing_order].append(digested)
     return all_payments
 
 def _calc_is_new_chat(game_history, userid):

@@ -13,7 +13,6 @@ from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card
-from binhex import REASONABLY_LARGE
 
 #pylint:disable=R0903,R0913,R0902
 
