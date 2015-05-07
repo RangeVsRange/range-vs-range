@@ -122,7 +122,8 @@ def is_logged_in():
     """
     Is the user logged in (i.e. they've been to the database)
     """
-    return 'userid' in session and 'screenname' in session
+    return is_authenticated() and  \
+        'userid' in session and 'screenname' in session
 
 def get_backdoor_details():
     """
