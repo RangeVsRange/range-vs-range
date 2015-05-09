@@ -20,25 +20,6 @@ from rvr.poker.showdown import showdown_equity
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
-# TODO: 1: multiple methods / schemes of calculating results:
-# (generically, of course)
-
-# The way to achieve this is to analyse and record all payments, but then
-# results are a selective summation. They'll always sum to the same amount
-# though, because the two variable ones - board and range change - are zero sum.
-
-# TODO: 1.1: EV results (pot payments, showdowns, fold equity, showdown calls)
-# This is pure EV, as accurate as possible, but high variance
-
-# TODO: 1.2: EV + board equity (include board equity payments)
-# This is lower variance, and good play should always yield +ve results
-
-# TODO: 1.3: EV + board equity + range change equity
-# This yields a result that is (in some sense) the sum of all branches
-
-# TODO: 1.4: EV + range change, no board (?)
-# Because why not?! If we're doing the other three.
-
 def _range_desc_to_size(range_description):
     """
     Given a range description, determine the number of combos it represents.
@@ -296,6 +277,80 @@ class AnalysisReplayer(object):
             payment.userid = userid
             payment.amount = amount
             self.session.add(payment)
+    
+    def equity_payments(self, item):
+        """
+        Payments in compensation due to one player's range changing. Note that
+        every remaining player gets a payment.
+        
+        This happens whenever a player has multiple "play continues" ranges.
+        When heads up, this means any time before the river when someone has a
+        passive range and an aggressive range.
+        
+        More generally, when three-handed, it can include folds. In fact, it
+        could probably be generalised to include fold equity! (But note that
+        fold equity is much less contentious!) (The issue with fold equity is
+        that it requires us to scale down the rest of play, because we don't
+        allow the fold line to happen, ever.)
+        
+        item is a GameHistoryRangeAction
+        """
+        # Establish "old ranges", meaning after anything that can't happen
+        # doesn't happen, but before it has been decided which of the things
+        # that can happen will happen.
+        userid = item.userid
+        old_ranges = {k: HandRange(v) for k, v in self.ranges.iteritems()
+                      if k in self.remaining_userids}
+        allowed = {'f', 'p', 'a'}
+        if not self.fold_continues:
+            allowed.discard('f')
+            old_ranges[userid] = old_ranges[userid]  \
+                .subtract(HandRange(self.prev_range_action.fold_range))
+        if not self.passive_continues:
+            allowed.discard('p')
+            old_ranges[userid] = old_ranges[userid]  \
+                .subtract(HandRange(self.prev_range_action.passive_range))
+        if self.prev_range_action.fold_ratio == 0.0:
+            allowed.discard('f')
+        if self.prev_range_action.passive_ratio == 0.0:
+            allowed.discard('p')
+        if self.prev_range_action.aggressive_ratio == 0.0:
+            allowed.discard('a')
+        if len(allowed) <= 1: # one path, or zero paths (end of the game)
+            logging.debug("gameid %d, order %d, no equity payments, "
+                          "allowed: %s",
+                          item.gameid, item.order, ','.join(allowed))
+            return
+        # Establish "new ranges", what will actually be.
+        new_ranges = dict(old_ranges)
+        if item.is_fold:
+            new_ranges[userid] = HandRange(self.prev_range_action.fold_range)
+        if item.is_passive:
+            new_ranges[userid] = HandRange(self.prev_range_action.passive_range)
+        if item.is_aggressive:
+            new_ranges[userid] =  \
+                HandRange(self.prev_range_action.aggressive_range)
+        # Calculate equities
+        old_equities, _ = showdown_equity(old_ranges, self.board)
+        new_equities, _ = showdown_equity(new_ranges, self.board)
+        for userid in self.remaining_userids:
+            # payment equal to what was lost
+            # note the use of item.factor (new), not prev_range_action.factor
+            amount = self.pot * (old_equities[userid] -
+                                 new_equities[userid]) * item.factor
+            logging.debug('gameid %d, order %d, userid %d, equity payment: '
+                          'pot %d * (before %0.4f - after %0.4f) * factor %0.4f'
+                          ' = amount %0.8f',
+                          item.gameid, item.order, userid, self.pot,
+                          old_equities[userid], new_equities[userid],
+                          item.factor, amount)
+            payment = PaymentToPlayer()
+            payment.reason = PaymentToPlayer.REASON_BRANCH
+            payment.gameid = item.gameid
+            payment.order = item.order
+            payment.userid = userid
+            payment.amount = amount
+            self.session.add(payment)        
 
     def fold_equity_payments(self, range_action, fold_ratio):
         """
@@ -477,11 +532,11 @@ class AnalysisReplayer(object):
         if call_ratio > 0:
             # It's a real call, not folding 100%
             order += 1
-            self.showdown_call(gameid=item.gameid, order=order,
-                caller=item.userid,
-                call_cost=self._calculate_call_cost(item.userid),
-                call_ratio=call_ratio,
-                factor=item.factor)
+            call_cost = self._calculate_call_cost(item.userid)
+            if call_cost != 0:
+                self.showdown_call(gameid=item.gameid, order=order,
+                    caller=item.userid, call_cost=call_cost,
+                    call_ratio=call_ratio, factor=item.factor)
             self.analyse_showdown(ranges=ranges,
                 order=order,
                 is_passive=True,
@@ -524,6 +579,7 @@ class AnalysisReplayer(object):
         if isinstance(item, GameHistoryBoard):
             self.process_board(item)
         if isinstance(item, GameHistoryActionResult):
+            self.equity_payments(item)
             self.process_action_result(item)
         if isinstance(item, GameHistoryRangeAction):
             self.process_range_action(item)
