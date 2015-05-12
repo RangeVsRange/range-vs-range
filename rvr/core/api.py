@@ -1066,7 +1066,7 @@ class API(object):
         Analyse games that haven't been analysed.
         """
         return self._run_pending_analysis()
-    
+        
     @api
     def reanalyse(self, gameid):
         """
@@ -1100,6 +1100,7 @@ class API(object):
         for equity in self.session.query(tables.GameHistoryShowdownEquity)  \
                 .all():
             equity.equity = None
+        self.session.query(tables.RunningGameParticipantResult).delete()
         self.session.query(tables.PaymentToPlayer).delete()
         for game in self.session.query(tables.RunningGame).all():
             game.analysis_performed = False
