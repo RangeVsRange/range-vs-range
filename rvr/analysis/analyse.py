@@ -594,7 +594,7 @@ class AnalysisReplayer(object):
                 .filter(PaymentToPlayer.gameid == self.game.gameid)  \
                 .filter(PaymentToPlayer.userid == rgp.userid).all()
             for scheme, include in  \
-                    RunningGameParticipantResult.SCHEME_DETAILS.iteritems():
+                    RunningGameParticipantResult.SCHEME_DETAILS.iteritems():  # @UndefinedVariable
                 rgpr = RunningGameParticipantResult()
                 rgpr.gameid = rgp.gameid
                 rgpr.userid = rgp.userid

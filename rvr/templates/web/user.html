@@ -1,0 +1,30 @@
+{% extends "web/base.html" %}
+
+{% block title %}{{screenname}} - Range vs. Range{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>{{screenname}}<br><small>Results and Statistics</small></h1>
+  </div>
+{% for situation in situations %}
+  <table class="table table-bordered">
+    <caption><h2><small>"{{situation.name}}" &mdash; {{screenname}} is <strong>{{"%0.04f" % (situation.average if situation.average > 0.0 else -situation.average,)}}</strong> chips <strong>{% if situation.average > 0 %}above{% else %}below{% endif %}</strong> the average (per orbit)</small></h2></caption>
+    <thead><tr>
+      <td><strong>Position</strong></td>
+      <td><strong>Site-wide average</strong></td>
+      <td><strong>EV for {{screenname}} (amount won / hands played)</strong></td>
+      <td><strong>Confidence</strong></td>
+    </tr></thead>
+    <tbody>     
+      {% for position in situation.positions %}<tr>
+        <td>{{position.name}}</td>
+        <td>{% if position.ev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.ev,)}}{% endif %}</td>
+        <td>{% if position.average is none %}N/A (0 hands){% else %}<strong>{{"%0.04f" % (position.average,)}}</strong> chips per hand ({{"%0.04f" % (position.total,)}} chips / {{position.played}} hands){% endif %}</td>
+        <td>{% if position.confidence is none %}N/A (0 hands){% else %}{{"%0.0f%%" % (position.confidence * 100,)}}{% endif %}</td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+{% endfor %}
+</div>
+{% endblock %}

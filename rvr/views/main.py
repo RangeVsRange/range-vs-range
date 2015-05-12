@@ -24,7 +24,15 @@ from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 1: try the Bootstrap hover stuff for rank combos so it works on mobile
+# TODO: 1: a page for a user's results
+# TODO: 1: populate with user's situation EV (per orbit)
+# TODO: 1: populate with user's results for each position
+# TODO: 1: populate with global average for each position
+
+# TODO: 2: try the Bootstrap hover stuff for rank combos so it works on mobile
+
+# TODO: 2.1: poll /r/poker for the most common/important/profitable postflop
+# TODO: 2.2: ... two-handed situation and create that as a second situation
 
 # TODO: 5: a 'situation' page that describes the situation
 
@@ -958,5 +966,54 @@ def analysis_page():
         is_raise=aife.is_raise, is_check=aife.is_check,
         navbar_items=navbar_items, is_logged_in=is_logged_in())
 
-# TODO: 2.1: poll /r/poker for the most common/important/profitable postflop
-# TODO: 2.2: ... two-handed situation and create that as a second situation
+@APP.route('/user', methods=['GET'])
+def user_page():
+    screenname = request.args.get('screenname', None)
+    if screenname is None:
+        return error("Invalid screenname.")
+    
+    situations = [
+        {'name': '3 bet pot',
+         'average': -0.47,
+         'positions': [{
+            'name': 'Position 0',
+            'ev': 1.1,
+            'played': 10,
+            'total': 10.0,
+            'average': 1.0,
+            'confidence': 0.45
+            }, {
+            'name': 'Position 1',
+            'ev': None,
+            'played': 0,
+            'total': 0.0,
+            'average': None,
+            'confidence': None
+            }]},
+        {'name': '4 bet pot',
+         'average': 0.38,
+         'positions': [{
+            'name': 'Position 0',
+            'ev': 1.1,
+            'played': 0,
+            'total': 0.0,
+            'average': None,
+            'confidence': None
+            }, {
+            'name': 'Position 1',
+            'ev': 1.9,
+            'played': 13,
+            'total': 20.0,
+            'average': 1.53,
+            'confidence': 0.32
+            }]}
+        ]
+
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('web/user.html',
+        screenname=screenname,
+        situations=situations,
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in())

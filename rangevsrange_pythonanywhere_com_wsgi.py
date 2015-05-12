@@ -29,6 +29,6 @@ from rvr.app import APP
 application = APP
 
 # These act on APP by registering routes etc.
-from rvr.views import main
-from rvr.views import range_editor
-from rvr.views import ajax
+from rvr.views import main  # @UnusedImport
+from rvr.views import range_editor  # @UnusedImport
+from rvr.views import ajax  # @UnusedImport
