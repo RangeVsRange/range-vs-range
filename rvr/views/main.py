@@ -991,7 +991,7 @@ def user_page():
             'confidence': None
             }]},
         {'name': '4 bet pot',
-         'average': 0.38,
+         'average': None,
          'positions': [{
             'name': 'Position 0',
             'ev': 1.1,

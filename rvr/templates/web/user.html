@@ -8,8 +8,8 @@
     <h1>{{screenname}}<br><small>Results and Statistics</small></h1>
   </div>
 {% for situation in situations %}
+  <h3>"{{situation.name}}" &mdash; {% if situation.average is none %}insufficient play to establish average result{% else %}<strong>{{"%0.04f" % (situation.average if situation.average > 0.0 else -situation.average,)}}</strong> chips <strong>{% if situation.average > 0 %}above{% else %}below{% endif %}</strong> the average per orbit{% endif %}</h3>
   <table class="table table-bordered">
-    <caption><h2><small>"{{situation.name}}" &mdash; {{screenname}} is <strong>{{"%0.04f" % (situation.average if situation.average > 0.0 else -situation.average,)}}</strong> chips <strong>{% if situation.average > 0 %}above{% else %}below{% endif %}</strong> the average (per orbit)</small></h2></caption>
     <thead><tr>
       <td><strong>Position</strong></td>
       <td><strong>Site-wide average</strong></td>
@@ -26,5 +26,6 @@
     </tbody>
   </table>
 {% endfor %}
+{{ share_buttons() }}
 </div>
 {% endblock %}
