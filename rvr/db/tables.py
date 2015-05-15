@@ -62,6 +62,7 @@ class SituationPlayer(BASE, object):
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          primary_key=True)
     order = Column(Integer, primary_key=True)
+    name_raw = Column(String, nullable=True)
     stack = Column(Integer, nullable=False)
     contributed = Column(Integer, nullable=False)
     range_raw = Column(String, nullable=False)
@@ -83,7 +84,18 @@ class SituationPlayer(BASE, object):
         """
         self.range_raw =  \
             unweighted_options_to_description(range_.generate_options())
-    range = property(get_range, set_range)    
+    range = property(get_range, set_range)
+    
+    def get_name(self):
+        """ Get name """
+        if self.name_raw is not None:
+            return self.name_raw
+        else:
+            return "Position %d" % (self.order,)
+    def set_name(self, name):
+        """ Set name """
+        self.name_raw = name
+    name = property(get_name, set_name)
 
 class Situation(BASE):
     """

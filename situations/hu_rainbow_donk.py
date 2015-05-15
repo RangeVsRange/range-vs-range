@@ -4,11 +4,13 @@ def create_situation():
     """
     # pylint:disable=undefined-variable
     co = dtos.SituationPlayerDetails(  # @UndefinedVariable
+        name="CO",
         stack=194,
         contributed=0,  # so far this betting round
         left_to_act=True,
         range_raw='22+,A2s+,K2s+,Q2s+,J2s+,T5s+,95s+,85s+,74s+,64s+,53s+,43s,A2o+,K8o+,QTo+,JTo,T9o,98o')
     btn = dtos.SituationPlayerDetails(  # @UndefinedVariable
+        name="BTN",
         stack=194,
         contributed=0,  # so far this betting round
         left_to_act=True,

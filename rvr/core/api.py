@@ -311,6 +311,7 @@ class API(object):
             child = tables.SituationPlayer()
             child.situation = situation
             child.order = order
+            child.name = player.name
             child.stack = player.stack
             child.contributed = player.contributed
             child.range_raw = player.range_raw
@@ -1182,11 +1183,13 @@ def _create_hu():
     Create the heads-up situation
     """
     hu_bb = dtos.SituationPlayerDetails(  # pylint:disable=C0103
+        name="BB",
         stack=198,
         contributed=2,
         left_to_act=True,
         range_raw=ANYTHING)
     hu_btn = dtos.SituationPlayerDetails(
+        name="BTN",
         stack=199,
         contributed=1,
         left_to_act=True,
@@ -1211,16 +1214,19 @@ def _create_three():
     """
     # pylint:disable=C0301
     three_co = dtos.SituationPlayerDetails(
+        name="CO",
         stack=195,
         contributed=0,
         left_to_act=True,
         range_raw="22+,A2s+,K7s+,Q9s+,J8s+,T8s+,97s+,87s,76s,65s,A8o+,KTo+,QTo+,JTo,T9o")
     three_btn = dtos.SituationPlayerDetails(
+        name="BTN",
         stack=195,
         contributed=0,
         left_to_act=True,
         range_raw="88-22,AJs-A2s,KTs-K7s,Q9s,J9s,T8s+,97s+,86s+,75s+,64s+,54s,A8o+,KTo+,QJo")
     three_bb = dtos.SituationPlayerDetails(
+        name="BB",
         stack=195,
         contributed=0,
         left_to_act=True,
@@ -1244,31 +1250,37 @@ def _create_cap():
     Create a 6-max full hand CAP situation
     """
     cap_sb = dtos.SituationPlayerDetails(
+        name="SB",
         stack=39,
         contributed=1,
         left_to_act=True,
         range_raw=ANYTHING)
     cap_bb = dtos.SituationPlayerDetails(
+        name="BB",
         stack=38,
         contributed=2,
         left_to_act=True,
         range_raw=ANYTHING)
     cap_utg = dtos.SituationPlayerDetails(
+        name="UTG",
         stack=40,
         contributed=0,
         left_to_act=True,
         range_raw=ANYTHING)
     cap_mp = dtos.SituationPlayerDetails(
+        name="MP",
         stack=40,
         contributed=0,
         left_to_act=True,
         range_raw=ANYTHING)
     cap_co = dtos.SituationPlayerDetails(
+        name="CO",
         stack=40,
         contributed=0,
         left_to_act=True,
         range_raw=ANYTHING)
     cap_btn = dtos.SituationPlayerDetails(
+        name="BTN",
         stack=40,
         contributed=0,
         left_to_act=True,

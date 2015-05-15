@@ -106,16 +106,17 @@ class SituationPlayerDetails(object):
     """
     Player-specific information for a situation.
     """
-    def __init__(self, stack, contributed, left_to_act, range_raw):
+    def __init__(self, name, stack, contributed, left_to_act, range_raw):
+        self.name = name
         self.stack = stack
         self.contributed = contributed
         self.left_to_act = left_to_act
         self.range_raw = range_raw
 
     def __repr__(self):
-        return ("SituationPlayerDetails(stack=%r, contributed=%r, " +  \
-            "left_to_act=%r, range=%r)") % (self.stack, self.contributed,
-            self.left_to_act, self.range_raw)
+        return ("SituationPlayerDetails(name=%r, stack=%r, contributed=%r, "
+            "left_to_act=%r, range=%r)") % (self.name, self.stack,
+            self.contributed, self.left_to_act, self.range_raw)
 
 class SituationDetails(object):
     """
@@ -160,7 +161,8 @@ class SituationDetails(object):
         Create instance from tables.Situation
         """
         ordered = sorted(situation.players, key=lambda p: p.order)
-        players = [SituationPlayerDetails(stack=player.stack,
+        players = [SituationPlayerDetails(name=player.name,
+                                          stack=player.stack,
                                           contributed=player.contributed,
                                           left_to_act=player.left_to_act,
                                           range_raw=player.range_raw)
