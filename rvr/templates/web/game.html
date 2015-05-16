@@ -27,7 +27,7 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
     iframe.width(470);  // Could be as low as 461 (@ 2014-06-08)
     iframe.height(410);  // Could be as low as 399 (@ 2014-06-08)
     iframe.text('Sorry, your browser does not support iframes.');
-    td = $('<td colspan=3>');
+    td = $('<td colspan=9>'); {# needed for table in situation tab #}
     td.append(iframe);
     tr = $('<tr>').attr('id', new_id);
     tr.append(td);
@@ -93,9 +93,10 @@ showdown_view = function(criterion) {
 
 <div class="tab-pane" id="situation">
 <p><strong>Situation description:</strong> {{game_details.situation.description}}</p>
+<p><strong>Starting pot:</strong> {{game_details.situation.pot_pre}}</p>
 <table class="table table-bordered">
 <thead>
-<tr><td><strong>Position</strong></td><td><strong>Starting Range</strong</td><td><strong>Player</strong></td></tr>
+<tr><td><strong>Position</strong></td><td><strong>Starting Range</strong</td><td><strong>Contributed</strong></td><td><strong>Player</strong></td></tr>
 </thead>
 <tbody>
 {% for i in range(num_players) %}
@@ -104,6 +105,7 @@ showdown_view = function(criterion) {
 <tr id='position-table-{{i}}'>
   <td>{{position.name}}</td>
   <td><button class="btn btn-primary" type=button id="view-position-{{i}}" onclick="range_view('current-position-row', 'view-position-{{i}}', 'position-table-{{i}}', '{{position.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View starting range</button></td>
+  <td>{{position.contributed}}</td>
   <td>{{rgp.user.screenname}}</td>
 </tr>
 {% endfor %}
