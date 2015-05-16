@@ -308,6 +308,22 @@ class AdminCmd(Cmd):
         result.analysis = None
         print result
         
+    def do_statistics(self, screenname):
+        """
+        statistics <username>
+        Display user's statistics
+        """
+        result = self.api.get_user_by_screenname(screenname)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+            return
+        result = self.api.get_user_statistics(result.userid)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+            return
+        for situation in result:
+            print situation
+
     def do_analyse(self, details):
         """
         analyse

@@ -973,7 +973,11 @@ def user_page():
         return error("Invalid screenname.")
     
     api = API()
-    result = api.get_user_results(screenname)
+    result = api.get_user_by_screenname(screenname)
+    if result == API.ERR_NO_SUCH_USER:
+        return error("Unrecognised screenname.")
+    userid = result.userid
+    result = api.get_user_statistics(userid)
     if result == API.ERR_NO_SUCH_USER:
         return error("No such user.")
     if isinstance(result, APIError):

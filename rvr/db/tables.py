@@ -4,7 +4,7 @@ Declares database tables
 from sqlalchemy import Column, Integer, String, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
-from sqlalchemy.types import Float, Numeric, DateTime
+from sqlalchemy.types import Float, DateTime
 from rvr.poker.cards import Card
 from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from sqlalchemy.orm.session import object_session
@@ -67,6 +67,7 @@ class SituationPlayer(BASE, object):
     contributed = Column(Integer, nullable=False)
     range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
+    average_result = Column(Float, nullable=True)
 
     situation = relationship("Situation", primaryjoin=  \
         "Situation.situationid==SituationPlayer.situationid",
@@ -634,13 +635,13 @@ class AnalysisFoldEquityItem(BASE):
         "==RangeItem.higher_card,AnalysisFoldEquityItem.lower_card"
         "==RangeItem.lower_card)")
     # Relevant columns
-    fold_ratio = Column(Numeric, nullable=False)
-    immediate_result = Column(Numeric, nullable=False)
+    fold_ratio = Column(Float, nullable=False)
+    immediate_result = Column(Float, nullable=False)
     # These next two can be negative, but if so we won't show them to the user.
     # Example: a bluff here wins 1.0 chips, and requires -0.3 chips EV to
     # semibluff, or -8.0% equity when called.
-    semibluff_ev = Column(Numeric, nullable=True)
-    semibluff_equity = Column(Numeric, nullable=True)
+    semibluff_ev = Column(Float, nullable=True)
+    semibluff_equity = Column(Float, nullable=True)
 
 # class AnalysisFloat(BASE):
 #     """

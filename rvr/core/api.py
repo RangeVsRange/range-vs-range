@@ -1044,12 +1044,12 @@ class API(object):
                               new_game.gameid, situation.situationid)
     
     @api
-    def get_user_results(self, screenname):
+    def get_user_statistics(self, userid):
         """
         Return user's site-wide results for all situations / positions.
         """
         matches = self.session.query(tables.User)  \
-            .filter(tables.User.screenname_raw == screenname).all()
+            .filter(tables.User.userid == userid).all()
         if not matches:
             return self.ERR_NO_SUCH_USER
         user = matches[0]
@@ -1057,7 +1057,9 @@ class API(object):
         # For now, there are only situation-specific results (nothing global).
         results = []
         for situation in all_situations:
-            pass
+            childs = []
+            for player in situation.players:
+                pass
         
         return [
             SituationResult(name= '3 bet pot',
