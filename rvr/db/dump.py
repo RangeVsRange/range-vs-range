@@ -150,13 +150,13 @@ def read_situation_players(session):
 
 def write_situation_players(session, sps):
     """ Write SituationPlayer from memory into DB """
-    for situationid, order, stack, contributed, range_raw, left_to_act  \
+    for situationid, order, name, stack, contributed, range_raw, left_to_act  \
             in sps:
         sp = SituationPlayer()
         session.add(sp)
         sp.situationid = situationid
         sp.order = order
-        sp.name = None  # TODO: 0: order, name, stack
+        sp.name = name
         sp.stack = stack
         sp.contributed = contributed
         sp.range_raw = range_raw
