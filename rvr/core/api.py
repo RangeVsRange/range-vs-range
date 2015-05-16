@@ -16,7 +16,8 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe,\
     generate_excluded_cards
-from rvr.core.dtos import MAP_TABLE_DTO, GamePayment
+from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, SituationResult,\
+    PositionResult
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
@@ -233,7 +234,7 @@ class API(object):
             return self.ERR_DUPLICATE_SCREENNAME
         # Check for existing user with this screenname
         matches = self.session.query(tables.User)  \
-            .filter(tables.User.screenname == request.screenname).all()
+            .filter(tables.User.screenname_raw == request.screenname).all()
         if matches:
             return self.ERR_DUPLICATE_SCREENNAME
         try:
@@ -281,7 +282,7 @@ class API(object):
         Return userid, screenname
         """
         matches = self.session.query(tables.User)  \
-            .filter(tables.User.screenname == screenname).all()
+            .filter(tables.User.screenname_raw == screenname).all()
         if matches:
             user = matches[0]
             return dtos.UserDetails.from_user(user)
@@ -1041,7 +1042,60 @@ class API(object):
                 self.session.flush()  # get gameid
                 logging.debug("Created open game %d for situation %d",
                               new_game.gameid, situation.situationid)
-                
+    
+    @api
+    def get_user_results(self, screenname):
+        """
+        Return user's site-wide results for all situations / positions.
+        """
+        matches = self.session.query(tables.User)  \
+            .filter(tables.User.screenname_raw == screenname).all()
+        if not matches:
+            return self.ERR_NO_SUCH_USER
+        user = matches[0]
+        all_situations = self.session.query(tables.Situation).all()
+        # For now, there are only situation-specific results (nothing global).
+        results = []
+        for situation in all_situations:
+            pass
+        
+        return [
+            SituationResult(name= '3 bet pot',
+             average= -0.47,
+             positions= [PositionResult(
+                name= 'Position 0',
+                ev= 1.1,
+                played= 10,
+                total= 10.0,
+                average= 1.0,
+                confidence= 0.45
+                ), PositionResult(
+                name='Position 1',
+                ev= None,
+                played= 0,
+                total= 0.0,
+                average= None,
+                confidence= None
+                )]),
+            SituationResult(name= '4 bet pot',
+             average= None,
+             positions= [PositionResult(
+                name= 'Position 0',
+                ev= 1.1,
+                played= 0,
+                total= 0.0,
+                average= None,
+                confidence= None
+                ), PositionResult(
+                name= 'Position 1',
+                ev= 1.9,
+                played= 13,
+                total= 20.0,
+                average= 1.53,
+                confidence= 0.32
+                )])
+            ]
+
     def _run_pending_analysis(self):
         """
         Look through all games for analysis that has not yet been done, and do

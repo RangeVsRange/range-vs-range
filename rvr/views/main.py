@@ -972,48 +972,18 @@ def user_page():
     if screenname is None:
         return error("Invalid screenname.")
     
-    situations = [
-        {'name': '3 bet pot',
-         'average': -0.47,
-         'positions': [{
-            'name': 'Position 0',
-            'ev': 1.1,
-            'played': 10,
-            'total': 10.0,
-            'average': 1.0,
-            'confidence': 0.45
-            }, {
-            'name': 'Position 1',
-            'ev': None,
-            'played': 0,
-            'total': 0.0,
-            'average': None,
-            'confidence': None
-            }]},
-        {'name': '4 bet pot',
-         'average': None,
-         'positions': [{
-            'name': 'Position 0',
-            'ev': 1.1,
-            'played': 0,
-            'total': 0.0,
-            'average': None,
-            'confidence': None
-            }, {
-            'name': 'Position 1',
-            'ev': 1.9,
-            'played': 13,
-            'total': 20.0,
-            'average': 1.53,
-            'confidence': 0.32
-            }]}
-        ]
-
+    api = API()
+    result = api.get_user_results(screenname)
+    if result == API.ERR_NO_SUCH_USER:
+        return error("No such user.")
+    if isinstance(result, APIError):
+        return error("An unknown error occurred retrieving results.")
+    
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/user.html',
         screenname=screenname,
-        situations=situations,
+        situations=result,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in())

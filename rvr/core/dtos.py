@@ -323,6 +323,36 @@ class RunningGameDetails(object):
         """
         return self.current_player is None
 
+class SituationResult(object):
+    """
+    Everything a user might want to know about their results for a situation.
+    """
+    def __init__(self, name, average, positions):
+        self.name = name
+        self.average = average
+        self.positions = positions
+        
+    def __repr__(self):
+        return "SituationResult(name=%r, average=%r, positions=%r)" %  \
+            (self.name, self.average, self.positions)
+
+class PositionResult(object):
+    """
+    Everything a user might want to know about their results for a position.
+    """
+    def __init__(self, name, ev, played, total, average, confidence):
+        self.name = name
+        self.ev = ev
+        self.played = played
+        self.total = total
+        self.average = average
+        self.confidence = confidence
+        
+    def __repr__(self):
+        return "PositionResult(name=%r, ev=%r, played=%r, total=%r, "  \
+            "average=%r, confidence=%r)" % (self.name, self.ev, self.played,
+            self.total, self.average, self.confidence)
+
 class UsersGameDetails(object):
     """
     lists of open game details, running game details, for a specific user
