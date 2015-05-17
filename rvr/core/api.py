@@ -1096,7 +1096,7 @@ class API(object):
                 else:
                     grand_total = None
                 total_played += played
-            if total_played > min_hands:
+            if total_played >= min_hands:
                 situation_results.append(SituationResult(
                     name=situation.description,
                     average=grand_total,
