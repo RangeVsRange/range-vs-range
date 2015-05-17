@@ -1042,7 +1042,18 @@ class API(object):
                 self.session.flush()  # get gameid
                 logging.debug("Created open game %d for situation %d",
                               new_game.gameid, situation.situationid)
-    
+
+    def _get_ev(self, game, order, userid):
+        """
+        Return user's 'ev' result, or None
+        """
+        for rgp in game.rgps:
+            if rgp.order == order and rgp.userid == userid:
+                for result in rgp.results:
+                    if result.scheme == 'ev':
+                        return result.result
+        return None
+        
     @api
     def get_user_statistics(self, userid):
         """
@@ -1055,11 +1066,44 @@ class API(object):
         user = matches[0]
         all_situations = self.session.query(tables.Situation).all()
         # For now, there are only situation-specific results (nothing global).
-        results = []
+        situation_results = []
         for situation in all_situations:
-            childs = []
+            position_results = []
+            games = self.session.query(tables.RunningGame)  \
+                .filter(tables.RunningGame.situationid ==
+                        situation.situationid).all()
+            grand_total = 0.0 - situation.pot_pre
+            did_play = False
             for player in situation.players:
-                pass
+                # TODO: REVISIT: could iterate over games only once
+                played = 0
+                total = 0.0
+                for game in games:
+                    ev = self._get_ev(game=game, order=player.order,
+                                      userid=userid)
+                    if ev is not None:
+                        played += 1
+                        total += ev
+                position_results.append(PositionResult(
+                    name=player.name,
+                    ev=player.average_result,
+                    played=played,
+                    total=total if played else None,
+                    average=total / played if played else None,
+                    confidence=None))  # TODO: how to calculate confidence?
+                if played and grand_total is not None:
+                    grand_total += total / played
+                    grand_total -= player.contributed
+                else:
+                    grand_total = None
+                if played:
+                    did_play = True
+            if did_play:
+                situation_results.append(SituationResult(
+                    name=situation.description,
+                    average=grand_total,
+                    positions=position_results))
+        return situation_results
         
         return [
             SituationResult(name= '3 bet pot',
@@ -1106,6 +1150,8 @@ class API(object):
         for position in positions:
             count = 0
             total = 0.0
+            # TODO: REVISIT: This is inefficient. Query RunningGame first...
+            # ... then use game.rgps.
             rgps = self.session.query(tables.RunningGameParticipant)  \
                 .filter(tables.RunningGameParticipant.order == position.order) \
                 .all()
