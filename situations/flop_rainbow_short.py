@@ -17,7 +17,7 @@ def create_situation():
         range_raw='55+,A2s+,K7s+,Q8s+,J8s+,T8s+,97s+,86s+,76s,A7o+,K9o+,QTo+,JTo,T9o,98o')
     situation = dtos.SituationDetails(  # @UndefinedVariable
         situationid=None,
-        description="654 rainbow flop, BTN vs BB, 35 BB deep, 2.5x open, with antes",
+        description="654 rainbow flop, BTN vs. BB, 35 BB deep, 2.5x open, with antes",
         players=[bb, sb_btn],  # BB acts first in future rounds
         current_player=0,  # BB acts first this round
         is_limit=False,
