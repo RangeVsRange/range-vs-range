@@ -1090,7 +1090,7 @@ class API(object):
                     played=played,
                     total=total if played else None,
                     average=total / played if played else None,
-                    confidence=None))  # TODO: how to calculate confidence?
+                    confidence=None))  # TODO: 0: calculate confidence somehow?
                 if played and grand_total is not None:
                     grand_total += total / played
                     grand_total -= player.contributed
