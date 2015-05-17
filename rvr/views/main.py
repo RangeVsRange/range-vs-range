@@ -971,13 +971,18 @@ def user_page():
     screenname = request.args.get('screenname', None)
     if screenname is None:
         return error("Invalid screenname.")
+    min_hands = request.args.get('min', '1')
+    try:
+        min_hands = int(min_hands)
+    except ValueError:
+        return error("Invalid min.")
     
     api = API()
     result = api.get_user_by_screenname(screenname)
     if result == API.ERR_NO_SUCH_USER:
         return error("Unrecognised screenname.")
     userid = result.userid
-    result = api.get_user_statistics(userid)
+    result = api.get_user_statistics(userid, min_hands=min_hands)
     if result == API.ERR_NO_SUCH_USER:
         return error("No such user.")
     if isinstance(result, APIError):

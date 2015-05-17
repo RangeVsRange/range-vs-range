@@ -1055,7 +1055,7 @@ class API(object):
         return None
         
     @api
-    def get_user_statistics(self, userid):
+    def get_user_statistics(self, userid, min_hands=1):
         """
         Return user's site-wide results for all situations / positions.
         """
@@ -1063,7 +1063,6 @@ class API(object):
             .filter(tables.User.userid == userid).all()
         if not matches:
             return self.ERR_NO_SUCH_USER
-        user = matches[0]
         all_situations = self.session.query(tables.Situation).all()
         # For now, there are only situation-specific results (nothing global).
         situation_results = []
@@ -1073,7 +1072,7 @@ class API(object):
                 .filter(tables.RunningGame.situationid ==
                         situation.situationid).all()
             grand_total = 0.0 - situation.pot_pre
-            did_play = False
+            total_played = 0
             for player in situation.players:
                 # TODO: REVISIT: could iterate over games only once
                 played = 0
@@ -1096,9 +1095,8 @@ class API(object):
                     grand_total -= player.contributed
                 else:
                     grand_total = None
-                if played:
-                    did_play = True
-            if did_play:
+                total_played += played
+            if total_played > min_hands:
                 situation_results.append(SituationResult(
                     name=situation.description,
                     average=grand_total,
