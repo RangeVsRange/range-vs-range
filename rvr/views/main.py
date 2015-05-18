@@ -24,12 +24,10 @@ from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 1: a page for a user's results
-# TODO: 1: populate with user's situation EV (per orbit)
-# TODO: 1: populate with user's results for each position
-# TODO: 1: populate with global average for each position
+# TODO: 1: try the Bootstrap hover stuff for rank combos so it works on mobile
+# because not having this makes it truly unplayable in learning mode!
 
-# TODO: 2: try the Bootstrap hover stuff for rank combos so it works on mobile
+# TODO: 1: track games as learning or competition mode, ignore learning mode
 
 # TODO: 2.1: poll /r/poker for the most common/important/profitable postflop
 # TODO: 2.2: ... two-handed situation and create that as a second situation
@@ -809,7 +807,6 @@ def game_page():
     """
     View of the specified game, authentication-aware
     """
-    # TODO: 0: every position should have a name
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")

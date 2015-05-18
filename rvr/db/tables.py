@@ -52,7 +52,34 @@ class User(BASE, object):
         else:
             self.screenname_raw = screenname
     screenname = property(get_screenname, set_screenname)        
+
+class Situation(BASE):
+    """
+    Training situations, e.g. HU NL HE for 100 BB preflop.
     
+    Has one-to-many relationships with OpenGame, RunningGame. 
+    """
+    __tablename__ = 'situation'
+    situationid = Column(Integer, primary_key=True)
+    description = Column(String, unique=True, nullable=False)
+    participants = Column(Integer, nullable=False)
+    is_limit = Column(Boolean, nullable=False)
+    big_blind = Column(Integer, nullable=False)
+    board_raw = Column(String, nullable=False)
+    current_round = Column(String, nullable=False)
+    pot_pre = Column(Integer, nullable=False)
+    increment = Column(Integer, nullable=False)
+    bet_count = Column(Integer, nullable=False)
+    # TODO: REVISIT: It's possible to do this FK better: http://goo.gl/CHgYzP
+    current_player_num = Column(Integer, ForeignKey("situation_player.order",
+        use_alter=True, name="fk_current_player"), nullable=False)
+    
+    def ordered_players(self):
+        """
+        Returns a list of SituationPlayer in the order they are seated.
+        """
+        # pylint:disable=E1101
+        return sorted(self.players, key=lambda p: p.order)
 
 class SituationPlayer(BASE, object):
     """
@@ -68,6 +95,7 @@ class SituationPlayer(BASE, object):
     range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     average_result = Column(Float, nullable=True)
+    stddev = Column(Float, nullable=True)  # TODO: 0: dump out, dump in
 
     situation = relationship("Situation", primaryjoin=  \
         "Situation.situationid==SituationPlayer.situationid",
@@ -97,34 +125,6 @@ class SituationPlayer(BASE, object):
         """ Set name """
         self.name_raw = name
     name = property(get_name, set_name)
-
-class Situation(BASE):
-    """
-    Training situations, e.g. HU NL HE for 100 BB preflop.
-    
-    Has one-to-many relationships with OpenGame, RunningGame. 
-    """
-    __tablename__ = 'situation'
-    situationid = Column(Integer, primary_key=True)
-    description = Column(String, unique=True, nullable=False)
-    participants = Column(Integer, nullable=False)
-    is_limit = Column(Boolean, nullable=False)
-    big_blind = Column(Integer, nullable=False)
-    board_raw = Column(String, nullable=False)
-    current_round = Column(String, nullable=False)
-    pot_pre = Column(Integer, nullable=False)
-    increment = Column(Integer, nullable=False)
-    bet_count = Column(Integer, nullable=False)
-    # TODO: REVISIT: It's possible to do this FK better: http://goo.gl/CHgYzP
-    current_player_num = Column(Integer, ForeignKey("situation_player.order",
-        use_alter=True, name="fk_current_player"), nullable=False)
-    
-    def ordered_players(self):
-        """
-        Returns a list of SituationPlayer in the order they are seated.
-        """
-        # pylint:disable=E1101
-        return sorted(self.players, key=lambda p: p.order)
 
 class OpenGame(BASE):
     """
