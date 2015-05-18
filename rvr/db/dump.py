@@ -146,13 +146,14 @@ def read_situation_players(session):
              sp.contributed,
              sp.range_raw,
              sp.left_to_act,
-             sp.average_result)
+             sp.average_result,
+             sp.stddev)
             for sp in sps]
 
 def write_situation_players(session, sps):
     """ Write SituationPlayer from memory into DB """
     for situationid, order, name, stack, contributed, range_raw, left_to_act,  \
-            average_result in sps:
+            average_result, stddev in sps:
         sp = SituationPlayer()
         session.add(sp)
         sp.situationid = situationid
@@ -163,6 +164,7 @@ def write_situation_players(session, sps):
         sp.range_raw = range_raw
         sp.left_to_act = left_to_act
         sp.average_result = average_result
+        sp.stddev = stddev
 
 def read_open_games(session):
     """ Read OpenGame table from DB into memory """
