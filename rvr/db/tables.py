@@ -95,7 +95,7 @@ class SituationPlayer(BASE, object):
     range_raw = Column(String, nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     average_result = Column(Float, nullable=True)
-    stddev = Column(Float, nullable=True)  # TODO: 0: dump out, dump in
+    stddev = Column(Float, nullable=True)  # TODO: promulgate, dump.py
 
     situation = relationship("Situation", primaryjoin=  \
         "Situation.situationid==SituationPlayer.situationid",
