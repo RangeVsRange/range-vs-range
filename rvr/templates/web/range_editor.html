@@ -4,6 +4,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{url_for('static', filename="js/range-editor.js")}}"></script>
+<script>$('[data-toggle="tooltip"]').tooltip()</script>
 <script>
     $MIN_RAISE = Number({{min_raise}});
     $MAX_RAISE = Number({{max_raise}});
