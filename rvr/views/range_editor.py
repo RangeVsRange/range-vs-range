@@ -363,7 +363,8 @@ def make_rank_table(color_maker, board, can_check, is_raised):
               'class': rank_class(row, col, color_maker, board),
               'hover': rank_hover(row, col, color_maker, board,
                                   is_raised=is_raised == "true",
-                                  is_can_check=can_check == "true")}
+                                  is_can_check=can_check == "true"),
+              'topthree': row < 3}
              for col in range(13)] for row in range(13)]
 
 def make_suited_table():
