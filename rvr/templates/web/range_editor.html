@@ -118,7 +118,7 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
 <!-- Start Rank Combos -->
   <label>Select rank combos:</label> <div class="btn-group"><a class="btn btn-default" onclick="select_all_rank(false)">None</a><a class="btn btn-default" onclick="select_all_rank(true)">All</a></div>
   <div class="pad-above">
-  {{ rt.formatted_rank_table(rank_table) }}  
+  {{ rt.formatted_rank_table(rank_table, False) }}  
   </div>
 <!-- End Rank Combos -->
 

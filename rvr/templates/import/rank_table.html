@@ -1,8 +1,8 @@
-{% macro formatted_rank_table(rank_table) %}
+{% macro formatted_rank_table(rank_table, tooltips) %}
   <table>
    {% for row in rank_table %}<tr>
     {% for details in row %}
-    <td>{% if details.class != "r_hdn" %}<div data-toggle="tooltip" {% if details.topthree %}data-placement='bottom' {% endif %}title="{{details.hover}}"><button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs" onclick="rank_click(event, '{{details.id}}');">{{details.text}}</button></div><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs invisible" disabled=disabled>&nbsp;</button>{% endif %}</td>
+    <td>{% if details.class != "r_hdn" %}<div {% if tooltips %}data-toggle="tooltip" {% endif %}{% if details.topthree %}data-placement='bottom' {% endif %}title="{{details.hover}}"><button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs" onclick="rank_click(event, '{{details.id}}');">{{details.text}}</button></div><input type=hidden class="r_h" id="sel_{{details.id}}" name="sel_{{details.id}}" value="false">{% else %}<button type=button id="{{details.id}}" class="{{details.class}} rank-button btn btn-default btn-xs invisible" disabled=disabled>&nbsp;</button>{% endif %}</td>
     {% endfor %}
    </tr>{% endfor %}
   </table>
