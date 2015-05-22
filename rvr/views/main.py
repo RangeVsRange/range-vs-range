@@ -24,9 +24,6 @@ from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 1: try the Bootstrap hover stuff for rank combos so it works on mobile
-# because not having this makes it truly unplayable in learning mode!
-
 # TODO: 1: track games as learning or competition mode, ignore learning mode
 
 # TODO: 2.1: poll /r/poker for the most common/important/profitable postflop
@@ -57,6 +54,8 @@ def is_authenticated():
     """
     Is the user authenticated (OIDC or backdoor)?
     """
+    # TODO: BUG: login expires after an hour, is not refreshed on interaction
+    # TODO: BUG: login does not return user to the same page
     if is_authenticated_oidc():
         return True
     if not local_settings.ALLOW_BACKDOOR:
@@ -742,7 +741,7 @@ def _finished_game(game, gameid, userid):
     scheme_includes = RunningGameParticipantResult.SCHEME_DETAILS[scheme]
     payments = _make_payments(game.history, game.payments, scheme_includes) 
     is_new_chat = _calc_is_new_chat(game.history, userid)
-    analyses = game.analysis.keys()
+    analyses = []  # TODO: 2: reintroduce this: game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
     navbar_items = [('', url_for('home_page'), 'Home'),
