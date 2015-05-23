@@ -936,10 +936,9 @@ class API(object):
         child_dtos = [dtos.GameItem.from_game_history_child(child)
                       for child in all_child_items]
         all_userids = [rgp.userid for rgp in game.rgps]
-        # TODO: 2: push is_learning into should_include_for
-        # because &m=l shouldn't let you see others' chats
-        history = [dto for dto in child_dtos if is_learning or
-            dto.should_include_for(userid, all_userids, game.is_finished)]
+        history = [dto for dto in child_dtos if
+            dto.should_include_for(userid, all_userids, game.is_finished,
+                                   is_learning)]
         payments = {} # map order to map reason to list payments
         for child in all_child_items:
             payments[child.order] = {}

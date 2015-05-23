@@ -377,7 +377,7 @@ class GameItem(object):
             return MAP_TABLE_DTO[class_].from_history_item(child)
         raise TypeError("Object is not a GameHistoryItem associated object")
     
-    def should_include_for(self, userid, all_userids, is_finished):
+    def should_include_for(self, userid, all_userids, is_finished, is_learning):
         """
         Should this item be included in the hand history for user <userid>,
         in a game with users <all_userids> and finished status <is_finished>?
@@ -415,12 +415,13 @@ class GameItemUserRange(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details, item.range_raw)
         
-    def should_include_for(self, userid, all_userids, is_finished):
+    def should_include_for(self, userid, all_userids, is_finished, is_learning):
         """
-        Ranges are only shown to the current user (while the game is running).
+        Ranges are only shown to the current user, while the game is running -
+        at least in competition mode.
         """
         # pylint:disable=unused-argument
-        return is_finished or self.user.userid == userid
+        return is_learning or is_finished or self.user.userid == userid
 
 class GameItemRangeAction(GameItem):
     """
@@ -468,13 +469,13 @@ class GameItemRangeAction(GameItem):
                    item.is_check, item.is_raise,
                    item.fold_ratio, item.passive_ratio, item.aggressive_ratio)
     
-    def should_include_for(self, userid, all_userids, is_finished):
+    def should_include_for(self, userid, all_userids, is_finished, is_learning):
         """
-        Range actions are only shown to the user who makes them
-        (while the game is running)
+        Range actions are only shown to the user who makes them, while the game
+        is running - at least in competition mode.
         """
         # pylint:disable=unused-argument
-        return is_finished or self.user.userid == userid
+        return is_learning or is_finished or self.user.userid == userid
     
 class GameItemActionResult(GameItem):
     """
@@ -603,7 +604,7 @@ class GameItemChat(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details, item.message)
 
-    def should_include_for(self, userid, all_userids, is_finished):
+    def should_include_for(self, userid, all_userids, is_finished, is_learning):
         """
         Private to game, even when game is finished
         """
@@ -657,7 +658,7 @@ class GameItemShowdown(GameItem):
                     for participant in item.participants]
         return cls(item.order, item.factor, item.is_passive, item.pot, equities)
     
-    def should_include_for(self, userid, all_userids, is_finished):
+    def should_include_for(self, userid, all_userids, is_finished, is_learning):
         """
         We should include showdowns in hand histories only once the hand is
         over.

@@ -24,8 +24,6 @@ from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 1: track games as learning or competition mode, ignore learning mode
-
 # TODO: 2.1: poll /r/poker for the most common/important/profitable postflop
 # TODO: 2.2: ... two-handed situation and create that as a second situation
 
@@ -274,6 +272,8 @@ def home_page():
     """
     Generates the unauthenticated landing page. AKA the main or home page.
     """
+    # TODO: 1: a tab for learning mode games, a tab for competition mode games
+    # TODO: 1: track games as learning or competition mode, ignore learning mode
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
             return redirect(url_for('backdoor_page'))
@@ -741,7 +741,7 @@ def _finished_game(game, gameid, userid):
     scheme_includes = RunningGameParticipantResult.SCHEME_DETAILS[scheme]
     payments = _make_payments(game.history, game.payments, scheme_includes) 
     is_new_chat = _calc_is_new_chat(game.history, userid)
-    analyses = []  # TODO: 2: reintroduce this: game.analysis.keys()
+    analyses = []  # TODO: 5: reintroduce this: game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
     navbar_items = [('', url_for('home_page'), 'Home'),
