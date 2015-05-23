@@ -29,6 +29,7 @@ from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
     PaymentToPlayer
 import datetime
 from rvr.local_settings import SUPPRESSED_SITUATIONS
+import numpy
 
 def exception_mapper(fun):
     """
@@ -1084,10 +1085,13 @@ class API(object):
                 position_results.append(PositionResult(
                     name=player.name,
                     ev=player.average_result,
+                    stddev=player.stddev,  # site stddev okay?
                     played=played,
                     total=total if played else None,
                     average=total / played if played else None,
-                    confidence=None))  # TODO: 0: calculate confidence somehow?
+                    confidence=None))
+                # TODO: 0: calculate confidence using user's stddev
+                # (not position's stddev)
                 if played and grand_total is not None:
                     grand_total += total / played
                     grand_total -= player.contributed
@@ -1100,43 +1104,6 @@ class API(object):
                     average=grand_total,
                     positions=position_results))
         return situation_results
-        
-        return [
-            SituationResult(name= '3 bet pot',
-             average= -0.47,
-             positions= [PositionResult(
-                name= 'Position 0',
-                ev= 1.1,
-                played= 10,
-                total= 10.0,
-                average= 1.0,
-                confidence= 0.45
-                ), PositionResult(
-                name='Position 1',
-                ev= None,
-                played= 0,
-                total= 0.0,
-                average= None,
-                confidence= None
-                )]),
-            SituationResult(name= '4 bet pot',
-             average= None,
-             positions= [PositionResult(
-                name= 'Position 0',
-                ev= 1.1,
-                played= 0,
-                total= 0.0,
-                average= None,
-                confidence= None
-                ), PositionResult(
-                name= 'Position 1',
-                ev= 1.9,
-                played= 13,
-                total= 20.0,
-                average= 1.53,
-                confidence= 0.32
-                )])
-            ]
 
     def _recalculate_global_statistics(self):
         """
@@ -1144,8 +1111,7 @@ class API(object):
         """
         positions = self.session.query(tables.SituationPlayer).all()
         for position in positions:
-            count = 0
-            total = 0.0
+            results = []
             # TODO: REVISIT: This is inefficient. Query RunningGame first...
             # ... then use game.rgps.
             rgps = self.session.query(tables.RunningGameParticipant)  \
@@ -1155,16 +1121,18 @@ class API(object):
                         if r.game.situationid == position.situationid]:
                 for result in rgp.results:
                     if result.scheme == 'ev':
-                        total += result.result
-                        count += 1
-            if count == 0:
-                position.average_result = None
+                        results.append(result.result)
+            if results:
+                position.average_result = sum(results) / len(results)
+                position.stddev = numpy.std(results)
             else:
-                position.average_result = total / count
+                position.average_result = None
+                position.stddev = None
             logging.debug('situationid %d (%s), position %d (%s), '
-                'average_result %r over %d games', position.situationid,
-                position.situation.description, position.order, position.name,
-                position.average_result, count)
+                'average_result %r (stddev %r) over %d games',
+                position.situationid, position.situation.description,
+                position.order, position.name, position.average_result,
+                position.stddev, len(results))
 
     def _run_pending_analysis(self):
         """

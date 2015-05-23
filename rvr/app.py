@@ -1,6 +1,7 @@
 """
 Defines the Flask container, 'APP'
 """
+# pylint:disable=no-name-in-module
 from flask import Flask
 from werkzeug import SharedDataMiddleware  #IGNORE:E0611 @UnresolvedImport
 import os

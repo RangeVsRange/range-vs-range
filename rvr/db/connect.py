@@ -1,7 +1,8 @@
 """
 Contains flask db object
 """
-from flask_sqlalchemy import SQLAlchemy
+# pylint:disable=import-error
+from flask_sqlalchemy import SQLAlchemy  # @UnresolvedImport
 from rvr.app import APP
 
 DB = SQLAlchemy(APP)
