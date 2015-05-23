@@ -21,6 +21,7 @@ from rvr.forms.chat import ChatForm
 from rvr import local_settings
 from rvr.forms.backdoor import BackdoorForm
 from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
+from functools import wraps
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -29,19 +30,28 @@ from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 
 # TODO: 5: a 'situation' page that describes the situation
 
-def auth_check(wrapee):
+def auth_check(view_func):
     """
-    Like OIDC.check, but respects the backdoor
+    Like OIDC.check, but respects the backdoor, and lets sessions live forever.
     """
     if local_settings.ALLOW_BACKDOOR:
-        return wrapee
+        return view_func
     else:
-        return OIDC.check(wrapee)
+        @wraps(view_func)
+        def decorated(*args, **kwargs):
+            if 'userid' not in session and 'screenname' not in session:
+                response = OIDC.authenticate_or_redirect()
+                if response is not None:
+                    return response
+            return view_func(*args, **kwargs)
+        return decorated
 
 def is_authenticated_oidc():
     """
     Is the user authenticated with OpenID Connect?
     """
+    if 'userid' in session and 'screenname' in session:
+        return True  # I don't care if Google's OIDC token expires
     if request.cookies.get(OIDC.id_token_cookie_name, None) is None:
         # Otherwise OIDC gets a little confused
         return False
@@ -52,8 +62,6 @@ def is_authenticated():
     """
     Is the user authenticated (OIDC or backdoor)?
     """
-    # TODO: BUG: login expires after an hour, is not refreshed on interaction
-    # TODO: BUG: login does not return user to the same page
     if is_authenticated_oidc():
         return True
     if not local_settings.ALLOW_BACKDOOR:
@@ -729,7 +737,7 @@ def _running_game(game, gameid, userid, api):
         current_options=game.current_options,
         is_me=is_me, is_mine=is_mine, is_new_chat=is_new_chat, is_running=True,
         range_editor_url=range_editor_url,
-        navbar_items=navbar_items, is_logged_in=is_logged_in())
+        navbar_items=navbar_items, is_logged_in=is_logged_in(), url=request.url)
 
 def _finished_game(game, gameid, userid):
     """
@@ -751,7 +759,8 @@ def _finished_game(game, gameid, userid):
         game_details=game.game_details, history=history, payments=payments,
         num_players=len(game.game_details.rgp_details), analyses=analyses,
         is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
-        scheme=scheme, navbar_items=navbar_items, is_logged_in=is_logged_in())
+        scheme=scheme, navbar_items=navbar_items, is_logged_in=is_logged_in(),
+        url=request.url)
 
 def authenticated_game_page(gameid, is_learning_mode):
     """
@@ -960,7 +969,7 @@ def analysis_page():
         items_passive=items_passive,
         items_fold=items_fold,
         is_raise=aife.is_raise, is_check=aife.is_check,
-        navbar_items=navbar_items, is_logged_in=is_logged_in())
+        navbar_items=navbar_items, is_logged_in=is_logged_in(), url=request.url)
 
 @APP.route('/user', methods=['GET'])
 def user_page():
@@ -991,4 +1000,5 @@ def user_page():
         screenname=screenname,
         situations=result,
         navbar_items=navbar_items,
-        is_logged_in=is_logged_in())
+        is_logged_in=is_logged_in(),
+        url=request.url)

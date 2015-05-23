@@ -135,13 +135,8 @@ class API(object):
         item.higher_card = higher_card.to_mnemonic()
         item.lower_card = lower_card.to_mnemonic()
         self.session.add(item)
-        try:
-            self.session.commit()
-            logging.debug("Added range item: %s, %s", item.higher_card,
-                          item.lower_card)
-        except IntegrityError:
-            self.session.rollback()
-            # No error, it's a singleton, it's there, we're happy.
+        logging.debug("Added range item: %s, %s", item.higher_card,
+                      item.lower_card)
     
     def _add_card_combos(self):
         """
@@ -157,6 +152,10 @@ class API(object):
                 if card1 > card2:
                     err = err or self._add_card_combo(higher_card=card1,
                                                       lower_card=card2)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()  # already there, no worries
         return err  
     
     @api

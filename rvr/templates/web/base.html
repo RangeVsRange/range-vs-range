@@ -35,7 +35,7 @@
           </ul>
         </li>
         {%- else %}
-        <li><a href="./login">Log in</a></li>
+        <li><a href="{{url_for('login', next=url) if url else url_for('login')}}">Log in</a></li>
         {%- endif %}
       </ul>
     </div><!--/.nav-collapse -->
