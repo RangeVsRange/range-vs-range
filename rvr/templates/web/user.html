@@ -14,15 +14,13 @@
     <thead><tr>
       <td><strong>Position</strong></td>
       <td><strong>Site-wide average</strong></td>
-      <td><strong>Site-wide stddev</strong></td>
       <td><strong>EV for {{screenname}} (amount won / hands played)</strong></td>
       <td><strong>Confidence</strong></td>
     </tr></thead>
     <tbody>     
       {% for position in situation.positions %}<tr>
         <td>{{position.name}}</td>
-        <td>{% if position.ev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.ev,)}}{% endif %}</td>
-        <td>{% if position.stddev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.stddev,)}}{% endif %}</td>
+        <td>{% if position.ev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.ev,)}} (sd {% if position.stddev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.stddev,)}}{% endif %}){% endif %}</td>
         <td>{% if position.average is none %}N/A (0 hands){% else %}<strong>{{"%0.04f" % (position.average,)}}</strong> chips per hand ({{"%0.04f" % (position.total,)}} chips / {{position.played}} hands){% endif %}</td>
         <td>{% if position.confidence is none %}N/A (0 hands){% else %}{{"%0.0f%%" % (position.confidence * 100,)}}{% endif %}</td>
       </tr>{% endfor %}
