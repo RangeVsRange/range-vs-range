@@ -24,7 +24,7 @@ from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player, \
     notify_finished
-from rvr.analysis.analyse import AnalysisReplayer
+from rvr.analysis.analyse import AnalysisReplayer, calculate_confidence
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
     PaymentToPlayer
 import datetime
@@ -1052,12 +1052,13 @@ class API(object):
                     if result.scheme == 'ev':
                         return result.result
         return None
-        
+    
     @api
     def get_user_statistics(self, userid, min_hands=1):
         """
         Return user's site-wide results for all situations / positions.
         """
+        # pylint:disable=no-member
         matches = self.session.query(tables.User)  \
             .filter(tables.User.userid == userid).all()
         if not matches:
@@ -1074,30 +1075,39 @@ class API(object):
             total_played = 0
             for player in situation.players:
                 # TODO: REVISIT: could iterate over games only once
-                played = 0
-                total = 0.0
+                results = []
                 for game in games:
                     ev = self._get_ev(game=game, order=player.order,
                                       userid=userid)
                     if ev is not None:
-                        played += 1
-                        total += ev
+                        results.append(ev)
+                total = sum(results)
+                ddof = 1
+                if len(results) > ddof + 1:
+                    user_stddev = numpy.std(results, ddof=ddof)
+                    confidence = calculate_confidence(
+                        total_result=total,
+                        num_games=len(results),
+                        be_mean=player.average_result,
+                        stddev=user_stddev)
+                else:
+                    confidence = 0.5  # they either are, or they aren't
                 position_results.append(PositionResult(
                     name=player.name,
                     ev=player.average_result,
                     stddev=player.stddev,  # site stddev okay?
-                    played=played,
-                    total=total if played else None,
-                    average=total / played if played else None,
-                    confidence=None))
+                    played=len(results),
+                    total=total if results else None,
+                    average=total / len(results) if results else None,
+                    confidence=confidence))
                 # TODO: 0: calculate confidence using user's stddev
                 # (not position's stddev)
-                if played and grand_total is not None:
-                    grand_total += total / played
+                if results and grand_total is not None:
+                    grand_total += total / len(results)
                     grand_total -= player.contributed
                 else:
                     grand_total = None
-                total_played += played
+                total_played += len(results)
             if total_played >= min_hands:
                 situation_results.append(SituationResult(
                     name=situation.description,
@@ -1124,7 +1134,7 @@ class API(object):
                         results.append(result.result)
             if results:
                 position.average_result = sum(results) / len(results)
-                position.stddev = numpy.std(results)
+                position.stddev = numpy.std(results)  # pylint:disable=no-member
             else:
                 position.average_result = None
                 position.stddev = None

@@ -22,7 +22,7 @@
         <td>{{position.name}}</td>
         <td>{% if position.ev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.ev,)}} (sd {% if position.stddev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.stddev,)}}{% endif %}){% endif %}</td>
         <td>{% if position.average is none %}N/A (0 hands){% else %}<strong>{{"%0.04f" % (position.average,)}}</strong> chips per hand ({{"%0.04f" % (position.total,)}} chips / {{position.played}} hands){% endif %}</td>
-        <td>{% if position.confidence is none %}N/A (0 hands){% else %}{{"%0.0f%%" % (position.confidence * 100,)}}{% endif %}</td>
+        <td>{% if position.confidence is none %}N/A (0 hands){% else %}{{"%0.1f%%" % (position.confidence * 100,)}}{% endif %}</td>
       </tr>{% endfor %}
     </tbody>
   </table>
