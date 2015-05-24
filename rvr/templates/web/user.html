@@ -21,8 +21,12 @@
       {% for position in situation.positions %}<tr>
         <td>{{position.name}}</td>
         <td>{% if position.ev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.ev,)}} (sd: {% if position.stddev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.stddev,)}}{% endif %}){% endif %}</td>
+        {% if position.played < min_visible %}
+        <td colspan=2><div class="text-center"><em>play at least {{min_visible}} hands to see statistics &mdash; only {{position.played}} played</em></div></td>
+        {% else %}
         <td>{% if position.average is none %}N/A (0 hands){% else %}<strong>{{"%0.04f" % (position.average,)}}</strong> chips per hand ({{"%0.04f" % (position.total,)}} chips / {{position.played}} hands){% endif %}</td>
         <td>{% if position.confidence is none %}N/A (0 hands){% else %}{{"%0.1f%%" % (position.confidence * 100,)}}{% endif %}</td>
+        {% endif %}
       </tr>{% endfor %}
     </tbody>
   </table>

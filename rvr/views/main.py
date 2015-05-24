@@ -280,8 +280,16 @@ def home_page():
     """
     Generates the unauthenticated landing page. AKA the main or home page.
     """
-    # TODO: 1: a tab for learning mode games, a tab for competition mode games
-    # TODO: 1: track games as learning or competition mode, ignore learning mode
+    # TODO: 0.0: min=10 for results 
+
+    # TODO: 0.1: in database, a flag on games: is_learning_mode
+    # TODO: 0.2: dump out, dump in, set all games to learning mode
+    # TODO: 0.2: all new games are learning mode
+    # TODO: 0.3: open games can be learning mode or competition mode
+    # TODO: 0.4: API, console know which games are which
+    # TODO: 0.5: game page shows a dismissable warning for learning mode games
+    # TODO: 0.6: open games tab has a checkbox / explanation popover
+    # TODO: 0.7: only competition mode games count towards results / statistics
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
             return redirect(url_for('backdoor_page'))
@@ -999,6 +1007,7 @@ def user_page():
     return render_template('web/user.html',
         screenname=screenname,
         situations=result,
+        min_visible=5,  # stats only shown if 5 hands played
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         url=request.url)

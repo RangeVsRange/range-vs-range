@@ -1082,6 +1082,10 @@ class API(object):
                     if ev is not None:
                         results.append(ev)
                 total = sum(results)
+                # Note: this is user's stddev for this position, not position's
+                # stddev - because user having a different style of play can
+                # make a difference to stddev. We have ddof=1 to help make up
+                # for the smaller sample size.
                 ddof = 1
                 if len(results) > ddof + 1:
                     user_stddev = numpy.std(results, ddof=ddof)
@@ -1100,8 +1104,6 @@ class API(object):
                     total=total if results else None,
                     average=total / len(results) if results else None,
                     confidence=confidence))
-                # TODO: 0: calculate confidence using user's stddev
-                # (not position's stddev)
                 if results and grand_total is not None:
                     grand_total += total / len(results)
                     grand_total -= player.contributed
