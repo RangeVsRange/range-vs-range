@@ -393,6 +393,7 @@ class API(object):
         # Maintain game ids from open games, essentially hijacking the
         # uniqueness of the gameid sequence in open game.
         running_game.gameid = open_game.gameid
+        running_game.public_ranges = open_game.public_ranges
         running_game.situation = situation
         # We have to calculate current userid in advance so we can flush.
         running_game.current_userid =  \
@@ -1036,6 +1037,7 @@ class API(object):
                 # add one!
                 new_game = tables.OpenGame()
                 new_game.situationid = situation.situationid
+                new_game.public_ranges = True
                 new_game.participants = 0
                 self.session.add(new_game)
                 self.session.flush()  # get gameid

@@ -280,9 +280,6 @@ def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
     """
-    # TODO: 0.1: in database, a flag on games: is_learning_mode
-    # TODO: 0.2: dump out, dump in, set all games to learning mode
-    # TODO: 0.2: all new games are learning mode
     # TODO: 0.3: open games can be learning mode or competition mode
     # TODO: 0.4: API, console know which games are which
     # TODO: 0.5: game page shows a dismissable warning for learning mode games
