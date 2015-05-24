@@ -171,16 +171,18 @@ def read_open_games(session):
     ogs = session.query(OpenGame).all()
     return [(og.gameid,
              og.situationid,
+             og.public_ranges,
              og.participants)
             for og in ogs]
 
 def write_open_games(session, ogs):
     """ Write OpenGame from memory into DB """
-    for gameid, situationid, participants in ogs:
+    for gameid, situationid, public_ranges, participants in ogs:
         og = OpenGame()
         session.add(og)
         og.gameid = gameid
         og.situationid = situationid
+        og.public_ranges = public_ranges
         og.participants = participants
 
 def read_open_game_participants(session):
@@ -205,6 +207,7 @@ def read_running_games(session):
     rgs = session.query(RunningGame).all()
     return [(rg.gameid,
              rg.situationid,
+             rg.public_ranges,
              rg.current_userid,
              rg.next_hh,
              rg.board_raw,
@@ -219,13 +222,14 @@ def read_running_games(session):
 
 def write_running_games(session, rgs):
     """ Write RunningGame from memory into DB """
-    for gameid, situationid, current_userid, next_hh, board_raw,  \
-            current_round, pot_pre, increment, bet_count,  \
+    for gameid, situationid, public_ranges, current_userid, next_hh,  \
+            board_raw, current_round, pot_pre, increment, bet_count,  \
             current_factor, last_action_time, analysis_performed in rgs:
         rg = RunningGame()
         session.add(rg)
         rg.gameid = gameid
         rg.situationid = situationid
+        rg.public_ranges = public_ranges
         rg.current_userid = current_userid
         rg.next_hh = next_hh
         rg.board_raw = board_raw

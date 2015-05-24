@@ -136,6 +136,7 @@ class OpenGame(BASE):
     gameid = Column(Integer, Sequence('gameid_seq'), primary_key=True)
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          nullable=False)
+    public_ranges = Column(Boolean, nullable=False)
     participants = Column(Integer, nullable=False)
     situation = relationship("Situation", backref="open_games")
 
@@ -170,6 +171,7 @@ class RunningGame(BASE, object):
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          nullable=False)
     situation = relationship("Situation", backref="running_games")
+    public_ranges = Column(Boolean, nullable=False)
     # TODO: REVISIT: ForeignKey("running_game_participant.userid")
     # This should be a foreign key, but then SQLAlchemy thinks there's a
     # circular dependency, and won't create the database. Even with
