@@ -305,6 +305,7 @@ def home_page():
         flash("An unknown error occurred retrieving your running games.")
         return redirect(url_for("error_page"))
     selected_heading = request.cookies.get("selected-heading", "heading-open")
+    selected_mode = request.cookies.get("selected-mode", "mode-competition")
     my_games.running_details.sort(
         key=lambda rg: rg.current_user_details.userid != userid)
     my_open = [og for og in open_games
@@ -325,6 +326,7 @@ def home_page():
         my_finished_games=my_finished_games,
         navbar_items=navbar_items,
         selected_heading=selected_heading,
+        selected_mode=selected_mode,
         is_logged_in=is_logged_in())
 
 @APP.route('/join', methods=['GET'])

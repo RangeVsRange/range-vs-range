@@ -12,7 +12,14 @@
   $('#heading-finished').click(function() {
     $.cookie('selected-heading', 'heading-finished', { expires: 7 });
   });
+  $('#mode-competition').click(function() {
+    $.cookie('selected-mode', 'mode-competition', { expires: 7 });
+  });
+  $('#mode-public').click(function() {
+    $.cookie('selected-mode', 'mode-public', { expires: 7 });
+  });
 </script>
+<script>$('[data-toggle="tooltip"]').tooltip()</script>
 {% endblock %}
 
 {% block styles %}
@@ -23,6 +30,52 @@
   }
 </style>
 {% endblock %}
+
+{% macro open_games(is_public) %}
+  <div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="min-width: 200px; width: 200px">Game</th>
+        <th>Players</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    {%- for game in my_open %}
+    <tr>
+      <td>
+        <div class="btn-group btn-group-justified">
+          <div class="btn-group">
+            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
+          </div>
+          <div class="btn-group">
+            <a class="btn btn-primary" href="{{ url_for('leave_game', gameid=game.gameid) }}">Leave</a>
+          </div>
+        </div>
+      </td>
+      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
+      <td>{{game.situation.description}}</td>
+    </tr>
+    {%- endfor %}
+    {%- for game in others_open %}
+    <tr>
+      <td>
+        <div class="btn-group btn-group-justified">
+          <div class="btn-group">
+            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
+          </div>
+          <div class="btn-group">
+            <a class="btn btn-primary" href="{{ url_for('join_game', gameid=game.gameid) }}">Join</a>
+          </div>
+        </div>
+      </td>
+      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
+      <td>{{game.situation.description}}</td>
+    </tr>
+    {%- endfor %}
+  </table>
+  </div>
+{% endmacro %}
 
 {% block content %}
 <div class="container">
@@ -80,49 +133,18 @@
 
 <!-- Open games -->
   <div class="tab-pane{% if selected_heading == "heading-open" %} active{% endif %}" id="open">
-  <div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th style="min-width: 200px; width: 200px">Game</th>
-        <th>Players</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    {%- for game in my_open %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <div class="btn-group">
-            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
-          </div>
-          <div class="btn-group">
-            <a class="btn btn-primary" href="{{ url_for('leave_game', gameid=game.gameid) }}">Leave</a>
-          </div>
+    <ul class="nav nav-tabs">
+      <li{% if selected_mode == "mode-competition" %} class="active"{% endif %}><a id="mode-competition" href="#competition" data-toggle="tab">Competition mode</a></li>
+      <li{% if selected_mode == "mode-public" %} class="active"{% endif %}><a id="mode-public" href="#public" data-toggle="tab">Optimization mode</a></li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane{% if selected_mode == "mode-competition" %} active{% endif %}" id="competition">
+          {{open_games(is_public=selected_mode != "mode-public")}}
         </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {%- endfor %}
-    {%- for game in others_open %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <div class="btn-group">
-            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
-          </div>
-          <div class="btn-group">
-            <a class="btn btn-primary" href="{{ url_for('join_game', gameid=game.gameid) }}">Join</a>
-          </div>
+        <div class="tab-pane{% if selected_mode == "mode-public" %} active{% endif %}" id="public">
+          {{open_games(is_public=selected_mode == "mode-public")}}
         </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {%- endfor %}
-  </table>
-  </div>
+    </div>
   </div><!-- /#open -->
 
 <!-- Finished games -->
