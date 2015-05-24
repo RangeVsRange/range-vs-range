@@ -923,7 +923,7 @@ class API(object):
             results.append(GamePayment(payment))
         return results
         
-    def _get_history_items(self, game, userid, is_learning):
+    def _get_history_items(self, game, userid, public_ranges):
         """
         Returns a list of game history items (tables.GameHistoryBase with
         additional details from child tables), with private data only for
@@ -939,7 +939,7 @@ class API(object):
         all_userids = [rgp.userid for rgp in game.rgps]
         history = [dto for dto in child_dtos if
             dto.should_include_for(userid, all_userids, game.is_finished,
-                                   is_learning)]
+                                   public_ranges)]
         payments = {} # map order to map reason to list payments
         for child in all_child_items:
             payments[child.order] = {}
@@ -958,7 +958,7 @@ class API(object):
         return {afe.order: dtos.AnalysisItemFoldEquity.from_afe(afe)
                 for afe in afes}
         
-    def _get_game(self, gameid, userid=None, is_learning=False):
+    def _get_game(self, gameid, userid=None):
         """
         Return game <gameid>. If <userid> is not None, return private data for
         the specified user. If the game is finished, return all private data.
@@ -972,13 +972,12 @@ class API(object):
                 return self.ERR_NO_SUCH_USER
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.gameid == gameid).all()
-        #    .filter(tables.RunningGame.current_userid != None)
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items, payment_items = self._get_history_items(game,
-            userid=userid, is_learning=is_learning)
+            userid=userid, public_ranges=game_details.public_ranges)
         analysis_items = self._get_analysis_items(game)
         if game.current_userid is None:
             current_options = None
@@ -1009,40 +1008,35 @@ class API(object):
         return self._get_game(gameid, userid=userid)
     
     @api
-    def get_learning_game(self, gameid):
-        """
-        Implements learning mode: all ranges visible to all players.
-        """
-        return self._get_game(gameid, is_learning=True)
-    
-    @api
     def ensure_open_games(self):
         """
         Ensure there is exactly one empty open game for each situation in the
         database.
         """
         for situation in self.session.query(tables.Situation).all():
-            empty_open = self.session.query(tables.OpenGame)  \
-                .filter(tables.OpenGame.situationid ==
-                        situation.situationid)  \
-                .filter(tables.OpenGame.participants == 0).all()
-            if len(empty_open) > 1:
-                # delete all except one
-                for game in empty_open[:-1]:
-                    logging.debug("Deleted open game %d for situation %d",
-                                  game.gameid, situation.situationid)
-                    self.session.delete(game)
-            elif len(empty_open) == 0 and  \
-                    situation.situationid not in SUPPRESSED_SITUATIONS:
-                # add one!
-                new_game = tables.OpenGame()
-                new_game.situationid = situation.situationid
-                new_game.public_ranges = True
-                new_game.participants = 0
-                self.session.add(new_game)
-                self.session.flush()  # get gameid
-                logging.debug("Created open game %d for situation %d",
-                              new_game.gameid, situation.situationid)
+            for public_ranges in [False, True]:
+                empty_open = self.session.query(tables.OpenGame)  \
+                    .filter(tables.OpenGame.situationid ==
+                            situation.situationid)  \
+                    .filter(tables.OpenGame.public_ranges == public_ranges)  \
+                    .filter(tables.OpenGame.participants == 0).all()
+                if len(empty_open) > 1:
+                    # delete all except one
+                    for game in empty_open[:-1]:
+                        logging.debug("Deleted open game %d for situation %d",
+                                      game.gameid, situation.situationid)
+                        self.session.delete(game)
+                elif len(empty_open) == 0 and  \
+                        situation.situationid not in SUPPRESSED_SITUATIONS:
+                    # add one!
+                    new_game = tables.OpenGame()
+                    new_game.situationid = situation.situationid
+                    new_game.public_ranges = public_ranges
+                    new_game.participants = 0
+                    self.session.add(new_game)
+                    self.session.flush()  # get gameid
+                    logging.debug("Created open game %d for situation %d",
+                                  new_game.gameid, situation.situationid)
 
     def _get_ev(self, game, order, userid):
         """

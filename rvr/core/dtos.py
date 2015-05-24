@@ -195,14 +195,16 @@ class OpenGameDetails(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, gameid, users, situation):
+    def __init__(self, gameid, public_ranges, users, situation):
         self.gameid = gameid
+        self.public_ranges = public_ranges
         self.users = users
         self.situation = situation
 
     def __repr__(self):
-        return "OpenGameDetails(gameid=%r, users=%r, situation=%r)" %  \
-            (self.gameid, self.users, self.situation)
+        return "OpenGameDetails(gameid=%r, public_ranges=%r, users=%r, "  \
+            "situation=%r)" % (self.gameid, self.public_ranges, self.users,
+            self.situation)
     
     @classmethod
     def from_open_game(cls, open_game):
@@ -211,23 +213,26 @@ class OpenGameDetails(object):
         """
         users = [UserDetails.from_user(o.user) for o in open_game.ogps]
         situation = SituationDetails.from_situation(open_game.situation)
-        return cls(open_game.gameid, users, situation)
+        return cls(open_game.gameid, open_game.public_ranges, users, situation)
 
 class RunningGameSummary(object):
     """
     list of users in game, and details of situation
     """
-    def __init__(self, gameid, users, situation, current_user_details):
+    def __init__(self, gameid, public_ranges, users, situation,
+                 current_user_details):
         self.gameid = gameid
+        self.public_ranges = public_ranges
         self.users = users
         self.situation = situation
         self.current_user_details = current_user_details
         self.is_finished = current_user_details is not None
 
     def __repr__(self):
-        return ("RunningGameSummary(gameid=%r, users=%r, situation=%r, " +
-                "current_user_details=%r)") %  \
-            (self.gameid, self.users, self.situation, self.current_user_details)
+        return ("RunningGameSummary(gameid=%r, public_ranges=%r, users=%r, "
+                "situation=%r, current_user_details=%r)") %  \
+            (self.gameid, self.users, self.public_ranges, self.situation,
+             self.current_user_details)
 
     @classmethod
     def from_running_game(cls, running_game):
@@ -241,7 +246,8 @@ class RunningGameSummary(object):
             user_details = UserDetails.from_user(running_game.current_rgp.user)
         else:
             user_details = None
-        return cls(running_game.gameid, users, situation, user_details)
+        return cls(running_game.gameid, running_game.public_ranges, users,
+                   situation, user_details)
 
 class RunningGameParticipantDetails(object):
     """
@@ -279,10 +285,11 @@ class RunningGameDetails(object):
     """
     details of a game, including game state (more than RunningGameSummary)
     """
-    def __init__(self, gameid, situation, current_player, board_raw,
-                 current_round, pot_pre, increment, bet_count,
+    def __init__(self, gameid, public_ranges, situation, current_player,
+                 board_raw, current_round, pot_pre, increment, bet_count,
                  current_factor, rgp_details):
         self.gameid = gameid
+        self.public_ranges = public_ranges
         self.situation = situation  # SituationDetails
         self.current_player = current_player # RGPDetails
         self.board_raw = board_raw
@@ -294,13 +301,14 @@ class RunningGameDetails(object):
         self.rgp_details = rgp_details  # list of RunningGameParticipantDetails
     
     def __repr__(self):
-        return ("RunningGameDetails(gameid=%r, situation=%r, "
+        return ("RunningGameDetails(gameid=%r, public_ranges=%r, situation=%r, "
                 "current_player=%r, board_raw=%r, current_round=%r, "
                 "pot_pre=%r, increment=%r, bet_count=%r, current_factor=%r, "
                 "rgp_details=%r") %  \
-            (self.gameid, self.situation, self.current_player, self.board_raw,
-             self.current_round, self.pot_pre, self.increment, self.bet_count,
-             self.current_factor, self.rgp_details)
+            (self.gameid, self.public_ranges, self.situation,
+             self.current_player, self.board_raw, self.current_round,
+             self.pot_pre, self.increment, self.bet_count, self.current_factor,
+             self.rgp_details)
     
     @classmethod
     def from_running_game(cls, game):
@@ -313,10 +321,11 @@ class RunningGameDetails(object):
         current_players = [r for r in rgp_details
                            if r.user.userid == game.current_userid]
         current_player = current_players[0] if current_players else None
-        return cls(game.gameid, situation, current_player, game.board_raw,
-                   game.current_round, game.pot_pre, game.increment,
-                   game.bet_count, game.current_factor, rgp_details)
-        
+        return cls(game.gameid, game.public_ranges, situation, current_player,
+                   game.board_raw, game.current_round, game.pot_pre,
+                   game.increment, game.bet_count, game.current_factor,
+                   rgp_details)
+    
     def is_finished(self):
         """
         True when the game is finished.
@@ -378,7 +387,8 @@ class GameItem(object):
             return MAP_TABLE_DTO[class_].from_history_item(child)
         raise TypeError("Object is not a GameHistoryItem associated object")
     
-    def should_include_for(self, userid, all_userids, is_finished, is_learning):
+    def should_include_for(self, userid, all_userids, is_finished,
+                           public_ranges):
         """
         Should this item be included in the hand history for user <userid>,
         in a game with users <all_userids> and finished status <is_finished>?
@@ -416,13 +426,14 @@ class GameItemUserRange(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details, item.range_raw)
         
-    def should_include_for(self, userid, all_userids, is_finished, is_learning):
+    def should_include_for(self, userid, all_userids, is_finished,
+                           public_ranges):
         """
         Ranges are only shown to the current user, while the game is running -
         at least in competition mode.
         """
         # pylint:disable=unused-argument
-        return is_learning or is_finished or self.user.userid == userid
+        return public_ranges or is_finished or self.user.userid == userid
 
 class GameItemRangeAction(GameItem):
     """
@@ -470,13 +481,14 @@ class GameItemRangeAction(GameItem):
                    item.is_check, item.is_raise,
                    item.fold_ratio, item.passive_ratio, item.aggressive_ratio)
     
-    def should_include_for(self, userid, all_userids, is_finished, is_learning):
+    def should_include_for(self, userid, all_userids, is_finished,
+                           public_ranges):
         """
         Range actions are only shown to the user who makes them, while the game
         is running - at least in competition mode.
         """
         # pylint:disable=unused-argument
-        return is_learning or is_finished or self.user.userid == userid
+        return public_ranges or is_finished or self.user.userid == userid
     
 class GameItemActionResult(GameItem):
     """
@@ -605,7 +617,8 @@ class GameItemChat(GameItem):
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details, item.message)
 
-    def should_include_for(self, userid, all_userids, is_finished, is_learning):
+    def should_include_for(self, userid, all_userids, is_finished,
+                           public_ranges):
         """
         Private to game, even when game is finished
         """
@@ -659,7 +672,8 @@ class GameItemShowdown(GameItem):
                     for participant in item.participants]
         return cls(item.order, item.factor, item.is_passive, item.pot, equities)
     
-    def should_include_for(self, userid, all_userids, is_finished, is_learning):
+    def should_include_for(self, userid, all_userids, is_finished,
+                           public_ranges):
         """
         We should include showdowns in hand histories only once the hand is
         over.

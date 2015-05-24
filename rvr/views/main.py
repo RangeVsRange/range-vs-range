@@ -280,10 +280,9 @@ def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
     """
-    # TODO: 0.3: open games can be learning mode or competition mode
-    # TODO: 0.4: API, console know which games are which
+    # TODO: 0: BUG: either they're displaying the wrong way around, or 
+    # existing open games were made competition mode
     # TODO: 0.5: game page shows a dismissable warning for learning mode games
-    # TODO: 0.6: open games tab has a checkbox / explanation popover
     # TODO: 0.7: only competition mode games count towards results / statistics
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
@@ -767,7 +766,7 @@ def _finished_game(game, gameid, userid):
         scheme=scheme, navbar_items=navbar_items, is_logged_in=is_logged_in(),
         url=request.url)
 
-def authenticated_game_page(gameid, is_learning_mode):
+def authenticated_game_page(gameid):
     """
     Game page when user is authenticated (i.e. the private view)
     """
@@ -777,10 +776,7 @@ def authenticated_game_page(gameid, is_learning_mode):
     userid = session['userid']
 
     api = API()
-    if is_learning_mode:
-        response = api.get_learning_game(gameid)
-    else:
-        response = api.get_private_game(gameid, userid)
+    response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_RUNNING_GAME:
             msg = "Invalid game ID."
@@ -831,8 +827,7 @@ def game_page():
         return redirect(url_for('error_page'))
 
     if is_authenticated():
-        is_learning_mode = request.args.get('m', None) == 'l'
-        return authenticated_game_page(gameid, is_learning_mode)
+        return authenticated_game_page(gameid)
     else:
         flash("You are not logged in. You are viewing this page anonymously.")
         return unauthenticated_game_page(gameid)

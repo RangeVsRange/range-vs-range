@@ -19,7 +19,9 @@
     $.cookie('selected-mode', 'mode-public', { expires: 7 });
   });
 </script>
-<script>$('[data-toggle="tooltip"]').tooltip()</script>
+<script>
+$('.mode-header').popover({trigger: 'hover'})
+</script>
 {% endblock %}
 
 {% block styles %}
@@ -41,7 +43,7 @@
         <th>Description</th>
       </tr>
     </thead>
-    {%- for game in my_open %}
+    {%- for game in my_open %}{% if game.public_ranges == is_public %}
     <tr>
       <td>
         <div class="btn-group btn-group-justified">
@@ -56,8 +58,8 @@
       <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
       <td>{{game.situation.description}}</td>
     </tr>
-    {%- endfor %}
-    {%- for game in others_open %}
+    {% endif %}{%- endfor %}
+    {%- for game in others_open %}{% if game.public_ranges == is_public %}
     <tr>
       <td>
         <div class="btn-group btn-group-justified">
@@ -72,7 +74,7 @@
       <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
       <td>{{game.situation.description}}</td>
     </tr>
-    {%- endfor %}
+    {% endif %}{%- endfor %}
   </table>
   </div>
 {% endmacro %}
@@ -134,15 +136,15 @@
 <!-- Open games -->
   <div class="tab-pane{% if selected_heading == "heading-open" %} active{% endif %}" id="open">
     <ul class="nav nav-tabs">
-      <li{% if selected_mode == "mode-competition" %} class="active"{% endif %}><a id="mode-competition" href="#competition" data-toggle="tab">Competition mode</a></li>
-      <li{% if selected_mode == "mode-public" %} class="active"{% endif %}><a id="mode-public" href="#public" data-toggle="tab">Optimization mode</a></li>
+      <li{% if selected_mode == "mode-competition" %} class="active"{% endif %}><a id="mode-competition" href="#competition" class="mode-header" data-toggle="tab" data-container="body" data-placement="top" data-content="This is real poker, played range vs. range. It gives you the opportunity to train your hand-reading skills, and practice exploitative play.">Competition mode</a></li>
+      <li{% if selected_mode == "mode-public" %} class="active"{% endif %}><a id="mode-public" href="#public" class="mode-header" data-toggle="tab" data-container="body" data-placement="top" data-content="This is for the game theory enthusiast. Players can see each other's ranges during play.">Optimization mode</a></li>
     </ul>
     <div class="tab-content">
         <div class="tab-pane{% if selected_mode == "mode-competition" %} active{% endif %}" id="competition">
-          {{open_games(is_public=selected_mode != "mode-public")}}
+          {{open_games(False)}}
         </div>
         <div class="tab-pane{% if selected_mode == "mode-public" %} active{% endif %}" id="public">
-          {{open_games(is_public=selected_mode == "mode-public")}}
+          {{open_games(True)}}
         </div>
     </div>
   </div><!-- /#open -->
