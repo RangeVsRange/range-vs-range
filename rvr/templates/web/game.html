@@ -71,6 +71,9 @@ showdown_view = function(criterion) {
 {{ flash_messages() }}
 
 <div class="container">
+{% if game_details.public_ranges %}
+<div class="alert alert-warning" role="alert">This is an optimization mode game. All players' ranges are visible during play.</div>
+{% endif %}
 
 <ul class="nav nav-tabs">
   <li><a id="heading-situation" href="#situation" data-toggle="tab">Situation</a></li>
