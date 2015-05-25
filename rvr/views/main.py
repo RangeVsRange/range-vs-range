@@ -280,7 +280,6 @@ def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
     """
-    # TODO: 0.5: game page shows a dismissable warning for learning mode games
     # TODO: 0.7: only competition mode games count towards results / statistics
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
