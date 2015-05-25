@@ -118,11 +118,12 @@ def range_contains_hand(range_, hand):
     """
     return set(hand) in range_.generate_options()
 
-def generate_excluded_cards(game):
+def generate_excluded_cards(game, hero=None):
     """
     calculate excluded cards, as if players had been dealt cards
-    """        
-    map_to_range = {rgp: rgp.range for rgp in game.rgps}
+    """
+    map_to_range = {rgp: rgp.range for rgp in game.rgps
+                    if rgp is not hero}
     player_to_dealt = deal_from_ranges(map_to_range, game.board)
     # note: this catches cards dealt to folded RGPs - as it should!
     excluded_cards = concatenate(player_to_dealt.values())
@@ -297,7 +298,7 @@ class WhatCouldBe(object):
         """
         # note that we only consider the possible
         # mostly copied from the old re_deal (originally!)
-        dead_cards = generate_excluded_cards(self.game)
+        dead_cards = generate_excluded_cards(self.game, hero=self.rgp)
         fold_options = self.range_action.fold_range  \
             .generate_options(dead_cards)
         passive_options = self.range_action.passive_range  \
