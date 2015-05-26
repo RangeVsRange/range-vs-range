@@ -287,7 +287,7 @@ class API(object):
             user = matches[0]
             return dtos.UserDetails.from_user(user)
         else:
-            return None
+            return API.ERR_NO_SUCH_USER
     
     def _add_situation(self, dto):
         """
