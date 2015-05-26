@@ -28,7 +28,7 @@ from rvr.analysis.analyse import AnalysisReplayer, calculate_confidence
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
     PaymentToPlayer
 import datetime
-from rvr.local_settings import SUPPRESSED_SITUATIONS
+from rvr.local_settings import SUPPRESSED_SITUATIONS, SUPPRESSED_GAME_MAX
 import numpy
 
 def exception_mapper(fun):
@@ -1066,7 +1066,9 @@ class API(object):
             position_results = []
             games = self.session.query(tables.RunningGame)  \
                 .filter(tables.RunningGame.situationid ==
-                        situation.situationid).all()
+                        situation.situationid)  \
+                .filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX)  \
+                .all()
             grand_total = 0.0 - situation.pot_pre
             total_played = 0
             for player in situation.players:
@@ -1123,6 +1125,8 @@ class API(object):
             # TODO: REVISIT: This is inefficient. Query RunningGame first...
             # ... then use game.rgps.
             rgps = self.session.query(tables.RunningGameParticipant)  \
+                .filter(tables.RunningGameParticipant.gameid >
+                        SUPPRESSED_GAME_MAX)  \
                 .filter(tables.RunningGameParticipant.order == position.order) \
                 .all()
             for rgp in [r for r in rgps
