@@ -280,7 +280,21 @@ def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
     """
-    # TODO: 0.7: only competition mode games count towards results / statistics
+    # TODO: 1: confidence for a situation
+    # sd = sqrt(n1.sd1^2 + n2.sd2^2 + n3.sd3^2 + ...)
+    
+    # TODO: 1: global confidence, in the same fashion
+    
+    # TODO: 1: link to statistics page from account menu
+    
+    # TODO: 1: fix database locking by moving to mySQL
+    # (and remove isolation_level='SERIALIZABLE')
+    
+    # TODO: 1: chat indicator on finished games
+    
+    # TODO: 2: account page with unsubscribe (now enduring) and spawn
+    
+    # TODO: 2: spawn mode games
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
             return redirect(url_for('backdoor_page'))
