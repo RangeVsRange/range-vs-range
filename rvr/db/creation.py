@@ -21,7 +21,8 @@ def do_begin(conn):
     To allows SQLite serializable isolation, per http://docs.sqlalchemy.org/en
     /latest/dialects/sqlite.html#serializable-transaction-isolation
     """
-    conn.execute("BEGIN")
+    if SQLALCHEMY_DATABASE_URI.startswith('sqlite'):
+        conn.execute("BEGIN")
 
 # from http://docs.sqlalchemy.org/en/rel_0_8/orm/session.html
 @contextmanager
