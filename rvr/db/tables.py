@@ -282,7 +282,7 @@ class GameHistoryBase(BASE):
     __tablename__ = 'game_history_base'
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
-    order = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True, autoincrement=False)
     time = Column(DateTime, nullable=False)
     factor = Column(Float, nullable=False)
     game = relationship("RunningGame",
