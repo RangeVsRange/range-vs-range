@@ -89,7 +89,7 @@ class SituationPlayer(BASE, object):
     __tablename__ = 'situation_player'
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          primary_key=True)
-    order = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True, autoincrement=False)
     name_raw = Column(String(20), nullable=True)
     stack = Column(Integer, nullable=False)
     contributed = Column(Integer, nullable=False)
