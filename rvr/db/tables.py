@@ -14,6 +14,7 @@ from sqlalchemy.orm.session import object_session
 # TODO: REVISIT: do strings need fixed lengths?
 
 MAX_CHAT = 10000
+MAX_RANGE_LENGTH = 6629
 
 class User(BASE, object):
     """
@@ -61,12 +62,12 @@ class Situation(BASE):
     """
     __tablename__ = 'situation'
     situationid = Column(Integer, primary_key=True)
-    description = Column(String, unique=True, nullable=False)
+    description = Column(String(100), unique=True, nullable=False)
     participants = Column(Integer, nullable=False)
     is_limit = Column(Boolean, nullable=False)
     big_blind = Column(Integer, nullable=False)
-    board_raw = Column(String, nullable=False)
-    current_round = Column(String, nullable=False)
+    board_raw = Column(String(10), nullable=False)
+    current_round = Column(String(7), nullable=False)
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
@@ -89,10 +90,10 @@ class SituationPlayer(BASE, object):
     situationid = Column(Integer, ForeignKey("situation.situationid"),
                          primary_key=True)
     order = Column(Integer, primary_key=True)
-    name_raw = Column(String, nullable=True)
+    name_raw = Column(String(20), nullable=True)
     stack = Column(Integer, nullable=False)
     contributed = Column(Integer, nullable=False)
-    range_raw = Column(String, nullable=False)
+    range_raw = Column(String(MAX_RANGE_LENGTH), nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     average_result = Column(Float, nullable=True)
     stddev = Column(Float, nullable=True)
@@ -181,8 +182,8 @@ class RunningGame(BASE, object):
     current_userid = Column(Integer, nullable=True)
     next_hh = Column(Integer, default=0, nullable=False)
     # game state
-    board_raw = Column(String, nullable=False)
-    current_round = Column(String, nullable=False)
+    board_raw = Column(String(10), nullable=False)
+    current_round = Column(String(7), nullable=False)
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
@@ -251,7 +252,7 @@ class RunningGameParticipant(BASE, object):
     # game state
     stack = Column(Integer, nullable=False)
     contributed = Column(Integer, nullable=False)
-    range_raw = Column(String, nullable=False)
+    range_raw = Column(String(MAX_RANGE_LENGTH), nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     folded = Column(Boolean, nullable=False)
     # relationships
@@ -316,7 +317,7 @@ class GameHistoryUserRange(BASE, FactorMixin):
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     # longest possible range = 6,629 chars
-    range_raw = Column(String, nullable=False)
+    range_raw = Column(String(MAX_RANGE_LENGTH), nullable=False)
 
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryUserRange.gameid," +  \
@@ -358,9 +359,9 @@ class GameHistoryRangeAction(BASE, FactorMixin):
     order = Column(Integer, ForeignKey("game_history_base.order"),
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
-    fold_range = Column(String, nullable=False)
-    passive_range = Column(String, nullable=False)
-    aggressive_range = Column(String, nullable=False)
+    fold_range = Column(String(MAX_RANGE_LENGTH), nullable=False)
+    passive_range = Column(String(MAX_RANGE_LENGTH), nullable=False)
+    aggressive_range = Column(String(MAX_RANGE_LENGTH), nullable=False)
     raise_total = Column(Integer, nullable=False)
     # For syntactical context, call or check, bet or raise:
     is_check = Column(Boolean, nullable=False)
@@ -385,8 +386,8 @@ class GameHistoryBoard(BASE, FactorMixin):
                     primary_key=True)
     order = Column(Integer, ForeignKey("game_history_base.order"),
                    primary_key=True)
-    street = Column(String, nullable=False)
-    cards = Column(String, nullable=False)
+    street = Column(String(7), nullable=False)
+    cards = Column(String(10), nullable=False)
     
     hh_base = relationship("GameHistoryBase", primaryjoin=  \
         "and_(GameHistoryBase.gameid==GameHistoryBoard.gameid," +  \
@@ -495,7 +496,7 @@ class PaymentToPlayer(BASE):
                    primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"),
                     primary_key=True)
-    reason = Column(String, primary_key=True)
+    reason = Column(String(20), primary_key=True)
     amount = Column(Float, nullable=False)
     history_base = relationship("GameHistoryBase",
         primaryjoin="and_(GameHistoryBase.gameid==PaymentToPlayer.gameid,"
@@ -526,7 +527,7 @@ class RunningGameParticipantResult(BASE):
                     primary_key=True)
     userid = Column(Integer, ForeignKey("running_game_participant.userid"),
                     primary_key=True)
-    scheme = Column(String, primary_key=True)
+    scheme = Column(String(6), primary_key=True)
     result = Column(Float, nullable=False)
     rgp = relationship("RunningGameParticipant",
         primaryjoin="and_(RunningGameParticipant.gameid=="
@@ -582,8 +583,8 @@ class RangeItem(BASE):
     This table doesn't achieve much, except to ensure uniqueness within a range.
     """
     __tablename__ = "range_item"
-    higher_card = Column(String, primary_key=True)
-    lower_card = Column(String, primary_key=True)
+    higher_card = Column(String(2), primary_key=True)
+    lower_card = Column(String(2), primary_key=True)
 
 class AnalysisFoldEquity(BASE):
     """
@@ -601,7 +602,7 @@ class AnalysisFoldEquity(BASE):
         "==AnalysisFoldEquity.gameid,GameHistoryActionResult.order"
         "==AnalysisFoldEquity.order)")
     # Relevant columns
-    street = Column(String, nullable=False)
+    street = Column(String(7), nullable=False)
     pot_before_bet = Column(Integer, nullable=False)
     is_raise = Column(Boolean, nullable=False)
     is_check = Column(Boolean, nullable=False)
@@ -619,9 +620,9 @@ class AnalysisFoldEquityItem(BASE):
                     primary_key=True)
     order = Column(Integer, ForeignKey("analysis_fold_equity.order"),
                    primary_key=True)
-    higher_card = Column(String, ForeignKey("range_item.higher_card"),
+    higher_card = Column(String(2), ForeignKey("range_item.higher_card"),
                          primary_key=True)
-    lower_card = Column(String, ForeignKey("range_item.lower_card"),
+    lower_card = Column(String(2), ForeignKey("range_item.lower_card"),
                         primary_key=True)
     is_aggressive = Column(Boolean, nullable=False)
     is_passive = Column(Boolean, nullable=False)
