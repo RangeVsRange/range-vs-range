@@ -100,6 +100,7 @@ def write_users(session, users):
         user.screenname_raw = screenname_raw
         user.email = email
         user.unsubscribed = unsubscribed
+        session.commit()
 
 def read_situations(session):
     """ Read Situation table from DB into memory """
@@ -135,6 +136,7 @@ def write_situations(session, situations):
         situation.increment = increment
         situation.bet_count = bet_count
         situation.current_player_num = current_player_num
+        session.commit()
 
 def read_situation_players(session):
     """ Read SituationPlayer table from DB into memory """
@@ -165,6 +167,7 @@ def write_situation_players(session, sps):
         sp.left_to_act = left_to_act
         sp.average_result = average_result
         sp.stddev = stddev
+        session.commit()
 
 def read_open_games(session):
     """ Read OpenGame table from DB into memory """
@@ -184,6 +187,7 @@ def write_open_games(session, ogs):
         og.situationid = situationid
         og.public_ranges = public_ranges
         og.participants = participants
+        session.commit()
 
 def read_open_game_participants(session):
     """ Read GameParticipant table from DB into memory """
@@ -201,6 +205,7 @@ def write_open_game_participants(session, ogps):
         ogp.userid = userid
         ogp.gameid = gameid
         ogp.order = order
+        session.commit()
 
 def read_running_games(session):
     """ Read RunningGame table from DB into memory """
@@ -240,6 +245,7 @@ def write_running_games(session, rgs):
         rg.current_factor = current_factor
         rg.last_action_time = last_action_time
         rg.analysis_performed = analysis_performed
+        session.commit()
 
 def read_running_game_participants(session):
     """ Read RunningGameParticipant table from DB into memory """
@@ -268,6 +274,7 @@ def write_running_game_participants(session, rgps):
         rgp.range_raw = range_raw
         rgp.left_to_act = left_to_act
         rgp.folded = folded
+        session.commit()
 
 def read_running_game_participant_results(session):
     """ Read RunningGameParticipantResult table from DB into memory """
@@ -286,6 +293,7 @@ def write_running_game_participant_results(session, rgprs):
         rgpr.userid = userid
         rgpr.scheme = scheme
         rgpr.result = result
+        session.commit()
 
 def read_payments_to_players(session):
     """ Read PaymentToPlayer table from DB into memory """
@@ -306,6 +314,7 @@ def write_payments_to_players(session, ptps):
         ptp.userid = userid
         ptp.reason = reason
         ptp.amount = amount
+        session.commit()
 
 def read_game_history_bases(session):
     """ Read GameHistoryBase table from DB into memory """
@@ -325,6 +334,7 @@ def write_game_history_bases(session, ghbs):
         ghb.order = order
         ghb.time = time
         ghb.factor = factor
+        session.commit()
 
 def read_game_history_user_ranges(session):
     """ Read GameHistoryUserRange table from DB into memory """
@@ -344,6 +354,7 @@ def write_game_history_user_ranges(session, ghurs):
         ghur.order = order
         ghur.userid = userid
         ghur.range_raw = range_raw
+        session.commit()
 
 def read_game_history_action_results(session):
     """ Read GameHistoryActionResult table from DB into memory """
@@ -374,6 +385,7 @@ def write_game_history_action_results(session, ghars):
         ghar.call_cost = call_cost
         ghar.raise_total = raise_total
         ghar.is_raise = is_raise
+        session.commit()
 
 def read_game_history_range_actions(session):
     """ Read HandHistoryRangeAction table from DB into memory """
@@ -411,6 +423,7 @@ def write_game_history_range_actions(session, ghras):
         ghra.fold_ratio = fold_ratio
         ghra.passive_ratio = passive_ratio
         ghra.aggressive_ratio = aggressive_ratio
+        session.commit()
 
 def read_game_history_boards(session):
     """ Read GameHistoryBoard table from DB into memory """
@@ -430,6 +443,7 @@ def write_game_history_boards(session, ghbs):
         ghb.order = order
         ghb.street = street
         ghb.cards = cards
+        session.commit()
         
 def read_game_history_timeouts(session):
     """ Read GameHistoryTimeout table from DB into memory """
@@ -447,6 +461,7 @@ def write_game_history_timeouts(session, ghts):
         ght.gameid = gameid
         ght.order = order
         ght.userid = userid
+        session.commit()
         
 def read_game_history_chats(session):
     """ Read GameHistoryChat table from DB into memory """
@@ -466,6 +481,7 @@ def write_game_history_chats(session, ghcs):
         ghc.order = order
         ghc.userid = userid
         ghc.message = message
+        session.commit()
 
 def read_game_history_showdowns(session):
     """ Read GameHistoryShowdown table from DB into memory """
@@ -485,6 +501,7 @@ def write_game_history_showdowns(session, ghss):
         ghs.order = order
         ghs.is_passive = is_passive
         ghs.pot = pot
+        session.commit()
         
 def read_game_history_showdown_equities(session):
     """ Read GameHistoryShowdownEquity table from DB into memory """
@@ -508,6 +525,7 @@ def write_game_history_showdown_equities(session, ghses):
         ghse.showdown_order = showdown_order
         ghse.userid = userid
         ghse.equity = equity
+        session.commit()
 
 def read_analysis_fold_equities(session):
     """ Read AnalysisFoldEquity table from DB into memory """
@@ -538,6 +556,7 @@ def write_analysis_fold_equities(session, afes):
         afe.bet_cost = bet_cost
         afe.raise_total = raise_total
         afe.pot_if_called = pot_if_called
+        session.commit()
 
 def read_analysis_fold_equity_items(session):
     """ Read AnalysisFoldEquityItem table from DB into memory """
@@ -573,6 +592,7 @@ def write_analysis_fold_equity_items(session, afeis):
         afei.immediate_result = immediate_result
         afei.semibluff_ev = semibluff_ev
         afei.semibluff_equity = semibluff_equity
+        session.commit()
 
 TABLE_READERS = {User: read_users,
                  Situation: read_situations,
@@ -634,7 +654,6 @@ def write_db(data):
     for table in dumpable_tables:
         if data.has_key(table.__tablename__):
             TABLE_WRITERS[table](session, data[table.__tablename__])
-    session.commit()
 
 def dump(filename):
     """ Read all tables from DB into memory, and write to file """
