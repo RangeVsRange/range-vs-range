@@ -52,7 +52,6 @@ dumpable_tables = [
     RunningGame,
     RunningGameParticipant,
     RunningGameParticipantResult,
-    PaymentToPlayer,
     GameHistoryBase,
     GameHistoryUserRange,
     GameHistoryActionResult,
@@ -62,6 +61,7 @@ dumpable_tables = [
     GameHistoryChat,
     GameHistoryShowdown,
     GameHistoryShowdownEquity,
+    PaymentToPlayer,
     RangeItem,
     AnalysisFoldEquity,
     AnalysisFoldEquityItem]
