@@ -454,8 +454,9 @@ class GameHistoryShowdown(BASE, FactorMixin):
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
             [GameHistoryBase.gameid, GameHistoryBase.order]),
-        ForeignKeyConstraint([gameid, order],
-            [GameHistoryRangeAction.gameid, GameHistoryRangeAction.order]),
+        # TODOL: REVISIT: why doesn't this work with MySQL?!
+        # ForeignKeyConstraint([gameid, order],
+        #    [GameHistoryRangeAction.gameid, GameHistoryRangeAction.order]),
         {})
     
 class GameHistoryShowdownEquity(BASE):
