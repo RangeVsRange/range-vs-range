@@ -39,6 +39,7 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryShowdown, GameHistoryShowdownEquity, PaymentToPlayer,\
     RunningGameParticipantResult
 from rvr.db.creation import SESSION
+import logging
 
 #pylint:disable=C0103
 
@@ -653,6 +654,7 @@ def write_db(data):
     session = SESSION()
     for table in dumpable_tables:
         if data.has_key(table.__tablename__):
+            logging.debug("writing %s", table.__tablename__)
             TABLE_WRITERS[table](session, data[table.__tablename__])
 
 def dump(filename):

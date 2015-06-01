@@ -540,10 +540,6 @@ class RunningGameParticipantResult(BASE):
     scheme = Column(String(6), primary_key=True)
     result = Column(Float, nullable=False)
     rgp = relationship("RunningGameParticipant",
-        primaryjoin="and_(RunningGameParticipant.gameid=="
-           "RunningGameParticipantResult.gameid,"
-           "RunningGameParticipant.userid=="
-           "RunningGameParticipantResult.userid)",
         backref=backref("results", cascade="all"))
     SCHEME_EV = 'ev'
     SCHEME_BOARD = 'board'
