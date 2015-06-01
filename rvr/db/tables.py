@@ -8,6 +8,7 @@ from sqlalchemy.types import Float, DateTime
 from rvr.poker.cards import Card
 from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from sqlalchemy.orm.session import object_session
+from sqlalchemy.sql.schema import ForeignKeyConstraint
 
 #pylint:disable=W0232,R0903
 
@@ -311,18 +312,19 @@ class GameHistoryUserRange(BASE, FactorMixin):
     """
     __tablename__ = "game_history_user_range"
     
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-                   primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     # longest possible range = 6,629 chars
     range_raw = Column(String(MAX_RANGE_LENGTH), nullable=False)
 
-    hh_base = relationship("GameHistoryBase", primaryjoin=  \
-        "and_(GameHistoryBase.gameid==GameHistoryUserRange.gameid," +  \
-        " GameHistoryBase.order==GameHistoryUserRange.order)")
+    hh_base = relationship("GameHistoryBase")
     user = relationship("User")
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
     
 class GameHistoryActionResult(BASE, FactorMixin):
     """
@@ -330,10 +332,8 @@ class GameHistoryActionResult(BASE, FactorMixin):
     """
     __tablename__ = "game_history_action_result"
     
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-                   primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     is_fold = Column(Boolean, nullable=False)
     is_passive = Column(Boolean, nullable=False)
@@ -342,10 +342,13 @@ class GameHistoryActionResult(BASE, FactorMixin):
     raise_total = Column(Integer, nullable=True)
     is_raise = Column(Boolean, nullable=True)
 
-    hh_base = relationship("GameHistoryBase", primaryjoin=  \
-        "and_(GameHistoryBase.gameid==GameHistoryActionResult.gameid," +  \
-        " GameHistoryBase.order==GameHistoryActionResult.order)")
+    hh_base = relationship("GameHistoryBase")
     user = relationship("User")
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
     
 class GameHistoryRangeAction(BASE, FactorMixin):
     """
@@ -354,10 +357,8 @@ class GameHistoryRangeAction(BASE, FactorMixin):
     """
     __tablename__ = "game_history_range_action"
     
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-                   primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     fold_range = Column(String(MAX_RANGE_LENGTH), nullable=False)
     passive_range = Column(String(MAX_RANGE_LENGTH), nullable=False)
@@ -371,10 +372,13 @@ class GameHistoryRangeAction(BASE, FactorMixin):
     passive_ratio = Column(Float, nullable=True)
     aggressive_ratio = Column(Float, nullable=True)
     
-    hh_base = relationship("GameHistoryBase", primaryjoin=  \
-        "and_(GameHistoryBase.gameid==GameHistoryRangeAction.gameid," +  \
-        " GameHistoryBase.order==GameHistoryRangeAction.order)")
+    hh_base = relationship("GameHistoryBase")
     user = relationship("User")
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
 
 class GameHistoryBoard(BASE, FactorMixin):
     """
@@ -382,16 +386,17 @@ class GameHistoryBoard(BASE, FactorMixin):
     """
     __tablename__ = "game_history_board"
     
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-                   primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     street = Column(String(7), nullable=False)
     cards = Column(String(10), nullable=False)
     
-    hh_base = relationship("GameHistoryBase", primaryjoin=  \
-        "and_(GameHistoryBase.gameid==GameHistoryBoard.gameid," +  \
-        " GameHistoryBase.order==GameHistoryBoard.order)")
+    hh_base = relationship("GameHistoryBase")
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
 
 class GameHistoryTimeout(BASE, FactorMixin):
     """
@@ -399,16 +404,17 @@ class GameHistoryTimeout(BASE, FactorMixin):
     """
     __tablename__ = "game_history_timeout"
     
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-                   primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     
-    hh_base = relationship("GameHistoryBase", primaryjoin=  \
-        "and_(GameHistoryBase.gameid==GameHistoryTimeout.gameid," +  \
-        " GameHistoryBase.order==GameHistoryTimeout.order)")
+    hh_base = relationship("GameHistoryBase")
     user = relationship("User")
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
     
 class GameHistoryChat(BASE, FactorMixin):
     """
@@ -416,17 +422,18 @@ class GameHistoryChat(BASE, FactorMixin):
     """
     __tablename__ = "game_history_chat"
     
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-                   primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     message = Column(String(MAX_CHAT), nullable=False)
     
-    hh_base = relationship("GameHistoryBase", primaryjoin=  \
-        "and_(GameHistoryBase.gameid==GameHistoryChat.gameid," +  \
-        " GameHistoryBase.order==GameHistoryChat.order)")
+    hh_base = relationship("GameHistoryBase")
     user = relationship("User")
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
 
 class GameHistoryShowdown(BASE, FactorMixin):
     """
@@ -436,17 +443,21 @@ class GameHistoryShowdown(BASE, FactorMixin):
     """
     __tablename__ = "game_history_showdown"
     
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
-        ForeignKey("game_history_range_action.gameid"), primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-        ForeignKey("game_history_range_action.order"), primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     # Was this showdown created by a call/check, or by a fold?
     is_passive = Column(Boolean, primary_key=True)
     pot = Column(Integer, nullable=False)
     
-    hh_base = relationship("GameHistoryBase", primaryjoin=  \
-        "and_(GameHistoryBase.gameid==GameHistoryShowdown.gameid," +  \
-        " GameHistoryBase.order==GameHistoryShowdown.order)")
+    hh_base = relationship("GameHistoryBase")
+        
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+            [GameHistoryBase.gameid, GameHistoryBase.order]),
+        ForeignKeyConstraint([gameid, order],
+            [GameHistoryRangeAction.gameid, GameHistoryRangeAction.order]),
+        {})
+    
 
 class GameHistoryShowdownEquity(BASE):
     """
@@ -454,26 +465,25 @@ class GameHistoryShowdownEquity(BASE):
     """
     __tablename__ = "game_history_showdown_equity"
     
-    gameid = Column(Integer, ForeignKey("game_history_showdown.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_showdown.order"),
-                   primary_key=True)
-    is_passive = Column(Boolean,
-                        ForeignKey("game_history_showdown.is_passive"),
-                        primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
+    is_passive = Column(Boolean, primary_key=True)
     # ordering within equity rows for this showdown
     showdown_order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     equity = Column(Float, nullable=True)  # populated by analysis
     
-    showdown = relationship("GameHistoryShowdown", primaryjoin="and_(" +
-        "GameHistoryShowdown.gameid==GameHistoryShowdownEquity.gameid," +
-        "GameHistoryShowdown.order==GameHistoryShowdownEquity.order," +
-        "GameHistoryShowdown.is_passive==" +
-        "GameHistoryShowdownEquity.is_passive)",
+    showdown = relationship("GameHistoryShowdown",
         backref=backref("participants", cascade="all",
             order_by="GameHistoryShowdownEquity.showdown_order"))
     user = relationship("User")
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order, is_passive],
+            [GameHistoryShowdown.gameid,
+             GameHistoryShowdown.order,
+             GameHistoryShowdown.is_passive]),
+        {})
     
 GAME_HISTORY_TABLES = [
     GameHistoryUserRange,
@@ -490,17 +500,14 @@ class PaymentToPlayer(BASE):
     A single player's part of a payment for something.
     """
     __tablename__ = 'payment_to_player'
-    gameid = Column(Integer, ForeignKey("game_history_base.gameid"),
+    gameid = Column(Integer,
                     primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_base.order"),
-                   primary_key=True)
+    order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"),
                     primary_key=True)
     reason = Column(String(20), primary_key=True)
     amount = Column(Float, nullable=False)
     history_base = relationship("GameHistoryBase",
-        primaryjoin="and_(GameHistoryBase.gameid==PaymentToPlayer.gameid,"
-            "GameHistoryBase.order==PaymentToPlayer.order)",
         backref=backref("payments_to_players", cascade="all"))
     user = relationship("User")
     # Putting chips in the pot
@@ -518,15 +525,18 @@ class PaymentToPlayer(BASE):
     REASON_BOARD = 'board'
     REASON_BRANCH = 'branch'
 
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
+
 class RunningGameParticipantResult(BASE):
     """
     Result for a user in a game, under a result scheme
     """
     __tablename__ = 'running_game_participant_result'
-    gameid = Column(Integer, ForeignKey("running_game_participant.gameid"),
-                    primary_key=True)
-    userid = Column(Integer, ForeignKey("running_game_participant.userid"),
-                    primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    userid = Column(Integer, primary_key=True)
     scheme = Column(String(6), primary_key=True)
     result = Column(Float, nullable=False)
     rgp = relationship("RunningGameParticipant",
@@ -565,6 +575,12 @@ class RunningGameParticipantResult(BASE):
                         PaymentToPlayer.REASON_BRANCH}
     }
 
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, userid],
+            [RunningGameParticipant.gameid, RunningGameParticipant.userid]),
+        {})
+
+
 # TODO: 5: further strategic analysis:
 # - fold equity analysis row (might be semibluff EV, or immediate profit)
 # - profitable float / bet (linked to call, and bet)
@@ -592,15 +608,10 @@ class AnalysisFoldEquity(BASE):
     """
     __tablename__ = "analysis_fold_equity"
     # Keys
-    gameid = Column(Integer, ForeignKey("running_game.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("game_history_action_result.order"),
-                   primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
     # Relationships
-    action_result = relationship("GameHistoryActionResult",
-        primaryjoin="and_(GameHistoryActionResult.gameid"
-        "==AnalysisFoldEquity.gameid,GameHistoryActionResult.order"
-        "==AnalysisFoldEquity.order)")
+    action_result = relationship("GameHistoryActionResult")
     # Relevant columns
     street = Column(String(7), nullable=False)
     pot_before_bet = Column(Integer, nullable=False)
@@ -609,34 +620,29 @@ class AnalysisFoldEquity(BASE):
     bet_cost = Column(Integer, nullable=False)
     raise_total = Column(Integer, nullable=False)
     pot_if_called = Column(Integer, nullable=False)
-
+    
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+            [GameHistoryActionResult.gameid, GameHistoryActionResult.order]),
+        {})
+    
 class AnalysisFoldEquityItem(BASE):
     """
     Individual combo in the analysis of fold equity in a spot.
     """
     __tablename__ = "analysis_fold_equity_item"
     # Keys
-    gameid = Column(Integer, ForeignKey("analysis_fold_equity.gameid"),
-                    primary_key=True)
-    order = Column(Integer, ForeignKey("analysis_fold_equity.order"),
-                   primary_key=True)
-    higher_card = Column(String(2), ForeignKey("range_item.higher_card"),
-                         primary_key=True)
-    lower_card = Column(String(2), ForeignKey("range_item.lower_card"),
-                        primary_key=True)
+    gameid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
+    higher_card = Column(String(2), primary_key=True)
+    lower_card = Column(String(2), primary_key=True)
     is_aggressive = Column(Boolean, nullable=False)
     is_passive = Column(Boolean, nullable=False)
     is_fold = Column(Boolean, nullable=False)
     # Relationships
     analysis_fold_item = relationship("AnalysisFoldEquity",
-        backref=backref("items", cascade="all"),
-        primaryjoin="and_(AnalysisFoldEquityItem.gameid"
-        "==AnalysisFoldEquity.gameid,AnalysisFoldEquityItem.order"
-        "==AnalysisFoldEquity.order)")
-    range_item = relationship("RangeItem",
-        primaryjoin="and_(AnalysisFoldEquityItem.higher_card"
-        "==RangeItem.higher_card,AnalysisFoldEquityItem.lower_card"
-        "==RangeItem.lower_card)")
+        backref=backref("items", cascade="all"))
+    range_item = relationship("RangeItem")
     # Relevant columns
     fold_ratio = Column(Float, nullable=False)
     immediate_result = Column(Float, nullable=False)
@@ -645,6 +651,13 @@ class AnalysisFoldEquityItem(BASE):
     # semibluff, or -8.0% equity when called.
     semibluff_ev = Column(Float, nullable=True)
     semibluff_equity = Column(Float, nullable=True)
+
+    __table_args__ = (
+        ForeignKeyConstraint([gameid, order],
+            [AnalysisFoldEquity.gameid, AnalysisFoldEquity.order]),
+        ForeignKeyConstraint([higher_card, lower_card],
+            [RangeItem.higher_card, RangeItem.lower_card]),
+        {})
 
 # class AnalysisFloat(BASE):
 #     """
