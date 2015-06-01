@@ -469,7 +469,7 @@ class GameHistoryShowdownEquity(BASE):
     order = Column(Integer, primary_key=True)
     is_passive = Column(Boolean, primary_key=True)
     # ordering within equity rows for this showdown
-    showdown_order = Column(Integer, primary_key=True)
+    showdown_order = Column(Integer, primary_key=True, autoincrement=False)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     equity = Column(Float, nullable=True)  # populated by analysis
     
