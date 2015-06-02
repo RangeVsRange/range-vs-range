@@ -1008,10 +1008,8 @@ def user_page():
     # suppress user's situation results where insufficient position hands
     for situation in result:
         for position in situation.positions:
-            if position.played >= min_visible:
-                break
-        else:
-            situation.average = None        
+            if position.played < min_visible:
+                situation.average = None     
     
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
