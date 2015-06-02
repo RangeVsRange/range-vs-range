@@ -125,6 +125,14 @@ def ensure_user():
     session['screenname'] = result.screenname
     flash("You have logged in as '%s'" % (session['screenname'],))
 
+def get_my_screenname():
+    """
+    Get logged in user's screenname
+    """
+    if not is_logged_in() or 'screenname' not in session:
+        return ""
+    return session['screenname']
+
 def error(message):
     """
     Flash error message and redirect to error page.
@@ -188,7 +196,8 @@ def change_screenname():
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/change.html', title='Change Your Screenname',
         current=current, form=form, navbar_items=navbar_items,
-        is_logged_in=is_logged_in(), is_account=True)
+        is_logged_in=is_logged_in(), is_account=True,
+        my_screenname=get_my_screenname())
 
 @APP.route('/unsubscribe', methods=['GET'])
 def unsubscribe():
@@ -249,7 +258,8 @@ def error_page():
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/flash.html', title='Sorry',
-        navbar_items=navbar_items, is_logged_in=is_logged_in())
+        navbar_items=navbar_items, is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname())
 
 @APP.route('/about', methods=['GET'])
 def about_page():
@@ -260,8 +270,9 @@ def about_page():
                     ('active', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/about.html', title="About",
-                           navbar_items=navbar_items,
-                           is_logged_in=is_logged_in())
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname())
 
 @APP.route('/faq', methods=['GET'])
 def faq_page():
@@ -272,21 +283,15 @@ def faq_page():
                     ('', url_for('about_page'), 'About'),
                     ('active', url_for('faq_page'), 'FAQ')]
     return render_template('web/faq.html', title="FAQ",
-                           navbar_items=navbar_items,
-                           is_logged_in=is_logged_in())
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname())
 
 @APP.route('/', methods=['GET'])
 def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
-    """
-    # TODO: 1: confidence for a situation
-    # sd = sqrt(n1.sd1^2 + n2.sd2^2 + n3.sd3^2 + ...)
-    
-    # TODO: 1: global confidence, in the same fashion
-    
-    # TODO: 1: link to statistics page from account menu
-    
+    """    
     # TODO: 1: 'updated!' indicator on finished games (on the RGPs)
     
     # TODO: 2: account page with email preferences, screenname, and spawn
@@ -294,6 +299,12 @@ def home_page():
     # TODO: 2: games have a "global factor" that scales down their significance
     
     # TODO: 3: spawn mode games
+
+    # TODO: 3: confidence for a situation
+    # sd = sqrt(n1.sd1^2 + n2.sd2^2 + n3.sd3^2 + ...)
+    
+    # TODO: 3: global confidence, in the same fashion
+
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
             return redirect(url_for('backdoor_page'))
@@ -336,7 +347,8 @@ def home_page():
         navbar_items=navbar_items,
         selected_heading=selected_heading,
         selected_mode=selected_mode,
-        is_logged_in=is_logged_in())
+        is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname())
 
 @APP.route('/join', methods=['GET'])
 @auth_check
@@ -751,7 +763,8 @@ def _running_game(game, gameid, userid, api):
         current_options=game.current_options,
         is_me=is_me, is_mine=is_mine, is_new_chat=is_new_chat, is_running=True,
         range_editor_url=range_editor_url,
-        navbar_items=navbar_items, is_logged_in=is_logged_in(), url=request.url)
+        navbar_items=navbar_items, is_logged_in=is_logged_in(), url=request.url,
+        my_screenname=get_my_screenname())
 
 def _finished_game(game, gameid, userid):
     """
@@ -774,7 +787,8 @@ def _finished_game(game, gameid, userid):
         num_players=len(game.game_details.rgp_details), analyses=analyses,
         is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
         scheme=scheme, navbar_items=navbar_items, is_logged_in=is_logged_in(),
-        url=request.url)
+        url=request.url,
+        my_screenname=get_my_screenname())
 
 def authenticated_game_page(gameid):
     """
@@ -979,7 +993,8 @@ def analysis_page():
         items_passive=items_passive,
         items_fold=items_fold,
         is_raise=aife.is_raise, is_check=aife.is_check,
-        navbar_items=navbar_items, is_logged_in=is_logged_in(), url=request.url)
+        navbar_items=navbar_items, is_logged_in=is_logged_in(), url=request.url,
+        my_screenname=get_my_screenname())
 
 @APP.route('/user', methods=['GET'])
 def user_page():
@@ -1020,4 +1035,5 @@ def user_page():
         min_visible=min_visible,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
-        url=request.url)
+        url=request.url,
+        my_screenname=get_my_screenname())
