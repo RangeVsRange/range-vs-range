@@ -1087,6 +1087,8 @@ class API(object):
                 ddof = 1
                 if len(results) > ddof + 1:
                     user_stddev = numpy.std(results, ddof=ddof)
+                    # TODO: 0: BUG: player.average_result can be None,
+                    # if analysis hasn't happened recently.
                     confidence = calculate_confidence(
                         total_result=total,
                         num_games=len(results),

@@ -9,7 +9,7 @@
   </div>
 {% for situation in situations %}
   <h3>"{{situation.name}}"</h3>
-  <h3>{% if situation.average is none %}insufficient play to establish average result{% else %}<strong>{{"%0.04f" % (situation.average if situation.average > 0.0 else -situation.average,)}}</strong> chips <strong>{% if situation.average > 0 %}above{% else %}below{% endif %}</strong> the average per orbit{% endif %}</h3>
+  {% if situation.average is not none %}<h3><strong>{{"%0.04f" % (situation.average if situation.average > 0.0 else -situation.average,)}}</strong> chips <strong>{% if situation.average > 0 %}above{% else %}below{% endif %}</strong> the average per orbit</h3>{% endif %}
   <table class="table table-bordered">
     <thead><tr>
       <td><strong>Position</strong></td>

@@ -25,8 +25,8 @@ from functools import wraps
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 2.1: poll /r/poker for the most common/important/profitable postflop
-# TODO: 2.2: ... two-handed situation and create that as a second situation
+# TODO: 3.1: poll /r/poker for the most common/important/profitable postflop
+# TODO: 3.2: ... two-handed situation and create that as a second situation
 
 # TODO: 5: a 'situation' page that describes the situation
 
@@ -287,14 +287,13 @@ def home_page():
     
     # TODO: 1: link to statistics page from account menu
     
-    # TODO: 1: fix database locking by moving to mySQL
-    # (and remove isolation_level='SERIALIZABLE')
+    # TODO: 1: 'updated!' indicator on finished games (on the RGPs)
     
-    # TODO: 1: chat indicator on finished games
+    # TODO: 2: account page with email preferences, screenname, and spawn
     
-    # TODO: 2: account page with unsubscribe (now enduring) and spawn
+    # TODO: 2: games have a "global factor" that scales down their significance
     
-    # TODO: 2: spawn mode games
+    # TODO: 3: spawn mode games
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
             return redirect(url_for('backdoor_page'))
@@ -1003,6 +1002,16 @@ def user_page():
         return error("No such user.")
     if isinstance(result, APIError):
         return error("An unknown error occurred retrieving results.")
+    
+    min_visible = 5
+    
+    # suppress user's situation results where insufficient position hands
+    for situation in result:
+        for position in situation.positions:
+            if position.played >= min_visible:
+                break
+        else:
+            situation.average = None        
     
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
