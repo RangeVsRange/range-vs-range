@@ -1003,7 +1003,7 @@ def user_page():
     if isinstance(result, APIError):
         return error("An unknown error occurred retrieving results.")
     
-    min_visible = 5
+    min_visible = 5  # stats only shown if 5 hands played
     
     # suppress user's situation results where insufficient position hands
     for situation in result:
@@ -1017,7 +1017,7 @@ def user_page():
     return render_template('web/user.html',
         screenname=screenname,
         situations=result,
-        min_visible=5,  # stats only shown if 5 hands played
+        min_visible=min_visible,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         url=request.url)

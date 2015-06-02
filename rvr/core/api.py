@@ -1063,6 +1063,11 @@ class API(object):
         # For now, there are only situation-specific results (nothing global).
         situation_results = []
         for situation in all_situations:
+            if any(player.average_result is None
+                   for player in situation.players):
+                # This can happen before global analysis is run.
+                # Suppress situation for now.
+                continue
             position_results = []
             games = self.session.query(tables.RunningGame)  \
                 .filter(tables.RunningGame.situationid ==
@@ -1087,8 +1092,6 @@ class API(object):
                 ddof = 1
                 if len(results) > ddof + 1:
                     user_stddev = numpy.std(results, ddof=ddof)
-                    # TODO: 0: BUG: player.average_result can be None,
-                    # if analysis hasn't happened recently.
                     confidence = calculate_confidence(
                         total_result=total,
                         num_games=len(results),
