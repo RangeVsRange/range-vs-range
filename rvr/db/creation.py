@@ -9,7 +9,7 @@ from functools import wraps
 from rvr.local_settings import SQLALCHEMY_DATABASE_URI
 
 ENGINE = create_engine(SQLALCHEMY_DATABASE_URI, echo=False,
-                       isolation_level='SERIALIZABLE',
+                       isolation_level='READ COMMITTED',
                        pool_recycle=120)
 SESSION = sessionmaker(bind=ENGINE)
 BASE = declarative_base()
