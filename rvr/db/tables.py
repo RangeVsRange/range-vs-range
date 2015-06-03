@@ -258,7 +258,9 @@ class RunningGameParticipant(BASE, object):
     folded = Column(Boolean, nullable=False)
     # relationships
     user = relationship("User", backref="rgps")
-    game = relationship("RunningGame", backref=backref("rgps", cascade="all"),
+    game = relationship("RunningGame",
+        backref=backref("rgps", cascade="all",
+                        order_by="RunningGameParticipant.order"),
         primaryjoin="RunningGame.gameid==RunningGameParticipant.gameid")
     # attributes
     def get_range(self):
