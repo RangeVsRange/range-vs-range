@@ -195,13 +195,13 @@ class RunningGame(BASE, object):
     # shortcut to know if analysis has been done
     analysis_performed = Column(Boolean, nullable=False)
     # game this was (originally) spawned from, if any
-    # TODO: 0.0: spawn_root_id = Column(Integer, ForeignKey("running_game.gameid"),
-    # TODO: 0.0:                         nullable=True)
+    spawn_root_id = Column(Integer, ForeignKey("running_game.gameid"),
+                           nullable=True)
     # starts at 1.0, reduces when spawned
     # across all games with this spawn_root_id, this will sum to 1.0
-    # TODO: 0.0: spawn_factor = Column(Float, nullable=False)
+    spawn_factor = Column(Float, nullable=False)
 
-    # TODO: 0.0: spawn_parent = relationship("RunningGame")
+    spawn_parent = relationship("RunningGame")
     
     def get_is_auto_spawn(self):
         """
