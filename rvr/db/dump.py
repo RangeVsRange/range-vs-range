@@ -223,7 +223,7 @@ def read_running_games(session):
              rg.bet_count,
              rg.current_factor,
              rg.last_action_time,
-             rg.analysis_performed)
+             rg.analysis_performed)  # TODO: 0: spawn factor, spawn root id
             for rg in rgs]
 
 def write_running_games(session, rgs):
@@ -246,6 +246,8 @@ def write_running_games(session, rgs):
         rg.current_factor = current_factor
         rg.last_action_time = last_action_time
         rg.analysis_performed = analysis_performed
+        rg.spawn_factor = 1.0  # TODO: 0.0
+        rg.spawn_root_id = gameid  # TODO: 0.0
         session.commit()
 
 def read_running_game_participants(session):
@@ -544,6 +546,8 @@ def read_analysis_fold_equities(session):
 
 def write_analysis_fold_equities(session, afes):
     """ Write AnalysisFoldEquity table from memory into DB """
+    # TODO: 5: reintroduce fold equity analysis
+    return
     for gameid, order, street, pot_before_bet, is_raise, is_check, bet_cost,  \
             raise_total, pot_if_called in afes:
         afe = AnalysisFoldEquity()
@@ -561,6 +565,8 @@ def write_analysis_fold_equities(session, afes):
 
 def read_analysis_fold_equity_items(session):
     """ Read AnalysisFoldEquityItem table from DB into memory """
+    # TODO: 5: reintroduce fold equity analysis
+    return []
     afeis = session.query(AnalysisFoldEquityItem).all()
     return [(afei.gameid,
              afei.order,
@@ -577,6 +583,7 @@ def read_analysis_fold_equity_items(session):
 
 def write_analysis_fold_equity_items(session, afeis):
     """ Write AnalysisFoldEquityItem table from memory into DB """
+    return  # TODO: 5: reintroduce fold equity analysis, less slowly!
     for gameid, order, higher_card, lower_card, is_aggressive, is_passive,  \
             is_fold, fold_ratio, immediate_result, semibluff_ev,  \
             semibluff_equity in afeis:

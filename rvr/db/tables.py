@@ -194,6 +194,21 @@ class RunningGame(BASE, object):
     last_action_time = Column(DateTime, nullable=False)  # or game start time
     # shortcut to know if analysis has been done
     analysis_performed = Column(Boolean, nullable=False)
+    # game this was (originally) spawned from, if any
+    spawn_root_id = Column(Integer, ForeignKey("running_game.gameid"),
+                             nullable=True)
+    # starts at 1.0, reduces when spawned
+    # across all games with this spawn_root_id, this will sum to 1.0
+    spawn_factor = Column(Float, nullable=False)
+
+    spawn_parent = relationship("RunningGame")
+    
+    def get_is_auto_spawn(self):
+        """
+        For now, we do this in lieu of having a setting on the game.
+        """
+        return self.public_ranges
+    is_auto_spawn = property(get_is_auto_spawn)
     # in lieu of a relationship...
     # TODO: REVISIT: can we do this with a one-to-one relationship?
     # ... and not cause circular reference issues?!
