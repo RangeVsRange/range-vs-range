@@ -196,7 +196,7 @@ class RunningGame(BASE, object):
     analysis_performed = Column(Boolean, nullable=False)
     # game this was (originally) spawned from, if any
     # TODO: 0.0: spawn_root_id = Column(Integer, ForeignKey("running_game.gameid"),
-                             nullable=True)
+    # TODO: 0.0:                         nullable=True)
     # starts at 1.0, reduces when spawned
     # across all games with this spawn_root_id, this will sum to 1.0
     # TODO: 0.0: spawn_factor = Column(Float, nullable=False)
