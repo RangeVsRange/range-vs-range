@@ -840,6 +840,7 @@ def game_page():
     View of the specified game, authentication-aware
     """
     # TODO: 0: remove all visible reference (including emails) to open game ID
+    # TODO: 0: show root id to user, not actual game id!
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -1012,6 +1013,7 @@ def user_page():
     if result == API.ERR_NO_SUCH_USER:
         return error("Unrecognised screenname.")
     userid = result.userid
+    screenname = result.screenname
     result = api.get_user_statistics(userid, min_hands=min_hands)
     if result == API.ERR_NO_SUCH_USER:
         return error("No such user.")
