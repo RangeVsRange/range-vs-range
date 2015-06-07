@@ -216,8 +216,6 @@ def finish_game(game):
     """
     # TODO: 5: test situations like P1 bet, P2 call, P3 fold/call/raise
     # (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.) 
-    # TODO: 5: board equity payments?
-    # TODO: 5: choice equity payments and current factor reduction?
     # TODO: 5: results weighted by size of ranges in starting situation?
     return game
 
@@ -330,11 +328,10 @@ class WhatCouldBe(object):
         len_pas = len(passive_options)
         len_agg = len(aggressive_options)
         total = len_fol + len_pas + len_agg
-        self.ratios = {
+        return {
             'fold': 1.0 * len_fol / total,
             'passive': 1.0 * len_pas / total,
             'aggressive': 1.0 * len_agg / total}
-        return self.ratios
 
     def calculate_what_will_be(self, auto_spawn):
         """

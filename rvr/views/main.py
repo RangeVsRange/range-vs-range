@@ -295,10 +295,6 @@ def home_page():
     # TODO: 1: 'updated!' indicator on finished games (on the RGPs)
     
     # TODO: 2: account page with email preferences, screenname, and spawn
-    
-    # TODO: 2: games have a "global factor" that scales down their significance
-    
-    # TODO: 3: spawn mode games
 
     # TODO: 3: confidence for a situation
     # sd = sqrt(n1.sd1^2 + n2.sd2^2 + n3.sd3^2 + ...)
@@ -843,6 +839,7 @@ def game_page():
     """
     View of the specified game, authentication-aware
     """
+    # TODO: 0: remove all visible reference (including emails) to open game ID
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
