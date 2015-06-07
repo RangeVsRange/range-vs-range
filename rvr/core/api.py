@@ -17,7 +17,7 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe,\
     generate_excluded_cards
 from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, SituationResult,\
-    PositionResult
+    PositionResult, ActionResult
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
@@ -26,10 +26,11 @@ from rvr.mail.notifications import notify_current_player, notify_first_player, \
     notify_finished
 from rvr.analysis.analyse import AnalysisReplayer, calculate_confidence
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
-    PaymentToPlayer
+    PaymentToPlayer, GameHistoryBase, GAME_HISTORY_TABLES
 import datetime
 from rvr.local_settings import SUPPRESSED_SITUATIONS, SUPPRESSED_GAME_MAX
 import numpy
+import re
 
 def exception_mapper(fun):
     """
@@ -281,13 +282,24 @@ class API(object):
         """
         Return userid, screenname
         """
+        # Look for screenname
         matches = self.session.query(tables.User)  \
             .filter(tables.User.screenname_raw == screenname).all()
         if matches:
             user = matches[0]
-            return dtos.UserDetails.from_user(user)
         else:
-            return API.ERR_NO_SUCH_USER
+            # Look for userid
+            matches = re.match(r"Player (\d+)$", screenname)
+            if not matches:
+                return API.ERR_NO_SUCH_USER
+            userid = int(matches.group(1))
+            matches = self.session.query(tables.User)  \
+                .filter(tables.User.userid == userid).all()
+            if matches:
+                user = matches[0]                    
+            else:
+                return API.ERR_NO_SUCH_USER
+        return dtos.UserDetails.from_user(user)
     
     def _add_situation(self, dto):
         """
@@ -390,9 +402,6 @@ class API(object):
         all_ogps = open_game.ogps + [final_ogp]
         running_game = tables.RunningGame()
         running_game.next_hh = 0
-        # Maintain game ids from open games, essentially hijacking the
-        # uniqueness of the gameid sequence in open game.
-        running_game.gameid = open_game.gameid
         running_game.public_ranges = open_game.public_ranges
         running_game.situation = situation
         # We have to calculate current userid in advance so we can flush.
@@ -406,6 +415,9 @@ class API(object):
         running_game.current_factor = 1.0
         running_game.last_action_time = datetime.datetime.utcnow()
         running_game.analysis_performed = False
+        running_game.spawn_factor = 1.0
+        # TODO: REVISIT: should this be game's gameid?
+        running_game.spawn_root_id = None
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
@@ -650,43 +662,35 @@ class API(object):
     ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
     ERR_INVALID_RANGES = APIError("Invalid ranges or raise size.")
 
-    def apply_action_result(self, game, rgp, action_result):
+    def _spawn_game(self, game):
         """
-        Change game and rgp state. Add relevant hand history items. Possibly
-        finish hand.
+        Make a current, running copy of the current, running game.
+        
+        This includes:
+         - RunningGame
+         - RunningGameParticipant
+         - GAME_HISTORY_TABLES
+         
+        Basically copies every table that holds info on a running game, and
+        changes the gameid.
         """
-        if action_result.is_fold:
-            act_fold(rgp)
-        elif action_result.is_passive:
-            act_passive(rgp, action_result.call_cost)
-        elif action_result.is_aggressive:
-            act_aggressive(game, rgp, action_result.raise_total)
-        else:
-            # terminate must not be passed here
-            raise ValueError("Invalid action result")
-        left_to_act = [p for p in game.rgps if p.left_to_act]
-        remain = [p for p in game.rgps if not p.left_to_act and not p.folded]
-        if len(left_to_act) == 1 and not remain:
-            # BB got a walk, or everyone folded to the button postflop
-            game.is_finished = True
-        elif not left_to_act:
-            if len(remain) == 1 or game.current_round == RIVER:
-                # The last person in folded their entire range, or
-                # We have a range-based showdown on the river.
-                game.is_finished = True
-            else:
-                # Deal, change round, set new game state.
-                self._finish_betting_round(game, remain)
-        else:
-            # Who's up next? And not someone named Who, but the pronoun.
-            later = [p for p in left_to_act if p.order > rgp.order]
-            earlier = [p for p in left_to_act if p.order < rgp.order]
-            chosen = later if later else earlier
-            next_rgp = min(chosen, key=lambda p: p.order)
-            game.current_userid = next_rgp.userid
-            logging.debug("Next to act in game %d: userid %d, order %d",
-                          game.gameid, next_rgp.userid, next_rgp.order)
-    
+        ng = game.copy()
+        ng.spawn_root_id = game.spawn_root_id  \
+            if game.spawn_root_id is not None else game.gameid
+        self.session.add(ng)
+        self.session.flush()  # get gameid
+        for rgp in game.rgps:
+            np = rgp.copy()
+            np.gameid = ng.gameid
+            self.session.add(np)
+        for table in GAME_HISTORY_TABLES:
+            for row in self.session.query(table)  \
+                    .filter(table.gameid == game.gameid).all():
+                nr = row.copy()
+                nr.gameid = ng.gameid
+                self.session.add(nr)
+        return ng
+
     def _deal_to_board(self, game):
         """
         Deal as many cards as are needed to bring the board up to the current
@@ -798,6 +802,54 @@ class API(object):
                 is_passive=True,
                 pot=pot,
                 factor=factor)
+            
+    def _apply_action_result(self, game, weight, action_result, range_raw):
+        """
+        Apply a spawn weight and an action result to a (potentially spawned)
+        game
+        """
+        logging.debug("gameid %r, determined to continue", game.gameid)
+        game.spawn_factor *= weight
+        rgp = game.current_rgp
+        self._record_action_result(rgp, action_result)
+        rgp.range_raw = range_raw
+        logging.debug("gameid %d, new range for userid %d, new range %r",
+                      rgp.gameid, rgp.userid, rgp.range_raw)
+        self._record_rgp_range(rgp, range_raw)
+        if action_result.is_fold:
+            act_fold(rgp)
+        elif action_result.is_passive:
+            act_passive(rgp, action_result.call_cost)
+        elif action_result.is_aggressive:
+            act_aggressive(game, rgp, action_result.raise_total)
+        else:
+            # terminate must not be passed here
+            raise ValueError("Invalid action result")
+        left_to_act = [p for p in game.rgps if p.left_to_act]
+        remain = [p for p in game.rgps if not p.left_to_act and not p.folded]
+        if len(left_to_act) == 1 and not remain:
+            # BB got a walk, or everyone folded to the button postflop
+            game.is_finished = True
+        elif not left_to_act:
+            if len(remain) == 1 or game.current_round == RIVER:
+                # The last person in folded their entire range, or
+                # We have a range-based showdown on the river.
+                game.is_finished = True
+            else:
+                # Deal, change round, set new game state.
+                self._finish_betting_round(game, remain)
+        else:
+            # Who's up next? And not someone named Who, but the pronoun.
+            later = [p for p in left_to_act if p.order > rgp.order]
+            earlier = [p for p in left_to_act if p.order < rgp.order]
+            chosen = later if later else earlier
+            next_rgp = min(chosen, key=lambda p: p.order)
+            game.current_userid = next_rgp.userid
+            logging.debug("Next to act in game %d: userid %d, order %d",
+                          game.gameid, next_rgp.userid, next_rgp.order)
+        if game.is_finished:
+            finish_game(game)
+        notify_current_player(game)  # Notify them *after* action obviously.
              
     def _perform_action(self, game, rgp, range_action, current_options):
         """
@@ -808,7 +860,7 @@ class API(object):
          - current_options, options user had here (re-computed)
          
         Outputs:
-         - An ActionResult, what *actually* happened
+         - ActionResult, and spawned game IDs
          
         Side effects:
          - Records range action in DB (purely copying input to DB)
@@ -834,20 +886,19 @@ class API(object):
         self._range_action_showdown(game, rgp, current_options,
                                     range_ratios)
         # this also changes game's current factor
-        action_result = what_could_be.calculate_what_will_be()
-        if action_result.is_terminate:
+        results = what_could_be.calculate_what_will_be(game.is_auto_spawn)
+        
+        if not results:
             logging.debug("gameid %r, determined to terminate", game.gameid)
             game.is_finished = True
             rgp.left_to_act = False
-        else:
-            logging.debug("gameid %r, determined to continue", game.gameid)
-            self._record_action_result(rgp, action_result)
-            self._record_rgp_range(rgp, rgp.range_raw)
-            self.apply_action_result(game, rgp, action_result)
-        if game.is_finished:
             finish_game(game)
-        notify_current_player(game)  # Notify them *after* action obviously.
-        return action_result
+            return ActionResult.terminate(), []
+    
+        games = [game] + [self._spawn_game(game) for r in results[1:]]    
+        for g, details in zip(games, results):
+            self._apply_action_result(g, *details)
+        return results[0][1], [g.gameid for g in games[1:]]
     
     @api
     def perform_action(self, gameid, userid, range_action):
@@ -880,8 +931,9 @@ class API(object):
                           + "userid %r, range_action %r",
                           _err, gameid, userid, range_action)
             return API.ERR_INVALID_RANGES
-        result = self._perform_action(game, rgp, range_action, current_options)
-        return result
+        results, spawned_gameids = self._perform_action(
+            game, rgp, range_action, current_options)
+        return results, spawned_gameids
     
     @api
     def chat(self, gameid, userid, message):

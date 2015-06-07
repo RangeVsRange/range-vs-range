@@ -472,25 +472,28 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
             logging.info('Unknown error from api.perform_action: %s', result)
         flash(msg)
         return False
-    else:
-        if result.is_fold:
-            msg = "You folded."
-        elif result.is_passive:
-            if result.call_cost == 0:
-                msg = "You checked."
-            else:
-                msg = "You called for %d." % (result.call_cost,)
-        elif result.is_aggressive:
-            if result.is_raise:
-                msg = "You raised to %d." % (result.raise_total,)
-            else:
-                msg = "You bet %d." % (result.raise_total,)
-        elif result.is_terminate:
-            msg = "The game is finished."
+    action, spawned = result
+    if action.is_fold:
+        msg = "You folded."
+    elif action.is_passive:
+        if action.call_cost == 0:
+            msg = "You checked."
         else:
-            msg = "I can't figure out what happened, eh."
-        flash(msg)
-        return True
+            msg = "You called for %d." % (action.call_cost,)
+    elif action.is_aggressive:
+        if action.is_raise:
+            msg = "You raised to %d." % (action.raise_total,)
+        else:
+            msg = "You bet %d." % (action.raise_total,)
+    elif action.is_terminate:
+        msg = "The game is finished."
+    else:
+        msg = "I can't figure out what happened, eh."
+    flash(msg)
+    for gameid in spawned:
+        flash("A different line of this game will continue in game %d" %
+              (gameid,))
+    return True
 
 def __board_to_vars(street, cards, order):
     """

@@ -239,7 +239,6 @@ class WhatCouldBe(object):
         
         self.all_in = any([player.stack == 0 for player in game.rgps])
         self.bough = []  # list of Branch
-        self.action_result = None
 
     def fold_continue(self):
         """
@@ -331,24 +330,21 @@ class WhatCouldBe(object):
         len_pas = len(passive_options)
         len_agg = len(aggressive_options)
         total = len_fol + len_pas + len_agg
-        return {
+        self.ratios = {
             'fold': 1.0 * len_fol / total,
             'passive': 1.0 * len_pas / total,
-            'aggressive': 1.0 * len_agg / total}        
+            'aggressive': 1.0 * len_agg / total}
+        return self.ratios
 
-    def re_range(self, branch):
-        """
-        Assign new range to rgp, and redeal their hand
-        """
-        # branch.options excludes cards dealt, branch.range does not
-        self.rgp.range_raw = branch.range.description
-        logging.debug("gameid %d, new range for userid %d, new range %r",
-                      self.rgp.gameid, self.rgp.userid, self.rgp.range_raw)
-
-    def calculate_what_will_be(self):
+    def calculate_what_will_be(self, auto_spawn):
         """
         Choose one of the non-terminal actions, or return termination if they're
         all terminal. Also update game's current_factor.
+        
+        Returns a weighted list of action results:
+            [(weight, action_result), (weight, action_result)...]
+            
+        If auto_spawn, there may be multiple. If not, then only one.
         """
         # reduce current factor by the ratio of non-terminal-to-terminal options
         non_terminal = []
@@ -380,20 +376,29 @@ class WhatCouldBe(object):
         # X continues with subrange A of original range B, while player Y holds
         # range C, what is the probability that play continues?)
         self.game.current_factor *= reduction
-        if non_terminal:
+        if not non_terminal:
+            logging.debug("gameid %d, what will be is to terminate",
+                          self.game.gameid)
+            return []
+        elif not auto_spawn:
             chosen_option = random.choice(non_terminal)
             # but which action was chosen?
             for branch in self.bough:
                 if chosen_option in branch.options:
                     logging.debug("gameid %d, chosen %r for action %r",
                         self.game.gameid, chosen_option, branch.action)
-                    self.action_result = branch.action
-                    self.re_range(branch)
+                    return [(1.0, branch.action, branch.range.description)]
         else:
-            logging.debug("gameid %d, what will be is to terminate",
-                          self.game.gameid)
-            self.action_result = ActionResult.terminate()
-        return self.action_result    
+            results = []
+            for branch in self.bough:
+                if branch.options and branch.is_continue:
+                    weight = 1.0 * len(branch.options) / len(non_terminal)
+                    logging.debug("gameid %d, action %r will happen or spawn,"
+                                  " with weight %0.4f",
+                                  self.game.gameid, branch.action, weight)
+                    results.append(
+                        (weight, branch.action, branch.range.description))
+            return results
 
 class Test(unittest.TestCase):
     """

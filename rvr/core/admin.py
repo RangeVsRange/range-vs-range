@@ -245,15 +245,17 @@ class AdminCmd(Cmd):
         if isinstance(response, APIError):
             print "Error:", response.description  # pylint:disable=E1101
             return
+        action, spawned = response
         # pylint:disable=E1103
-        if response.is_fold:
+        if action.is_fold:
             print "You folded."
-        elif response.is_passive:
+        elif action.is_passive:
             print "You called."
-        elif response.is_aggressive:
-            print "You raised to %d." % (response.raise_total,)
+        elif action.is_aggressive:
+            print "You raised to %d." % (action.raise_total,)
         else:
-            print "Response:", response
+            print "Action:", action
+        print "Spawned: ", spawned
             
     def do_chat(self, details):
         """

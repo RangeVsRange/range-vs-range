@@ -201,8 +201,29 @@ class RunningGame(BASE, object):
     # across all games with this spawn_root_id, this will sum to 1.0
     spawn_factor = Column(Float, nullable=False)
 
-    spawn_parent = relationship("RunningGame")
+    spawn_root = relationship("RunningGame")
     
+    def copy(self):
+        """
+        Creates new RunningGame, spawned from this one
+        """
+        game = RunningGame()
+        game.situationid = self.situationid
+        game.public_ranges = self.public_ranges
+        game.current_userid = self.current_userid
+        game.next_hh = self.next_hh
+        game.board_raw = self.board_raw
+        game.current_round = self.current_round
+        game.pot_pre = self.pot_pre
+        game.increment = self.increment
+        game.bet_count = self.bet_count
+        game.current_factor = self.current_factor
+        game.last_action_time = self.last_action_time
+        game.analysis_performed = self.analysis_performed
+        game.spawn_root_id = self.spawn_root_id
+        game.spawn_factor = self.spawn_factor
+        return game
+        
     def get_is_auto_spawn(self):
         """
         For now, we do this in lieu of having a setting on the game.
@@ -271,6 +292,20 @@ class RunningGameParticipant(BASE, object):
     range_raw = Column(String(MAX_RANGE_LENGTH), nullable=False)
     left_to_act = Column(Boolean, nullable=False)
     folded = Column(Boolean, nullable=False)
+
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = RunningGameParticipant()
+        new.userid = self.userid
+        new.gameid = None
+        new.order = self.order
+        new.stack = self.stack
+        new.contributed = self.contributed
+        new.range_raw = self.range_raw
+        new.left_to_act = self.left_to_act
+        new.folded = self.folded
+        return new
+    
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame",
@@ -290,7 +325,7 @@ class RunningGameParticipant(BASE, object):
         self.range_raw = unweighted_options_to_description(
             range_.generate_options())
     range = property(get_range, set_range)
-
+    
 class GameHistoryBase(BASE):
     """
     Base table for all different kinds of hand history items.
@@ -305,6 +340,15 @@ class GameHistoryBase(BASE):
     factor = Column(Float, nullable=False)
     game = relationship("RunningGame",
                         backref=backref("history", cascade="all"))
+    
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryBase()
+        new.gameid = None
+        new.order = self.order
+        new.time = self.time
+        new.factor = self.factor
+        return new
 
 class FactorMixin(object):
     """
@@ -338,6 +382,15 @@ class GameHistoryUserRange(BASE, FactorMixin):
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
     
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryUserRange()
+        new.gameid = None
+        new.order = self.order
+        new.userid = self.userid
+        new.range_raw = self.range_raw
+        return new
+    
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
@@ -362,6 +415,20 @@ class GameHistoryActionResult(BASE, FactorMixin):
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
     
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryActionResult()
+        new.gameid = None
+        new.order = self.order
+        new.userid = self.userid
+        new.is_fold = self.is_fold
+        new.is_passive = self.is_passive
+        new.is_aggressive = self.is_aggressive
+        new.call_cost = self.call_cost
+        new.raise_total = self.raise_total
+        new.is_raise = self.is_raise
+        return new
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
@@ -392,6 +459,23 @@ class GameHistoryRangeAction(BASE, FactorMixin):
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
     
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryRangeAction()
+        new.gameid = None
+        new.order = self.order
+        new.userid = self.userid
+        new.fold_range = self.fold_range
+        new.passive_range = self.passive_range
+        new.aggressive_range = self.aggressive_range
+        new.raise_total = self.raise_total
+        new.is_check = self.is_check
+        new.is_raise = self.is_raise
+        new.fold_ratio = self.fold_ratio
+        new.passive_ratio = self.passive_ratio
+        new.aggressive_ratio = self.aggressive_ratio
+        return new
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
@@ -409,6 +493,15 @@ class GameHistoryBoard(BASE, FactorMixin):
     cards = Column(String(10), nullable=False)
     
     hh_base = relationship("GameHistoryBase")
+    
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryBoard()
+        new.gameid = None
+        new.order = self.order
+        new.street = self.street
+        new.cards = self.cards
+        return new
     
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
@@ -428,6 +521,14 @@ class GameHistoryTimeout(BASE, FactorMixin):
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
     
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryTimeout()
+        new.gameid = None
+        new.order = self.order
+        new.userid = self.userid
+        return new
+    
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
@@ -446,6 +547,15 @@ class GameHistoryChat(BASE, FactorMixin):
     
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
+    
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryChat()
+        new.gameid = None
+        new.order = self.order
+        new.userid = self.userid
+        new.message = self.message
+        return new
     
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
@@ -467,6 +577,15 @@ class GameHistoryShowdown(BASE, FactorMixin):
     pot = Column(Integer, nullable=False)
     
     hh_base = relationship("GameHistoryBase")
+    
+    def copy(self):
+        """ For spawn: copies, but not gameid """
+        new = GameHistoryShowdown()
+        new.gameid = None
+        new.order = self.order
+        new.is_passive = self.is_passive
+        new.pot = self.pot
+        return new
      
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
@@ -501,8 +620,10 @@ class GameHistoryShowdownEquity(BASE):
              GameHistoryShowdown.order,
              GameHistoryShowdown.is_passive]),
         {})
-    
+
+# This is what we copy, when we copy a running game    
 GAME_HISTORY_TABLES = [
+    GameHistoryBase,
     GameHistoryUserRange,
     GameHistoryActionResult,
     GameHistoryRangeAction,
