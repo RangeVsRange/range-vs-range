@@ -196,7 +196,7 @@ class RunningGame(BASE, object):
     analysis_performed = Column(Boolean, nullable=False)
     # game this was (originally) spawned from, if any
     spawn_group = Column(Integer, ForeignKey("running_game.gameid"),
-                           nullable=False)
+                           nullable=True)
     # starts at 1.0, reduces when spawned
     # across all games with this spawn_group, this will sum to 1.0
     spawn_factor = Column(Float, nullable=False)
