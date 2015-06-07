@@ -416,11 +416,10 @@ class API(object):
         running_game.last_action_time = datetime.datetime.utcnow()
         running_game.analysis_performed = False
         running_game.spawn_factor = 1.0
-        # TODO: REVISIT: should this be game's gameid?
-        running_game.spawn_root_id = None
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
+        running_game.spawn_root_id = running_game.gameid
         for order, (ogp, s_p) in enumerate(zip(all_ogps, situation_players)):
             # create rgps in the order they will act in future rounds
             rgp = tables.RunningGameParticipant()

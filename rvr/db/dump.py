@@ -250,7 +250,8 @@ def write_running_games(session, rgs):
         rg.last_action_time = last_action_time
         rg.analysis_performed = analysis_performed
         rg.spawn_factor = spawn_factor
-        rg.spawn_root_id = spawn_root_id
+        rg.spawn_root_id = spawn_root_id if spawn_root_id is not None  \
+            else gameid
         session.commit()
 
 def read_running_game_participants(session):
