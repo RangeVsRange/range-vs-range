@@ -310,16 +310,20 @@ class AdminCmd(Cmd):
         result.analysis = None
         print result
         
-    def do_statistics(self, screenname):
+    def do_statistics(self, params):
         """
-        statistics <username>
+        statistics <username> <is_competition>
         Display user's statistics
         """
+        args = params.split(None, 1)
+        screenname = args[0]
+        is_competition = len(args) == 1 or args[1] == 'True'
         result = self.api.get_user_by_screenname(screenname)
         if isinstance(result, APIError):
             print "Error:", result.description
             return
-        result = self.api.get_user_statistics(result.userid)
+        result = self.api.get_user_statistics(result.userid, min_hands=1,
+                                              is_competition=is_competition)
         if isinstance(result, APIError):
             print "Error:", result.description
             return

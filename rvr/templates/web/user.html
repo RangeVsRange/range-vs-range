@@ -1,11 +1,30 @@
 {% extends "web/base.html" %}
 
+{% block scripts %}
+{{ super() }}
+<script>
+$('.mode-button').popover({trigger: 'hover'})
+</script>
+{% endblock %}
+
 {% block title %}{{screenname}} - Range vs. Range{% endblock %}
 
 {% block content %}
 <div class="container">
   <div class="page-header">
     <h1>{{screenname}}<br><small>Results and Statistics</small></h1>
+    <div class="btn-group">
+      <button type="button" class="btn {% if mode == 'optimization' %}btn-warning{% else %}btn-primary{% endif %} dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+        {% if mode == 'optimization' %}Optimization mode{% else %}Competition mode{% endif %} <span class="caret"></span>
+      </button>      
+      <ul class="dropdown-menu" role="menu">
+        {% if mode == 'optimization' %}
+        <li><a href="{{url_for('user_page', screenname=screenname, mode='competition')}}">Switch to competition mode</a></li>
+        {% else %}
+        <li><a href="{{url_for('user_page', screenname=screenname, mode='optimization')}}">Switch to optimization mode</a></li>
+        {% endif %}
+      </ul>
+    </div>
   </div>
 {% for situation in situations %}
   <h3>"{{situation.name}}"</h3>

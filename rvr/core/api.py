@@ -1101,7 +1101,7 @@ class API(object):
         return None
     
     @api
-    def get_user_statistics(self, userid, min_hands=1):
+    def get_user_statistics(self, userid, min_hands=1, is_competition=True):
         """
         Return user's site-wide results for all situations / positions.
         """
@@ -1121,6 +1121,7 @@ class API(object):
                 continue
             position_results = []
             games = self.session.query(tables.RunningGame)  \
+                .filter(tables.RunningGame.public_ranges != is_competition)  \
                 .filter(tables.RunningGame.situationid ==
                         situation.situationid)  \
                 .filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX)  \

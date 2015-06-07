@@ -1007,6 +1007,7 @@ def user_page():
         min_hands = int(min_hands)
     except ValueError:
         return error("Invalid min.")
+    is_competition = request.args.get('mode', 'competition') == 'competition'
     
     api = API()
     result = api.get_user_by_screenname(screenname)
@@ -1014,7 +1015,8 @@ def user_page():
         return error("Unrecognised screenname.")
     userid = result.userid
     screenname = result.screenname
-    result = api.get_user_statistics(userid, min_hands=min_hands)
+    result = api.get_user_statistics(userid, min_hands=min_hands,
+                                     is_competition=is_competition)
     if result == API.ERR_NO_SUCH_USER:
         return error("No such user.")
     if isinstance(result, APIError):
@@ -1035,6 +1037,7 @@ def user_page():
         screenname=screenname,
         situations=result,
         min_visible=min_visible,
+        mode='competition' if is_competition else 'optimization',
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         url=request.url,
