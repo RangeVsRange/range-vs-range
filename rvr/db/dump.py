@@ -233,7 +233,7 @@ def write_running_games(session, rgs):
     for gameid, situationid, public_ranges, current_userid, next_hh,  \
             board_raw, current_round, pot_pre, increment, bet_count,  \
             current_factor, last_action_time, analysis_performed,  \
-             in rgs:
+            spawn_factor, spawn_group in rgs:
         rg = RunningGame()
         session.add(rg)
         rg.gameid = gameid
@@ -249,8 +249,8 @@ def write_running_games(session, rgs):
         rg.current_factor = current_factor
         rg.last_action_time = last_action_time
         rg.analysis_performed = analysis_performed
-        rg.spawn_factor = 1.0
-        rg.spawn_group = gameid
+        rg.spawn_factor = spawn_factor
+        rg.spawn_group = spawn_group
         session.commit()
 
 def read_running_game_participants(session):
