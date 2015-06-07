@@ -287,7 +287,7 @@ class RunningGameDetails(object):
     """
     def __init__(self, gameid, public_ranges, situation, current_player,
                  board_raw, current_round, pot_pre, increment, bet_count,
-                 current_factor, spawn_factor, spawn_root_id, rgp_details):
+                 current_factor, spawn_factor, spawn_group, rgp_details):
         self.gameid = gameid
         self.public_ranges = public_ranges
         self.situation = situation  # SituationDetails
@@ -299,18 +299,18 @@ class RunningGameDetails(object):
         self.bet_count = bet_count
         self.current_factor = current_factor
         self.spawn_factor = spawn_factor
-        self.spawn_root_id = spawn_root_id
+        self.spawn_group = spawn_group
         self.rgp_details = rgp_details  # list of RunningGameParticipantDetails
     
     def __repr__(self):
         return ("RunningGameDetails(gameid=%r, public_ranges=%r, situation=%r, "
                 "current_player=%r, board_raw=%r, current_round=%r, "
                 "pot_pre=%r, increment=%r, bet_count=%r, current_factor=%r, "
-                "spawn_factor=%r, spawn_root_id=%r, rgp_details=%r") %  \
+                "spawn_factor=%r, spawn_group=%r, rgp_details=%r") %  \
             (self.gameid, self.public_ranges, self.situation,
              self.current_player, self.board_raw, self.current_round,
              self.pot_pre, self.increment, self.bet_count, self.current_factor,
-             self.spawn_factor, self.spawn_root_id, self.rgp_details)
+             self.spawn_factor, self.spawn_group, self.rgp_details)
     
     @classmethod
     def from_running_game(cls, game):
@@ -323,12 +323,12 @@ class RunningGameDetails(object):
         current_players = [r for r in rgp_details
                            if r.user.userid == game.current_userid]
         current_player = current_players[0] if current_players else None
-        spawn_root_id = game.spawn_root_id if game.spawn_root_id is not None  \
+        spawn_group = game.spawn_group if game.spawn_group is not None  \
             else game.gameid
         return cls(game.gameid, game.public_ranges, situation, current_player,
                    game.board_raw, game.current_round, game.pot_pre,
                    game.increment, game.bet_count, game.current_factor,
-                   game.spawn_factor, spawn_root_id, rgp_details)
+                   game.spawn_factor, spawn_group, rgp_details)
     
     def is_finished(self):
         """

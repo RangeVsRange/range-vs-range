@@ -195,10 +195,10 @@ class RunningGame(BASE, object):
     # shortcut to know if analysis has been done
     analysis_performed = Column(Boolean, nullable=False)
     # game this was (originally) spawned from, if any
-    spawn_root_id = Column(Integer, ForeignKey("running_game.gameid"),
-                           nullable=True)
+    spawn_group = Column(Integer, ForeignKey("running_game.gameid"),
+                           nullable=False)
     # starts at 1.0, reduces when spawned
-    # across all games with this spawn_root_id, this will sum to 1.0
+    # across all games with this spawn_group, this will sum to 1.0
     spawn_factor = Column(Float, nullable=False)
 
     spawn_root = relationship("RunningGame")
@@ -220,7 +220,7 @@ class RunningGame(BASE, object):
         game.current_factor = self.current_factor
         game.last_action_time = self.last_action_time
         game.analysis_performed = self.analysis_performed
-        game.spawn_root_id = self.spawn_root_id
+        game.spawn_group = self.spawn_group
         game.spawn_factor = self.spawn_factor
         return game
         

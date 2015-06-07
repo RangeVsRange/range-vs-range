@@ -419,7 +419,7 @@ class API(object):
         situation_players = situation.ordered_players()
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
-        running_game.spawn_root_id = running_game.gameid
+        running_game.spawn_group = running_game.gameid
         for order, (ogp, s_p) in enumerate(zip(all_ogps, situation_players)):
             # create rgps in the order they will act in future rounds
             rgp = tables.RunningGameParticipant()
@@ -674,8 +674,8 @@ class API(object):
         changes the gameid.
         """
         ng = game.copy()
-        ng.spawn_root_id = game.spawn_root_id  \
-            if game.spawn_root_id is not None else game.gameid
+        ng.spawn_group = game.spawn_group  \
+            if game.spawn_group is not None else game.gameid
         self.session.add(ng)
         self.session.flush()  # get gameid
         for rgp in game.rgps:
