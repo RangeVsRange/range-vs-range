@@ -10,3 +10,4 @@ local_settings.py
 /server.cfg
 /db.pkl
 /client_secrets.json
+/db production.pkl
