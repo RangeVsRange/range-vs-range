@@ -34,7 +34,7 @@ import pickle
 from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     OpenGameParticipant, RunningGame, RunningGameParticipant, \
     GameHistoryBoard, GameHistoryRangeAction, GameHistoryActionResult, \
-    GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout, RangeItem,\
+    GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout,\
     AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat,\
     GameHistoryShowdown, GameHistoryShowdownEquity, PaymentToPlayer,\
     RunningGameParticipantResult
@@ -62,24 +62,8 @@ dumpable_tables = [
     GameHistoryShowdown,
     GameHistoryShowdownEquity,
     PaymentToPlayer,
-    RangeItem,
     AnalysisFoldEquity,
     AnalysisFoldEquityItem]
-
-def read_range_items(session):
-    """ Read RangeItem table from DB into memory """
-    range_items = session.query(RangeItem).all()
-    return [(r.higher_card,
-             r.lower_card)
-            for r in range_items]
-    
-def write_range_items(session, range_items):
-    """ Write RangeItem table from memory into DB """
-    for higher_card, lower_card in range_items:
-        range_item = RangeItem()
-        session.add(range_item)
-        range_item.higher_card = higher_card
-        range_item.lower_card = lower_card
 
 def read_users(session):
     """ Read User table from DB into memory """
@@ -623,7 +607,6 @@ TABLE_READERS = {User: read_users,
                  GameHistoryChat: read_game_history_chats,
                  GameHistoryShowdown: read_game_history_showdowns,
                  GameHistoryShowdownEquity: read_game_history_showdown_equities,
-                 RangeItem: read_range_items,
                  AnalysisFoldEquity: read_analysis_fold_equities,
                  AnalysisFoldEquityItem: read_analysis_fold_equity_items}
 
@@ -645,7 +628,6 @@ TABLE_WRITERS = {User: write_users,
                  GameHistoryChat: write_game_history_chats,
                  GameHistoryShowdown: write_game_history_showdowns,
                  GameHistoryShowdownEquity: write_game_history_showdown_equities,
-                 RangeItem: write_range_items,
                  AnalysisFoldEquity: write_analysis_fold_equities,
                  AnalysisFoldEquityItem: write_analysis_fold_equity_items}
 

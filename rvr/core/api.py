@@ -120,14 +120,13 @@ class API(object):
         """
         #pylint:disable=R0201
         BASE.metadata.create_all(ENGINE)  # @UndefinedVariable
+        self._add_card_combos()
     
     def _add_all_situations(self):
         """
         Add all situations
         """
         self._add_situation(_create_hu())
-        self._add_situation(_create_three())
-        self._add_situation(_create_cap())
     
     def _add_card_combo(self, higher_card, lower_card):
         """
@@ -140,6 +139,7 @@ class API(object):
         logging.debug("Added range item: %s, %s", item.higher_card,
                       item.lower_card)
     
+    @create_session
     def _add_card_combos(self):
         """
         Populate table of RangeItem
@@ -169,7 +169,6 @@ class API(object):
                         
         # Each of these also commits.
         err = None
-        err = self._add_card_combos() or err
         err = self._add_all_situations() or err
         return err
     
