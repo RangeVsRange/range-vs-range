@@ -1042,3 +1042,14 @@ def user_page():
         is_logged_in=is_logged_in(),
         url=request.url,
         my_screenname=get_my_screenname())
+
+@APP.route('/alpha', methods=['GET'])
+def alpha():
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('web/alpha.html',
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
+        url=request.url,
+        my_screenname=get_my_screenname())
