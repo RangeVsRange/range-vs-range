@@ -1,0 +1,50 @@
+{% extends "web/base.html" %}
+
+{% block title %}Range vs. Range - Group {{group_id}}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>Game Group {{group_id}}</h1>
+  </div>
+  
+  <table class="table table-bordered">
+
+  <thead>
+  <tr>
+  <td rowspan=2><div class="text-center"><strong>Game</strong></div></td>
+  <td colspan='{{num_streets}}'><div class="text-center"><strong>Action</strong></div></td>
+  <td colspan='{{num_players}}'><div class="text-center"><strong>Results</strong></div></td>
+  </tr>
+  <tr>
+  {% for street in streets %}<td><strong>{{street}}</strong></td>{% endfor %}
+  {% for player in players %}<td><Strong>{{player}}</strong></td>{% endfor %}
+  </tr>
+  </thead>
+
+  <tbody>
+  {% for game in games %}
+  <tr>
+    <td>Game {{game.gameid}}</td>
+    {% for street in streets %}
+    <td>{{game.line[street]}}</td>
+    {% endfor %}
+    {% for player in players %}
+    <td>{{game.results[player]}}</td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+  
+  <tfoot>
+  <tr>
+  <td colspan="{{num_streets + 1}}"></td>
+  {% for player in players %}<td><strong>{{"%0.4f" % (totals[player],)}}</strong></td>{% endfor %}  
+  </tr>
+  </tfoot>
+  
+  </tbody>
+
+  </table>
+{{ share_buttons() }}
+</div>
+{% endblock %}

@@ -958,8 +958,16 @@ class API(object):
                           gameid, userid, message)
             return API.ERR_CHAT_TOO_LONG
         
-        result = self._record_chat(rgp, message)
-        return result
+        # check that it's not a duplicate (ignore if so)
+        last = self.session.query(tables.GameHistoryChat)  \
+            .filter(tables.GameHistoryChat.order == game.next_hh).all()
+        if last and last[0].message == message and last[0].userid == userid:
+            # very last item in hand history is a chat
+            # with the same message
+            # by the same user
+            return
+        
+        self._record_chat(rgp, message)
     
     def _get_payments(self, child):
         """

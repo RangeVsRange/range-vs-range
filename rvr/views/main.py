@@ -873,7 +873,7 @@ def _chat_page(game, gameid, userid, api):
     # First load, OR something's wrong with their data.
     all_chats = [h[1] for h in _make_history_list(game.history,
                                                   game.game_details.situation)
-                 if h[0] == 'CHAT']    
+                 if h[0] == 'CHAT']
     return render_template('web/chat.html', gameid=gameid, form=form,
         all_chats=all_chats)
 
@@ -1049,6 +1049,41 @@ def alpha():
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/alpha.html',
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
+        url=request.url,
+        my_screenname=get_my_screenname())
+    
+@APP.route('/group', methods=['GET'])
+def group_page():
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        flash("Invalid game ID.")
+        return redirect(url_for('error_page'))
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        flash("Invalid game ID.")
+        return redirect(url_for('error_page'))
+
+    group_id = gameid  # TODO: 0: API should return root id (group id)
+
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('web/group.html',
+        players=['Alice', 'Bob'],
+        streets=['Flop', 'Turn', 'River'],
+        num_streets=3,
+        num_players=2,
+        games=[{'gameid': 101,
+                'line': {'Flop': 'Alice checks, Bob bets 9, Alice calls', 'Turn': "Alice checks, Bob bets 27, Alice calls", 'River': "Alice checks, Bob checks"},
+                'results': {'Alice': 1.0, 'Bob': 2.0}},
+               {'gameid': 102,
+                'line': {'Flop': "Alice checks, Bob bets 9, Alice calls", 'Turn': "Alice checks, Bob bets 27, Alice calls", 'River': "Alice checks, Bob bets 81, Alice raises to 121, Bob calls"},
+                'results': {'Alice': 2.0, 'Bob': 1.0}}],
+        totals={'Alice': 3.0, 'Bob': 2.9999999},
+        group_id=group_id,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         url=request.url,
