@@ -960,7 +960,7 @@ class API(object):
         
         # check that it's not a duplicate (ignore if so)
         last = self.session.query(tables.GameHistoryChat)  \
-            .filter(tables.GameHistoryChat.order == game.next_hh).all()
+            .filter(tables.GameHistoryChat.order == game.next_hh - 1).all()
         if last and last[0].message == message and last[0].userid == userid:
             # very last item in hand history is a chat
             # with the same message
