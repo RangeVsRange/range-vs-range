@@ -1,4 +1,5 @@
 {% extends "web/base.html" %}
+{% import "import/game_list.html" as gl %}
 
 {% block title %}Range vs. Range - Group {{groupid}}{% endblock %}
 
@@ -8,6 +9,8 @@
     <h1>Game Group {{groupid}}</h1>
   </div>
   
+  {{ gl.running_games(games) }}
+{#
   <table class="table table-bordered">
 
   <thead>
@@ -23,7 +26,7 @@
   </thead>
 
   <tbody>
-  {% for game in games %}
+  {% for game in games2 %}
   <tr>
     <td>Game {{game.gameid}}</td>
     {% for street in streets %}
@@ -45,6 +48,7 @@
   </tbody>
 
   </table>
+#}
 {{ share_buttons() }}
 </div>
 {% endblock %}

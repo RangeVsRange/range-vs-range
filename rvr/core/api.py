@@ -28,10 +28,10 @@ from rvr.analysis.analyse import AnalysisReplayer
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
     PaymentToPlayer, GAME_HISTORY_TABLES
 import datetime
-from rvr.local_settings import SUPPRESSED_SITUATIONS, SUPPRESSED_GAME_MAX
-import numpy
+from rvr.local_settings import SUPPRESSED_SITUATIONS
 import re
 from rvr.analysis import statistics
+from rvr.analysis.statistics import recalculate_global_statistics
 
 def exception_mapper(fun):
     """
@@ -1110,37 +1110,6 @@ class API(object):
         return statistics.get_user_statistics(self.session, userid, min_hands,
                                               is_competition)
 
-    def _recalculate_global_statistics(self):
-        """
-        Calculate situation players' averages
-        """
-        positions = self.session.query(tables.SituationPlayer).all()
-        for position in positions:
-            results = []
-            # TODO: REVISIT: This is inefficient. Query RunningGame first...
-            # ... then use game.rgps.
-            rgps = self.session.query(tables.RunningGameParticipant)  \
-                .filter(tables.RunningGameParticipant.gameid >
-                        SUPPRESSED_GAME_MAX)  \
-                .filter(tables.RunningGameParticipant.order == position.order) \
-                .all()
-            for rgp in [r for r in rgps
-                        if r.game.situationid == position.situationid]:
-                for result in rgp.results:
-                    if result.scheme == 'ev':
-                        results.append(result.result)
-            if results:
-                position.average_result = sum(results) / len(results)
-                position.stddev = numpy.std(results)  # pylint:disable=no-member
-            else:
-                position.average_result = None
-                position.stddev = None
-            logging.debug('situationid %d (%s), position %d (%s), '
-                'average_result %r (stddev %r) over %d games',
-                position.situationid, position.situation.description,
-                position.order, position.name, position.average_result,
-                position.stddev, len(results))
-
     def _run_pending_analysis(self):
         """
         Look through all games for analysis that has not yet been done, and do
@@ -1159,7 +1128,7 @@ class API(object):
                 logging.debug("gameid %d, notifying", game.gameid)
                 notify_finished(game)
                 self.session.commit()  # also a reasonable time to commit
-        self._recalculate_global_statistics()
+        recalculate_global_statistics(self.session)
 
     @api
     def run_pending_analysis(self):
@@ -1294,7 +1263,7 @@ class API(object):
             return API.ERR_NO_SUCH_RUNNING_GAME
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.spawn_group == root.gameid).all()
-        return root.gameid, [RunningGameDetails.from_running_game(game)
+        return root.gameid, [dtos.RunningGameSummary.from_running_game(game)
                              for game in games]
 
 def _create_hu():

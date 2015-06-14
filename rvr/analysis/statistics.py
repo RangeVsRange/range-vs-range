@@ -4,6 +4,7 @@ import numpy
 from rvr.core.dtos import PositionResult, SituationResult
 import math
 from scipy import stats
+import logging
 
 def _calculate_confidence(total_result, num_games,
                          be_mean, stddev):
@@ -119,3 +120,34 @@ def get_user_statistics(session, userid, min_hands, is_competition):
                 average=grand_total,
                 positions=position_results))
     return situation_results
+
+def recalculate_global_statistics(session):
+    """
+    Calculate situation players' averages
+    """
+    positions = session.query(tables.SituationPlayer).all()
+    for position in positions:
+        results = []
+        # TODO: REVISIT: This is inefficient. Query RunningGame first...
+        # ... then use game.rgps.
+        rgps = session.query(tables.RunningGameParticipant)  \
+            .filter(tables.RunningGameParticipant.gameid >
+                    SUPPRESSED_GAME_MAX)  \
+            .filter(tables.RunningGameParticipant.order == position.order) \
+            .all()
+        for rgp in [r for r in rgps
+                    if r.game.situationid == position.situationid]:
+            for result in rgp.results:
+                if result.scheme == 'ev':
+                    results.append(result.result)
+        if results:
+            position.average_result = sum(results) / len(results)
+            position.stddev = numpy.std(results)  # pylint:disable=no-member
+        else:
+            position.average_result = None
+            position.stddev = None
+        logging.debug('situationid %d (%s), position %d (%s), '
+            'average_result %r (stddev %r) over %d games',
+            position.situationid, position.situation.description,
+            position.order, position.name, position.average_result,
+            position.stddev, len(results))

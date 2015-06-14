@@ -1,4 +1,5 @@
 {% extends "web/base.html" %}
+{% import "import/game_list.html" as gl %}
 
 {% block scripts %}
 {{ super() }}
@@ -102,31 +103,7 @@ $('.mode-header').popover({trigger: 'hover'})
   <div class="tab-pane{% if selected_heading == "heading-my" %} active{% endif %}" id="my">
 {%- if r_games.running_details %}
   <div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th style="min-width: 200px; width: 200px">Game</th>
-        <th>Players</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    {%- for game in r_games.running_details %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <div class="btn-group">
-            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
-          </div>
-          <div class="btn-group">
-            <a href="{{ url_for('game_page', gameid=game.gameid) }}" class="btn {% if game.public_ranges %}btn-warning{% else %}btn-primary{% endif %}" >{% if game.current_user_details.userid == userid %}Play{% else %}View{% endif %}</a>
-          </div>
-        </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {%- endfor %}
-  </table>
+  {{ gl.running_games(r_games.running_details) }}
   </div>
 {%- else %}
   <div class="alert alert-info">You don't have any running games. Click the 'Open games' tab to see games you can join.</div>
@@ -153,31 +130,7 @@ $('.mode-header').popover({trigger: 'hover'})
   <div class="tab-pane{% if selected_heading == "heading-finished" %} active{% endif %}" id="finished">
 {%- if my_finished_games %}
   <div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th style="min-width: 200px; width: 200px">Game</th>
-        <th>Players</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    {%- for game in my_finished_games %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <div class="btn-group">
-            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
-          </div>
-          <div class="btn-group">
-            <a href="{{ url_for('game_page', gameid=game.gameid) }}" class="btn {% if game.public_ranges %}btn-warning{% else %}btn-primary{% endif %}">View</a>
-          </div>
-        </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {%- endfor %}
-  </table>
+  {{ gl.running_games(my_finished_games) }}
   </div>
 {%- else %}
   <div class="alert alert-info">You don't have any finished games. Click the 'Open games' tab to see games you can join.</div>
