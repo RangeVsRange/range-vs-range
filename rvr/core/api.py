@@ -217,13 +217,25 @@ class API(object):
         """
         Unsubscribe the user from further emails (until they log in again).
         """
-        matches = self.session.query(tables.User)  \
-            .filter(tables.User.identity == identity).all()
-        if not matches:
-            return self.ERR_NO_SUCH_USER
-        user = matches[0]
+        try:
+            user = self.session.query(tables.User)  \
+                .filter(tables.User.identity == identity).one()
+        except NoResultFound:
+            return API.ERR_NO_SUCH_USER
         user.unsubscribed = True
-            
+    
+    @api
+    def resubscribe(self, userid):
+        """
+        Re-subscribe user
+        """
+        try:
+            user = self.session.query(tables.User)  \
+                .filter(tables.User.userid == userid).one()
+        except NoResultFound:
+            return API.ERR_NO_SUCH_USER
+        user.unsubscribed = False
+    
     @api
     def change_screenname(self, request):
         """

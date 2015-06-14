@@ -106,14 +106,15 @@ def ensure_user():
     May flash messages.
     """
     # TODO: REVISIT: automagically hook this into OIDC.check 
+    api = API()
     if not is_authenticated():
         # user is not authenticated yet
         return
     if is_logged_in():
         # user is authenticated and authorised (logged in)
+        api.resubscribe(session['userid'])
         return
     identity, email = get_oidc_token_details()
-    api = API()
     req = LoginRequest(identity=identity,
                        email=email)
     result = api.login(req)
