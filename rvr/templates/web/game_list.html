@@ -20,12 +20,14 @@ show_game_details = function(gameid) {
 </script>
 {% endblock %}
 
-{% macro running_games(games_details, userid) %}
+{% macro running_games(games_details, userid, show_details) %}
   <table class="table">
     <thead>
       <tr>
         <th style="min-width: 200px; width: 200px">Game</th>
+        {% if show_details %}
         <th>Details</th>
+        {% endif %}
         <th>Players</th>
         <th>Description</th>
       </tr>
@@ -42,10 +44,12 @@ show_game_details = function(gameid) {
           </div>
         </div>
       </td>
+      {% if show_details %}
       <td>
         <button type=button class="btn btn-default game-show" id="show-{{game.gameid}}" onclick="show_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span></button>
         <button type=button class="btn btn-default game-hide hidden" id="hide-{{game.gameid}}" onclick="hide_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-top" aria-hidden="true"></span></button>
       </td>
+      {% endif %}
       <td>
         {% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}
       </td>

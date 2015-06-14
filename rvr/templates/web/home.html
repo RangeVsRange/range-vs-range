@@ -102,7 +102,7 @@ $('.mode-header').popover({trigger: 'hover'})
   <div class="tab-pane{% if selected_heading == "heading-my" %} active{% endif %}" id="my">
 {%- if r_games.running_details %}
   <div class="table-responsive">
-  {{ running_games(r_games.running_details, userid) }}
+  {{ running_games(r_games.running_details, userid, False) }}
   </div>
 {%- else %}
   <div class="alert alert-info">You don't have any running games. Click the 'Open games' tab to see games you can join.</div>
@@ -129,7 +129,7 @@ $('.mode-header').popover({trigger: 'hover'})
   <div class="tab-pane{% if selected_heading == "heading-finished" %} active{% endif %}" id="finished">
 {%- if my_finished_games %}
   <div class="table-responsive">
-  {{ running_games(my_finished_games, userid) }}
+  {{ running_games(my_finished_games, userid, True) }}
   </div>
 {%- else %}
   <div class="alert alert-info">You don't have any finished games. Click the 'Open games' tab to see games you can join.</div>
