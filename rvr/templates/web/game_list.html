@@ -1,0 +1,58 @@
+{% extends "web/base.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+hide_game_details = function(gameid) {
+    $('.game-show').removeClass('hidden');
+    $('.game-hide').addClass('hidden');
+    $('.game-row').addClass('hidden');
+};
+show_game_details = function(gameid) {
+    hide_game_details(gameid); // start afresh
+    $('#show-' + gameid).addClass('hidden');
+    $('#hide-' + gameid).removeClass('hidden');
+    $('#row-' + gameid).removeClass('hidden');
+};
+</script>
+{% endblock %}
+
+{% macro running_games(games_details, userid) %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="min-width: 200px; width: 200px">Game</th>
+        <th>Details</th>
+        <th>Players</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    {%- for game in games_details %}
+    <tr>
+      <td>
+        <div class="btn-group btn-group-justified">
+          <div class="btn-group">
+            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
+          </div>
+          <div class="btn-group">
+            <a href="{{ url_for('game_page', gameid=game.gameid) }}" class="btn {% if game.public_ranges %}btn-warning{% else %}btn-primary{% endif %}" >{% if game.current_user_details is none %}View{% elif game.current_user_details.userid == userid %}Play{% else %}View{% endif %}</a>
+          </div>
+        </div>
+      </td>
+      <td>
+        <button type=button class="btn btn-default game-show" id="show-{{game.gameid}}" onclick="show_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span></button>
+        <button type=button class="btn btn-default game-hide hidden" id="hide-{{game.gameid}}" onclick="hide_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-top" aria-hidden="true"></span></button>
+      </td>
+      <td>
+        {% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}
+      </td>
+      <td>{{game.situation.description}}</td>
+    </tr>
+    <tr class="game-row hidden" id="row-{{game.gameid}}">
+      <td colspan=4>
+          Did I mention RvR is alhpa software?
+      </td>
+    </tr>
+    {%- endfor %}
+  </table>
+{% endmacro %}
