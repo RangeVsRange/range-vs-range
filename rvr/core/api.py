@@ -210,11 +210,11 @@ class API(object):
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
             return dtos.LoginResponse.from_user(user, False)
-            
+
     @api
     def unsubscribe(self, identity):
         """
-        Unsubscribe the user from further emails (until the log in again).
+        Unsubscribe the user from further emails (until they log in again).
         """
         matches = self.session.query(tables.User)  \
             .filter(tables.User.identity == identity).all()
@@ -847,7 +847,7 @@ class API(object):
                           game.gameid, next_rgp.userid, next_rgp.order)
         if game.is_finished:
             finish_game(game)
-        notify_current_player(game)  # Notify them *after* action obviously.
+        notify_current_player(game)
              
     def _perform_action(self, game, rgp, range_action, current_options):
         """

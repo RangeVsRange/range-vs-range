@@ -1067,6 +1067,8 @@ def group_page():
         return redirect(url_for('error_page'))
 
     group_id = gameid  # TODO: 0: API should return root id (group id)
+    # TODO: 0.1: https://github.com/jonmiles/bootstrap-treeview
+    # grouped by betting line
 
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),

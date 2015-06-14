@@ -130,6 +130,7 @@ def notify_current_player(game):
                screenname=user.screenname,
                identity=user.identity,
                game=game)
+    user.unsubscribed = True
 
 def notify_first_player(game, starter_id):
     """
@@ -143,6 +144,7 @@ def notify_first_player(game, starter_id):
                       is_starter=(rgp.userid==starter_id),
                       is_acting=(rgp.userid==game.current_userid),
                       game=game)
+        rgp.user.unsubscribed = True
 
 def notify_finished(game):
     """
@@ -153,3 +155,4 @@ def notify_finished(game):
                        screenname=rgp.user.screenname,
                        identity=rgp.user.identity,
                        game=game)
+        rgp.user.unsubscribed = True
