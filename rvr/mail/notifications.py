@@ -102,6 +102,9 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting,
 def _game_finished(recipient, screenname, identity, game):
     """
     Lets recipient know their game has finished and analysis is ready.
+    
+    This email gets sent even if the user is unsubscribed, because it just sucks
+    so much when you miss one.
     """
     msg = Message("Analysis for Game %d on Range vs. Range" %
                   (game.gameid,))
@@ -126,6 +129,8 @@ def notify_current_player(game):
     if game.current_userid == None:
         return
     user = game.current_rgp.user
+    if user.unsubscribed:
+        return
     _your_turn(recipient=user.email,
                screenname=user.screenname,
                identity=user.identity,
@@ -138,6 +143,8 @@ def notify_first_player(game, starter_id):
     turn to act (i.e. via email).
     """
     for rgp in game.rgps:
+        if rgp.user.unsubscribed:
+            continue
         _game_started(recipient=rgp.user.email,
                       screenname=rgp.user.screenname,
                       identity=rgp.user.identity,
@@ -149,6 +156,8 @@ def notify_first_player(game, starter_id):
 def notify_finished(game):
     """
     Notify everyone their game is finished.
+    
+    Even if unsubscribed, because it just sucks so much when you miss one.
     """
     for rgp in game.rgps:
         _game_finished(recipient=rgp.user.email,
