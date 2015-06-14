@@ -220,7 +220,7 @@ class RunningGameSummary(object):
     list of users in game, and details of situation
     """
     def __init__(self, gameid, public_ranges, users, situation,
-                 current_user_details, rgp_details):
+                 current_user_details, rgp_details, spawn_factor):
         self.gameid = gameid
         self.public_ranges = public_ranges
         self.users = users  # TODO: REVISIT: replace this with rgp_details
@@ -228,12 +228,14 @@ class RunningGameSummary(object):
         self.current_user_details = current_user_details
         self.is_finished = current_user_details is None
         self.rgp_details = rgp_details
+        self.spawn_factor = spawn_factor
 
     def __repr__(self):
         return ("RunningGameSummary(gameid=%r, public_ranges=%r, users=%r, "
-                "situation=%r, current_user_details=%r, rgp_details=%r)") %  \
+                "situation=%r, current_user_details=%r, rgp_details=%r, "
+                "spawn_factor=%r)") %  \
             (self.gameid, self.users, self.public_ranges, self.situation,
-             self.current_user_details, self.rgp_details)
+             self.current_user_details, self.rgp_details, self.spawn_factor)
 
     @classmethod
     def from_running_game(cls, running_game):
@@ -250,7 +252,8 @@ class RunningGameSummary(object):
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in running_game.rgps]
         return cls(running_game.gameid, running_game.public_ranges, users,
-                   situation, user_details, rgp_details)
+                   situation, user_details, rgp_details,
+                   running_game.spawn_factor)
 
 class RunningGameParticipantDetails(object):
     """

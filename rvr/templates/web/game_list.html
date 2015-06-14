@@ -7,6 +7,9 @@ hide_game_details = function(gameid) {
     $('.game-show').removeClass('hidden');
     $('.game-hide').addClass('hidden');
     $('.game-row').addClass('hidden');
+    // $('#show-' + gameid).removeClass('hidden');
+    // $('#hide-' + gameid).addClass('hidden');
+    // $('#row-' + gameid).addClass('hidden');
 };
 show_game_details = function(gameid) {
     hide_game_details(gameid); // start afresh
@@ -56,7 +59,7 @@ show_game_details = function(gameid) {
         <table class="table table-condensed">
         <thead>
         <tr>
-          <td><strong></strong></td>
+          {% if game.public_ranges %}<td><strong>Line weight</strong></td>{% endif %}
           {% for rgp in game.rgp_details %}
           <td><strong>{{rgp.user.screenname}}</strong></td>
           {% endfor %}
@@ -64,7 +67,7 @@ show_game_details = function(gameid) {
         </thead>
         <tbody>
         <tr>
-          <td><strong>Total</strong></td>  
+          {% if game.public_ranges %}<td>{{"%0.2f%%" % (game.spawn_factor * 100.0,)}}</td>{% endif %}
           {% for rgp in game.rgp_details %}
           <td>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % (rgp.results['ev'],)}}{% endif %}</td>
           {% endfor %}
@@ -75,5 +78,5 @@ show_game_details = function(gameid) {
       </td>
     </tr>
     {%- endfor %}
-  </table>
+  </table>  
 {% endmacro %}

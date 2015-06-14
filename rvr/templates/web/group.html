@@ -9,6 +9,28 @@
   </div>
   
   {{ running_games(games, None) }}
+
+    <h2>Results Summary</h2>
+
+    <table class="table table-condensed">
+    <thead>
+    <tr>
+      <td><strong>Completed</strong></td>
+      {% for item in total_results %}
+      <td><strong>{{item.screenname}}</strong></td>
+      {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <td>{{"%0.2f%%" % (total_weight * 100.0,)}}</td>
+      {% for item in total_results %}
+      <td>{{"%0.4f" % (item.result,)}}</td>
+      {% endfor %}
+    </tr>
+    </tbody>
+    </table>
+  
 {#
   <table class="table table-bordered">
 

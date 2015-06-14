@@ -1075,6 +1075,21 @@ def group_page():
     del gameid
     groupid, games = result
 
+    # We rely on all games having the same players here - and there being at
+    # least one of them!
+    total_weight = sum(game.spawn_factor for game in games if game.is_finished)
+    screennames = [rgp.user.screenname for rgp in games[0].rgp_details]
+    results_by_player = {screenname: 0.0 for screenname in screennames}
+    for i, screenname in enumerate(screennames):
+        for game in games:
+            if not game.rgp_details[i].results:
+                continue
+            results_by_player[screenname] += game.spawn_factor *  \
+                game.rgp_details[i].results['ev']
+    total_results = [{'screenname': screenname,
+                      'result': results_by_player[screenname]}
+                     for screenname in screennames]
+    
     # TODO: 0.1: https://github.com/jonmiles/bootstrap-treeview
     # grouped by betting line
 
@@ -1087,6 +1102,8 @@ def group_page():
         num_streets=3,
         num_players=2,
         games=games,
+        total_weight=total_weight,
+        total_results=total_results,
         games2=[{'gameid': 101,
                 'line': {'Flop': 'Alice checks, Bob bets 9, Alice calls', 'Turn': "Alice checks, Bob bets 27, Alice calls", 'River': "Alice checks, Bob checks"},
                 'results': {'Alice': 1.0, 'Bob': 2.0}},
