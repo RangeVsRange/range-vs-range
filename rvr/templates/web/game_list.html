@@ -50,7 +50,28 @@ show_game_details = function(gameid) {
     </tr>
     <tr class="game-row hidden" id="row-{{game.gameid}}">
       <td colspan=4>
-          Did I mention RvR is alhpa software?
+        {% if not game.is_finished %}
+        (game is still running)
+        {% else %}
+        <table class="table table-condensed">
+        <thead>
+        <tr>
+          <td><strong></strong></td>
+          {% for rgp in game.rgp_details %}
+          <td><strong>{{rgp.user.screenname}}</strong></td>
+          {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><strong>Total</strong></td>  
+          {% for rgp in game.rgp_details %}
+          <td>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % (rgp.results['ev'],)}}{% endif %}</td>
+          {% endfor %}
+        </tr>
+        </tbody>
+        </table>
+        {% endif %}
       </td>
     </tr>
     {%- endfor %}
