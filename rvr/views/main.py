@@ -1066,6 +1066,11 @@ def group_page():
     except ValueError:
         flash("Invalid game ID.")
         return redirect(url_for('error_page'))
+    
+    if is_logged_in():
+        userid = session['userid']
+    else:
+        userid = None
 
     api = API()
     result = api.get_group_games(gameid=gameid)
@@ -1104,6 +1109,7 @@ def group_page():
         games=games,
         total_weight=total_weight,
         total_results=total_results,
+        userid=userid,
         games2=[{'gameid': 101,
                 'line': {'Flop': 'Alice checks, Bob bets 9, Alice calls', 'Turn': "Alice checks, Bob bets 27, Alice calls", 'River': "Alice checks, Bob checks"},
                 'results': {'Alice': 1.0, 'Bob': 2.0}},
