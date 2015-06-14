@@ -17,8 +17,6 @@ from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
 from rvr.poker.showdown import showdown_equity
-import math
-from scipy import stats
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -27,43 +25,6 @@ def _range_desc_to_size(range_description):
     Given a range description, determine the number of combos it represents.
     """
     return len(HandRange(range_description).generate_options()) 
-
-def calculate_confidence(total_result, num_games,
-                         be_mean, stddev):
-    """
-    total_result is the user's total chips won in a position.
-    
-    num_games is the number of games over which the user has won these chips.
-    
-    be_mean is the expected result for a breakeven player playing one game in
-    this position.
-    
-    stddev is the standard deviation for this position.
-    
-    Returns a confidence rating between 0.0 and 1.0. This should be interpreted
-    as follows:
-        "If you are a breakeven player, you are in the luckiest
-         ((1 - confidence) * 100)% of players on the site."
-    
-    Mathematically, what is the chance of a variable with given mean and stddev
-    when summed over N trials being less than the given total?
-    
-    Well if X has mean M and std S, then N*X has mean N*M and std sqrt(N)*S
-    """
-    # pylint:disable=no-member
-    be_total = be_mean * num_games
-    be_stddev = stddev * math.sqrt(num_games)
-    if be_stddev == 0.0:  # too few games
-        if total_result > be_total:
-            return 1.0
-        elif total_result < be_total:
-            return 0.0
-        else:
-            return 0.5  # now that's just silly! 
-    # the following is what the average player's results total looks like after
-    # num_games games
-    be_norm = stats.norm(loc=be_total, scale=be_stddev)
-    return be_norm.cdf(total_result)
 
 class FoldEquityAccumulator(object):
     """

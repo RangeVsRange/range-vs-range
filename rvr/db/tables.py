@@ -14,6 +14,9 @@ from sqlalchemy.sql.schema import ForeignKeyConstraint
 
 # TODO: REVISIT: do strings need fixed lengths?
 
+# TODO: 2: add indexes (index=True parameter) to all columns that are searched
+# http://docs.sqlalchemy.org/en/latest/core/constraints.html#indexes
+
 MAX_CHAT = 10000
 MAX_RANGE_LENGTH = 6629
 

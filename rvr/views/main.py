@@ -1066,7 +1066,14 @@ def group_page():
         flash("Invalid game ID.")
         return redirect(url_for('error_page'))
 
-    group_id = gameid  # TODO: 0: API should return root id (group id)
+    api = API()
+    result = api.get_group_games(gameid=gameid)
+    if result == API.ERR_NO_SUCH_RUNNING_GAME:
+        flash("No such game.")
+        return redirect(url_for('error_page'))
+    del gameid
+    groupid, games = result
+
     # TODO: 0.1: https://github.com/jonmiles/bootstrap-treeview
     # grouped by betting line
 
@@ -1085,7 +1092,7 @@ def group_page():
                 'line': {'Flop': "Alice checks, Bob bets 9, Alice calls", 'Turn': "Alice checks, Bob bets 27, Alice calls", 'River': "Alice checks, Bob bets 81, Alice raises to 121, Bob calls"},
                 'results': {'Alice': 2.0, 'Bob': 1.0}}],
         totals={'Alice': 3.0, 'Bob': 2.9999999},
-        group_id=group_id,
+        groupid=groupid,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         url=request.url,

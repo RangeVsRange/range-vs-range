@@ -16,21 +16,22 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe,\
     generate_excluded_cards
-from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, SituationResult,\
-    PositionResult, ActionResult
+from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult,\
+    RunningGameDetails
 from rvr.infrastructure.util import concatenate
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_first_player, \
     notify_finished
-from rvr.analysis.analyse import AnalysisReplayer, calculate_confidence
+from rvr.analysis.analyse import AnalysisReplayer
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
-    PaymentToPlayer, GameHistoryBase, GAME_HISTORY_TABLES
+    PaymentToPlayer, GAME_HISTORY_TABLES
 import datetime
 from rvr.local_settings import SUPPRESSED_SITUATIONS, SUPPRESSED_GAME_MAX
 import numpy
 import re
+from rvr.analysis import statistics
 
 def exception_mapper(fun):
     """
@@ -893,7 +894,7 @@ class API(object):
             finish_game(game)
             return ActionResult.terminate(), []
     
-        games = [game] + [self._spawn_game(game) for r in results[1:]]    
+        games = [game] + [self._spawn_game(game) for _ in results[1:]]    
         for g, details in zip(games, results):
             self._apply_action_result(g, *details)
         return results[0][1], [g.gameid for g in games[1:]]
@@ -1096,89 +1097,18 @@ class API(object):
                     self.session.flush()  # get gameid
                     logging.debug("Created open game %d for situation %d",
                                   new_game.gameid, situation.situationid)
-
-    def _get_ev(self, game, order, userid):
-        """
-        Return user's 'ev' result, or None
-        """
-        for rgp in game.rgps:
-            if rgp.order == order and rgp.userid == userid:
-                for result in rgp.results:
-                    if result.scheme == 'ev':
-                        return result.result
-        return None
     
     @api
     def get_user_statistics(self, userid, min_hands=1, is_competition=True):
         """
         Return user's site-wide results for all situations / positions.
         """
-        # pylint:disable=no-member
         matches = self.session.query(tables.User)  \
             .filter(tables.User.userid == userid).all()
         if not matches:
             return self.ERR_NO_SUCH_USER
-        all_situations = self.session.query(tables.Situation).all()
-        # For now, there are only situation-specific results (nothing global).
-        situation_results = []
-        for situation in all_situations:
-            if any(player.average_result is None
-                   for player in situation.players):
-                # This can happen before global analysis is run.
-                # Suppress situation for now.
-                continue
-            position_results = []
-            games = self.session.query(tables.RunningGame)  \
-                .filter(tables.RunningGame.public_ranges != is_competition)  \
-                .filter(tables.RunningGame.situationid ==
-                        situation.situationid)  \
-                .filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX)  \
-                .all()
-            grand_total = 0.0 - situation.pot_pre
-            total_played = 0
-            for player in situation.players:
-                # TODO: REVISIT: could iterate over games only once
-                results = []
-                for game in games:
-                    ev = self._get_ev(game=game, order=player.order,
-                                      userid=userid)
-                    if ev is not None:
-                        results.append(ev)
-                total = sum(results)
-                # Note: this is user's stddev for this position, not position's
-                # stddev - because user having a different style of play can
-                # make a difference to stddev. We have ddof=1 to help make up
-                # for the smaller sample size.
-                ddof = 1
-                if len(results) > ddof + 1:
-                    user_stddev = numpy.std(results, ddof=ddof)
-                    confidence = calculate_confidence(
-                        total_result=total,
-                        num_games=len(results),
-                        be_mean=player.average_result,
-                        stddev=user_stddev)
-                else:
-                    confidence = 0.5  # they either are, or they aren't
-                position_results.append(PositionResult(
-                    name=player.name,
-                    ev=player.average_result,
-                    stddev=player.stddev,  # site stddev okay?
-                    played=len(results),
-                    total=total if results else None,
-                    average=total / len(results) if results else None,
-                    confidence=confidence))
-                if results and grand_total is not None:
-                    grand_total += total / len(results)
-                    grand_total -= player.contributed
-                else:
-                    grand_total = None
-                total_played += len(results)
-            if total_played >= min_hands:
-                situation_results.append(SituationResult(
-                    name=situation.description,
-                    average=grand_total,
-                    positions=position_results))
-        return situation_results
+        return statistics.get_user_statistics(self.session, userid, min_hands,
+                                              is_competition)
 
     def _recalculate_global_statistics(self):
         """
@@ -1347,6 +1277,25 @@ class API(object):
                     element.order = base.order                    
                     count += 1
         return count
+    
+    @api
+    def get_group_games(self, gameid):
+        """
+        Get all running games in group.
+        
+        Gameid may not be the parent game.
+        
+        Returns groupid, gameids (for now).
+        """
+        try:
+            root = self.session.query(tables.RunningGame)  \
+                .filter(tables.RunningGame.gameid == gameid).one()
+        except NoResultFound:
+            return API.ERR_NO_SUCH_RUNNING_GAME
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.spawn_group == root.gameid).all()
+        return root.gameid, [RunningGameDetails.from_running_game(game)
+                             for game in games]
 
 def _create_hu():
     """
