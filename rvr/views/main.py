@@ -842,6 +842,7 @@ def game_page():
     """
     # TODO: 0: remove all visible reference (including emails) to open game ID
     # TODO: 0: show root id to user, not actual game id!
+    # TODO: 2: asynchronous analysis triggered by action (like emails are)
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")

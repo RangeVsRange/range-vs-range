@@ -2,7 +2,7 @@
 """
 Core API for Range vs. Range backend.
 """
-from rvr.db.creation import BASE, ENGINE, create_session
+from rvr.db.creation import BASE, ENGINE, create_session, session_scope
 from rvr.db import tables
 from rvr.core import dtos
 from functools import wraps
@@ -16,9 +16,8 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe,\
     generate_excluded_cards
-from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult,\
-    RunningGameDetails
-from rvr.infrastructure.util import concatenate
+from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult
+from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
 from sqlalchemy.orm.exc import NoResultFound
@@ -840,11 +839,13 @@ class API(object):
         remain = [p for p in game.rgps if not p.left_to_act and not p.folded]
         if len(left_to_act) == 1 and not remain:
             # BB got a walk, or everyone folded to the button postflop
+            # TODO: REVISIT: I think this never happens
             game.is_finished = True
         elif not left_to_act:
             if len(remain) == 1 or game.current_round == RIVER:
                 # The last person in folded their entire range, or
                 # We have a range-based showdown on the river.
+                # TODO: REVISIT: I think this never happens
                 game.is_finished = True
             else:
                 # Deal, change round, set new game state.
@@ -858,8 +859,6 @@ class API(object):
             game.current_userid = next_rgp.userid
             logging.debug("Next to act in game %d: userid %d, order %d",
                           game.gameid, next_rgp.userid, next_rgp.order)
-        if game.is_finished:
-            finish_game(game)
         notify_current_player(game)
              
     def _perform_action(self, game, rgp, range_action, current_options):
@@ -903,7 +902,6 @@ class API(object):
             logging.debug("gameid %r, determined to terminate", game.gameid)
             game.is_finished = True
             rgp.left_to_act = False
-            finish_game(game)
             return ActionResult.terminate(), []
     
         games = [game] + [self._spawn_game(game) for _ in results[1:]]    
@@ -944,6 +942,9 @@ class API(object):
             return API.ERR_INVALID_RANGES
         results, spawned_gameids = self._perform_action(
             game, rgp, range_action, current_options)
+        if game.is_finished:
+            self.session.commit()
+            self._analyse_immediately(game)
         return results, spawned_gameids
     
     @api
@@ -1133,14 +1134,25 @@ class API(object):
             .filter(tables.RunningGame.current_userid == None).all()
         for game in games:
             if not game.analysis_performed:
-                replayer = AnalysisReplayer(self, self.session, game)
+                replayer = AnalysisReplayer(self.session, game)
                 replayer.analyse()
-                game.analysis_performed = True
-                self.session.commit()  # ensure it can only happen once
-                logging.debug("gameid %d, notifying", game.gameid)
-                notify_finished(game)
-                self.session.commit()  # also a reasonable time to commit
+                replayer.finalise()        
         recalculate_global_statistics(self.session)
+    
+    def _analyse_immediately(self, game):
+        """
+        Analyse game on a different thread.
+        """
+        def do_analyse():
+            """
+            With new session, because I doubt they're thread safe.
+            """
+            if game.analysis_performed:
+                return
+            replayer = AnalysisReplayer(self.session, game)
+            replayer.analyse()
+            replayer.finalise()
+        on_a_different_thread(do_analyse)
 
     @api
     def run_pending_analysis(self):

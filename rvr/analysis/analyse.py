@@ -17,6 +17,7 @@ from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
 from rvr.poker.showdown import showdown_equity
+from rvr.mail.notifications import notify_finished
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -144,14 +145,13 @@ class AnalysisReplayer(object):
     database.
     """
     #pylint:disable=W0201
-    def __init__(self, api, session, game):
+    def __init__(self, session, game):
         logging.debug("gameid %d, AnalysisReplayer, initialising",
                       game.gameid)
         if not game.is_finished:
             raise ValueError("Can't analyse game until finished.")
         if game.analysis_performed:
             raise ValueError("Game is already analysed.")
-        self.api = api
         self.session = session
         self.game = game
         self.pot = self.game.situation.pot_pre +  \
@@ -640,6 +640,16 @@ class AnalysisReplayer(object):
             self.process_child_item(item)
             
         self.finalise_results()
+        
+    def finalise(self):
+        """
+        Commit, send out notification
+        """
+        self.game.analysis_performed = True
+        self.session.commit()  # ensure it can only notify once
+        logging.debug("gameid %d, notifying", self.game.gameid)
+        notify_finished(self.game)
+        self.session.commit()  # also a reasonable time to commit
 
 class Test(unittest.TestCase):
     """

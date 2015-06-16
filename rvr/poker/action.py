@@ -209,15 +209,9 @@ def act_terminate(game, rgp):
     rgp.left_to_act = False
     game.is_finished = True
 
-def finish_game(game):
-    """
-    Game is finished. Calculate results, record in hand history,
-    perform analysis.
-    """
-    # TODO: 5: test situations like P1 bet, P2 call, P3 fold/call/raise
-    # (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.) 
-    # TODO: 5: results weighted by size of ranges in starting situation?
-    return game
+# TODO: 5: test situations like P1 bet, P2 call, P3 fold/call/raise
+# (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.) 
+# TODO: 5: results weighted by size of ranges in starting situation?
 
 Branch = namedtuple("Branch",  # pylint:disable=C0103
                     ["is_continue",  # For this option, does play continue?
