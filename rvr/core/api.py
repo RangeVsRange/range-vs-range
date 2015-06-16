@@ -14,7 +14,7 @@ from rvr.poker.handrange import remove_board_from_range,  \
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
-    act_passive, act_fold, act_aggressive, finish_game, WhatCouldBe,\
+    act_passive, act_fold, act_aggressive, WhatCouldBe,\
     generate_excluded_cards
 from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult
 from rvr.infrastructure.util import concatenate, on_a_different_thread
