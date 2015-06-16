@@ -944,7 +944,7 @@ class API(object):
             game, rgp, range_action, current_options)
         if game.is_finished:
             self.session.commit()
-            self._analyse_immediately(game)
+            self._analyse_immediately(game.gameid)
         return results, spawned_gameids
     
     @api
@@ -1139,7 +1139,7 @@ class API(object):
                 replayer.finalise()        
         recalculate_global_statistics(self.session)
     
-    def _analyse_immediately(self, game):
+    def _analyse_immediately(self, gameid):
         """
         Analyse game on a different thread.
         """
@@ -1147,12 +1147,19 @@ class API(object):
             """
             With new session, because I doubt they're thread safe.
             """
-            if game.analysis_performed:
-                return
-            replayer = AnalysisReplayer(self.session, game)
-            replayer.analyse()
-            replayer.finalise()
-            self.session.commit()
+            with session_scope() as session:
+                try:
+                    game = session.query(tables.RunningGame)  \
+                        .filter(tables.RunningGame.gameid == gameid).one()
+                except NoResultFound:
+                    logging.warning("No game for immediate analysis: %d", gameid)
+                    return
+                if game.analysis_performed:
+                    return
+                replayer = AnalysisReplayer(session, game)
+                replayer.analyse()
+                replayer.finalise()
+                session.commit()
         on_a_different_thread(do_analyse)
 
     @api

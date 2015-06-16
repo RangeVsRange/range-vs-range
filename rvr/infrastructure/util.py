@@ -24,8 +24,5 @@ def on_a_different_thread(fun):
     Per http://stackoverflow.com/questions/11047307/
         run-flask-mail-asynchronously/18407455
     """
-    def wrapped():
-        thr = Thread(target=copy_current_request_context(fun))
-        thr.start()
-
-    return wrapped
+    thr = Thread(target=copy_current_request_context(fun))
+    thr.start()
