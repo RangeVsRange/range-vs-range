@@ -1152,6 +1152,7 @@ class API(object):
             replayer = AnalysisReplayer(self.session, game)
             replayer.analyse()
             replayer.finalise()
+            self.session.commit()
         on_a_different_thread(do_analyse)
 
     @api
