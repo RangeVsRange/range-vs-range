@@ -131,6 +131,14 @@ $('.mode-header').popover({trigger: 'hover'})
   <div class="table-responsive">
   {{ running_games(my_finished_games, userid, True) }}
   </div>
+  <div class='text-center'>
+    {% if fp_less %}
+    <a class="btn btn-default" aria-label="Previous" href="{{url_for('home_page', fp=fp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span></a>
+    {% endif %}
+    {% if fp_more %}
+    <a class="btn btn-default" aria-label="Next" href="{{url_for('home_page', fp=fp+1)}}"><span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
+    {% endif %}
+  </div>
 {%- else %}
   <div class="alert alert-info">You don't have any finished games. Click the 'Open games' tab to see games you can join.</div>
 {%- endif %}

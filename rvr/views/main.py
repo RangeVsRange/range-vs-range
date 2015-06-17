@@ -310,6 +310,11 @@ def home_page():
     alternate_response = ensure_user()
     if alternate_response:
         return alternate_response
+    fp = request.args.get('fp', '1')
+    try:
+        fp = int(fp)
+    except ValueError:
+        fp = 1
     api = API()
     userid = session['userid']
     screenname = session['screenname']
@@ -331,6 +336,9 @@ def home_page():
                    if not any([u.userid == userid for u in og.users])]
     my_finished_games = sorted(my_games.finished_details,
                                key=lambda g: g.gameid, reverse=True)
+    fp_less = fp > 1
+    fp_more = len(my_finished_games) > fp * 20
+    my_finished_games = my_finished_games[(fp - 1) * 20: fp * 20]
     form = ChangeForm()
     navbar_items = [('active', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
@@ -341,6 +349,7 @@ def home_page():
         my_open=my_open,
         others_open=others_open,
         my_finished_games=my_finished_games,
+        fp=fp, fp_less=fp_less, fp_more=fp_more,
         navbar_items=navbar_items,
         selected_heading=selected_heading,
         selected_mode=selected_mode,
