@@ -1160,6 +1160,7 @@ class API(object):
                 replayer.analyse()
                 replayer.finalise()
                 session.commit()
+                session.close()
         on_a_different_thread(do_analyse)
 
     @api
