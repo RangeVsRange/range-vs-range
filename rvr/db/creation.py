@@ -29,9 +29,9 @@ def do_begin(conn):
 
 # from http://docs.sqlalchemy.org/en/rel_0_8/orm/session.html
 @contextmanager
-def session_scope():
+def session_scope(session_builder):
     """Provide a transactional scope around a series of operations."""
-    session = SESSION()
+    session = session_builder()
     try:
         yield session
         session.commit()
@@ -53,7 +53,7 @@ def create_session(fun):
         """
         self = args[0]
         if self.session is None:
-            with session_scope() as session:
+            with session_scope(SESSION) as session:
                 self.session = session
                 try:
                     return fun(*args, **kwargs)

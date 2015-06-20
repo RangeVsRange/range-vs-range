@@ -30,6 +30,7 @@ from rvr.local_settings import SUPPRESSED_SITUATIONS
 import re
 from rvr.analysis import statistics
 from rvr.analysis.statistics import recalculate_global_statistics
+from sqlalchemy.orm.session import sessionmaker
 
 def exception_mapper(fun):
     """
@@ -1149,7 +1150,7 @@ class API(object):
             """
             With new session, because I doubt they're thread safe.
             """
-            with session_scope() as session:
+            with session_scope(sessionmaker(bind=ENGINE)) as session:
                 try:
                     game = session.query(tables.RunningGame)  \
                         .filter(tables.RunningGame.gameid == gameid).one()
