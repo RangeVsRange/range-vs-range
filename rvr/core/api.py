@@ -21,8 +21,7 @@ from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
 from sqlalchemy.orm.exc import NoResultFound
-from rvr.mail.notifications import notify_current_player, notify_first_player, \
-    notify_finished
+from rvr.mail.notifications import notify_current_player, notify_first_player
 from rvr.analysis.analyse import AnalysisReplayer
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
     PaymentToPlayer, GAME_HISTORY_TABLES

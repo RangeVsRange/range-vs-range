@@ -33,52 +33,6 @@ $('.mode-header').popover({trigger: 'hover'})
 </style>
 {% endblock %}
 
-{% macro open_games(is_public) %}
-  <div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th style="min-width: 200px; width: 200px">Game</th>
-        <th>Players</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    {%- for game in my_open %}{% if game.public_ranges == is_public %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <div class="btn-group">
-            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
-          </div>
-          <div class="btn-group">
-            <a class="btn {% if is_public %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url_for('leave_game', gameid=game.gameid) }}">Leave</a>
-          </div>
-        </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {% endif %}{%- endfor %}
-    {%- for game in others_open %}{% if game.public_ranges == is_public %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <div class="btn-group">
-            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
-          </div>
-          <div class="btn-group">
-            <a class="btn {% if is_public %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url_for('join_game', gameid=game.gameid) }}">Join</a>
-          </div>
-        </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {% endif %}{%- endfor %}
-  </table>
-  </div>
-{% endmacro %}
-
 {% block content %}
 <div class="container">
   <div class="page-header">
@@ -133,10 +87,10 @@ $('.mode-header').popover({trigger: 'hover'})
   </div>
   <div class='text-center'>
     {% if fp_less %}
-    <a class="btn btn-default" aria-label="Previous" href="{{url_for('home_page', fp=fp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span></a>
+    <a class="btn btn-sm btn-default" aria-label="Previous" href="{{url_for('home_page', fp=fp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> prev</a>
     {% endif %}
     {% if fp_more %}
-    <a class="btn btn-default" aria-label="Next" href="{{url_for('home_page', fp=fp+1)}}"><span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
+    <a class="btn btn-sm btn-default" aria-label="Next" href="{{url_for('home_page', fp=fp+1)}}">next <span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
     {% endif %}
   </div>
 {%- else %}

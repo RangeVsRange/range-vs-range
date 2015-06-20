@@ -394,7 +394,7 @@ def join_game():
         msg = "An unknown error occurred joining game %d, sorry." % (gameid,)
         logging.debug("unrecognised error from api.join_game: %s", response)
     else:
-        msg = "You have joined game %s." % (gameid,)
+        msg = "Game joined!"
         flash(msg)
         return redirect(url_for('home_page'))
     flash(msg)
