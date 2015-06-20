@@ -245,7 +245,7 @@ class AdminCmd(Cmd):
         if isinstance(response, APIError):
             print "Error:", response.description  # pylint:disable=E1101
             return
-        action, spawned = response
+        action, spawned, is_first_action = response
         # pylint:disable=E1103
         if action.is_fold:
             print "You folded."
@@ -255,7 +255,8 @@ class AdminCmd(Cmd):
             print "You raised to %d." % (action.raise_total,)
         else:
             print "Action:", action
-        print "Spawned: ", spawned
+        print "Spawned:", spawned
+        print "Is first action:", is_first_action
             
     def do_chat(self, details):
         """

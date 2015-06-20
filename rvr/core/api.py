@@ -912,6 +912,14 @@ class API(object):
             self._apply_action_result(g, *details)
         return results[0][1], [g.gameid for g in games[1:]]
     
+    def _has_never_acted(self, userid):
+        """
+        True if user has never acted in any game. It's a trigger to let them
+        know they have to wait for the other player to move.
+        """
+        return None is self.session.query(tables.GameHistoryRangeAction)  \
+            .filter(tables.GameHistoryRangeAction.userid == userid).first()
+    
     @api
     def perform_action(self, gameid, userid, range_action):
         """
@@ -943,12 +951,14 @@ class API(object):
                           + "userid %r, range_action %r",
                           _err, gameid, userid, range_action)
             return API.ERR_INVALID_RANGES
+        is_first_action = self._has_never_acted(userid)
         results, spawned_gameids = self._perform_action(
             game, rgp, range_action, current_options)
         if game.is_finished:
             self.session.commit()
-            self._analyse_immediately(game.gameid)
-        return results, spawned_gameids
+            # TODO: REVISIT: This is a good idea, but it's not working in prod
+            # self._analyse_immediately(game.gameid)
+        return results, spawned_gameids, is_first_action
     
     @api
     def chat(self, gameid, userid, message):

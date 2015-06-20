@@ -141,6 +141,12 @@ def error(message):
     flash(message)
     return redirect(url_for('error_page'))
 
+def is_first_action():
+    """
+    Does the user have the first_action cookie set?
+    """
+    return request.cookies.has_key("first_action")
+
 @APP.route('/backdoor', methods=['GET', 'POST'])
 def backdoor_page():
     """
@@ -354,6 +360,7 @@ def home_page():
         selected_heading=selected_heading,
         selected_mode=selected_mode,
         is_logged_in=is_logged_in(),
+        is_first_action=is_first_action(),
         my_screenname=get_my_screenname())
 
 @APP.route('/join', methods=['GET'])
@@ -448,7 +455,7 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
             total = int(form.total.data)
         except ValueError:
             flash("Incomprehensible raise total.")
-            return False
+            return False, False
     else:
         total = 0
     range_action = dtos.ActionDetails(fold_raw=fold, passive_raw=passive,
@@ -463,7 +470,7 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
         range_action.aggressive_range.validate()
     except ValueError as err:
         flash("%s range is invalid. Reason: %s." % (range_name, err.message))
-        return False
+        return False, False
     logging.debug("gameid %r, performing action, userid %r, range_action %r",
                   gameid, userid, range_action)
     result = api.perform_action(gameid, userid, range_action)
@@ -477,8 +484,8 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
             msg = "An unknown error occurred performing action, sorry."
             logging.info('Unknown error from api.perform_action: %s', result)
         flash(msg)
-        return False
-    action, spawned = result
+        return False, False
+    action, spawned, is_first_action = result
     if action.is_fold:
         msg = "You folded."
     elif action.is_passive:
@@ -499,7 +506,7 @@ def _handle_action(gameid, userid, api, form, can_check, can_raise):
     for gameid in spawned:
         flash("A different line of this game will continue in game %d" %
               (gameid,))
-    return True
+    return True, is_first_action
 
 def __board_to_vars(street, cards, order):
     """
@@ -741,10 +748,14 @@ def _running_game(game, gameid, userid, api):
         min_raise=game.current_options.min_raise,
         max_raise=game.current_options.max_raise)
     if form.validate_on_submit():
-        if _handle_action(gameid, userid, api, form,
-                          game.current_options.can_check(),
-                          game.current_options.can_raise()):
-            return redirect(url_for('game_page', gameid=gameid))   
+        success, set_first_action = _handle_action(gameid, userid, api, form,
+                game.current_options.can_check(),
+                game.current_options.can_raise())
+        if success:
+            response = redirect(url_for('game_page', gameid=gameid))
+            if set_first_action:
+                response.set_cookie('first_action', 'True', max_age=86400)
+            return response
     
     # First load, OR something's wrong with their data.
     range_editor_url = url_for('range_editor',
@@ -772,7 +783,8 @@ def _running_game(game, gameid, userid, api):
         current_options=game.current_options,
         is_me=is_me, is_mine=is_mine, is_new_chat=is_new_chat, is_running=True,
         range_editor_url=range_editor_url,
-        navbar_items=navbar_items, is_logged_in=is_logged_in(), url=request.url,
+        navbar_items=navbar_items, is_logged_in=is_logged_in(),
+        is_first_action=is_first_action(), url=request.url,
         my_screenname=get_my_screenname())
 
 def _finished_game(game, gameid, userid):
@@ -796,7 +808,7 @@ def _finished_game(game, gameid, userid):
         num_players=len(game.game_details.rgp_details), analyses=analyses,
         is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
         scheme=scheme, navbar_items=navbar_items, is_logged_in=is_logged_in(),
-        url=request.url,
+        is_first_action=is_first_action(), url=request.url,
         my_screenname=get_my_screenname())
 
 def authenticated_game_page(gameid):
@@ -1051,6 +1063,7 @@ def user_page():
         mode='competition' if is_competition else 'optimization',
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
+        is_first_action=is_first_action(),
         url=request.url,
         my_screenname=get_my_screenname())
 
@@ -1064,6 +1077,20 @@ def alpha():
         is_logged_in=is_logged_in(),
         url=request.url,
         my_screenname=get_my_screenname())
+    
+@APP.route('/whatnow', methods=['GET'])
+def whatnow():
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+ 
+    response = make_response(render_template('web/whatnow.html',
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
+        url=request.url,
+        my_screenname=get_my_screenname()))
+    response.set_cookie('first_action', expires=0)
+    return response
     
 @APP.route('/group', methods=['GET'])
 def group_page():
@@ -1120,15 +1147,9 @@ def group_page():
         total_weight=total_weight,
         total_results=total_results,
         userid=userid,
-        games2=[{'gameid': 101,
-                'line': {'Flop': 'Alice checks, Bob bets 9, Alice calls', 'Turn': "Alice checks, Bob bets 27, Alice calls", 'River': "Alice checks, Bob checks"},
-                'results': {'Alice': 1.0, 'Bob': 2.0}},
-               {'gameid': 102,
-                'line': {'Flop': "Alice checks, Bob bets 9, Alice calls", 'Turn': "Alice checks, Bob bets 27, Alice calls", 'River': "Alice checks, Bob bets 81, Alice raises to 121, Bob calls"},
-                'results': {'Alice': 2.0, 'Bob': 1.0}}],
-        totals={'Alice': 3.0, 'Bob': 2.9999999},
         groupid=groupid,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
+        is_first_action=is_first_action(),
         url=request.url,
         my_screenname=get_my_screenname())
