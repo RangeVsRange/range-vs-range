@@ -26,6 +26,9 @@ $('.mode-button').popover({trigger: 'hover'})
       </ul>
     </div>
   </div>
+  
+  {{ flash_messages() }}
+
 {% for situation in situations %}
   <h3>"{{situation.name}}"</h3>
   {% if situation.average is not none %}<h3><strong>{{"%0.04f" % (situation.average if situation.average > 0.0 else -situation.average,)}}</strong> chips <strong>{% if situation.average > 0 %}above{% else %}below{% endif %}</strong> the average per orbit</h3>{% endif %}

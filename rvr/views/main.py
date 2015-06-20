@@ -403,7 +403,10 @@ def join_game():
     else:
         msg = "Game joined!"
         flash(msg)
-        return redirect(url_for('home_page'))
+        if response is None:
+            return redirect(url_for('home_page'))
+        else:
+            return redirect(url_for('game_page', gameid=response))
     flash(msg)
     return redirect(url_for('error_page'))
 
@@ -861,7 +864,7 @@ def game_page():
     """
     View of the specified game, authentication-aware
     """
-    # TODO: 0: remove all visible reference (including emails) to open game ID
+    # TODO: 0: when you join a game and it starts, navigate immediately to game.
     # TODO: 0: show root id to user, not actual game id!
     # TODO: 2: asynchronous analysis triggered by action (like emails are)
     gameid = request.args.get('gameid', None)

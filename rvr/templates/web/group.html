@@ -8,6 +8,8 @@
     <h1>Game Group {{groupid}}</h1>
   </div>
   
+  {{ flash_messages() }}
+  
   {{ running_games(games, userid, True) }}
 
     <h2>Results Summary</h2>
