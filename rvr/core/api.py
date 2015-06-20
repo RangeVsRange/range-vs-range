@@ -410,6 +410,9 @@ class API(object):
         """
         situation = open_game.situation
         all_ogps = open_game.ogps + [final_ogp]
+        # move everyone left so that final_ogp will act first
+        offset = len(all_ogps) - 1 - situation.current_player_num
+        all_ogps = all_ogps[offset:] + all_ogps[:offset]
         running_game = tables.RunningGame()
         running_game.next_hh = 0
         running_game.public_ranges = open_game.public_ranges
