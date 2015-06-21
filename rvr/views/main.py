@@ -1139,6 +1139,8 @@ def group_page():
     # TODO: 0.1: https://github.com/jonmiles/bootstrap-treeview
     # grouped by betting line
 
+    games = sorted(games, key=lambda game: -game.spawn_factor)
+
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
