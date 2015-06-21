@@ -316,11 +316,16 @@ def home_page():
     alternate_response = ensure_user()
     if alternate_response:
         return alternate_response
-    fp = request.args.get('fp', '1')
+    cfp = request.args.get('cfp', '1')
+    ofp = request.args.get('ofp', '1')
     try:
-        fp = int(fp)
+        cfp = int(cfp)
     except ValueError:
-        fp = 1
+        cfp = 1
+    try:
+        ofp = int(ofp)
+    except ValueError:
+        ofp = 1
     api = API()
     userid = session['userid']
     screenname = session['screenname']
@@ -334,28 +339,41 @@ def home_page():
         return redirect(url_for("error_page"))
     selected_heading = request.cookies.get("selected-heading", "heading-open")
     selected_mode = request.cookies.get("selected-mode", "mode-competition")
-    my_games.running_details.sort(
-        key=lambda rg: rg.current_user_details.userid != userid)
+    my_running_games = sorted(my_games.running_details,
+                              key=lambda g: not g.is_on_me)
+    my_finished_games = sorted(my_games.finished_details,
+                               key=lambda g: g.gameid, reverse=True)
+    my_running_groups = sorted(my_games.running_groups,
+                               key=lambda g: not g.is_on_me)
+    my_finished_groups = sorted(my_games.finished_groups,
+                                key=lambda g: g.groupid, reverse=True)
     my_open = [og for og in open_games
                if any([u.userid == userid for u in og.users])]
     others_open = [og for og in open_games
                    if not any([u.userid == userid for u in og.users])]
-    my_finished_games = sorted(my_games.finished_details,
-                               key=lambda g: g.gameid, reverse=True)
-    fp_less = fp > 1
-    fp_more = len(my_finished_games) > fp * 20
-    my_finished_games = my_finished_games[(fp - 1) * 20: fp * 20]
+
+    cfp_less = cfp > 1
+    cfp_more = len(my_finished_games) > cfp * 20
+    my_finished_games = my_finished_games[(cfp - 1) * 20: cfp * 20]
+
+    ofp_less = ofp > 1
+    ofp_more = len(my_finished_groups) > ofp * 20
+    my_finished_groups = my_finished_groups[(ofp - 1) * 20: ofp * 20]
+
     form = ChangeForm()
     navbar_items = [('active', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
-        r_games=my_games,
+        my_running_games=my_running_games,
+        my_finished_games=my_finished_games,
+        my_running_groups=my_running_groups,
+        my_finished_groups=my_finished_groups,
         my_open=my_open,
         others_open=others_open,
-        my_finished_games=my_finished_games,
-        fp=fp, fp_less=fp_less, fp_more=fp_more,
+        cfp=cfp, cfp_less=cfp_less, cfp_more=cfp_more,
+        ofp=ofp, ofp_less=ofp_less, ofp_more=ofp_more,
         navbar_items=navbar_items,
         selected_heading=selected_heading,
         selected_mode=selected_mode,
@@ -1113,7 +1131,7 @@ def group_page():
         userid = None
 
     api = API()
-    result = api.get_group_games(gameid=gameid)
+    result = api.get_group_games(gameid=gameid, userid=userid)
     if result == API.ERR_NO_SUCH_RUNNING_GAME:
         flash("No such game.")
         return redirect(url_for('error_page'))
@@ -1134,7 +1152,7 @@ def group_page():
                       'result': results_by_player[screenname]}
                      for screenname in screennames]
     total_weight = sum(game.spawn_factor
-                       for game in games if game.has_results())
+                       for game in games if game.is_analysed)
 
     # TODO: 0.1: https://github.com/jonmiles/bootstrap-treeview
     # grouped by betting line

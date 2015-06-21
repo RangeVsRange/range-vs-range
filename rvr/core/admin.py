@@ -19,7 +19,7 @@ class AdminCmd(Cmd):
     def __init__(self):
         Cmd.__init__(self)
         self.api = API()
-        
+
     def do_recreate_timeouts(self, _details):
         """
         Recreate timeouts that were accidentally lost via dump
@@ -29,7 +29,7 @@ class AdminCmd(Cmd):
             print "Error:", result
         else:
             print "%d timeouts recreated" % (result,)
-    
+
     def do_createdb(self, _details):
         """
         Create the database
@@ -39,7 +39,7 @@ class AdminCmd(Cmd):
             print "Error:", result
         else:
             print "Database created"
-            
+
     def do_initialise(self, _details):
         """
         Initialise a (created but empty) database
@@ -53,19 +53,19 @@ class AdminCmd(Cmd):
         if result:
             print "Error:", result
         else:
-            print "Open games refreshed."            
-    
+            print "Open games refreshed."
+
     def do_situation(self, details):
         """
         Load situation from given python module and add it to the DB. E.g.:
-        
+
         situation hu.py
-        
+
         will load a situation from a method called reate_situation defined in
         hu.py, and add it to the database.
-        
+
         You can also load directly from the command line:
-        
+
         python console.py situation hu.py
         """
         # TODO: REVISIT: this can't be used to accept user-defined situations.
@@ -76,7 +76,7 @@ class AdminCmd(Cmd):
         situation = create_situation()  # @UndefinedVariable
         result = self.api.add_situation(situation)
         print "added situation, result", result
-    
+
     def do_login(self, params):
         """
         Calls the login API function
@@ -107,7 +107,7 @@ class AdminCmd(Cmd):
             print "No such user"
         else:
             print "'%s' has userid %s" % (user.screenname, user.userid)
-    
+
     def do_rmuser(self, details):
         """
         rmuser <userid>
@@ -121,7 +121,7 @@ class AdminCmd(Cmd):
             print "Deleted."
         else:
             print "Nothing happened."
-    
+
     def do_getuser(self, details):
         """
         getuser <userid>
@@ -162,18 +162,6 @@ class AdminCmd(Cmd):
             return
         print "Open games:"
         for details in response:
-            print details
-
-    def do_runninggames(self, _details):
-        """
-        Display running games, their descriptions, and their users.
-        """
-        result = self.api.get_running_games()
-        if isinstance(result, APIError):
-            print "Error:", result.description
-            return
-        print "Running games:"
-        for details in result:
             print details
 
     def do_joingame(self, params):
@@ -223,7 +211,7 @@ class AdminCmd(Cmd):
         print "Finished games:"
         for game in result.finished_details:
             print game
-            
+
     def do_act(self, params):
         """
         act <gameid> <userid> <fold> <passive> <aggressive> <total>
@@ -257,7 +245,7 @@ class AdminCmd(Cmd):
             print "Action:", action
         print "Spawned:", spawned
         print "Is first action:", is_first_action
-            
+
     def do_chat(self, details):
         """
         chat <gameid> <userid> <message>
@@ -276,7 +264,7 @@ class AdminCmd(Cmd):
             return
         print "Chatted in game %d, for userid %d, message %r" %  \
             (gameid, userid, message)
-    
+
     def do_update(self, _details):
         """
         The kind of updates a background process would normally do. Currently
@@ -287,7 +275,7 @@ class AdminCmd(Cmd):
         if result:
             print "Error:", result
         else:
-            print "Open games refreshed."            
+            print "Open games refreshed."
 
     def do_handhistory(self, params):
         """
@@ -310,7 +298,7 @@ class AdminCmd(Cmd):
         # There's just so damn much of it, the best way to see it is on the web.
         result.analysis = None
         print result
-        
+
     def do_statistics(self, params):
         """
         statistics <username> <is_competition>
@@ -335,12 +323,12 @@ class AdminCmd(Cmd):
         """
         analyse
         Run pending analysis
-        
+
         analyse <gameid>
         Re/analyse gameid
-        
+
         analyse [refresh]
-        Reanalyse everything. 
+        Reanalyse everything.
         """
         if details == "":
             result = self.api.run_pending_analysis()
@@ -356,7 +344,7 @@ class AdminCmd(Cmd):
         else:
             try:
                 gameid = int(details)
-            except ValueError:                
+            except ValueError:
                 print "Bad syntax. See 'help analyse'."
                 return
             result = self.api.reanalyse(gameid)
@@ -382,16 +370,16 @@ class AdminCmd(Cmd):
     def do_dump(self, params):
         """
         dump { out | in }
-        
+
         dump out pickles the database to db.pkl
         dump in unpickles it
-        
+
         To restore a database from a db.pkl file:
         1. delete the database file (rvr.db)
         2. "createdb"
         3. "dump in"
         4. "initialise"
-        
+
         The "initiialise" does things like refreshing open games, because open
         games are not dumped out by "dump out".
         """

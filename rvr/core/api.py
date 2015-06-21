@@ -56,7 +56,7 @@ def api(fun):
     Equivalent to:
         @exception_mapper
         @create_session
-        
+
     Used to ensure exception_mapper and create_session are applied in the
     correct order.
     """
@@ -86,7 +86,7 @@ class APIError(object):
     """
     def __init__(self, description):
         self.description = description
-    
+
     def __str__(self):
         return self.description
 
@@ -97,7 +97,7 @@ class API(object):
      - an admin console or command line
      - a thick client
     """
-    
+
     ERR_UNKNOWN = APIError("Internal error")
     ERR_NO_SUCH_USER = APIError("No such user")
     ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
@@ -109,10 +109,10 @@ class API(object):
     ERR_USER_NOT_IN_GAME = APIError("User is not in the specified game")
     ERR_DUPLICATE_SITUATION = APIError("Duplicate situation")
     ERR_CHAT_TOO_LONG = APIError("Chat too long, max %d chars" % (MAX_CHAT,))
-    
+
     def __init__(self):
         self.session = None  # required for @create_session
-    
+
     @exception_mapper
     def create_db(self):
         """
@@ -121,13 +121,13 @@ class API(object):
         #pylint:disable=R0201
         BASE.metadata.create_all(ENGINE)  # @UndefinedVariable
         self._add_card_combos()
-    
+
     def _add_all_situations(self):
         """
         Add all situations
         """
         self._add_situation(_create_hu())
-    
+
     def _add_card_combo(self, higher_card, lower_card):
         """
         Add a RangeItem
@@ -138,7 +138,7 @@ class API(object):
         self.session.add(item)
         logging.debug("Added range item: %s, %s", item.higher_card,
                       item.lower_card)
-    
+
     @create_session
     def _add_card_combos(self):
         """
@@ -158,20 +158,20 @@ class API(object):
             self.session.commit()
         except IntegrityError:
             self.session.rollback()  # already there, no worries
-        return err  
-    
+        return err
+
     @api
     def initialise_db(self):
         """
         Create initial data for database
         """
         self.session.commit()  # any errors are our own
-                        
+
         # Each of these also commits.
         err = None
         err = self._add_all_situations() or err
         return err
-    
+
     @api
     def add_situation(self, situation):
         """
@@ -179,7 +179,7 @@ class API(object):
         """
         self.session.commit()  # any errors are our own
         return self._add_situation(situation)
-    
+
     @api
     def login(self, request):
         """
@@ -222,7 +222,7 @@ class API(object):
         except NoResultFound:
             return API.ERR_NO_SUCH_USER
         user.unsubscribed = True
-    
+
     @api
     def resubscribe(self, userid):
         """
@@ -234,7 +234,7 @@ class API(object):
         except NoResultFound:
             return API.ERR_NO_SUCH_USER
         user.unsubscribed = False
-    
+
     @api
     def change_screenname(self, request):
         """
@@ -255,7 +255,7 @@ class API(object):
                 .one().screenname = request.screenname
         except NoResultFound:
             return self.ERR_NO_SUCH_USER
-    
+
     @api
     def get_user(self, userid):
         """
@@ -270,7 +270,7 @@ class API(object):
                                  identity=user.identity,
                                  email=user.email,
                                  screenname=user.screenname)
-    
+
     @api
     def delete_user(self, userid):
         """
@@ -287,7 +287,7 @@ class API(object):
             self.session.delete(ogp)
         self.session.delete(user)
         return True
-    
+
     @api
     def get_user_by_screenname(self, screenname):
         """
@@ -307,16 +307,16 @@ class API(object):
             matches = self.session.query(tables.User)  \
                 .filter(tables.User.userid == userid).all()
             if matches:
-                user = matches[0]                    
+                user = matches[0]
             else:
                 return API.ERR_NO_SUCH_USER
         return dtos.UserDetails.from_user(user)
-    
+
     def _add_situation(self, dto):
         """
         Add a dtos.SituationDetails to the database, as a tables.Situation and
         associated tables.SituationPlayer objects.
-        
+
         Returns situation id, or APIError
         """
         situation = tables.Situation()
@@ -347,8 +347,8 @@ class API(object):
             return situation.situationid
         except IntegrityError:
             self.session.rollback()
-            return self.ERR_DUPLICATE_SITUATION            
-    
+            return self.ERR_DUPLICATE_SITUATION
+
     @api
     def get_open_games(self):
         """
@@ -361,20 +361,7 @@ class API(object):
         results = [dtos.OpenGameDetails.from_open_game(game)
                    for game in all_open_games]
         return results
-    
-    @api
-    def get_running_games(self):
-        """
-        Retrieve running games including registered users
-        input: (none)
-        outputs: List of running games. For each game, users in game, details
-                 of game
-        """
-        all_running_games = self.session.query(tables.RunningGame).all()
-        results = [dtos.RunningGameSummary.from_running_game(game)
-                   for game in all_running_games]
-        return results
-    
+
     @api
     def get_user_running_games(self, userid):
         """
@@ -382,29 +369,51 @@ class API(object):
         inputs: userid
         outputs: list of user's games. each may be open game, running (not our
         turn), running (our turn), finished. no more details of each game.
-        
+
         Note: we don't validate that userid is a real userid!
         """
         rgps = self.session.query(tables.RunningGameParticipant)  \
             .filter(tables.RunningGameParticipant.userid == userid).all()
-        running_games = [dtos.RunningGameSummary.from_running_game(rgp.game)
-                         for rgp in rgps if rgp.game.current_userid is not None]
-        finished_games = [dtos.RunningGameSummary.from_running_game(rgp.game)
-                          for rgp in rgps if rgp.game.current_userid is None]
-        return dtos.UsersGameDetails(userid, running_games, finished_games)
-    
+        running_games =  \
+            [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
+             for rgp in rgps if rgp.game.current_userid is not None
+             and not rgp.game.public_ranges]
+        finished_games =  \
+            [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
+             for rgp in rgps if rgp.game.current_userid is None
+             and not rgp.game.public_ranges]
+        group_ids = set(rgp.game.spawn_group for rgp in rgps
+                        if rgp.game.public_ranges)
+        running_groups = []
+        finished_groups = []
+        for group in group_ids:
+            spawns = [rgp for rgp in rgps if rgp.game.spawn_group == group
+                      and rgp.game.public_ranges]
+            is_finished = all(spawn.game.is_finished for spawn in spawns)
+            is_on_me = any(spawn.game.current_userid == userid for spawn in spawns)
+            if is_finished:
+                finished_groups.append(
+                    dtos.RunningGroup.from_rgps(group, is_finished, is_on_me,
+                        [rgp.game for rgp in spawns]))
+            else:
+                running_groups.append(
+                    dtos.RunningGroup.from_rgps(group, is_finished, is_on_me,
+                        [rgp.game for rgp in spawns]))
+        return dtos.UsersGameDetails(userid, running_games, finished_games,
+                                     running_groups, finished_groups)
+
     def _start_game(self, open_game, final_ogp):
         """
         Takes the id of a full OpenGame, creates a new RunningGame from it,
         deletes the original and returns the id of the new RunningGame.
-        
+
         This gets called when a game fills up, so that we can immediately tell
         the user that the game was started, and the new running game's id.
-        
+
         Because adding a user to an open game happens in the same context as
         starting the game here, it's not possible for an open game to be left
         full.
-        
+
         Returns RunningGame object, because there is no game id, because the
         object hasn't been committed yet, so the database hasn't created the id
         yet.
@@ -457,7 +466,7 @@ class API(object):
         notify_first_player(running_game, starter_id=final_ogp.userid)
         logging.debug("Started game %d", open_game.gameid)
         return running_game
-    
+
     def _record_hand_history_item(self, game, item, factor=None):
         """
         Create a GameHistoryBase, and add it and item to the session.
@@ -472,7 +481,7 @@ class API(object):
         item.order = base.order
         self.session.add(base)
         self.session.add(item)
-        
+
     def _record_showdown_participant(self, gameid, order, is_passive,
                                      showdown_order, userid):
         """
@@ -486,7 +495,7 @@ class API(object):
         equity.userid = userid
         equity.equity = None  # will be populated by analysis
         self.session.add(equity)
-    
+
     def _record_action_result(self, rgp, action_result):
         """
         Record that this user's range action resulted in this actual action.
@@ -503,7 +512,7 @@ class API(object):
         element.is_raise = action_result.is_raise
         self._record_hand_history_item(rgp.game, element)
         rgp.game.last_action_time = datetime.datetime.utcnow()
-    
+
     def _record_rgp_range(self, rgp, range_raw):
         """
         Record that this user now has this range in this game, in the hand
@@ -513,7 +522,7 @@ class API(object):
         element.userid = rgp.userid
         element.range_raw = range_raw
         self._record_hand_history_item(rgp.game, element)
-        
+
     def _record_range_action(self, rgp, range_action, is_check, is_raise,
                              range_ratios):
         """
@@ -531,7 +540,7 @@ class API(object):
         element.passive_ratio = range_ratios['passive']
         element.aggressive_ratio = range_ratios['aggressive']
         self._record_hand_history_item(rgp.game, element)
-        
+
     def _record_board(self, game):
         """
         Record board at street
@@ -540,7 +549,7 @@ class API(object):
         element.street = game.current_round
         element.cards = game.board_raw
         self._record_hand_history_item(game, element)
-        
+
     def _record_timeout(self, rgp):
         """
         Record timeout
@@ -557,11 +566,11 @@ class API(object):
         element.user = rgp.user
         element.message = message
         self._record_hand_history_item(rgp.game, element)
-        
+
     def _record_showdown(self, game, is_passive, pot, factor, participants):
         """
         Record showdown (but not participants / equity)
-        
+
         Note that the factor is not the game's current factor!
         """
         element = tables.GameHistoryShowdown()
@@ -609,7 +618,7 @@ class API(object):
         ogp.gameid = game.gameid
         ogp.userid = user.userid
         ogp.order = game.participants  # evidently 1-based
-            
+
         # start game?
         start_game = game.participants == game.situation.participants
         if start_game:
@@ -618,7 +627,7 @@ class API(object):
             # add user to game
             self.session.add(ogp)
             running_game = None
-            
+
         try:
             # This commits either the add or the start game. We do this so that
             # if it's going to fail, it fails before the ensure_open_games()
@@ -632,15 +641,15 @@ class API(object):
             self.session.rollback()
             # Complete fail, okay, here we just try again!
             running_game = self.join_game(userid, gameid)
-    
+
         logging.debug("User %d joined game %d", userid, gameid)
-    
+
         self.ensure_open_games()
-    
+
         # it's committed, so we will have the id
         if running_game is not None:
             return running_game.gameid
-        
+
     @api
     def leave_game(self, userid, gameid):
         """
@@ -664,12 +673,12 @@ class API(object):
                 break
         else:
             return self.ERR_USER_NOT_IN_GAME
-        game.participants -= 1        
+        game.participants -= 1
         # I don't know why, but flush here causes ensure_open_games to fail.
         # Failure to merge appropriately?
         self.session.commit()
         logging.debug("User %d left game %d", userid, gameid)
-        self.ensure_open_games()        
+        self.ensure_open_games()
 
     ERR_NOT_USERS_TURN = APIError("It's not that user's turn.")
     ERR_INVALID_RAISE_TOTAL = APIError("Invalid raise total.")
@@ -678,12 +687,12 @@ class API(object):
     def _spawn_game(self, game):
         """
         Make a current, running copy of the current, running game.
-        
+
         This includes:
          - RunningGame
          - RunningGameParticipant
          - GAME_HISTORY_TABLES
-         
+
         Basically copies every table that holds info on a running game, and
         changes the gameid.
         """
@@ -718,7 +727,7 @@ class API(object):
             self._record_board(game)
         for rgp in game.rgps:
             rgp.range = remove_board_from_range(rgp.range, game.board)
-    
+
     def _finish_betting_round(self, game, remain):
         """
         Deal and such
@@ -739,12 +748,12 @@ class API(object):
             if rgp.folded:
                 continue
             rgp.left_to_act = True
-    
+
     def _create_showdown(self, game, participants, is_passive, pot, factor):
         # pylint:disable=R0913
         """
         Create a showdown in the game history
-        
+
         game is a RunningGame
         participants is a list of RGPs showing down
         is_passive signals that this showdown was created by a call
@@ -758,7 +767,7 @@ class API(object):
                       game.gameid, is_passive, factor, pot,
                       [rgp.userid for rgp in participants])
         self._record_showdown(game, is_passive, pot, factor, participants)
-    
+
     def _range_action_showdown(self, game, actor,
                                current_options, range_ratios):
         # pylint:disable=R0914
@@ -815,7 +824,7 @@ class API(object):
                 is_passive=True,
                 pot=pot,
                 factor=factor)
-            
+
     def _apply_action_result(self, game, weight, action_result, range_raw):
         """
         Apply a spawn weight and an action result to a (potentially spawned)
@@ -863,7 +872,7 @@ class API(object):
             logging.debug("Next to act in game %d: userid %d, order %d",
                           game.gameid, next_rgp.userid, next_rgp.order)
         notify_current_player(game)
-             
+
     def _perform_action(self, game, rgp, range_action, current_options):
         """
         Inputs:
@@ -871,10 +880,10 @@ class API(object):
          - rgp, tables.RunningGameParticipant object, == game.current_rgp
          - range_action, action to perform
          - current_options, options user had here (re-computed)
-         
+
         Outputs:
          - ActionResult, and spawned game IDs
-         
+
         Side effects:
          - Records range action in DB (purely copying input to DB)
          - Records action result in DB
@@ -886,7 +895,7 @@ class API(object):
            - determining who is next to act, if still same betting round
          - If the game is finished:
            - flag that the game is finished
-           
+
         It's as simple as that. Now we just need to do / calculate as described,
         but instead of redealing based on can_call and can_fold, we'll play out
         each option, and terminate only when all options are terminal.
@@ -900,18 +909,18 @@ class API(object):
                                     range_ratios)
         # this also changes game's current factor
         results = what_could_be.calculate_what_will_be(game.is_auto_spawn)
-        
+
         if not results:
             logging.debug("gameid %r, determined to terminate", game.gameid)
             game.is_finished = True
             rgp.left_to_act = False
             return ActionResult.terminate(), []
-    
-        games = [game] + [self._spawn_game(game) for _ in results[1:]]    
+
+        games = [game] + [self._spawn_game(game) for _ in results[1:]]
         for g, details in zip(games, results):
             self._apply_action_result(g, *details)
         return results[0][1], [g.gameid for g in games[1:]]
-    
+
     def _has_never_acted(self, userid):
         """
         True if user has never acted in any game. It's a trigger to let them
@@ -919,12 +928,12 @@ class API(object):
         """
         return None is self.session.query(tables.GameHistoryRangeAction)  \
             .filter(tables.GameHistoryRangeAction.userid == userid).first()
-    
+
     @api
     def perform_action(self, gameid, userid, range_action):
         """
         Performs range_action for specified user in specified game.
-        
+
         Fails if:
          - game is not a running game with user in it
          - it's not user's turn
@@ -936,8 +945,8 @@ class API(object):
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
-        
-        # check that they're in the game and it's their turn        
+
+        # check that they're in the game and it's their turn
         if game.current_userid == userid:
             rgp = game.current_rgp
         else:
@@ -959,7 +968,7 @@ class API(object):
             # TODO: REVISIT: This is a good idea, but it's not working in prod
             # self._analyse_immediately(game.gameid)
         return results, spawned_gameids, is_first_action
-    
+
     @api
     def chat(self, gameid, userid, message):
         """
@@ -970,7 +979,7 @@ class API(object):
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
         game = games[0]
-        
+
         # check that they're in the game
         for rgp_ in game.rgps:
             if rgp_.userid == userid:
@@ -978,13 +987,13 @@ class API(object):
                 break
         else:
             return self.ERR_USER_NOT_IN_GAME
-        
+
         # check that their message is short enough (clobber if not, sorry)
         if len(message) > MAX_CHAT:
             logging.debug("chat failing, gameid=%r, userid=%r, message=%r",
                           gameid, userid, message)
             return API.ERR_CHAT_TOO_LONG
-        
+
         # check that it's not a duplicate (ignore if so)
         last = self.session.query(tables.GameHistoryChat)  \
             .filter(tables.GameHistoryChat.gameid == gameid)  \
@@ -994,9 +1003,9 @@ class API(object):
             # with the same message
             # by the same user
             return
-        
+
         self._record_chat(rgp, message)
-    
+
     def _get_payments(self, child):
         """
         Return list of payment DTOs
@@ -1008,7 +1017,7 @@ class API(object):
         for payment in payments:
             results.append(GamePayment(payment))
         return results
-        
+
     def _get_history_items(self, game, userid, public_ranges):
         """
         Returns a list of game history items (tables.GameHistoryBase with
@@ -1043,7 +1052,7 @@ class API(object):
             .filter(AnalysisFoldEquity.gameid == game.gameid).all()
         return {afe.order: dtos.AnalysisItemFoldEquity.from_afe(afe)
                 for afe in afes}
-        
+
     def _get_game(self, gameid, userid=None):
         """
         Return game <gameid>. If <userid> is not None, return private data for
@@ -1083,7 +1092,7 @@ class API(object):
         outputs: hand history populated with ranges iff finished
         """
         return self._get_game(gameid)
-    
+
     @api
     def get_private_game(self, gameid, userid):
         """
@@ -1092,7 +1101,7 @@ class API(object):
         outputs: hand history partially populated with ranges for userid only
         """
         return self._get_game(gameid, userid=userid)
-    
+
     @api
     def ensure_open_games(self):
         """
@@ -1123,7 +1132,7 @@ class API(object):
                     self.session.flush()  # get gameid
                     logging.debug("Created open game %d for situation %d",
                                   new_game.gameid, situation.situationid)
-    
+
     @api
     def get_user_statistics(self, userid, min_hands=1, is_competition=True):
         """
@@ -1140,8 +1149,8 @@ class API(object):
         """
         Look through all games for analysis that has not yet been done, and do
         it, and record the analysis in the database.
-        
-        If you need to RE-analyse the database, delete existing analysis first. 
+
+        If you need to RE-analyse the database, delete existing analysis first.
         """
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid == None).all()
@@ -1149,9 +1158,9 @@ class API(object):
             if not game.analysis_performed:
                 replayer = AnalysisReplayer(self.session, game)
                 replayer.analyse()
-                replayer.finalise()        
+                replayer.finalise()
         recalculate_global_statistics(self.session)
-    
+
     def _analyse_immediately(self, gameid):
         """
         Analyse game on a different thread.
@@ -1182,7 +1191,7 @@ class API(object):
         Analyse games that haven't been analysed.
         """
         return self._run_pending_analysis()
-        
+
     @api
     def reanalyse(self, gameid):
         """
@@ -1253,7 +1262,7 @@ class API(object):
                 self._timeout(game)
                 count += 1
         return count
-    
+
     @api
     def recreate_timeouts(self):
         """
@@ -1272,7 +1281,7 @@ class API(object):
                 .filter(tables.GameHistoryBase.gameid == game.gameid).all()
             bases.sort(key=lambda b: b.order)
             for base in bases:
-                for sub in subs:                        
+                for sub in subs:
                     if self.session.query(sub)  \
                             .filter(sub.gameid == base.gameid)  \
                             .filter(sub.order == base.order).all():
@@ -1289,17 +1298,17 @@ class API(object):
                     self.session.add(element)
                     element.userid = ghra.userid
                     element.gameid = base.gameid
-                    element.order = base.order                    
+                    element.order = base.order
                     count += 1
         return count
-    
+
     @api
-    def get_group_games(self, gameid):
+    def get_group_games(self, gameid, userid=None):
         """
         Get all running games in group.
-        
+
         Gameid may not be the parent game.
-        
+
         Returns groupid, gameids (for now).
         """
         try:
@@ -1309,7 +1318,8 @@ class API(object):
             return API.ERR_NO_SUCH_RUNNING_GAME
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.spawn_group == root.gameid).all()
-        return root.gameid, [dtos.RunningGameSummary.from_running_game(game)
+        return root.gameid, [dtos.RunningGameSummary.from_running_game(game,
+                                                                       userid)
                              for game in games]
 
 def _create_hu():

@@ -220,46 +220,42 @@ class RunningGameSummary(object):
     list of users in game, and details of situation
     """
     def __init__(self, gameid, public_ranges, users, situation,
-                 current_user_details, rgp_details, spawn_factor):
+                 is_on_me, is_finished, is_analysed, rgp_details, spawn_group,
+                 spawn_factor):
         self.gameid = gameid
         self.public_ranges = public_ranges
         self.users = users  # TODO: REVISIT: replace this with rgp_details
         self.situation = situation
-        self.current_user_details = current_user_details
-        self.is_finished = current_user_details is None
+        self.is_on_me = is_on_me
+        self.is_analysed = is_analysed
+        self.is_finished = is_finished
         self.rgp_details = rgp_details
+        self.spawn_group = spawn_group
         self.spawn_factor = spawn_factor
-
-    def has_results(self):
-        """
-        Not just is_finished, but also has calculated results
-        """
-        return all(rgp.results.has_key('ev') for rgp in self.rgp_details)
 
     def __repr__(self):
         return ("RunningGameSummary(gameid=%r, public_ranges=%r, users=%r, "
-                "situation=%r, current_user_details=%r, rgp_details=%r, "
-                "spawn_factor=%r)") %  \
+                "situation=%r, is_on_me=%r, is_finished=%r, is_analysed=%r, "
+                "rgp_details=%r, spawn_group=%r, spawn_factor=%r)") %  \
             (self.gameid, self.users, self.public_ranges, self.situation,
-             self.current_user_details, self.rgp_details, self.spawn_factor)
+             self.is_on_me, self.is_finished, self.is_analysed,
+             self.rgp_details, self.spawn_group, self.spawn_factor)
 
     @classmethod
-    def from_running_game(cls, running_game):
+    def from_running_game(cls, running_game, userid):
         """
         Create object from tables.RunningGame
         """
         rgps = sorted(running_game.rgps, key=lambda r:r.order)
         users = [UserDetails.from_user(r.user) for r in rgps]
         situation = SituationDetails.from_situation(running_game.situation)
-        if running_game.current_userid is not None:
-            user_details = UserDetails.from_user(running_game.current_rgp.user)
-        else:
-            user_details = None
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in running_game.rgps]
         return cls(running_game.gameid, running_game.public_ranges, users,
-                   situation, user_details, rgp_details,
-                   running_game.spawn_factor)
+                   situation, running_game.current_userid == userid,
+                   running_game.current_userid is None,
+                   running_game.analysis_performed, rgp_details,
+                   running_game.spawn_group, running_game.spawn_factor)
 
 class RunningGameParticipantDetails(object):
     """
@@ -292,6 +288,41 @@ class RunningGameParticipantDetails(object):
         results = {rgpr.scheme: rgpr.result for rgpr in rgp.results}
         return cls(user, rgp.order, rgp.stack, rgp.contributed, rgp.range_raw,
                    rgp.left_to_act, rgp.folded, results)
+
+class RunningGroup(object):
+    """
+    Summary of a spawn group
+    """
+    def __init__(self, groupid, is_finished, is_on_me, is_analysed,
+                 description, users):
+        self.groupid = groupid
+        self.is_finished = is_finished
+        self.is_on_me = is_on_me
+        self.is_analysed = is_analysed
+        self.description = description
+        self.users = users
+
+    def __repr__(self):
+        return ("RunningGroup(groupid=%r, is_finished=%r, is_on_me=%r, "
+                "is_analysed=%r, description=%r, users=%r)") %  \
+            (self.groupid, self.is_finished, self.is_on_me, self.is_analysed,
+             self.description, self.users)
+
+    @classmethod
+    def from_rgps(cls, groupid, is_finished, is_on_me, games):
+        is_analysed = sum(game.spawn_factor for game in games
+                          if game.analysis_performed)
+        users = {rgp.userid: {'screenname': rgp.user.screenname, 'result': 0.0}
+                 for rgp in games[0].rgps}
+        for game in games:
+            for rgp in game.rgps:
+                for result in rgp.results:
+                    if result.scheme == 'ev':
+                        users[rgp.userid]['result'] +=  \
+                            result.result * game.spawn_factor
+        users = [users[rgp.userid] for rgp in games[0].rgps]
+        return cls(groupid, is_finished, is_on_me, is_analysed,
+                   games[0].situation.description, users)
 
 class RunningGameDetails(object):
     """
@@ -348,6 +379,8 @@ class RunningGameDetails(object):
         """
         return self.current_player is None
 
+
+
 class SituationResult(object):
     """
     Everything a user might want to know about their results for a situation.
@@ -383,10 +416,13 @@ class UsersGameDetails(object):
     """
     lists of open game details, running game details, for a specific user
     """
-    def __init__(self, userid, running_details, finished_details):
+    def __init__(self, userid, running_details, finished_details,
+                 running_groups, finished_groups):
         self.userid = userid
         self.running_details = running_details
         self.finished_details = finished_details
+        self.running_groups = running_groups
+        self.finished_groups = finished_groups
 
 class GameItem(object):
     """
