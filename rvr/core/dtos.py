@@ -34,7 +34,7 @@ class ChangeScreennameRequest(object):
     When the initial automatic login fails, the user gets a chance to choose a
     different screenname and try again. All is well, and this class is not
     needed.
-    
+
     When the initial automatic login succeeds, the user may still want to change
     their screenname, and we give them that option. When they do so, this
     request object is sent to the backend to change their name.
@@ -60,7 +60,7 @@ class UserDetails(object):
     def __init__(self, userid, screenname):
         self.userid = userid
         self.screenname = screenname
-    
+
     def __repr__(self):
         return "UserDetails(userid=%r, screenname=%r)" %  \
             (self.userid, self.screenname)
@@ -79,22 +79,22 @@ class LoginResponse(UserDetails):
     """
     Response from a LoginRequest. Note that the screenname may change because
     the user has chosen a different one.
-    
+
     If response has a different screenname to request, it means that the user
     has previously chosen to have a different screenname, possibly because their
     name was taken.
-    
+
     If response has the same screenname, it means either that the user has
     logged in previously, or they were created with that screenname.
     """
     def __init__(self, userid, screenname, existed):
         UserDetails.__init__(self, userid, screenname)
         self.existed = existed
-    
+
     def __repr__(self):
         return "LoginResponse(userid=%r, screenname=%r, existed=%r)" %  \
             (self.userid, self.screenname, self.existed)
-    
+
     @classmethod
     def from_user(cls, user, existed):  # pylint:disable=W0221
         """
@@ -130,9 +130,9 @@ class SituationDetails(object):
         Note that board_raw can contain fewer cards than current_round would
         suggest (e.g. to allow flop situations with random flops), but it can't
         contain more.
-        
+
         players is a list of SituationPlayerDetails.
-        
+
         current_player is an index into the players list.
         """
         self.situationid = situationid
@@ -146,7 +146,7 @@ class SituationDetails(object):
         self.pot_pre = pot_pre
         self.increment = increment
         self.bet_count = bet_count
-    
+
     def __repr__(self):
         return ("SituationDetails(situationid=%r, description=%r, players=%r, "
             "current_player=%r, is_limit=%r, big_blind=%r, board_raw=%r, "
@@ -154,7 +154,7 @@ class SituationDetails(object):
             (self.situationid, self.description, self.players,
              self.current_player, self.is_limit, self.big_blind, self.board_raw,
              self.current_round, self.pot_pre, self.increment, self.bet_count)
-        
+
     @classmethod
     def from_situation(cls, situation):
         """
@@ -178,12 +178,12 @@ class SituationDetails(object):
                    pot_pre=situation.pot_pre,
                    increment=situation.increment,
                    bet_count=situation.bet_count)
-    
+
     def left_to_act(self):
         """
         From (but excluding) current_player, all players who are left to
         act, including those players before current_player, after the others.
-        
+
         E.g. if the players are 1,2,3,4,5 and 3 is current, and only 4 and 2
         have left_to_act=True, then this function returns [4, 2].
         """
@@ -205,7 +205,7 @@ class OpenGameDetails(object):
         return "OpenGameDetails(gameid=%r, public_ranges=%r, users=%r, "  \
             "situation=%r)" % (self.gameid, self.public_ranges, self.users,
             self.situation)
-    
+
     @classmethod
     def from_open_game(cls, open_game):
         """
@@ -229,6 +229,12 @@ class RunningGameSummary(object):
         self.is_finished = current_user_details is None
         self.rgp_details = rgp_details
         self.spawn_factor = spawn_factor
+
+    def has_results(self):
+        """
+        Not just is_finished, but also has calculated results
+        """
+        return all(rgp.results.has_key('ev') for rgp in self.rgp_details)
 
     def __repr__(self):
         return ("RunningGameSummary(gameid=%r, public_ranges=%r, users=%r, "
@@ -269,14 +275,14 @@ class RunningGameParticipantDetails(object):
         self.left_to_act = left_to_act
         self.folded = folded
         self.results = results
-    
+
     def __repr__(self):
         return ("RunningGameParticipantDetails(user=%r, order=%r, stack=%r, "
                 "contributed=%r, range=%r, left_to_act=%r, folded=%r, "
                 "results=%r)") %  \
             (self.user, self.order, self.stack, self.contributed,
              self.range_raw, self.left_to_act, self.folded, self.results)
-    
+
     @classmethod
     def from_rgp(cls, rgp):
         """
@@ -307,7 +313,7 @@ class RunningGameDetails(object):
         self.spawn_factor = spawn_factor
         self.spawn_group = spawn_group
         self.rgp_details = rgp_details  # list of RunningGameParticipantDetails
-    
+
     def __repr__(self):
         return ("RunningGameDetails(gameid=%r, public_ranges=%r, situation=%r, "
                 "current_player=%r, board_raw=%r, current_round=%r, "
@@ -317,13 +323,13 @@ class RunningGameDetails(object):
              self.current_player, self.board_raw, self.current_round,
              self.pot_pre, self.increment, self.bet_count, self.current_factor,
              self.spawn_factor, self.spawn_group, self.rgp_details)
-    
+
     @classmethod
     def from_running_game(cls, game):
         """
         Create object from tables.RunningGame
         """
-        situation = SituationDetails.from_situation(game.situation)        
+        situation = SituationDetails.from_situation(game.situation)
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in game.rgps]
         current_players = [r for r in rgp_details
@@ -335,7 +341,7 @@ class RunningGameDetails(object):
                    game.board_raw, game.current_round, game.pot_pre,
                    game.increment, game.bet_count, game.current_factor,
                    game.spawn_factor, spawn_group, rgp_details)
-    
+
     def is_finished(self):
         """
         True when the game is finished.
@@ -350,7 +356,7 @@ class SituationResult(object):
         self.name = name
         self.average = average
         self.positions = positions
-        
+
     def __repr__(self):
         return "SituationResult(name=%r, average=%r, positions=%r)" %  \
             (self.name, self.average, self.positions)
@@ -367,7 +373,7 @@ class PositionResult(object):
         self.average = average
         self.stddev = stddev
         self.confidence = confidence
-        
+
     def __repr__(self):
         return "PositionResult(name=%r, ev=%r, played=%r, total=%r, "  \
             "average=%r, stddev=%r, confidence=%r)" % (self.name, self.ev,
@@ -385,18 +391,18 @@ class UsersGameDetails(object):
 class GameItem(object):
     """
     base class for hand history item DTOs
-    """    
+    """
     @classmethod
     def from_game_history_child(cls, child):
         """
         Child is a GameHistoryUserRange, etc.
-        Construct a GameItemUserRange, etc. 
+        Construct a GameItemUserRange, etc.
         """
         class_ = child.__class__
         if class_ in MAP_TABLE_DTO:
             return MAP_TABLE_DTO[class_].from_history_item(child)
         raise TypeError("Object is not a GameHistoryItem associated object")
-    
+
     def should_include_for(self, userid, all_userids, is_finished,
                            public_ranges):
         """
@@ -423,7 +429,7 @@ class GameItemUserRange(GameItem):
     def __repr__(self):
         return "GameItemUserRange(order=%r, factor=%r, user=%r, range=%r)" %  \
             (self.order, self.factor, self.user, self.range_raw)
-    
+
     def __str__(self):
         return "%s's range is: %s" %  \
             (self.user.screenname, self.range_raw)
@@ -435,7 +441,7 @@ class GameItemUserRange(GameItem):
         """
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details, item.range_raw)
-        
+
     def should_include_for(self, userid, all_userids, is_finished,
                            public_ranges):
         """
@@ -464,7 +470,7 @@ class GameItemRangeAction(GameItem):
         self.fold_ratio = fold_ratio
         self.passive_ratio = passive_ratio
         self.aggressive_ratio = aggressive_ratio
-    
+
     def __repr__(self):
         return ("GameItemRangeAction(order=%r, factor=%r, user=%r,"
                 " range_action=%r, is_check=%r, is_raise=%r,"
@@ -472,11 +478,11 @@ class GameItemRangeAction(GameItem):
             (self.order, self.factor, self.user, self.range_action,
              self.is_check, self.is_raise,
              self.fold_ratio, self.passive_ratio, self.aggressive_ratio)
-    
+
     def __str__(self):
         return "%s performs range-based action: %s" % (self.user,
                                                        self.range_action)
-    
+
     @classmethod
     def from_history_item(cls, item):
         """
@@ -490,7 +496,7 @@ class GameItemRangeAction(GameItem):
         return cls(item.order, item.factor, user_details, range_action,
                    item.is_check, item.is_raise,
                    item.fold_ratio, item.passive_ratio, item.aggressive_ratio)
-    
+
     def should_include_for(self, userid, all_userids, is_finished,
                            public_ranges):
         """
@@ -499,7 +505,7 @@ class GameItemRangeAction(GameItem):
         """
         # pylint:disable=unused-argument
         return public_ranges or is_finished or self.user.userid == userid
-    
+
 class GameItemActionResult(GameItem):
     """
     User's range action results in an action
@@ -512,16 +518,16 @@ class GameItemActionResult(GameItem):
         self.factor = factor
         self.user = user
         self.action_result = action_result
-    
+
     def __repr__(self):
         return ("GameItemActionResult(order=%r, factor=%r, user=%r, " +
                 "action_result=%r)") %  \
             (self.order, self.factor, self.user, self.action_result)
-    
+
     def __str__(self):
         return "%s performs action: %s" % (self.user,
                                            self.action_result)
-    
+
     @classmethod
     def from_history_item(cls, item):
         """
@@ -548,11 +554,11 @@ class GameItemBoard(GameItem):
         self.factor = factor
         self.street = street
         self.cards = cards
-    
+
     def __repr__(self):
         return "GameItemBoard(order=%r, factor=%r, street=%r, cards=%r)" %  \
             (self.order, self.factor, self.street, self.cards)
-    
+
     def __str__(self):
         if self.street == FLOP:
             return "%s: %s" % (self.street, self.cards)
@@ -564,7 +570,7 @@ class GameItemBoard(GameItem):
         else:
             # Unknown, but probably PREFLOP, but shouldn't happen.
             return "(unknown street) %s: %s" % (self.street, self.cards)
-    
+
     @classmethod
     def from_history_item(cls, item):
         """
@@ -587,10 +593,10 @@ class GameItemTimeout(GameItem):
     def __repr__(self):
         return ("GameItemTimeout(order=%r, factor=%r, user=%r)") %  \
             (self.order, self.factor, self.user)
-    
+
     def __str__(self):
         return "%s has timed out" % (self.user,)
-    
+
     @classmethod
     def from_history_item(cls, item):
         """
@@ -598,7 +604,7 @@ class GameItemTimeout(GameItem):
         """
         user_details = UserDetails.from_user(item.user)
         return cls(item.order, item.factor, user_details)
-    
+
 class GameItemChat(GameItem):
     """
     User chats message.
@@ -611,14 +617,14 @@ class GameItemChat(GameItem):
         self.factor = factor
         self.user = user
         self.message = message
-        
+
     def __repr__(self):
         return "GameItemChat(order=%r, factor=%r, user=%r, message=%r)" %  \
             (self.order, self.factor, self.user, self.message)
-    
+
     def __str__(self):
         return "%s chats: %s" % (self.user, self.message)
-    
+
     @classmethod
     def from_history_item(cls, item):
         """
@@ -655,11 +661,11 @@ class GameItemShowdown(GameItem):
         return "GameItemShowdown(order=%r, factor=%r, is_passive=%r, "  \
             "pot=%r, equities=%r)" %  \
             (self.order, self.factor, self.is_passive, self.pot, self.equities)
-    
+
     def __str__(self):
         return "Showdown between %s for %d chips" %  \
             (self.players_desc(), self.pot)
-    
+
     def players_desc(self):
         """
         Return a string like "Player A, Player B and Player C".
@@ -670,8 +676,8 @@ class GameItemShowdown(GameItem):
                                        for eq in self.equities[:-1]])
         return " and ".join([first_showdowners,
                                     str(self.equities[-1].user)])
-        
-    
+
+
     @classmethod
     def from_history_item(cls, item):
         """
@@ -681,7 +687,7 @@ class GameItemShowdown(GameItem):
         equities = [GameItemShowdownEquity(participant)
                     for participant in item.participants]
         return cls(item.order, item.factor, item.is_passive, item.pot, equities)
-    
+
     def should_include_for(self, userid, all_userids, is_finished,
                            public_ranges):
         """
@@ -701,7 +707,7 @@ class GameItemShowdownEquity(object):
         """
         self.user = UserDetails.from_user(equity_item.user)
         self.equity = equity_item.equity
-        
+
     def __repr__(self):
         return "GameItemShowdownEquity(user=%r, equity=%r)" %  \
             (self.user, self.equity)
@@ -743,7 +749,7 @@ class AnalysisItemFoldEquityItem(object):
             "immediate_result=%r, semibluff_ev=%r, semibluff_equity=%r)" %  \
             (self.cards, self.fold_ratio, self.immediate_result,
              self.semibluff_ev, self.semibluff_equity)
-    
+
     @classmethod
     def from_afei(cls, afei):
         """
@@ -765,7 +771,7 @@ class AnalysisItemFoldEquity(object):
                            TURN: "On the turn",
                            RIVER: "On the river",
                            None: "After the hand"}
-    
+
     def __init__(self, bettor, street, pot_before_bet, is_raise, is_check,
                  bet_cost, raise_total, pot_if_called, items):
         # bettor is a UserDetails
@@ -778,7 +784,7 @@ class AnalysisItemFoldEquity(object):
         self.raise_total = raise_total
         self.pot_if_called = pot_if_called
         self.items = items
-    
+
     def __repr__(self):
         return "AnalysisItemFoldEquity(bettor=%r, street=%r, "  \
             "pot_before_bet=%r, is_raise=%r, is_check=%r, bet_cost=%r, "  \
@@ -786,7 +792,7 @@ class AnalysisItemFoldEquity(object):
             (self.bettor, self.street, self.pot_before_bet, self.is_raise,
              self.is_check, self.bet_cost, self.raise_total, self.pot_if_called,
              self.items)
-  
+
     @classmethod
     def from_afe(cls, afe):
         """
@@ -812,11 +818,11 @@ MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
 class RunningGameHistory(object):
     """
     Everything about a running game.
-    
+
     This will contain range data for both players if the game is finished, for
     one player if that user is requesting this object, or for no one if this is
     a public view of a running game.
-    
+
     It will contain analysis only if the game is finished.
     """
     def __init__(self, game_details, current_options, history_items,
@@ -826,24 +832,24 @@ class RunningGameHistory(object):
         self.history = history_items
         self.payments = payment_items
         self.analysis = analysis_items
-        
+
     def __repr__(self):
         return "RunningGameHistory(game_details=%r, current_options=%r, "  \
             "history=%r, analysis=%r)" %  \
             (self.game_details, self.current_options, self.history,
              self.analysis)
-        
+
     def is_finished(self):
         """
         True when the game is finished.
         """
         return self.game_details.is_finished()
-            
+
 class ActionOptions(object):
     """
     Describes the options available to the current player, in general poker
     terms. E.g. fold, check, raise between X and Y chips, call Z chips.
-    
+
     (Note that being allowed to fold is implied. You're always allowed to fold.)
     """
     def __init__(self, call_cost, is_raise=False,
@@ -862,12 +868,12 @@ class ActionOptions(object):
                 "specify both min_raise and max_raise, or neither")
         self.min_raise = min_raise
         self.max_raise = max_raise
-        
+
     def __repr__(self):
         return "ActionOptions(call_cost=%r, is_raise=%r, min_raise=%r, "  \
             "max_raise=%r)" % (self.call_cost, self.is_raise, self.min_raise,
                                self.max_raise)
-    
+
     def can_check(self):
         """
         Does the user have the option to check?
@@ -875,14 +881,14 @@ class ActionOptions(object):
         # Note that this is cost to call, not total contribution once called.
         # Which is why it works for checking in the big blind.
         return self.call_cost == 0
-    
+
     def can_raise(self):
         """
         Does the user have the option to raise? If so, minraise and max_raise
         will be available to express how much the user can raise to.
         """
         return self.min_raise is not None
-    
+
 class ActionDetails(object):
     """
     range-based action request object
@@ -923,7 +929,7 @@ class ActionDetails(object):
                 "aggressive_range=%r, raise_total=%r") %  \
             (self.fold_range, self.passive_range, self.aggressive_range,
              self.raise_total)
-            
+
     def __str__(self):
         return "folding %s, passive %s, aggressive (to %d) %s" %  \
             (self.fold_range.description, self.passive_range.description,
@@ -933,7 +939,7 @@ class ActionResult(object):
     """
     response to a range-based action request, tells the user what happened
     """
-    def __init__(self, is_fold=False, is_passive=False, 
+    def __init__(self, is_fold=False, is_passive=False,
                  is_aggressive=False, call_cost=None, raise_total=None,
                  is_terminate=False, is_raise=False):
         if len([b for b in [is_fold, is_passive, is_aggressive] if b]) != 1  \
@@ -953,21 +959,21 @@ class ActionResult(object):
         self.raise_total = raise_total
         self.is_terminate = is_terminate
         self.is_raise = is_raise
-        
+
     @classmethod
     def fold(cls):
         """
         User folded
         """
         return ActionResult(is_fold=True)
-    
+
     @classmethod
     def call(cls, call_cost):
         """
         User checked or called
         """
         return ActionResult(is_passive=True, call_cost=call_cost)
-    
+
     @classmethod
     def raise_to(cls, raise_total, is_raise):
         """
@@ -975,7 +981,7 @@ class ActionResult(object):
         """
         return ActionResult(is_aggressive=True, raise_total=raise_total,
                             is_raise=is_raise)
-    
+
     @classmethod
     def terminate(cls):
         """
@@ -983,7 +989,7 @@ class ActionResult(object):
         recorded.
         """
         return ActionResult(is_terminate=True)
-    
+
     def __str__(self):
         # pylint:disable=R0911
         if self.is_fold:
@@ -1001,7 +1007,7 @@ class ActionResult(object):
         if self.is_terminate:
             return "(terminate)"
         return "(inexplicable)"
-    
+
     def __repr__(self):
         return ("ActionResult(is_fold=%r, is_passive=%r, " +
                 "is_aggressive=%r, call_cost=%r, raise_total=%r, " +

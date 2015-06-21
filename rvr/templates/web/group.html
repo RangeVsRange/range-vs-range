@@ -1,17 +1,14 @@
 {% extends "web/base.html" %}
 
-{% macro running_games(games_details, userid, show_details, show_description) %}
+{% macro running_games(games_details, userid) %}
   <table class="table">
     <thead>
       <tr>
         <th style="min-width: 200px; width: 200px">Game</th>
-        {% if show_details %}
-        <th>Details</th>
-        {% endif %}
-        <th>Players</th>
-        {% if show_description %}
-        <th>Description</th>
-        {% endif %}
+        <th>Line weight</th>
+        {% for sn in screennames %}
+        <th>{{sn}}</th>
+        {% endfor %}
       </tr>
     </thead>
     {%- for game in games_details %}
@@ -26,44 +23,10 @@
           </div>
         </div>
       </td>
-      {% if show_details %}
-      <td>
-        <button type=button class="btn btn-default game-show" id="show-{{game.gameid}}" onclick="show_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span></button>
-        <button type=button class="btn btn-default game-hide hidden" id="hide-{{game.gameid}}" onclick="hide_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-top" aria-hidden="true"></span></button>
-      </td>
-      {% endif %}
-      <td>
-        {% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}
-      </td>
-      {% if show_description %}
-      <td>{{game.situation.description}}</td>
-      {% endif %}
-    </tr>
-    <tr class="game-row hidden" id="row-{{game.gameid}}">
-      <td colspan=4>
-        {% if not game.is_finished %}
-        (game is still running)
-        {% else %}
-        <table class="table table-condensed">
-        <thead>
-        <tr>
-          {% if game.public_ranges %}<td><strong>Line weight</strong></td>{% endif %}
-          {% for rgp in game.rgp_details %}
-          <td><strong>{{rgp.user.screenname}}</strong></td>
-          {% endfor %}
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-          {% if game.public_ranges %}<td>{{"%0.2f%%" % (game.spawn_factor * 100.0,)}}</td>{% endif %}
-          {% for rgp in game.rgp_details %}
-          <td>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % (rgp.results['ev'],)}}{% endif %}</td>
-          {% endfor %}
-        </tr>
-        </tbody>
-        </table>
-        {% endif %}
-      </td>
+      <td>{{"%0.2f%%" % (game.spawn_factor * 100.0,)}}</td>
+      {% for rgp in game.rgp_details %}
+      <td>{% if not game.is_finished %}(running){% elif not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % (rgp.results['ev'],)}}{% endif %}</td>
+      {% endfor %}
     </tr>
     {%- endfor %}
   </table>
@@ -71,22 +34,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script>
-hide_game_details = function(gameid) {
-    $('.game-show').removeClass('hidden');
-    $('.game-hide').addClass('hidden');
-    $('.game-row').addClass('hidden');
-    // $('#show-' + gameid).removeClass('hidden');
-    // $('#hide-' + gameid).addClass('hidden');
-    // $('#row-' + gameid).addClass('hidden');
-};
-show_game_details = function(gameid) {
-    hide_game_details(gameid); // start afresh
-    $('#show-' + gameid).addClass('hidden');
-    $('#hide-' + gameid).removeClass('hidden');
-    $('#row-' + gameid).removeClass('hidden');
-};
-</script>
 {% endblock %}
 
 {% block title %}Range vs. Range - Group {{groupid}}{% endblock %}
@@ -102,7 +49,7 @@ show_game_details = function(gameid) {
 
   {{ flash_messages() }}
 
-  {{ running_games(games, userid, True, False) }}
+  {{ running_games(games, userid) }}
 
     <h2>Results Summary</h2>
 
@@ -125,45 +72,6 @@ show_game_details = function(gameid) {
     </tbody>
     </table>
 
-{#
-  <table class="table table-bordered">
-
-  <thead>
-  <tr>
-  <td rowspan=2><div class="text-center"><strong>Game</strong></div></td>
-  <td colspan='{{num_streets}}'><div class="text-center"><strong>Action</strong></div></td>
-  <td colspan='{{num_players}}'><div class="text-center"><strong>Results</strong></div></td>
-  </tr>
-  <tr>
-  {% for street in streets %}<td><strong>{{street}}</strong></td>{% endfor %}
-  {% for player in players %}<td><strong>{{player}}</strong></td>{% endfor %}
-  </tr>
-  </thead>
-
-  <tbody>
-  {% for game in games2 %}
-  <tr>
-    <td>Game {{game.gameid}}</td>
-    {% for street in streets %}
-    <td>{{game.line[street]}}</td>
-    {% endfor %}
-    {% for player in players %}
-    <td>{{game.results[player]}}</td>
-    {% endfor %}
-  </tr>
-  {% endfor %}
-
-  <tfoot>
-  <tr>
-  <td colspan="{{num_streets + 1}}"></td>
-  {% for player in players %}<td><strong>{{"%0.4f" % (totals[player],)}}</strong></td>{% endfor %}
-  </tr>
-  </tfoot>
-
-  </tbody>
-
-  </table>
-#}
 {{ share_buttons() }}
 </div>
 {% endblock %}

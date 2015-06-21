@@ -87,7 +87,7 @@ def get_backdoor_details():
 def get_oidc_token_details():
     """
     Implements a backdoor login alternative, for use in development only ldo.
-    
+
     Returns (subject identifier, subject email)
     """
     try:
@@ -100,12 +100,12 @@ def get_oidc_token_details():
 def ensure_user():
     """
     Commit user to database and determine userid.
-    
+
     May return a complete web response (e.g. in case of error).
-    
+
     May flash messages.
     """
-    # TODO: REVISIT: automagically hook this into OIDC.check 
+    # TODO: REVISIT: automagically hook this into OIDC.check
     api = API()
     if not is_authenticated():
         # user is not authenticated yet
@@ -211,7 +211,7 @@ def unsubscribe():
     """
     Record that the user does not want to receive any more emails, at least
     until they log in again and in so doing clear that flag.
-    
+
     Note that authentication is not required.
     """
     api = API()
@@ -298,14 +298,14 @@ def faq_page():
 def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
-    """    
+    """
     # TODO: 1: 'updated!' indicator on finished games (on the RGPs)
-    
+
     # TODO: 2: account page with email preferences, screenname, and spawn
 
     # TODO: 3: confidence for a situation
     # sd = sqrt(n1.sd1^2 + n2.sd2^2 + n3.sd3^2 + ...)
-    
+
     # TODO: 3: global confidence, in the same fashion
 
     if not is_authenticated():
@@ -529,7 +529,7 @@ def _board_to_vars(item):
 def _range_action_to_vars(item):
     """
     Convert to percentages (relative), and such.
-    
+
     Returns (total_range, fold_range, passive_range, aggressive_range, username,
              fold_pct, passive_pct, aggressive_pct, raise_total)
     """
@@ -587,7 +587,7 @@ def _action_summary_to_vars(range_action, action_result, action_result_order,
             "passive": pas,
             "aggressive": agg,
             "order": user_range.order}
-    
+
 def _action_result_to_vars(action_result):
     """
     Summarises action result for the case where the hand is in progress, and
@@ -596,7 +596,7 @@ def _action_result_to_vars(action_result):
     return {"screenname": action_result.user.screenname,
             "action_result": action_result.action_result,
             "order": action_result.order}
-    
+
 def _timeout_to_vars(timeout):
     """
     Summarises a timeout.
@@ -675,7 +675,7 @@ def _make_payments(game_history, game_payments, scheme_includes):
     game_payments maps order to map of reason to list of GamePayment
 
     Return dict mapping range action order to list of payments.
-    
+
     One payment includes a reason, and a dict mapping player order to payment.
     """
     all_payments = {}
@@ -729,7 +729,7 @@ def _make_payments(game_history, game_payments, scheme_includes):
 def _calc_is_new_chat(game_history, userid):
     """
     Determine if there is new chat, from userid's perspective.
-    
+
     Specifically, if there is a chat more recent than userid's last action.
     """
     is_new_chat = False
@@ -759,7 +759,7 @@ def _running_game(game, gameid, userid, api):
             if set_first_action:
                 response.set_cookie('first_action', 'True', max_age=86400)
             return response
-    
+
     # First load, OR something's wrong with their data.
     range_editor_url = url_for('range_editor',
         rng_original=game.game_details.current_player.range_raw,
@@ -798,14 +798,14 @@ def _finished_game(game, gameid, userid):
     history = _make_history_list(game.history, game.game_details.situation)
     scheme = request.args.get('scheme', 'ev')
     scheme_includes = RunningGameParticipantResult.SCHEME_DETAILS[scheme]
-    payments = _make_payments(game.history, game.payments, scheme_includes) 
+    payments = _make_payments(game.history, game.payments, scheme_includes)
     is_new_chat = _calc_is_new_chat(game.history, userid)
     analyses = []  # TODO: 5: reintroduce this: game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')] 
+                    ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/game.html', title=title,
         game_details=game.game_details, history=history, payments=payments,
         num_players=len(game.game_details.rgp_details), analyses=analyses,
@@ -833,7 +833,7 @@ def authenticated_game_page(gameid):
                 (gameid,)
         flash(msg)
         return redirect(url_for('error_page'))
-    
+
     if response.is_finished():
         return _finished_game(response, gameid, userid)
     else:
@@ -853,7 +853,7 @@ def unauthenticated_game_page(gameid):
                 (gameid,)
         flash(msg)
         return redirect(url_for('error_page'))
-    
+
     if response.is_finished():
         return _finished_game(response, gameid, None)
     else:
@@ -908,7 +908,7 @@ def _chat_page(game, gameid, userid, api):
 def chat_page():
     """
     Chat history for game, and a text field to chat into game.
-    
+
     Requires that user is registered in game.
     """
     gameid = request.args.get('gameid', None)
@@ -922,7 +922,7 @@ def chat_page():
         return redirect(url_for('error_page'))
 
     userid = session['userid']
-    
+
     api = API()
     response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
@@ -933,7 +933,7 @@ def chat_page():
                 (gameid,)
         flash(msg)
         return redirect(url_for('error_page'))
-    
+
     return _chat_page(response, gameid, userid, api)
 
 @APP.route('/analysis', methods=['GET'])
@@ -946,7 +946,7 @@ def analysis_page():
     # This can simply display each rank combo and allow selection of suit
     # combos. Then it can display, for each rank combo, the average EV of the
     # selected suit combos, as hover text. I'm not sure about colours.
-    
+
     # Or more simply, display EV of each combo in hover text, and colour squares
     # like a normal range viewer (green / yellow / red / blue).
     gameid = request.args.get('gameid', None)
@@ -967,7 +967,7 @@ def analysis_page():
                 (gameid,)
         return error(msg)
     game = response
-    
+
     order = request.args.get('order', None)
     if order is None:
         return error("Invalid order.")
@@ -984,7 +984,7 @@ def analysis_page():
         return error("Invalid order (not in game).")
 
     if not isinstance(item, dtos.GameItemActionResult):
-        return error("Invalid order (not a bet or raise).") 
+        return error("Invalid order (not a bet or raise).")
 
     if not item.action_result.is_aggressive:
         return error("Analysis only for bets right now, sorry.")
@@ -1034,7 +1034,7 @@ def user_page():
     except ValueError:
         return error("Invalid min.")
     is_competition = request.args.get('mode', 'competition') == 'competition'
-    
+
     api = API()
     result = api.get_user_by_screenname(screenname)
     if result == API.ERR_NO_SUCH_USER:
@@ -1047,15 +1047,15 @@ def user_page():
         return error("No such user.")
     if isinstance(result, APIError):
         return error("An unknown error occurred retrieving results.")
-    
+
     min_visible = 5  # stats only shown if 5 hands played
-    
+
     # suppress user's situation results where insufficient position hands
     for situation in result:
         for position in situation.positions:
             if position.played < min_visible:
-                situation.average = None     
-    
+                situation.average = None
+
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
@@ -1080,13 +1080,13 @@ def alpha():
         is_logged_in=is_logged_in(),
         url=request.url,
         my_screenname=get_my_screenname())
-    
+
 @APP.route('/whatnow', methods=['GET'])
 def whatnow():
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
- 
+
     response = make_response(render_template('web/whatnow.html',
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
@@ -1094,7 +1094,7 @@ def whatnow():
         my_screenname=get_my_screenname()))
     response.set_cookie('first_action', expires=0)
     return response
-    
+
 @APP.route('/group', methods=['GET'])
 def group_page():
     gameid = request.args.get('gameid', None)
@@ -1106,7 +1106,7 @@ def group_page():
     except ValueError:
         flash("Invalid game ID.")
         return redirect(url_for('error_page'))
-    
+
     if is_logged_in():
         userid = session['userid']
     else:
@@ -1122,7 +1122,6 @@ def group_page():
 
     # We rely on all games having the same players here - and there being at
     # least one of them!
-    total_weight = sum(game.spawn_factor for game in games if game.is_finished)
     screennames = [rgp.user.screenname for rgp in games[0].rgp_details]
     results_by_player = {screenname: 0.0 for screenname in screennames}
     for i, screenname in enumerate(screennames):
@@ -1134,7 +1133,9 @@ def group_page():
     total_results = [{'screenname': screenname,
                       'result': results_by_player[screenname]}
                      for screenname in screennames]
-    
+    total_weight = sum(game.spawn_factor
+                       for game in games if game.has_results())
+
     # TODO: 0.1: https://github.com/jonmiles/bootstrap-treeview
     # grouped by betting line
 
@@ -1144,6 +1145,7 @@ def group_page():
     return render_template('web/group.html',
         description=games[0].situation.description,
         games=games,
+        screennames=[user.screenname for user in games[0].users],
         total_weight=total_weight,
         total_results=total_results,
         userid=userid,
