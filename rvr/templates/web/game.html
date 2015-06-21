@@ -1,4 +1,4 @@
-{% extends "web/game_list.html" %}
+{% extends "web/base.html" %}
 
 {% block metas %}
 {{super()}}
@@ -35,13 +35,13 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
 };
 showdown_view = function(criterion) {
     // toggle this one, hide all others
-	was_visible = $(criterion).is(':visible');
-	$('.showdown').hide();
-	if (was_visible) {
-		$(criterion).hide();
-	} else {
-		$(criterion).show();
-	}
+  was_visible = $(criterion).is(':visible');
+  $('.showdown').hide();
+  if (was_visible) {
+    $(criterion).hide();
+  } else {
+    $(criterion).show();
+  }
 };
 </script>
 {% if is_new_chat and is_mine %}
@@ -125,7 +125,7 @@ showdown_view = function(criterion) {
     <p>The board is: <input type=hidden id=board value="{{game_details.board_raw}}">{% for card in board %}<img alt="{{card}}" src="/static/smallcards/{{card}}.png">{% endfor %}</p>
     <p>The pot at the start of this round was: <strong>{{game_details.pot_pre}}</strong>.</p>
     {% endif %}
-    
+
     <table class="table table-bordered">
     <thead>
     <tr><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td><td><strong>Status</strong></td></tr>
@@ -152,7 +152,7 @@ showdown_view = function(criterion) {
     </tbody>
     </table>
   </div>
-  
+
   {% if is_me %}
   <div class="tab-pane" id="range-editor">
     <iframe src="{{range_editor_url}}" min-width="100%" width="100%" height="1200px" name="range-editor"></iframe>
@@ -185,7 +185,7 @@ showdown_view = function(criterion) {
           {%- elif result.is_aggressive %}bets {{result.raise_total}}
           {%- else %}does something inexplicable
           {%- endif %},</strong>
-          with {{item.combos}} combos ({{"%0.2f" % item.percent}}% of all possible hands) 
+          with {{item.combos}} combos ({{"%0.2f" % item.percent}}% of all possible hands)
         {% elif hint == "ACTION_RESULT" %}
           <strong>{{item.screenname}}
           {% set result = item.action_result %}
@@ -220,12 +220,12 @@ showdown_view = function(criterion) {
           {% if not is_running and hint == "ACTION_SUMMARY" and item.action_result.is_aggressive and item.action_result_order in analyses %}
           <a class="btn btn-primary" href="{{url_for('analysis_page', gameid=game_details.gameid, order=item.action_result_order)}}">Analysis</a>
           {% endif %}
-  
+
           {# link to showdown page #}
           {% if hint == "SHOWDOWN" %}
           <button class="btn btn-primary" type=button onclick="showdown_view('#showdown-{{item.order}}');">Details</a>
           {% endif %}
-          
+
           {# button for inline range viewing #}
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
           <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
@@ -238,24 +238,24 @@ showdown_view = function(criterion) {
     {% if hint == "SHOWDOWN" %}
     <tr style="display:none;" class=showdown id="showdown-{{item.order}}">
     <td>
-		<table class="table table-condensed">
-		<thead>
-		<tr>
-		  <td><strong>Player</strong></td>
-		  <td><strong>Equity</strong></td>
-		  <td><strong>Payout</strong></td>
-		</tr>
-		</thead>
-		<tbody>
-		{% for equity in item.equities %}
-		<tr>
-		  <td>{{equity.user.screenname}}</td>
-		  <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity}}{% endif %}</td>
-		  <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity * item.pot}}{% endif %}</td>
-		</tr>
-		{% endfor %}
-		</tbody>
-		</table>
+    <table class="table table-condensed">
+    <thead>
+    <tr>
+      <td><strong>Player</strong></td>
+      <td><strong>Equity</strong></td>
+      <td><strong>Payout</strong></td>
+    </tr>
+    </thead>
+    <tbody>
+    {% for equity in item.equities %}
+    <tr>
+      <td>{{equity.user.screenname}}</td>
+      <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity}}{% endif %}</td>
+      <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity * item.pot}}{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
     </td>
     </tr>
     {% endif %}
@@ -308,13 +308,13 @@ showdown_view = function(criterion) {
           {% elif p.reason == 'showdown' %}
             <strong>{{p.screenname}}</strong> gets paid <strong>{{"%0.4f" % (p.amount,)}}</strong> at showdown.
           {% else %}
-            <strong>Unknown type of payment '{{p.reason}}', details: {{p}}</strong> 
+            <strong>Unknown type of payment '{{p.reason}}', details: {{p}}</strong>
           {% endif %}
         </td>
         {% for i in range(num_players) %}
         {% set rgp = game_details.rgp_details[i] %}
         <td>
-            {% if rgp.user.screenname == p.screenname %}        
+            {% if rgp.user.screenname == p.screenname %}
             <strong>{{"%0.4f" % p.amount}}</strong>
             {% endif %}
         </td>
@@ -328,7 +328,7 @@ showdown_view = function(criterion) {
         {% for i in range(num_players) %}
         {% set rgp = game_details.rgp_details[i] %}
         <td><strong>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % rgp.results[scheme]}}{% endif %}</strong></td>
-        {% endfor %}   
+        {% endfor %}
     </tr>
 </table>
 </div> <!-- results -->

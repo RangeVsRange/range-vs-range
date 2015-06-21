@@ -1,16 +1,108 @@
-{% extends "web/game_list.html" %}
+{% extends "web/base.html" %}
+
+{% macro running_games(games_details, userid, show_details, show_description) %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="min-width: 200px; width: 200px">Game</th>
+        {% if show_details %}
+        <th>Details</th>
+        {% endif %}
+        <th>Players</th>
+        {% if show_description %}
+        <th>Description</th>
+        {% endif %}
+      </tr>
+    </thead>
+    {%- for game in games_details %}
+    <tr>
+      <td>
+        <div class="btn-group btn-group-justified">
+          <div class="btn-group">
+            <button type=button class="btn btn-default">Game {{game.gameid}}</button>
+          </div>
+          <div class="btn-group">
+            <a href="{{ url_for('game_page', gameid=game.gameid) }}" class="btn {% if game.public_ranges %}btn-warning{% else %}btn-primary{% endif %}" >{% if game.current_user_details is none %}View{% elif game.current_user_details.userid == userid %}Play{% else %}View{% endif %}</a>
+          </div>
+        </div>
+      </td>
+      {% if show_details %}
+      <td>
+        <button type=button class="btn btn-default game-show" id="show-{{game.gameid}}" onclick="show_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span></button>
+        <button type=button class="btn btn-default game-hide hidden" id="hide-{{game.gameid}}" onclick="hide_game_details({{game.gameid}});"><span class="glyphicon glyphicon-triangle-top" aria-hidden="true"></span></button>
+      </td>
+      {% endif %}
+      <td>
+        {% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}
+      </td>
+      {% if show_description %}
+      <td>{{game.situation.description}}</td>
+      {% endif %}
+    </tr>
+    <tr class="game-row hidden" id="row-{{game.gameid}}">
+      <td colspan=4>
+        {% if not game.is_finished %}
+        (game is still running)
+        {% else %}
+        <table class="table table-condensed">
+        <thead>
+        <tr>
+          {% if game.public_ranges %}<td><strong>Line weight</strong></td>{% endif %}
+          {% for rgp in game.rgp_details %}
+          <td><strong>{{rgp.user.screenname}}</strong></td>
+          {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          {% if game.public_ranges %}<td>{{"%0.2f%%" % (game.spawn_factor * 100.0,)}}</td>{% endif %}
+          {% for rgp in game.rgp_details %}
+          <td>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % (rgp.results['ev'],)}}{% endif %}</td>
+          {% endfor %}
+        </tr>
+        </tbody>
+        </table>
+        {% endif %}
+      </td>
+    </tr>
+    {%- endfor %}
+  </table>
+{% endmacro %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+hide_game_details = function(gameid) {
+    $('.game-show').removeClass('hidden');
+    $('.game-hide').addClass('hidden');
+    $('.game-row').addClass('hidden');
+    // $('#show-' + gameid).removeClass('hidden');
+    // $('#hide-' + gameid).addClass('hidden');
+    // $('#row-' + gameid).addClass('hidden');
+};
+show_game_details = function(gameid) {
+    hide_game_details(gameid); // start afresh
+    $('#show-' + gameid).addClass('hidden');
+    $('#hide-' + gameid).removeClass('hidden');
+    $('#row-' + gameid).removeClass('hidden');
+};
+</script>
+{% endblock %}
 
 {% block title %}Range vs. Range - Group {{groupid}}{% endblock %}
 
 {% block content %}
 <div class="container">
   <div class="page-header">
-    <h1>Game Group {{groupid}}</h1>
+    <h1>
+      Game Group {{groupid}}<br>
+      <small>{{description}}</small>
+    </h1>
   </div>
-  
+
   {{ flash_messages() }}
-  
-  {{ running_games(games, userid, True) }}
+
+  {{ running_games(games, userid, True, False) }}
 
     <h2>Results Summary</h2>
 
@@ -32,7 +124,7 @@
     </tr>
     </tbody>
     </table>
-  
+
 {#
   <table class="table table-bordered">
 
@@ -60,14 +152,14 @@
     {% endfor %}
   </tr>
   {% endfor %}
-  
+
   <tfoot>
   <tr>
   <td colspan="{{num_streets + 1}}"></td>
-  {% for player in players %}<td><strong>{{"%0.4f" % (totals[player],)}}</strong></td>{% endfor %}  
+  {% for player in players %}<td><strong>{{"%0.4f" % (totals[player],)}}</strong></td>{% endfor %}
   </tr>
   </tfoot>
-  
+
   </tbody>
 
   </table>

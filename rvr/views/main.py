@@ -1142,10 +1142,7 @@ def group_page():
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/group.html',
-        players=['Alice', 'Bob'],
-        streets=['Flop', 'Turn', 'River'],
-        num_streets=3,
-        num_players=2,
+        description=games[0].situation.description,
         games=games,
         total_weight=total_weight,
         total_results=total_results,
