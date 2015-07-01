@@ -216,7 +216,7 @@ def read_running_games(session):
 def write_running_games(session, rgs):
     """ Write RunningGame from memory into DB """
     for gameid, situationid, public_ranges, current_userid, next_hh,  \
-            board_raw, current_round, pot_pre, increment,  \
+            board_raw, total_board_raw, current_round, pot_pre, increment,  \
             bet_count, current_factor, last_action_time, analysis_performed,  \
             spawn_factor, spawn_group in rgs:
         rg = RunningGame()
@@ -227,7 +227,7 @@ def write_running_games(session, rgs):
         rg.current_userid = current_userid
         rg.next_hh = next_hh
         rg.board_raw = board_raw
-        rg.total_board_raw = ''
+        rg.total_board_raw = total_board_raw
         rg.current_round = current_round
         rg.pot_pre = pot_pre
         rg.increment = increment
