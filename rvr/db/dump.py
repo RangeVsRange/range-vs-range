@@ -181,7 +181,7 @@ def read_open_game_participants(session):
              ogp.gameid,
              ogp.order)
             for ogp in ogps]
-    
+
 def write_open_game_participants(session, ogps):
     """ Write GameParticipant from memory into DB """
     for userid, gameid, order in ogps:
@@ -201,6 +201,7 @@ def read_running_games(session):
              rg.current_userid,
              rg.next_hh,
              rg.board_raw,
+             rg.total_board_raw,
              rg.current_round,
              rg.pot_pre,
              rg.increment,
@@ -215,8 +216,8 @@ def read_running_games(session):
 def write_running_games(session, rgs):
     """ Write RunningGame from memory into DB """
     for gameid, situationid, public_ranges, current_userid, next_hh,  \
-            board_raw, current_round, pot_pre, increment, bet_count,  \
-            current_factor, last_action_time, analysis_performed,  \
+            board_raw, current_round, pot_pre, increment,  \
+            bet_count, current_factor, last_action_time, analysis_performed,  \
             spawn_factor, spawn_group in rgs:
         rg = RunningGame()
         session.add(rg)
@@ -226,6 +227,7 @@ def write_running_games(session, rgs):
         rg.current_userid = current_userid
         rg.next_hh = next_hh
         rg.board_raw = board_raw
+        rg.total_board_raw = ''
         rg.current_round = current_round
         rg.pot_pre = pot_pre
         rg.increment = increment
@@ -273,7 +275,7 @@ def read_running_game_participant_results(session):
              rgpr.userid,
              rgpr.scheme,
              rgpr.result) for rgpr in rgprs]
-    
+
 def write_running_game_participant_results(session, rgprs):
     """ Write RunningGameParticipantResult from memory into DB """
     for gameid, userid, scheme, result in rgprs:
@@ -398,7 +400,7 @@ def write_game_history_range_actions(session, ghras):
     """ Write HandHistoryRangeAction from memory into DB """
     for gameid, order, userid, fold_range, passive_range, aggressive_range,  \
             raise_total, is_check, is_raise, \
-            fold_ratio, passive_ratio, aggressive_ratio in ghras:        
+            fold_ratio, passive_ratio, aggressive_ratio in ghras:
         ghra = GameHistoryRangeAction()
         session.add(ghra)
         ghra.gameid = gameid
@@ -434,7 +436,7 @@ def write_game_history_boards(session, ghbs):
         ghb.street = street
         ghb.cards = cards
         session.commit()
-        
+
 def read_game_history_timeouts(session):
     """ Read GameHistoryTimeout table from DB into memory """
     ghts = session.query(GameHistoryTimeout).all()
@@ -442,7 +444,7 @@ def read_game_history_timeouts(session):
              ght.order,
              ght.userid)
             for ght in ghts]
-    
+
 def write_game_history_timeouts(session, ghts):
     """ Write GameHistoryTimeout from memory into DB """
     for gameid, order, userid in ghts:
@@ -452,7 +454,7 @@ def write_game_history_timeouts(session, ghts):
         ght.order = order
         ght.userid = userid
         session.commit()
-        
+
 def read_game_history_chats(session):
     """ Read GameHistoryChat table from DB into memory """
     ghcs = session.query(GameHistoryChat).all()
@@ -461,7 +463,7 @@ def read_game_history_chats(session):
              ghc.userid,
              ghc.message)
             for ghc in ghcs]
-  
+
 def write_game_history_chats(session, ghcs):
     """ Write GameHistoryChat table from memory into DB """
     for gameid, order, userid, message in ghcs:
@@ -492,7 +494,7 @@ def write_game_history_showdowns(session, ghss):
         ghs.is_passive = is_passive
         ghs.pot = pot
         session.commit()
-        
+
 def read_game_history_showdown_equities(session):
     """ Read GameHistoryShowdownEquity table from DB into memory """
     ghses = session.query(GameHistoryShowdownEquity).all()

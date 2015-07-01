@@ -39,7 +39,7 @@ def range_sum_equal(fold_range, passive_range, aggressive_range,
         if ori != new:
             # actually three scenarios:
             # hand is in multiple action ranges
-            # (new is the same as the previous new) 
+            # (new is the same as the previous new)
             # hand is in action ranges but not original range
             # (new < ori means new is not in original range)
             # hand is in original range but not action ranges
@@ -133,7 +133,7 @@ def generate_excluded_cards(game, hero=None):
 def calculate_current_options(game, rgp):
     """
     Determines what options the current player has in a running game.
-    
+
     Returns a dtos.ActionOptions instance.
     """
     raised_to = max([p.contributed for p in game.rgps])
@@ -178,7 +178,7 @@ def act_fold(rgp):
     """
     rgp.folded = True
     rgp.left_to_act = False
-    
+
 def act_passive(rgp, call_cost):
     """
     Check or call rgp
@@ -186,7 +186,7 @@ def act_passive(rgp, call_cost):
     rgp.stack -= call_cost
     rgp.contributed += call_cost
     rgp.left_to_act = False
-    
+
 def act_aggressive(game, rgp, raise_total):
     """
     Bet or raise rgp
@@ -210,7 +210,7 @@ def act_terminate(game, rgp):
     game.is_finished = True
 
 # TODO: 5: test situations like P1 bet, P2 call, P3 fold/call/raise
-# (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.) 
+# (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.)
 # TODO: 5: results weighted by size of ranges in starting situation?
 
 Branch = namedtuple("Branch",  # pylint:disable=C0103
@@ -228,7 +228,7 @@ class WhatCouldBe(object):
         self.rgp = rgp
         self.range_action = range_action
         self.current_options = current_options
-        
+
         self.all_in = any([player.stack == 0 for player in game.rgps])
         self.bough = []  # list of Branch
 
@@ -244,7 +244,7 @@ class WhatCouldBe(object):
                     if r.left_to_act and r is not self.rgp]
         return game_continues(self.game.current_round, self.all_in,
                               will_remain, will_act)
-    
+
     def passive_continue(self):
         """
         If a passive action is taken here, will the hand continue?
@@ -256,7 +256,7 @@ class WhatCouldBe(object):
                     if r.left_to_act and r is not self.rgp]
         return game_continues(self.game.current_round, self.all_in,
                               will_remain, will_act)
-    
+
     def aggressive_continue(self):
         """
         If an aggressive action is taken here, will the hand continue?
@@ -270,7 +270,7 @@ class WhatCouldBe(object):
                     if not r.folded and r is not self.rgp]
         return game_continues(self.game.current_round, self.all_in,
                               will_remain, will_act)
-        
+
     def consider_all(self):
         """
         Plays every action in range_action, except the zero-weighted ones.
@@ -279,16 +279,30 @@ class WhatCouldBe(object):
         action results in at least two players remaining in the hand, and at
         least one player left to act. (Whether or not that includes this
         player.)
-        
+
         Inputs: see __init__
-        
+
         Outputs: range ratios
-        
+
         Side effects:
          - analyse effects of a fold, a passive play, or an aggressive play
         """
         # note that we only consider the possible
         # mostly copied from the old re_deal (originally!)
+
+        # TODO: 0.0: if generate_excluded_cards considers the future board:
+        # - (good) we'll never end up in an impossible situation
+        #   (e.g. Ax vs. Ax on board AAxAx)
+        # - (bad) (already possible?) sometimes one range just won't be played
+        #   out (actually, good and correct?, for both competition and
+        #   optimization mode?)
+        # TODO: REVISIT: sometimes this considers something not to be an...
+        # option when it truly is, e.g:
+        # - Villain happens to draw AA for dealt/excluded cards
+        # - board has two aces also
+        # - Hero has only Ax in his calling range
+        # - result is that villain has 0% calls for this game
+        # - blech!
         dead_cards = generate_excluded_cards(self.game, hero=self.rgp)
         fold_options = self.range_action.fold_range  \
             .generate_options(dead_cards)
@@ -331,10 +345,10 @@ class WhatCouldBe(object):
         """
         Choose one of the non-terminal actions, or return termination if they're
         all terminal. Also update game's current_factor.
-        
+
         Returns a weighted list of action results:
             [(weight, action_result), (weight, action_result)...]
-            
+
         If auto_spawn, there may be multiple. If not, then only one.
         """
         # reduce current factor by the ratio of non-terminal-to-terminal options
@@ -395,7 +409,7 @@ class Test(unittest.TestCase):
     """
     Unit tests for action functionality
     """
-    # pylint:disable=R0904    
+    # pylint:disable=R0904
     def test_cmp_options(self):
         """
         Test _cmp_options
@@ -421,13 +435,13 @@ class Test(unittest.TestCase):
         self.assertEqual(1, _cmp_options(kh_kc, kh_qh))
         self.assertEqual(-1, _cmp_options(kh_kc, ah_kh))
         self.assertEqual(-1, _cmp_options(kh_kc, ks_kh))
-    
+
     def test_range_action_fits(self):
         """
         Test range_action_fits
         """
         # pylint:disable=R0915
-        
+
         # will test that:
         # - hand in original but not action should fail
         # - hand not in original but in action should fail
@@ -442,10 +456,10 @@ class Test(unittest.TestCase):
         range_22_72o = HandRange("22,72o")
         range_aa_22 = HandRange("AA,22")
         range_empty = HandRange("nothing")
-        
+
         #options = [FoldOption(), CheckOption(), RaiseOption(2, 194)]
         options = ActionOptions(0, False, 2, 194)
-        
+
         # invalid, raise size too small
         range_action = ActionDetails(range_72o, range_22, range_aa, 1)
         val, rsn = range_action_fits(range_action, options, range_original)
@@ -479,7 +493,7 @@ class Test(unittest.TestCase):
         self.assertFalse(val)
         self.assertEqual(rsn,
             "hand in original range but not in action ranges: AdAc")
-        
+
         # invalid, KK in action but not original
         range_action = ActionDetails(range_72o, range_aa_22, range_kk, 2)
         val, rsn = range_action_fits(range_action, options, range_original)
@@ -492,10 +506,10 @@ class Test(unittest.TestCase):
         val, rsn = range_action_fits(range_action, options, range_original)
         self.assertFalse(val)
         self.assertEqual(rsn, "hand in multiple ranges: AdAc")
-        
+
         #options = [FoldOption(), CallOption(10), RaiseOption(20, 194)]
         options = ActionOptions(10, True, 20, 194)
-        
+
         # valid, empty raise range (still has a raise size, which is okay)
         range_action = ActionDetails(range_aa, range_22_72o, range_empty, 20)
         val, rsn = range_action_fits(range_action, options, range_original)
@@ -509,12 +523,12 @@ class Test(unittest.TestCase):
 
         #options = [FoldOption(), CallOption(194)]
         options = ActionOptions(194)
-        
+
         # valid, 0 raise size is okay if empty raise range
         range_action = ActionDetails(range_22_72o, range_aa, range_empty, 0)
         val, rsn = range_action_fits(range_action, options, range_original)
         self.assertTrue(val)
-        
+
         # valid, 200 raise size is okay if empty raise range
         range_action = ActionDetails(range_22_72o, range_aa, range_empty, 200)
         val, rsn = range_action_fits(range_action, options, range_original)
@@ -532,7 +546,7 @@ class Test(unittest.TestCase):
         self.assertFalse(val)
         self.assertEqual(rsn,
             "there was a raising range, but raising was not an option")
-        
+
         range_action = ActionDetails(range_72o, range_22, range_aa, 0)
         val, rsn = range_action_fits(range_action, options, range_original)
         self.assertFalse(val)

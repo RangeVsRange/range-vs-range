@@ -25,7 +25,7 @@ def _range_desc_to_size(range_description):
     """
     Given a range description, determine the number of combos it represents.
     """
-    return len(HandRange(range_description).generate_options()) 
+    return len(HandRange(range_description).generate_options())
 
 class FoldEquityAccumulator(object):
     """
@@ -48,11 +48,11 @@ class FoldEquityAccumulator(object):
         self.pot_if_called = pot_if_called
         self.potential_folders = potential_folders  # userids
         self.folds = []  # list of (userid, fold_ratio)
-    
+
     def folder(self, ghra):
         """
         ghra is a GameHistoryRangeAction, who we consider to be a folder.
-        
+
         Returns True if this fea is complete.
         """
         logging.debug("gameid %d, FEA %d, adding folder: userid %d",
@@ -64,7 +64,7 @@ class FoldEquityAccumulator(object):
         nonfold_range = pas.add(agg, self.board)
         self.folds.append((ghra.userid, fold_range, nonfold_range))
         return len(self.potential_folders) == 0
-    
+
     def _create_afe(self):
         """
         Create the AnalysisFoldEquity
@@ -80,7 +80,7 @@ class FoldEquityAccumulator(object):
         afe.raise_total = self.raise_total
         afe.pot_if_called = self.pot_if_called
         return afe
-    
+
     def _create_afei(self, combo, is_agg=False, is_pas=False, is_fol=False):
         """
         Create an AnalaysisFoldEquityItem for a particular combo in Hero's range
@@ -101,7 +101,7 @@ class FoldEquityAccumulator(object):
             nonfold_size = len(nonfold_range.generate_options(
                 self.board + list(combo)))
             folder_fold_ratio = 1.0 * fold_size / (fold_size + nonfold_size)
-            afei.fold_ratio *= folder_fold_ratio 
+            afei.fold_ratio *= folder_fold_ratio
             # product of everyone's fold ratios = how often we take it down
         nonfold_ratio = 1.0 - afei.fold_ratio
         afei.immediate_result = afei.fold_ratio * self.pot_before_bet -  \
@@ -113,13 +113,15 @@ class FoldEquityAccumulator(object):
             afei.semibluff_ev = None
             afei.semibluff_equity = None
         return afei
-    
+
     def finalise(self, session):
         """
         Assuming complete, return an AnalysisFoldEquity
         """
         logging.debug("gameid %d, FEA %d, calculating...", self.gameid,
                       self.order)
+        logging.debug("actually, not bothering!")
+        return  # TODO: 5: reintroduce this (fold equity analysis)
         assert len(self.potential_folders) == 0
         afe = self._create_afe()
         session.add(afe)
@@ -157,7 +159,7 @@ class AnalysisReplayer(object):
         self.pot = self.game.situation.pot_pre +  \
             sum([p.contributed for p in self.game.situation.players])
         self.street = self.game.situation.current_round
-        self.board = Card.many_from_text(self.game.situation.board_raw)
+        self.board = self.game.situation.board
         self.fea = None  # current fold equity accumulator
         self.prev_range_action = None
 
@@ -188,7 +190,7 @@ class AnalysisReplayer(object):
             self.pot_payment(item, item.call_cost)
             if self.fea is not None:
                 # because they call, we will never know how much the other
-                # players would have folded 
+                # players would have folded
                 logging.debug("gameid %d, FEA %d, canceling",
                               self.fea.gameid, self.fea.order)
             self.fea = None
@@ -204,16 +206,16 @@ class AnalysisReplayer(object):
             pot_if_called = self.pot + bet_cost + amount_raised
             self.fea = FoldEquityAccumulator(
                 gameid=self.game.gameid,
-                order=item.order, 
+                order=item.order,
                 street=self.street,
                 board=self.board,
                 bettor=item.userid,
                 range_action=self.prev_range_action,  # ranges before bet
-                raise_total=item.raise_total, 
-                pot_before_bet=self.pot, 
-                bet_cost=bet_cost, 
-                pot_if_called=pot_if_called, 
-                potential_folders=[u for u in self.remaining_userids if 
+                raise_total=item.raise_total,
+                pot_before_bet=self.pot,
+                bet_cost=bet_cost,
+                pot_if_called=pot_if_called,
+                potential_folders=[u for u in self.remaining_userids if
                     u != item.userid])
             self.pot += bet_cost
             self.ranges[item.userid] = self.prev_range_action.aggressive_range
@@ -231,7 +233,7 @@ class AnalysisReplayer(object):
             if fea_complete:
                 self.fea.finalise(self.session)
                 self.fea = None
-                
+
     def pot_payment(self, action_item, contribution):
         """
         A simple payment from a player to the pot.
@@ -250,7 +252,7 @@ class AnalysisReplayer(object):
         payment.userid = action_item.userid
         payment.amount = amount
         self.session.add(payment)
-        
+
     def board_payment(self, board_item, board_before, board_after):
         """
         Payments in compensation of change of equity due to board cards.
@@ -277,22 +279,22 @@ class AnalysisReplayer(object):
             payment.userid = userid
             payment.amount = amount
             self.session.add(payment)
-    
+
     def equity_payments(self, item):
         """
         Payments in compensation due to one player's range changing. Note that
         every remaining player gets a payment.
-        
+
         This happens whenever a player has multiple "play continues" ranges.
         When heads up, this means any time before the river when someone has a
         passive range and an aggressive range.
-        
+
         More generally, when three-handed, it can include folds. In fact, it
         could probably be generalised to include fold equity! (But note that
         fold equity is much less contentious!) (The issue with fold equity is
         that it requires us to scale down the rest of play, because we don't
         allow the fold line to happen, ever.)
-        
+
         item is a GameHistoryRangeAction
         """
         # Establish "old ranges", meaning after anything that can't happen
@@ -350,7 +352,7 @@ class AnalysisReplayer(object):
             payment.order = item.order
             payment.userid = userid
             payment.amount = amount
-            self.session.add(payment)        
+            self.session.add(payment)
 
     def fold_equity_payments(self, range_action, fold_ratio):
         """
@@ -358,7 +360,7 @@ class AnalysisReplayer(object):
         remaining, and is a payment equal to the current pot multiplied by the
         current factor multiplied by the fold ratio (up to and including 100% of
         the pot, e.g. when in a HU situation BTN open folds 100%).
-        
+
         This is not a payment from one player to the other. It is a payment
         the pot to the player who bet. The bettor gains a portion of the pot
         equal to the fold ratio, and the pot loses this by virtue of a reduction
@@ -434,7 +436,7 @@ class AnalysisReplayer(object):
             gameid, order, caller, call_cost, factor, call_ratio,
             payment.amount)
         self.session.add(payment)
-    
+
     def analyse_showdown(self, ranges, order, is_passive, userids):
         """
         Create a showdown with given userids. Pre-river if pre-river.
@@ -479,15 +481,15 @@ class AnalysisReplayer(object):
             participant.equity = equity_map[userid]
         self.showdown_payments(showdown=showdown,
                                equities=existing_equities.values())
-    
+
     def _calculate_call_cost(self, userid):
         """
         It would have been convenient if this was stored in
         GameHistoryRangeAction... but it's easy enough to calculate based on
         this object's state.
         """
-        return max(self.contrib.values()) - self.contrib[userid]    
-    
+        return max(self.contrib.values()) - self.contrib[userid]
+
     def range_action_showdown(self, item, call_ratio):
         """
         Consider showdowns based on this range action resulting in a fold, and
@@ -571,7 +573,7 @@ class AnalysisReplayer(object):
             all_in=all_in,
             will_remain=passive_will_remain,
             will_act=will_act)
-        
+
     def process_child_item(self, item):
         """
         Process a single history item, as part of the broader analysis.
@@ -608,7 +610,7 @@ class AnalysisReplayer(object):
     def analyse(self):
         """
         Perform all analysis on game that has not been done.
-        
+
         If you need to reanalyse the game, delete the existing analysis first.
         """
         self.ranges = {self.game.rgps[i].userid:
@@ -618,7 +620,7 @@ class AnalysisReplayer(object):
                        self.game.situation.players[i].stack
                        for i in range(len(self.game.situation.players))}
         self.contrib = {self.game.rgps[i].userid:
-                        self.game.situation.players[i].contributed 
+                        self.game.situation.players[i].contributed
                         for i in range(len(self.game.situation.players))}
         self.remaining_userids = [rgp.userid for rgp in self.game.rgps]
         self.left_to_act = [self.game.rgps[i].userid
@@ -626,7 +628,7 @@ class AnalysisReplayer(object):
                             if self.game.situation.players[i].left_to_act]
 
         gameid = self.game.gameid
-        
+
         logging.debug("gameid %d, AnalysisReplayer, analyse", gameid)
         items = [self.session.query(table)
                  .filter(table.gameid == gameid).all()
@@ -638,9 +640,9 @@ class AnalysisReplayer(object):
                              key=lambda c: c.order)
         for item in child_items:
             self.process_child_item(item)
-            
+
         self.finalise_results()
-        
+
     def finalise(self):
         """
         Commit, send out notification
@@ -681,7 +683,7 @@ class Test(unittest.TestCase):
             1.0 / 3.0 * 10.0 + (2.0 / 3.0) * (-10))
         self.assertAlmostEqual(afei.semibluff_ev, 5.0)
         self.assertAlmostEqual(afei.semibluff_equity, 5.0 / 30.0)
-        
+
     def test_create_afei_one_folder_raise(self):
         """ Test _create_afei for a raise against one player"""
         # raise from 10 to 30 on an original pot of 10
@@ -711,7 +713,7 @@ class Test(unittest.TestCase):
     def test_create_afei_one_folder_reraise(self):
         """ Test _create_afei for a reraise against one player"""
         # raise from 30 to 50 on an original pot of 10
-        # unprofitable bluff      
+        # unprofitable bluff
         fea = FoldEquityAccumulator(
             gameid=0,
             order=0,
@@ -733,7 +735,7 @@ class Test(unittest.TestCase):
             1.0 / 4.0 * 50.0 + (3.0 / 4.0) * (-40.0))  # -17.5
         self.assertAlmostEqual(afei.semibluff_ev, 4.0 / 3.0 * 17.5)
         self.assertAlmostEqual(afei.semibluff_equity, 4.0 / 3.0 * 17.5 / 110.0)
-    
+
     def test_create_afei_two_folders_bet(self):
         """ Test _create_afei for a bet against two players"""
         # bet 10 on a pot of 10
@@ -755,14 +757,14 @@ class Test(unittest.TestCase):
         fea.folds.append((1, fold_range, nonfold_range))
         fold_range = HandRange("KK")
         nonfold_range = HandRange("AA")
-        fea.folds.append((1, fold_range, nonfold_range))        
+        fea.folds.append((1, fold_range, nonfold_range))
         afei = fea._create_afei(combo=Card.many_from_text("AsQh"), is_agg=True)
         self.assertAlmostEqual(afei.fold_ratio, 4.0 / 9.0)
         self.assertAlmostEqual(afei.immediate_result,
             4.0 / 9.0 * 10.0 + (5.0 / 9.0) * (-10))
         self.assertEqual(afei.semibluff_ev, None)
         self.assertEqual(afei.semibluff_equity, None)
-    
+
     def test_create_afei_two_folders_raise(self):
         """ Test _create_afei for a raise against two players"""
         # raise from 10 to 30 on an original pot of 10
@@ -791,7 +793,7 @@ class Test(unittest.TestCase):
             1.0 / 6.0 * 20.0 + (5.0 / 6.0) * (-30))  # -21.66...
         self.assertAlmostEqual(afei.semibluff_ev, None)
         self.assertAlmostEqual(afei.semibluff_equity, None)
-    
+
     def test_create_afei_two_fodlers_reraise(self):
         """ Test _create_afei for a reraise against two players"""
         # raise from 30 to 50 on an original pot of 10

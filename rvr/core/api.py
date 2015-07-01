@@ -21,7 +21,7 @@ from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW
 from sqlalchemy.orm.exc import NoResultFound
-from rvr.mail.notifications import notify_current_player, notify_first_player
+from rvr.mail.notifications import notify_current_player, notify_started
 from rvr.analysis.analyse import AnalysisReplayer
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
     PaymentToPlayer, GAME_HISTORY_TABLES
@@ -460,10 +460,11 @@ class API(object):
             self.session.flush()  # populate game
             # Note that we do NOT create a range history item for them,
             # it is implied.
-        # TODO: REVISIT: check that this cascades to ogps
+        # TODO: 2: check that this cascades to ogps
         self.session.delete(open_game)
+        # TODO: 0: choose 5-card board probabilistically consistent with ranges
         self._deal_to_board(running_game)  # also changes ranges
-        notify_first_player(running_game, starter_id=final_ogp.userid)
+        notify_started(running_game, starter_id=final_ogp.userid)
         logging.debug("Started game %d", open_game.gameid)
         return running_game
 
@@ -737,6 +738,7 @@ class API(object):
         current_user = min(remain, key=lambda r: r.order)
         game.current_userid = current_user.userid
         game.current_round = NEXT_ROUND[game.current_round]
+        # TODO: 0: reveal, not deal
         self._deal_to_board(game)
         game.increment = game.situation.big_blind
         game.bet_count = 0

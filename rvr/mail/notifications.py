@@ -18,13 +18,13 @@ class NotificationSettings(object):
     def __init__(self):
         self.suppress_email = False
         self.async_email = True
-        
+
 NOTIFICATION_SETTINGS = NotificationSettings()
 
 def send_email_async(msg):
     """
     Send email on a different thread.
-    
+
     Per http://stackoverflow.com/questions/11047307/
         run-flask-mail-asynchronously/18407455
     """
@@ -34,10 +34,10 @@ def send_email_async(msg):
         Wrapper to send message with copied context
         """
         MAIL.send(msg)
-    
+
     thr = Thread(target=with_context)
     thr.start()
-    
+
 def send_email(msg):
     """
     Send email, async only if NOTIFICATION_SETTINGS.async_email
@@ -71,7 +71,7 @@ def _your_turn(recipient, screenname, identity, game):
     The identity is used to create the unsubscribe link. We can safely use
     that to identify the user in plain text, because they get to see it
     anyway during authentication.
-    
+
     Uses Flask-Mail; sends asynchronously.
     """
     msg = Message("It's your turn in Game %d on Range vs. Range" %
@@ -102,7 +102,7 @@ def _game_started(recipient, screenname, identity, is_starter, is_acting,
 def _game_finished(recipient, screenname, identity, game):
     """
     Lets recipient know their game has finished and analysis is ready.
-    
+
     This email gets sent even if the user is unsubscribed, because it just sucks
     so much when you miss one.
     """
@@ -137,13 +137,13 @@ def notify_current_player(game):
                game=game)
     user.unsubscribed = True
 
-def notify_first_player(game, starter_id):
+def notify_started(game, starter_id):
     """
     If the game is not finished, notify the current player that it's their
     turn to act (i.e. via email).
     """
     for rgp in game.rgps:
-        if rgp.user.unsubscribed:
+        if rgp.user.unsubscribed or rgp.userid == starter_id:
             continue
         _game_started(recipient=rgp.user.email,
                       screenname=rgp.user.screenname,
@@ -156,7 +156,7 @@ def notify_first_player(game, starter_id):
 def notify_finished(game):
     """
     Notify everyone their game is finished.
-    
+
     Even if unsubscribed, because it just sucks so much when you miss one.
     """
     for rgp in game.rgps:

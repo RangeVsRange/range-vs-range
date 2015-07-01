@@ -23,7 +23,7 @@ MAX_RANGE_LENGTH = 6629
 class User(BASE, object):
     """
     A user of the application.
-    
+
     Has many-to-many relationships with OpenGame, RunningGame.
     """
     __tablename__ = 'user'
@@ -32,7 +32,7 @@ class User(BASE, object):
     screenname_raw = Column(String(20), nullable=True, unique=True)
     email = Column(String(256), nullable=False)
     unsubscribed = Column(Boolean, nullable=False)
-    
+
     # attributes
     def get_screenname(self):
         """
@@ -56,13 +56,13 @@ class User(BASE, object):
             self.screenname_raw = None
         else:
             self.screenname_raw = screenname
-    screenname = property(get_screenname, set_screenname)        
+    screenname = property(get_screenname, set_screenname)
 
 class Situation(BASE):
     """
     Training situations, e.g. HU NL HE for 100 BB preflop.
-    
-    Has one-to-many relationships with OpenGame, RunningGame. 
+
+    Has one-to-many relationships with OpenGame, RunningGame.
     """
     __tablename__ = 'situation'
     situationid = Column(Integer, primary_key=True)
@@ -78,7 +78,7 @@ class Situation(BASE):
     # TODO: REVISIT: foreign key, possibly with use_alter=True
     # ... or move this to a Boolean on SituationPlayer
     current_player_num = Column(Integer, nullable=False)
-    
+
     def ordered_players(self):
         """
         Returns a list of SituationPlayer in the order they are seated.
@@ -105,7 +105,7 @@ class SituationPlayer(BASE, object):
     situation = relationship("Situation", primaryjoin=  \
         "Situation.situationid==SituationPlayer.situationid",
         backref="players")
-    
+
     # attributes
     def get_range(self):
         """
@@ -119,7 +119,7 @@ class SituationPlayer(BASE, object):
         self.range_raw =  \
             unweighted_options_to_description(range_.generate_options())
     range = property(get_range, set_range)
-    
+
     def get_name(self):
         """ Get name """
         if self.name_raw is not None:
@@ -134,7 +134,7 @@ class SituationPlayer(BASE, object):
 class OpenGame(BASE):
     """
     Details of an open game, not yet full of registered participants.
-    
+
     Has a many-to-many relationship with User, via OpenGameParticipant.
     """
     __tablename__ = 'open_game'
@@ -167,7 +167,7 @@ class OpenGameParticipant(BASE):
 class RunningGame(BASE, object):
     """
     Details of an active running game.
-    
+
     Has a many-to-many relationship with User, via RunningGameParticipant.
     """
     __tablename__ = 'running_game'
@@ -186,7 +186,11 @@ class RunningGame(BASE, object):
     current_userid = Column(Integer, nullable=True)
     next_hh = Column(Integer, default=0, nullable=False)
     # game state
+    # TODO: 0.0: split into board_raw (complete board) and...
+    # board_text (current) per current_round, and perhaps same for board
+    # board = what's currently visible, total_board = what will be
     board_raw = Column(String(10), nullable=False)
+    total_board_raw = Column(String(10), nullable=False)
     current_round = Column(String(7), nullable=False)
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
@@ -205,7 +209,7 @@ class RunningGame(BASE, object):
     spawn_factor = Column(Float, nullable=False)
 
     spawn_root = relationship("RunningGame")
-    
+
     def copy(self):
         """
         Creates new RunningGame, spawned from this one
@@ -226,13 +230,16 @@ class RunningGame(BASE, object):
         game.spawn_group = self.spawn_group
         game.spawn_factor = self.spawn_factor
         return game
-        
+
+    # Attributes
+
     def get_is_auto_spawn(self):
         """
         For now, we do this in lieu of having a setting on the game.
         """
         return self.public_ranges
     is_auto_spawn = property(get_is_auto_spawn)
+
     # in lieu of a relationship...
     # TODO: REVISIT: can we do this with a one-to-one relationship?
     # ... and not cause circular reference issues?!
@@ -248,11 +255,11 @@ class RunningGame(BASE, object):
             .filter(RunningGameParticipant.gameid == self.gameid).one()
     def set_current_rgp(self, rgp):
         """
-        Set current_userid, from RunningGameParticipant 
+        Set current_userid, from RunningGameParticipant
         """
         self.current_userid = rgp.userid
     current_rgp = property(get_current_rgp, set_current_rgp)
-    # attributes
+
     def get_board(self):
         """
         Get board, as list of Card
@@ -264,6 +271,19 @@ class RunningGame(BASE, object):
         """
         self.board_raw = ''.join([card.to_mnemonic() for card in cards])
     board = property(get_board, set_board)
+
+    def get_total_board(self):
+        """
+        Get total board, as list of Card
+        """
+        return Card.many_from_text(self.total_board_raw)
+    def set_total_board(self, cards):
+        """
+        Set total board, from list of Card
+        """
+        self.total_board_raw = ''.join([card.to_mnemonic() for card in cards])
+    total_board = property(get_total_board, set_total_board)
+
     def get_is_finished(self):
         """
         Is the game finished
@@ -308,7 +328,7 @@ class RunningGameParticipant(BASE, object):
         new.left_to_act = self.left_to_act
         new.folded = self.folded
         return new
-    
+
     # relationships
     user = relationship("User", backref="rgps")
     game = relationship("RunningGame",
@@ -328,11 +348,11 @@ class RunningGameParticipant(BASE, object):
         self.range_raw = unweighted_options_to_description(
             range_.generate_options())
     range = property(get_range, set_range)
-    
+
 class GameHistoryBase(BASE):
     """
     Base table for all different kinds of hand history items.
-    
+
     Each item of whatever type has a link to a base item.
     """
     __tablename__ = 'game_history_base'
@@ -343,7 +363,7 @@ class GameHistoryBase(BASE):
     factor = Column(Float, nullable=False)
     game = relationship("RunningGame",
                         backref=backref("history", cascade="all"))
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryBase()
@@ -367,7 +387,7 @@ class FactorMixin(object):
         Set factor on associated GameHistoryBase
         """
         self.hh_base.factor = factor
-    factor = property(get_factor, set_factor)        
+    factor = property(get_factor, set_factor)
 
 class GameHistoryUserRange(BASE, FactorMixin):
     """
@@ -375,7 +395,7 @@ class GameHistoryUserRange(BASE, FactorMixin):
     and after each range action.
     """
     __tablename__ = "game_history_user_range"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
@@ -384,7 +404,7 @@ class GameHistoryUserRange(BASE, FactorMixin):
 
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryUserRange()
@@ -393,18 +413,18 @@ class GameHistoryUserRange(BASE, FactorMixin):
         new.userid = self.userid
         new.range_raw = self.range_raw
         return new
-    
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
         {})
-    
+
 class GameHistoryActionResult(BASE, FactorMixin):
     """
     User's range action results in this action result (fold, call, etc.)
     """
     __tablename__ = "game_history_action_result"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
@@ -417,7 +437,7 @@ class GameHistoryActionResult(BASE, FactorMixin):
 
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryActionResult()
@@ -436,14 +456,14 @@ class GameHistoryActionResult(BASE, FactorMixin):
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
         {})
-    
+
 class GameHistoryRangeAction(BASE, FactorMixin):
     """
     User folds part of range, checks or calls part of range, and bets or raises
     part of range.
     """
     __tablename__ = "game_history_range_action"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
@@ -458,10 +478,10 @@ class GameHistoryRangeAction(BASE, FactorMixin):
     fold_ratio = Column(Float, nullable=True)
     passive_ratio = Column(Float, nullable=True)
     aggressive_ratio = Column(Float, nullable=True)
-    
+
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryRangeAction()
@@ -489,14 +509,14 @@ class GameHistoryBoard(BASE, FactorMixin):
     The board at <street> is <cards>.
     """
     __tablename__ = "game_history_board"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     street = Column(String(7), nullable=False)
     cards = Column(String(10), nullable=False)
-    
+
     hh_base = relationship("GameHistoryBase")
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryBoard()
@@ -505,7 +525,7 @@ class GameHistoryBoard(BASE, FactorMixin):
         new.street = self.street
         new.cards = self.cards
         return new
-    
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
@@ -516,14 +536,14 @@ class GameHistoryTimeout(BASE, FactorMixin):
     Player <userid> has timed out.
     """
     __tablename__ = "game_history_timeout"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
-    
+
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryTimeout()
@@ -531,26 +551,26 @@ class GameHistoryTimeout(BASE, FactorMixin):
         new.order = self.order
         new.userid = self.userid
         return new
-    
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
         {})
-    
+
 class GameHistoryChat(BASE, FactorMixin):
     """
     Player <userid> says <message>.
     """
     __tablename__ = "game_history_chat"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     message = Column(String(MAX_CHAT), nullable=False)
-    
+
     hh_base = relationship("GameHistoryBase")
     user = relationship("User")
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryChat()
@@ -559,7 +579,7 @@ class GameHistoryChat(BASE, FactorMixin):
         new.userid = self.userid
         new.message = self.message
         return new
-    
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
@@ -568,19 +588,19 @@ class GameHistoryChat(BASE, FactorMixin):
 class GameHistoryShowdown(BASE, FactorMixin):
     """
     Users <list of user> have showdown with equities <equity map>
-    
+
     Note that showdowns always follow the range action that creates them.
     """
     __tablename__ = "game_history_showdown"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     # Was this showdown created by a call/check, or by a fold?
     is_passive = Column(Boolean, primary_key=True)
     pot = Column(Integer, nullable=False)
-    
+
     hh_base = relationship("GameHistoryBase")
-    
+
     def copy(self):
         """ For spawn: copies, but not gameid """
         new = GameHistoryShowdown()
@@ -589,7 +609,7 @@ class GameHistoryShowdown(BASE, FactorMixin):
         new.is_passive = self.is_passive
         new.pot = self.pot
         return new
-     
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
             [GameHistoryBase.gameid, GameHistoryBase.order]),
@@ -597,13 +617,13 @@ class GameHistoryShowdown(BASE, FactorMixin):
         # ForeignKeyConstraint([gameid, order],
         #     [GameHistoryRangeAction.gameid, GameHistoryRangeAction.order]),
         {})
-    
+
 class GameHistoryShowdownEquity(BASE):
     """
     User <userid> has equity <equity> in showdown <gameid, order, is_passive>
     """
     __tablename__ = "game_history_showdown_equity"
-    
+
     gameid = Column(Integer, primary_key=True)
     order = Column(Integer, primary_key=True)
     is_passive = Column(Boolean, primary_key=True)
@@ -611,12 +631,12 @@ class GameHistoryShowdownEquity(BASE):
     showdown_order = Column(Integer, primary_key=True, autoincrement=False)
     userid = Column(Integer, ForeignKey("user.userid"), nullable=False)
     equity = Column(Float, nullable=True)  # populated by analysis
-    
+
     showdown = relationship("GameHistoryShowdown",
         backref=backref("participants", cascade="all",
             order_by="GameHistoryShowdownEquity.showdown_order"))
     user = relationship("User")
-    
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order, is_passive],
             [GameHistoryShowdown.gameid,
@@ -624,7 +644,7 @@ class GameHistoryShowdownEquity(BASE):
              GameHistoryShowdown.is_passive]),
         {})
 
-# This is what we copy, when we copy a running game    
+# This is what we copy, when we copy a running game
 GAME_HISTORY_TABLES = [
     GameHistoryBase,
     GameHistoryUserRange,
@@ -730,9 +750,9 @@ class RunningGameParticipantResult(BASE):
 class RangeItem(BASE):
     """
     One hand in a range. Used to tie results to specific combos.
-    
+
     Note: these are singletons, defined once and used everywhere.
-    
+
     This table doesn't achieve much, except to ensure uniqueness within a range.
     """
     __tablename__ = "range_item"
@@ -757,12 +777,12 @@ class AnalysisFoldEquity(BASE):
     bet_cost = Column(Integer, nullable=False)
     raise_total = Column(Integer, nullable=False)
     pot_if_called = Column(Integer, nullable=False)
-    
+
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
             [GameHistoryActionResult.gameid, GameHistoryActionResult.order]),
         {})
-    
+
 class AnalysisFoldEquityItem(BASE):
     """
     Individual combo in the analysis of fold equity in a spot.
@@ -801,19 +821,19 @@ class AnalysisFoldEquityItem(BASE):
 #     Profitability of a call with the intention of betting later, on any street
 #     """
 #     pass
-# 
+#
 # class AnalysisRiverBet(BASE):
 #     """
 #     Equity of a bet when called, on the river, summary of the many hands.
 #     """
 #     pass
-# 
+#
 # class AnalysisRiverBetHand(BASE):
 #     """
 #     Analysis of the equity of an individual hand in a river bet range.
 #     """
 #     pass
-# 
+#
 # class AnalysisRiverCall(BASE):
 #     """
 #     EV and equity of all hands in a call range on the river, summary.
@@ -821,33 +841,33 @@ class AnalysisFoldEquityItem(BASE):
 #     showdown value is.
 #     """
 #     pass
-# 
+#
 # class AnalysisRiverCallHand(BASE):
 #     """
 #     Analysis of the EV and equity of an individual hand in a river call (or
 #     check) range.
 #     """
-# 
+#
 # class AnalysisRiverFold(BASE):
 #     """
 #     EV and equity of all hands in a fold range on the river, summary. But only
 #     when there's actually a bet.
 #     """
 #     pass
-# 
+#
 # class AnalysisRiverFoldHand(BASE):
 #     """
 #     Analysis of the EV and equity of an individual hand in a river fold range.
 #     """
 #     pass
-# 
+#
 # class AnalysisRiverBluffRaise(BASE):
 #     """
 #     EV and equity of a bluff raise on the river, summary. Includes betting as
 #     a bluff when we could check.
 #     """
 #     pass
-# 
+#
 # class AnalysisRiverBluffRaiseHand(BASE):
 #     """
 #     EV and equity of an individual hand in a raise range on the river.

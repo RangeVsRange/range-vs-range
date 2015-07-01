@@ -28,7 +28,9 @@ from functools import wraps
 # TODO: 3.1: poll /r/poker for the most common/important/profitable postflop
 # TODO: 3.2: ... two-handed situation and create that as a second situation
 
-# TODO: 5: a 'situation' page that describes the situation
+# TODO: 5: a 'situation' page that describes the situation...
+# TODO: 5: reused in situation tab of game page - with starting pot!...
+# TODO: 5: and card removal effects of board (change to range editor)
 
 def auth_check(view_func):
     """
@@ -299,7 +301,7 @@ def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
     """
-    # TODO: 1: 'updated!' indicator on finished games (on the RGPs)
+    # TODO: 2: 'updated!' indicator on finished games (on the RGPs)
 
     # TODO: 2: account page with email preferences, screenname, and spawn
 
@@ -882,9 +884,7 @@ def game_page():
     """
     View of the specified game, authentication-aware
     """
-    # TODO: 0: when you join a game and it starts, navigate immediately to game.
-    # TODO: 0: show root id to user, not actual game id!
-    # TODO: 2: asynchronous analysis triggered by action (like emails are)
+    # TODO: 5: on-going semi-immediate analysis (long-running process)
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -1154,8 +1154,9 @@ def group_page():
     total_weight = sum(game.spawn_factor
                        for game in games if game.is_analysed)
 
-    # TODO: 0.1: https://github.com/jonmiles/bootstrap-treeview
-    # grouped by betting line
+    # TODO: 0: board fixing for group...
+    # but when?
+    # TODO: 1: betting line in group table (and elsewhere)
 
     games = sorted(games, key=lambda game: -game.spawn_factor)
 
