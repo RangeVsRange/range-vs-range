@@ -86,6 +86,18 @@ class Situation(BASE):
         # pylint:disable=E1101
         return sorted(self.players, key=lambda p: p.order)
 
+    def get_board(self):
+        """
+        Get board, as list of Card
+        """
+        return Card.many_from_text(self.board_raw)
+    def set_board(self, cards):
+        """
+        Set board, from list of Card
+        """
+        self.board_raw = ''.join([card.to_mnemonic() for card in cards])
+    board = property(get_board, set_board)
+
 class SituationPlayer(BASE, object):
     """
     Details of a player in a situation
@@ -186,10 +198,9 @@ class RunningGame(BASE, object):
     current_userid = Column(Integer, nullable=True)
     next_hh = Column(Integer, default=0, nullable=False)
     # game state
-    # TODO: 0.0: split into board_raw (complete board) and...
-    # board_text (current) per current_round, and perhaps same for board
-    # board = what's currently visible, total_board = what will be
+    # current board
     board_raw = Column(String(10), nullable=False)
+    # future board
     total_board_raw = Column(String(10), nullable=False)
     current_round = Column(String(7), nullable=False)
     pot_pre = Column(Integer, nullable=False)
@@ -220,6 +231,7 @@ class RunningGame(BASE, object):
         game.current_userid = self.current_userid
         game.next_hh = self.next_hh
         game.board_raw = self.board_raw
+        game.total_board_raw = self.total_board_raw
         game.current_round = self.current_round
         game.pot_pre = self.pot_pre
         game.increment = self.increment

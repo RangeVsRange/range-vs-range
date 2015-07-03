@@ -33,7 +33,7 @@ class Rank(object):
     @classmethod
     def from_mnemonic(cls, char):
         """
-        From the relevant rank character, e.g. 'K' -> King 
+        From the relevant rank character, e.g. 'K' -> King
         """
         return RANK_MAP[char]
 
@@ -185,7 +185,7 @@ class Card(object):
         HandRange.
         """
         return RANK_INVERT[self.rank] + SUIT_INVERT[self.suit]
-    
+
     def to_mask(self):
         """
         For calculations, convert to raw data mask
@@ -195,23 +195,23 @@ class Card(object):
     def __str__(self):
         # Note: Suits are plurals, Ranks are singular.
         return "%s of %s" % (str(self.rank), str(self.suit))
-    
+
     def __repr__(self):
         return self.__str__()
-    
+
     def __cmp__(self, other):
         if not isinstance(other, Card):
             return 0
         return cmp(self.rank, other.rank) or cmp(self.suit, other.suit)
-    
+
     def __eq__(self, other):
         if not isinstance(other, Card):
             return False
         return self.rank == other.rank and self.suit == other.suit
-    
+
     def __ne__(self, other):
         return not self.__eq__(other)
-    
+
     def __hash__(self):
         return hash(self.rank) ^ hash(self.suit)
 
@@ -231,6 +231,8 @@ def deal_card(excluded):
 def deal_cards(excluded, number):
     """
     Deal multiple cards and return as a list
+
+    Warning! Dealt cards will be appended to excluded list!
     """
     return [deal_card(excluded) for _ in range(number)]
 

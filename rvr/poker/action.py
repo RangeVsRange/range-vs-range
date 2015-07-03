@@ -124,10 +124,28 @@ def generate_excluded_cards(game, hero=None):
     """
     map_to_range = {rgp: rgp.range for rgp in game.rgps
                     if rgp is not hero}
-    player_to_dealt = deal_from_ranges(map_to_range, game.board)
+    # We consider the future board. By doing this here, we make action
+    # probabilities consistent with calculated range sizes.
+    # Implications:
+    #  - we're using an actual board for everything, except pre-river all in
+    #  - i.e. call ratio will be determined by future board cards, even though
+    #    future board cards are ignored for equity calculations
+    #  - it's extremely counter-intuitive, but I think it's the right result
+    # More broadly:
+    #  - (good) we'll never end up in an impossible situation
+    #    (e.g. Ax vs. Ax on board AAxAx)
+    #  - (bad) (already possible?) sometimes one range just won't be played
+    #    out (actually, good and correct?, for both competition and
+    #    optimization mode?)
+    #  - (bad) when you get all in pre-river, future cards will be excluded
+    #    from the perspective of the probability of the action, but included
+    #    from the perspective of the showdown ranges and equities (but this
+    #    is still the most preferable option)
+    board = game.total_board or game.board
+    player_to_dealt = deal_from_ranges(map_to_range, board)
     # note: this catches cards dealt to folded RGPs - as it should!
     excluded_cards = concatenate(player_to_dealt.values())
-    excluded_cards.extend(game.board)
+    excluded_cards.extend(board)
     return excluded_cards
 
 def calculate_current_options(game, rgp):
@@ -290,12 +308,6 @@ class WhatCouldBe(object):
         # note that we only consider the possible
         # mostly copied from the old re_deal (originally!)
 
-        # TODO: 0.0: if generate_excluded_cards considers the future board:
-        # - (good) we'll never end up in an impossible situation
-        #   (e.g. Ax vs. Ax on board AAxAx)
-        # - (bad) (already possible?) sometimes one range just won't be played
-        #   out (actually, good and correct?, for both competition and
-        #   optimization mode?)
         # TODO: REVISIT: sometimes this considers something not to be an...
         # option when it truly is, e.g:
         # - Villain happens to draw AA for dealt/excluded cards
@@ -386,6 +398,7 @@ class WhatCouldBe(object):
                           self.game.gameid)
             return []
         elif not auto_spawn:
+            # TODO: REVISIT: should use real probability, not flat list choice
             chosen_option = random.choice(non_terminal)
             # but which action was chosen?
             for branch in self.bough:

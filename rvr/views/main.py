@@ -1154,8 +1154,7 @@ def group_page():
     total_weight = sum(game.spawn_factor
                        for game in games if game.is_analysed)
 
-    # TODO: 0: board fixing for group...
-    # but when?
+    # TODO: 0: when total board in affect, hold group at same street
     # TODO: 1: betting line in group table (and elsewhere)
 
     games = sorted(games, key=lambda game: -game.spawn_factor)

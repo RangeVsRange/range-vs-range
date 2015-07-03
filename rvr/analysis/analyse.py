@@ -546,16 +546,16 @@ class AnalysisReplayer(object):
 
     def process_range_action(self, item):
         """
-        Process a GameItemRangeAction
+        Process a GameHistoryRangeAction
         """
-        fol = len(HandRange(item.fold_range).generate_options(self.board))
-        pas = len(HandRange(item.passive_range).generate_options(self.board))
-        agg = len(HandRange(item.aggressive_range).generate_options(self.board))
-        total = fol + pas + agg
-        fold_ratio = 1.0 * fol / total if item.fold_ratio is None  \
-            else item.fold_ratio
-        call_ratio = 1.0 * pas / total if item.passive_ratio is None  \
-            else item.passive_ratio
+        legacy_fol = len(HandRange(item.fold_range).generate_options(self.board))
+        legacy_pas = len(HandRange(item.passive_range).generate_options(self.board))
+        legacy_agg = len(HandRange(item.aggressive_range).generate_options(self.board))
+        total = legacy_fol + legacy_pas + legacy_agg
+        fold_ratio = item.fold_ratio if item.fold_ratio is not None  \
+            else 1.0 * legacy_fol / total
+        call_ratio = item.passive_ratio if item.passive_ratio is not None  \
+            else 1.0 * legacy_pas / total
         self.fold_equity_payments(range_action=item, fold_ratio=fold_ratio)
         self.range_action_fea(item)
         self.range_action_showdown(item, call_ratio=call_ratio)

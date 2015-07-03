@@ -10,7 +10,7 @@ import logging
 from sqlalchemy.exc import IntegrityError
 import traceback
 from rvr.poker.handrange import remove_board_from_range,  \
-    ANYTHING, NOTHING
+    ANYTHING, NOTHING, deal_from_ranges, IncompatibleRangesError
 from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
@@ -423,6 +423,7 @@ class API(object):
         # move everyone left so that final_ogp will act first
         offset = len(all_ogps) - 1 - situation.current_player_num
         all_ogps = all_ogps[offset:] + all_ogps[:offset]
+        total_board = self._generate_total_board(situation)
         running_game = tables.RunningGame()
         running_game.next_hh = 0
         running_game.public_ranges = open_game.public_ranges
@@ -439,10 +440,13 @@ class API(object):
         running_game.last_action_time = datetime.datetime.utcnow()
         running_game.analysis_performed = False
         running_game.spawn_factor = 1.0
-        situation_players = situation.ordered_players()
+        running_game.total_board = total_board
         self.session.add(running_game)
         self.session.flush()  # get gameid from database
+        logging.debug('Secret total board for game %d: %r',
+                      running_game.gameid, running_game.total_board_raw)
         running_game.spawn_group = running_game.gameid
+        situation_players = situation.ordered_players()
         for order, (ogp, s_p) in enumerate(zip(all_ogps, situation_players)):
             # create rgps in the order they will act in future rounds
             rgp = tables.RunningGameParticipant()
@@ -462,7 +466,6 @@ class API(object):
             # it is implied.
         # TODO: 2: check that this cascades to ogps
         self.session.delete(open_game)
-        # TODO: 0: choose 5-card board probabilistically consistent with ranges
         self._deal_to_board(running_game)  # also changes ranges
         notify_started(running_game, starter_id=final_ogp.userid)
         logging.debug("Started game %d", open_game.gameid)
@@ -721,13 +724,37 @@ class API(object):
         """
         total = TOTAL_COMMUNITY_CARDS[game.current_round]
         current = len(game.board)
-        excluded_cards = generate_excluded_cards(game)
-        new_board = game.board + deal_cards(excluded_cards, total - current)
+        if game.total_board:
+            new_board = game.total_board[0:total]
+        else:
+            excluded_cards = generate_excluded_cards(game)
+            new_board = game.board + deal_cards(excluded_cards, total - current)
         game.board = new_board
         if total > current:
             self._record_board(game)
         for rgp in game.rgps:
             rgp.range = remove_board_from_range(rgp.range, game.board)
+
+    def _generate_total_board(self, situation):
+        """
+        Generate (but don't deal) all future board cards.
+        """
+        ranges = {p: p.range for p in situation.players}
+        situation_board = situation.board
+        for _ in range(10):
+            # We can at least assume an incompatible deal is very unlikely,
+            # because it being likely implies the players already know what the
+            # future board cards will be... If we want to support that, we may
+            # as well allow the situation to define the future board cards.
+            to_deal = TOTAL_COMMUNITY_CARDS[RIVER] - len(situation_board)
+            board = situation_board
+            deal_cards(board, to_deal)
+            try:
+                deal_from_ranges(ranges, board)
+                return board
+            except IncompatibleRangesError:
+                pass
+        raise IncompatibleRangesError()
 
     def _finish_betting_round(self, game, remain):
         """
@@ -738,7 +765,6 @@ class API(object):
         current_user = min(remain, key=lambda r: r.order)
         game.current_userid = current_user.userid
         game.current_round = NEXT_ROUND[game.current_round]
-        # TODO: 0: reveal, not deal
         self._deal_to_board(game)
         game.increment = game.situation.big_blind
         game.bet_count = 0
