@@ -799,6 +799,9 @@ class API(object):
                 if g.game_finished:
                     # all in already
                     continue
+                if g.current_round != current_round:
+                    # legacy support!
+                    continue
                 assert not any(p.left_to_act for p in g.rgps)
                 assert g.current_userid == None
                 assert g.current_round == current_round
