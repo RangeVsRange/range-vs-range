@@ -9,6 +9,7 @@ PREFLOP = "Preflop"
 FLOP = "Flop"
 TURN = "Turn"
 RIVER = "River"
+FINISHED = "Finished"
 
 class Rank(object):
     """

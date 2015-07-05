@@ -19,7 +19,7 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
 from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult
 from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
-    SUITS_HIGH_TO_LOW
+    SUITS_HIGH_TO_LOW, TURN, FINISHED
 from sqlalchemy.orm.exc import NoResultFound
 from rvr.mail.notifications import notify_current_player, notify_started
 from rvr.analysis.analyse import AnalysisReplayer
@@ -376,11 +376,11 @@ class API(object):
             .filter(tables.RunningGameParticipant.userid == userid).all()
         running_games =  \
             [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
-             for rgp in rgps if rgp.game.current_userid is not None
+             for rgp in rgps if rgp.game.game_finished
              and not rgp.game.public_ranges]
         finished_games =  \
             [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
-             for rgp in rgps if rgp.game.current_userid is None
+             for rgp in rgps if not rgp.game.game_finished
              and not rgp.game.public_ranges]
         group_ids = set(rgp.game.spawn_group for rgp in rgps
                         if rgp.game.public_ranges)
@@ -389,8 +389,9 @@ class API(object):
         for group in group_ids:
             spawns = [rgp for rgp in rgps if rgp.game.spawn_group == group
                       and rgp.game.public_ranges]
-            is_finished = all(spawn.game.is_finished for spawn in spawns)
-            is_on_me = any(spawn.game.current_userid == userid for spawn in spawns)
+            is_finished = all(spawn.game.game_finished for spawn in spawns)
+            is_on_me = any(spawn.game.current_userid == userid
+                           for spawn in spawns)
             if is_finished:
                 finished_groups.append(
                     dtos.RunningGroup.from_rgps(group, is_finished, is_on_me,
@@ -756,14 +757,62 @@ class API(object):
                 pass
         raise IncompatibleRangesError()
 
-    def _finish_betting_round(self, game, remain):
+    def _open_the_gate(self, spawn_group, current_round):
+        """
+        Time to finish the betting round for the group?
+        """
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.spawn_group ==
+                    spawn_group).all()
+        return not any(g.current_round == current_round
+                       and not g.round_finished for g in games)
+
+    def _attempt_start_next_round(self, gameid, spawn_group, current_round):
+        """
+        Finish the betting round for all games in the group, if and only if:
+         - they are all ready for the next card, or
+         - it's already the river, or
+         - just for this game if this game is all in, but still for the others
+           if one of the other two conditions hold
+
+        Finish all games in group if:
+         - all games have finished this betting round, except river
+
+        Finish just this game if:
+         - all in and not river
+
+        Finish no games if:
+         - not river, not all in, other games haven't finished this round
+
+        More concisely:
+         - if all games finished this round, finish games still at this round
+         - else if all in and not river, finish just this game
+         - else... do nothing
+        """
+        assert current_round in [PREFLOP, FLOP, TURN]
+        if self._open_the_gate(spawn_group, current_round):
+            # finish all
+            games = self.session.query(tables.RunningGame)  \
+                .filter(tables.RunningGame.spawn_group ==
+                        spawn_group).all()
+            for g in games:
+                if g.game_finished:
+                    # all in already
+                    continue
+                assert not any(p.left_to_act for p in g.rgps)
+                assert g.current_userid == None
+                assert g.current_round == current_round
+                self._start_next_round(g)
+        else:
+            # ... do nothing
+            logging.debug("gameid %d, waiting for others in group", gameid)
+
+    def _start_next_round(self, game):
         """
         Deal and such
         """
-        # Note that the original setting of game state is not here,
-        # it's directly in API. Perhaps it should be here. Perhaps it will...
-        current_user = min(remain, key=lambda r: r.order)
-        game.current_userid = current_user.userid
+        remain = [p for p in game.rgps if not p.folded]
+        game.current_userid = min(remain, key=lambda r: r.order).userid
         game.current_round = NEXT_ROUND[game.current_round]
         self._deal_to_board(game)
         game.increment = game.situation.big_blind
@@ -776,6 +825,7 @@ class API(object):
             if rgp.folded:
                 continue
             rgp.left_to_act = True
+        notify_current_player(game)
 
     def _create_showdown(self, game, participants, is_passive, pot, factor):
         # pylint:disable=R0913
@@ -880,16 +930,20 @@ class API(object):
         if len(left_to_act) == 1 and not remain:
             # BB got a walk, or everyone folded to the button postflop
             # TODO: REVISIT: I think this never happens
-            game.is_finished = True
+            left_to_act[0].left_to_act = False
+            game.game_finished = True
         elif not left_to_act:
             if len(remain) == 1 or game.current_round == RIVER:
                 # The last person in folded their entire range, or
                 # We have a range-based showdown on the river.
                 # TODO: REVISIT: I think this never happens
-                game.is_finished = True
+                game.game_finished = True
             else:
-                # Deal, change round, set new game state.
-                self._finish_betting_round(game, remain)
+                # Betting round is done. Game is not. This triggers attempting
+                # to start the next betting round, but it is not the only thing
+                # that does - also the players getting all in, which never gets
+                # here because it finished the game!
+                game.current_userid = None
         else:
             # Who's up next? And not someone named Who, but the pronoun.
             later = [p for p in left_to_act if p.order > rgp.order]
@@ -899,9 +953,9 @@ class API(object):
             game.current_userid = next_rgp.userid
             logging.debug("Next to act in game %d: userid %d, order %d",
                           game.gameid, next_rgp.userid, next_rgp.order)
-        notify_current_player(game)
+            notify_current_player(game)
 
-    def _perform_action(self, game, rgp, range_action, current_options):
+    def _inner_perform_action(self, game, rgp, range_action, current_options):
         """
         Inputs:
          - game, tables.RunningGame object, from database
@@ -933,21 +987,36 @@ class API(object):
         self._record_range_action(rgp, range_action,
             current_options.can_check(), current_options.is_raise,
             range_ratios)
-        self._range_action_showdown(game, rgp, current_options,
-                                    range_ratios)
+        self._range_action_showdown(game, rgp, current_options, range_ratios)
         # this also changes game's current factor
         results = what_could_be.calculate_what_will_be(game.is_auto_spawn)
 
         if not results:
             logging.debug("gameid %r, determined to terminate", game.gameid)
-            game.is_finished = True
             rgp.left_to_act = False
+            game.game_finished = True
             return ActionResult.terminate(), []
 
         games = [game] + [self._spawn_game(game) for _ in results[1:]]
         for g, details in zip(games, results):
             self._apply_action_result(g, *details)
         return results[0][1], [g.gameid for g in games[1:]]
+
+    def _perform_action(self, game, rgp, range_action, current_options):
+        """
+        _inner_perform_action, but with _attempt_start_next_round
+        """
+        round_initially = game.current_round
+        result = self._inner_perform_action(game, rgp, range_action,
+                                            current_options)
+        # Deal, change round, set new game state. If it is time to!
+        # condition: the betting round is finished for this game, and
+        # it wasn't the river (the game may or may not be finished)
+        if round_initially != RIVER and game.current_userid is None:
+            self.session.commit()
+            self._attempt_start_next_round(game.gameid, game.spawn_group,
+                                           round_initially)
+        return result
 
     def _has_never_acted(self, userid):
         """
@@ -991,10 +1060,6 @@ class API(object):
         is_first_action = self._has_never_acted(userid)
         results, spawned_gameids = self._perform_action(
             game, rgp, range_action, current_options)
-        if game.is_finished:
-            self.session.commit()
-            # TODO: REVISIT: This is a good idea, but it's not working in prod
-            # self._analyse_immediately(game.gameid)
         return results, spawned_gameids, is_first_action
 
     @api
@@ -1061,7 +1126,7 @@ class API(object):
                       for child in all_child_items]
         all_userids = [rgp.userid for rgp in game.rgps]
         history = [dto for dto in child_dtos if
-            dto.should_include_for(userid, all_userids, game.is_finished,
+            dto.should_include_for(userid, all_userids, game.game_finished,
                                    public_ranges)]
         payments = {} # map order to map reason to list payments
         for child in all_child_items:
@@ -1181,7 +1246,7 @@ class API(object):
         If you need to RE-analyse the database, delete existing analysis first.
         """
         games = self.session.query(tables.RunningGame)  \
-            .filter(tables.RunningGame.current_userid == None).all()
+            .filter(tables.RunningGame.current_round == FINISHED).all()
         for game in games:
             if not game.analysis_performed:
                 replayer = AnalysisReplayer(self.session, game)
@@ -1193,6 +1258,9 @@ class API(object):
         """
         Analyse game on a different thread.
         """
+        # TODO: 5: on-going semi-immediate analysis (long-running process)
+        # with analysis etc. triggered by socket
+        # (_analyse_immediately didn't work in production)
         def do_analyse():
             """
             With new session, because I doubt they're thread safe.
@@ -1283,7 +1351,8 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid != None).all()
         for game in games:
-            if game.last_action_time + datetime.timedelta(days=7) <  \
+            # TODO: 0: days=7, not weeks=7
+            if game.last_action_time + datetime.timedelta(weeks=7) <  \
                     datetime.datetime.utcnow():
                 # This doesn't cause a race condition because we have isolation
                 # level set to SERIALIZABLE

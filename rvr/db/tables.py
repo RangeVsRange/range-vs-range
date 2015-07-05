@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
 from sqlalchemy.types import Float, DateTime
-from rvr.poker.cards import Card
+from rvr.poker.cards import Card, FINISHED
 from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.sql.schema import ForeignKeyConstraint
@@ -58,7 +58,7 @@ class User(BASE, object):
             self.screenname_raw = screenname
     screenname = property(get_screenname, set_screenname)
 
-class Situation(BASE):
+class Situation(BASE, object):
     """
     Training situations, e.g. HU NL HE for 100 BB preflop.
 
@@ -194,7 +194,7 @@ class RunningGame(BASE, object):
     # circular dependency, and won't create the database. Even with
     # post_update=True :(
     # Surely the fact that this is nullable should allow post_update to work!
-    # if current_userid is None, game is finished
+    # if current_userid is None, current round is finished
     current_userid = Column(Integer, nullable=True)
     next_hh = Column(Integer, default=0, nullable=False)
     # game state
@@ -296,20 +296,27 @@ class RunningGame(BASE, object):
         self.total_board_raw = ''.join([card.to_mnemonic() for card in cards])
     total_board = property(get_total_board, set_total_board)
 
-    def get_is_finished(self):
+    def get_game_finished(self):
         """
-        Is the game finished
+        Is the game finished?
+        """
+        return self.current_round == FINISHED
+    def set_game_finished(self, value):
+        """
+        Set game finished. Value must be true.
+        """
+        if not value:
+            raise ValueError("can't restart a game")
+        self.current_round = FINISHED
+        self.current_userid = None
+    game_finished = property(get_game_finished, set_game_finished)
+
+    def get_round_finished(self):
+        """
+        Is the current round finished?
         """
         return self.current_userid == None
-    def set_is_finished(self, value):
-        """
-        Finish the game. Value must be True.
-        """
-        if not value:  # attempting to start a game
-            if self.get_is_finished():  # attempting to restart a finished game.
-                raise ValueError("Cannot restart a game")
-        self.current_userid = None
-    is_finished = property(get_is_finished, set_is_finished)
+    round_finished = property(get_round_finished)
 
 class RunningGameParticipant(BASE, object):
     """

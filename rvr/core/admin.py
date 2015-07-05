@@ -233,7 +233,7 @@ class AdminCmd(Cmd):
         if isinstance(response, APIError):
             print "Error:", response.description  # pylint:disable=E1101
             return
-        action, spawned, is_first_action = response
+        action, spawned, is_first_action = response  # pylint:disable=unpacking-non-sequence,line-too-long
         # pylint:disable=E1103
         if action.is_fold:
             print "You folded."

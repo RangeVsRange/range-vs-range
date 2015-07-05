@@ -22,6 +22,7 @@ from rvr import local_settings
 from rvr.forms.backdoor import BackdoorForm
 from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 from functools import wraps
+from rvr.poker.cards import FINISHED
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -143,7 +144,7 @@ def error(message):
     flash(message)
     return redirect(url_for('error_page'))
 
-def is_first_action():
+def is_what_now():
     """
     Does the user have the first_action cookie set?
     """
@@ -380,7 +381,7 @@ def home_page():
         selected_heading=selected_heading,
         selected_mode=selected_mode,
         is_logged_in=is_logged_in(),
-        is_first_action=is_first_action(),
+        is_first_action=is_what_now(),
         my_screenname=get_my_screenname())
 
 @APP.route('/join', methods=['GET'])
@@ -807,7 +808,29 @@ def _running_game(game, gameid, userid, api):
         is_me=is_me, is_mine=is_mine, is_new_chat=is_new_chat, is_running=True,
         range_editor_url=range_editor_url,
         navbar_items=navbar_items, is_logged_in=is_logged_in(),
-        is_first_action=is_first_action(), url=request.url,
+        is_first_action=is_what_now(), url=request.url,
+        my_screenname=get_my_screenname())
+
+def _paused_game(game, gameid, userid):
+    """
+    Response from game page when the requested game is paused.
+    """
+    title = 'Game %d' % (gameid,)
+    history = _make_history_list(game.history, game.game_details.situation)
+    is_new_chat = _calc_is_new_chat(game.history, userid)
+    board_raw = game.game_details.board_raw
+    board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
+    is_mine = (userid in [rgp.user.userid
+                          for rgp in game.game_details.rgp_details])
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('web/game.html', title=title,
+        board=board, game_details=game.game_details,
+        num_players=len(game.game_details.rgp_details), history=history,
+        is_me=False, is_mine=is_mine, is_new_chat=is_new_chat, is_running=True,
+        navbar_items=navbar_items, is_logged_in=is_logged_in(),
+        is_first_action=is_what_now(), url=request.url,
         my_screenname=get_my_screenname())
 
 def _finished_game(game, gameid, userid):
@@ -831,7 +854,7 @@ def _finished_game(game, gameid, userid):
         num_players=len(game.game_details.rgp_details), analyses=analyses,
         is_running=False, is_mine=is_mine, is_new_chat=is_new_chat,
         scheme=scheme, navbar_items=navbar_items, is_logged_in=is_logged_in(),
-        is_first_action=is_first_action(), url=request.url,
+        is_first_action=is_what_now(), url=request.url,
         my_screenname=get_my_screenname())
 
 def authenticated_game_page(gameid):
@@ -856,6 +879,8 @@ def authenticated_game_page(gameid):
 
     if response.is_finished():
         return _finished_game(response, gameid, userid)
+    elif response.game_details.current_player == None:
+        return _paused_game(response, gameid, userid)
     else:
         return _running_game(response, gameid, userid, api)
 
@@ -884,7 +909,6 @@ def game_page():
     """
     View of the specified game, authentication-aware
     """
-    # TODO: 5: on-going semi-immediate analysis (long-running process)
     gameid = request.args.get('gameid', None)
     if gameid is None:
         flash("Invalid game ID.")
@@ -1084,7 +1108,7 @@ def user_page():
         mode='competition' if is_competition else 'optimization',
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
-        is_first_action=is_first_action(),
+        is_first_action=is_what_now(),
         url=request.url,
         my_screenname=get_my_screenname())
 
@@ -1136,7 +1160,7 @@ def group_page():
         flash("No such game.")
         return redirect(url_for('error_page'))
     del gameid
-    groupid, games = result
+    groupid, games = result  # pylint:disable=unpacking-non-sequence
 
     # We rely on all games having the same players here - and there being at
     # least one of them!
@@ -1154,7 +1178,6 @@ def group_page():
     total_weight = sum(game.spawn_factor
                        for game in games if game.is_analysed)
 
-    # TODO: 0: when total board in affect, hold group at same street
     # TODO: 1: betting line in group table (and elsewhere)
 
     games = sorted(games, key=lambda game: -game.spawn_factor)
@@ -1172,6 +1195,6 @@ def group_page():
         groupid=groupid,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
-        is_first_action=is_first_action(),
+        is_first_action=is_what_now(),
         url=request.url,
         my_screenname=get_my_screenname())

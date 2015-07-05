@@ -150,7 +150,11 @@ class AnalysisReplayer(object):
     def __init__(self, session, game):
         logging.debug("gameid %d, AnalysisReplayer, initialising",
                       game.gameid)
-        if not game.is_finished:
+        if not game.game_finished:
+            # TODO: 1: set currently finished games street to FINISHED
+            # finished being round == river and player == NULL or
+            # all players all in (and player == NULL)
+            # In the mean time, we can't analyse any old games!
             raise ValueError("Can't analyse game until finished.")
         if game.analysis_performed:
             raise ValueError("Game is already analysed.")

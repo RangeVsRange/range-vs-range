@@ -137,7 +137,7 @@ showdown_view = function(criterion) {
       <td>{{rgp.stack}}</td>
       <td>{{rgp.contributed}}</td>
       <td>
-      {% if rgp.user.screenname == game_details.current_player.user.screenname %}
+      {% if game_details.current_player and rgp.user.screenname == game_details.current_player.user.screenname %}
         <em>(acting now)</em>
       {% elif rgp.left_to_act %}
         <em>(still to act)</em>

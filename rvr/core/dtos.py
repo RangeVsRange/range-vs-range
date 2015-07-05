@@ -12,7 +12,7 @@ Data transfer objects:
 from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange
-from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card
+from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card, FINISHED
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -253,7 +253,7 @@ class RunningGameSummary(object):
                        for rgp in running_game.rgps]
         return cls(running_game.gameid, running_game.public_ranges, users,
                    situation, running_game.current_userid == userid,
-                   running_game.current_userid is None,
+                   running_game.game_finished,
                    running_game.analysis_performed, rgp_details,
                    running_game.spawn_group, running_game.spawn_factor)
 
@@ -377,9 +377,7 @@ class RunningGameDetails(object):
         """
         True when the game is finished.
         """
-        return self.current_player is None
-
-
+        return self.current_round == FINISHED
 
 class SituationResult(object):
     """

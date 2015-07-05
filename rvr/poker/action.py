@@ -1,7 +1,7 @@
 """
 action functionality, imported from the previous versions
 """
-from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN
+from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN, FINISHED
 import unittest
 from rvr.poker.handrange import HandRange, _cmp_options, deal_from_ranges
 from rvr.infrastructure.util import concatenate
@@ -225,7 +225,7 @@ def act_terminate(game, rgp):
     Handle game termination when a range action results in termination.
     """
     rgp.left_to_act = False
-    game.is_finished = True
+    game.game_finished = True
 
 # TODO: 5: test situations like P1 bet, P2 call, P3 fold/call/raise
 # (P3's action triggers a P1+P2 showdown and a P1+P2+P3 showdown, and more.)

@@ -123,7 +123,7 @@ def _game_finished(recipient, screenname, identity, game):
 
 def notify_current_player(game):
     """
-    If the game is not finished, notify the current player that it's their
+    If the game is running, notify the current player that it's their
     turn to act (i.e. via email).
     """
     if game.current_userid == None:
