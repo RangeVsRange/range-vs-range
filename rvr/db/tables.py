@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from rvr.db.creation import BASE
 from sqlalchemy.types import Float, DateTime
-from rvr.poker.cards import Card, FINISHED
+from rvr.poker.cards import Card, FINISHED, RIVER
 from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.sql.schema import ForeignKeyConstraint
@@ -300,6 +300,15 @@ class RunningGame(BASE, object):
         """
         Is the game finished?
         """
+        # legacy support:
+        if self.current_round == RIVER and self.current_userid == None:
+            # old-style finishments on river
+            return True
+        if self.current_userid == None and  \
+                any(rgp.stack == 0 for rgp in self.rgps):
+            # old-style finishments pre-river
+            return True
+        # real logic:
         return self.current_round == FINISHED
     def set_game_finished(self, value):
         """
