@@ -1177,7 +1177,8 @@ def group_page():
     total_weight = sum(game.spawn_factor
                        for game in games if game.is_analysed)
 
-    # TODO: 1: betting line in group table (and elsewhere)
+    # TODO: 1.2: betting line in group table (and elsewhere)
+    # TODO: 1.3: betting line "roll-up" and/or EV tree view
 
     games = sorted(games, key=lambda game: -game.spawn_factor)
 

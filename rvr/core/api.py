@@ -465,8 +465,7 @@ class API(object):
             self.session.flush()  # populate game
             # Note that we do NOT create a range history item for them,
             # it is implied.
-        # TODO: 2: check that this cascades to ogps
-        self.session.delete(open_game)
+        self.session.delete(open_game)  # cascades to OGPs
         self._deal_to_board(running_game)  # also changes ranges
         notify_started(running_game, starter_id=final_ogp.userid)
         logging.debug("Started game %d", open_game.gameid)
@@ -933,7 +932,7 @@ class API(object):
         if len(left_to_act) == 1 and not remain:
             # BB got a walk, or everyone folded to the button postflop
             # TODO: REVISIT: I think this never happens
-            # TODO: 1: test this scenario, see if this triggers
+            # TODO: 0.1: test this scenario, see if this triggers
             assert False
             left_to_act[0].left_to_act = False
             game.game_finished = True
@@ -942,7 +941,7 @@ class API(object):
                 # The last person in folded their entire range, or
                 # We have a range-based showdown on the river.
                 # TODO: REVISIT: I think this never happens
-                # TODO: 1: test this scenario, see if this triggers
+                # TODO: 0.2: test this scenario, see if this triggers
                 assert False
                 game.game_finished = True
             else:
@@ -1358,7 +1357,7 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid != None).all()
         for game in games:
-            # TODO: 4: users should time out - of everything - not RGPs
+            # TODO: 1.1: users should time out - of everything - not RGPs
             # seven days is probably the right length of time
             if game.last_action_time + datetime.timedelta(weeks=7) <  \
                     datetime.datetime.utcnow():
