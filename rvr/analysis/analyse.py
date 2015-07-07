@@ -122,6 +122,7 @@ class FoldEquityAccumulator(object):
                       self.order)
         logging.debug("actually, not bothering!")
         return  # TODO: 5: reintroduce this (fold equity analysis)
+        #pylint:disable=unreachable
         assert len(self.potential_folders) == 0
         afe = self._create_afe()
         session.add(afe)
@@ -454,10 +455,15 @@ class AnalysisReplayer(object):
                       self.game.gameid, order)
         showdown = showdowns[0]
         # TODO: REVISIT: this ignores ranges of folded players
-        # it might make a difference in situations where a player has (for
+        # It might make a difference in situations where a player has (for
         # example) limited their range to Ax and later folded, hence surely
         # removing an ace from the deck for the other players (significantly
         # changing their equities)
+        # Actually, where it makes a difference, it would be really neat to see
+        # it. Imagine someone saying "hey, this stupid site says I made a bad
+        # call here with 23% equity when really I had 32% equity and it was a
+        # great call!" Well no actually, the card removal effects of the folded
+        # players change your equity, and you suck at poker.
         range_map = {k: v for k, v in ranges.iteritems() if k in userids}
         equity_map, iterations = showdown_equity(range_map, self.game.board)
         logging.debug('gameid %d, order %d, is_passive %r, factor %0.8f, '

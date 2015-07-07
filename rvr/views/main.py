@@ -22,7 +22,6 @@ from rvr import local_settings
 from rvr.forms.backdoor import BackdoorForm
 from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 from functools import wraps
-from rvr.poker.cards import FINISHED
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -843,7 +842,7 @@ def _finished_game(game, gameid, userid):
     scheme_includes = RunningGameParticipantResult.SCHEME_DETAILS[scheme]
     payments = _make_payments(game.history, game.payments, scheme_includes)
     is_new_chat = _calc_is_new_chat(game.history, userid)
-    analyses = []  # TODO: 5: reintroduce this: game.analysis.keys()
+    analyses = []  # TODO: 5: fold equity analysis: game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
     navbar_items = [('', url_for('home_page'), 'Home'),

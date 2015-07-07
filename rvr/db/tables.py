@@ -12,8 +12,6 @@ from sqlalchemy.sql.schema import ForeignKeyConstraint
 
 #pylint:disable=W0232,R0903
 
-# TODO: REVISIT: do strings need fixed lengths?
-
 # TODO: 2: add indexes (index=True parameter) to all columns that are searched
 # http://docs.sqlalchemy.org/en/latest/core/constraints.html#indexes
 
@@ -162,10 +160,6 @@ class OpenGameParticipant(BASE):
     Association object for the many-to-many relationship between users and open
     games.
     """
-    # TODO: 5: OpenGameParticipants should time out, e.g. at 1 day
-    # (or perhaps players should time out, and when they do, auto-fold current
-    # games and leave open games)
-    # (this is particularly important when we allow more players)
     __tablename__ = 'open_game_participant'
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("open_game.gameid"), primary_key=True)
@@ -304,6 +298,7 @@ class RunningGame(BASE, object):
         if self.current_round == RIVER and self.current_userid == None:
             # old-style finishments on river
             return True
+        # pylint:disable=no-member
         if self.current_userid == None and  \
                 any(rgp.stack == 0 for rgp in self.rgps):
             # old-style finishments pre-river

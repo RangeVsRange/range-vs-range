@@ -1,7 +1,7 @@
 """
 action functionality, imported from the previous versions
 """
-from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN, FINISHED
+from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN
 import unittest
 from rvr.poker.handrange import HandRange, _cmp_options, deal_from_ranges
 from rvr.infrastructure.util import concatenate

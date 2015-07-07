@@ -537,6 +537,7 @@ def write_analysis_fold_equities(session, afes):
     """ Write AnalysisFoldEquity table from memory into DB """
     # TODO: 5: reintroduce fold equity analysis
     return
+    #pylint:disable=unreachable
     for gameid, order, street, pot_before_bet, is_raise, is_check, bet_cost,  \
             raise_total, pot_if_called in afes:
         afe = AnalysisFoldEquity()
@@ -556,6 +557,7 @@ def read_analysis_fold_equity_items(session):
     """ Read AnalysisFoldEquityItem table from DB into memory """
     # TODO: 5: reintroduce fold equity analysis
     return []
+    #pylint:disable=unreachable
     afeis = session.query(AnalysisFoldEquityItem).all()
     return [(afei.gameid,
              afei.order,
@@ -573,6 +575,7 @@ def read_analysis_fold_equity_items(session):
 def write_analysis_fold_equity_items(session, afeis):
     """ Write AnalysisFoldEquityItem table from memory into DB """
     return  # TODO: 5: reintroduce fold equity analysis, less slowly!
+    #pylint:disable=unreachable
     for gameid, order, higher_card, lower_card, is_aggressive, is_passive,  \
             is_fold, fold_ratio, immediate_result, semibluff_ev,  \
             semibluff_equity in afeis:

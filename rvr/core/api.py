@@ -933,6 +933,8 @@ class API(object):
         if len(left_to_act) == 1 and not remain:
             # BB got a walk, or everyone folded to the button postflop
             # TODO: REVISIT: I think this never happens
+            # TODO: 1: test this scenario, see if this triggers
+            assert False
             left_to_act[0].left_to_act = False
             game.game_finished = True
         elif not left_to_act:
@@ -940,6 +942,8 @@ class API(object):
                 # The last person in folded their entire range, or
                 # We have a range-based showdown on the river.
                 # TODO: REVISIT: I think this never happens
+                # TODO: 1: test this scenario, see if this triggers
+                assert False
                 game.game_finished = True
             else:
                 # Betting round is done. Game is not. This triggers attempting
@@ -1354,7 +1358,8 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid != None).all()
         for game in games:
-            # TODO: 0: days=7, not weeks=7
+            # TODO: 4: users should time out - of everything - not RGPs
+            # seven days is probably the right length of time
             if game.last_action_time + datetime.timedelta(weeks=7) <  \
                     datetime.datetime.utcnow():
                 # This doesn't cause a race condition because we have isolation
