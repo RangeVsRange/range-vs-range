@@ -9,6 +9,7 @@ from rvr.poker.cards import Card, FINISHED, RIVER
 from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.sql.schema import ForeignKeyConstraint
+from sqlalchemy.orm.exc import NoResultFound
 
 #pylint:disable=W0232,R0903
 
@@ -30,6 +31,7 @@ class User(BASE, object):
     screenname_raw = Column(String(20), nullable=True, unique=True)
     email = Column(String(256), nullable=False)
     unsubscribed = Column(Boolean, nullable=False)
+    # TODO: 0.2: upgrade production database with this - as datetime.utcnow()
     last_seen = Column(DateTime, nullable=False)
 
     # attributes
@@ -254,12 +256,13 @@ class RunningGame(BASE, object):
         """
         Get current RunningGameParticipant, from current_userid
         """
-        if self.current_userid is None:
-            return None
         session = object_session(self)
-        return session.query(RunningGameParticipant)  \
-            .filter(RunningGameParticipant.userid == self.current_userid)  \
-            .filter(RunningGameParticipant.gameid == self.gameid).one()
+        try:
+            return session.query(RunningGameParticipant)  \
+                .filter(RunningGameParticipant.userid == self.current_userid)  \
+                .filter(RunningGameParticipant.gameid == self.gameid).one()
+        except NoResultFound:
+            return None
     def set_current_rgp(self, rgp):
         """
         Set current_userid, from RunningGameParticipant

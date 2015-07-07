@@ -20,16 +20,6 @@ class AdminCmd(Cmd):
         Cmd.__init__(self)
         self.api = API()
 
-    def do_recreate_timeouts(self, _details):
-        """
-        Recreate timeouts that were accidentally lost via dump
-        """
-        result = self.api.recreate_timeouts()
-        if isinstance(result, APIError):
-            print "Error:", result
-        else:
-            print "%d timeouts recreated" % (result,)
-
     def do_createdb(self, _details):
         """
         Create the database

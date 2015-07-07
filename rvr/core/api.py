@@ -658,7 +658,15 @@ class API(object):
     @api
     def leave_game(self, userid, gameid):
         """
-        4. Leave/cancel game we're in
+        Leave/cancel game we're in
+        inputs: userid, gameid
+        outputs: (none)
+        """
+        return self._leave_game(userid, gameid)
+
+    def _leave_game(self, userid, gameid):
+        """
+        Leave/cancel game we're in
         inputs: userid, gameid
         outputs: (none)
         """
@@ -1319,18 +1327,25 @@ class API(object):
         self.session.commit()
         return self._run_pending_analysis()
 
-    def _timeout(self, game):
+    def _timeout_running(self, rgp):
         """
-        Timeout the current player by folding their current range.
+        Timeout user from running game - make them fold their entire range
         """
-        rgp = game.current_rgp
-        current_options = calculate_current_options(game, rgp)
+        current_options = calculate_current_options(rgp.game, rgp)
         range_action = dtos.ActionDetails(fold_raw=rgp.range_raw,
             passive_raw=NOTHING, aggressive_raw=NOTHING, raise_total=0)
-        logging.debug("gameid %d, userid %d being timed out", game.gameid,
+        logging.debug("gameid %d, userid %d being timed out", rgp.gameid,
                       rgp.userid)
         self._record_timeout(rgp)
-        self._perform_action(game, rgp, range_action, current_options)
+        self._perform_action(rgp.game, rgp, range_action, current_options)
+
+    def _timeout_open(self, ogp):
+        """
+        Timeout user from open game - make the leave
+        """
+        logging.debug("open game %d, userid %d being timed out",
+                      ogp.gameid, ogp.userid)
+        self._leave_game(ogp.userid, ogp.gameid)
 
     @api
     def process_timeouts(self):
@@ -1338,63 +1353,30 @@ class API(object):
         Fold players' hands where those players have not acted for the
         standard timeout time period.
         """
-        # TODO: 1.1: users should time out - of everything - not RGPs
-        # seven days is probably the right length of time
-        # - collect users to be timed out
-        # - for each user
-        #   - for each RunningGame
-        #     - make user fold
-        #   - for each OpenGame
-        #     - make user leave the game
+        # This has to be kind of idempotent - we're not recording that users
+        # have been timed out, so we will keep seeing them as needing to be
+        # timed out. This is okay, because they won't actually have any running
+        # or open games to be timed out of, so nothing will happen.
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+        users = self.session.query(tables.User)  \
+            .filter(tables.User.last_seen < cutoff).all()
         count = 0
-        games = self.session.query(tables.RunningGame)  \
-            .filter(tables.RunningGame.current_userid != None).all()
-        for game in games:
-            if game.last_action_time + datetime.timedelta(weeks=7) <  \
-                    datetime.datetime.utcnow():
-                # This doesn't cause a race condition because we have isolation
-                # level set to SERIALIZABLE
-                self._timeout(game)
+        for user in users:
+            games = self.session.query(tables.RunningGame)  \
+                .filter(tables.RunningGame.current_userid == user.userid)  \
+                .all()
+            for game in games:
+                if game.game_finished:
+                    continue
+                rgp = game.current_user
+                if rgp is None or rgp.userid != user.userid:
+                    continue  # avoid race condition of user returning right now
                 count += 1
-        return count
-
-    @api
-    def recreate_timeouts(self):
-        """
-        Temporary function to recreate lost timeout rows.
-        """
-        count = 0
-        subs = [tables.GameHistoryActionResult,
-                tables.GameHistoryBoard,
-                tables.GameHistoryRangeAction,
-                tables.GameHistoryTimeout,
-                tables.GameHistoryUserRange,
-                tables.GameHistoryChat]
-        games = self.session.query(tables.RunningGame).all()
-        for game in games:
-            bases = self.session.query(tables.GameHistoryBase)  \
-                .filter(tables.GameHistoryBase.gameid == game.gameid).all()
-            bases.sort(key=lambda b: b.order)
-            for base in bases:
-                for sub in subs:
-                    if self.session.query(sub)  \
-                            .filter(sub.gameid == base.gameid)  \
-                            .filter(sub.order == base.order).all():
-                        break
-                else:
-                    logging.info("recreating timeout gameid %d, order %d",
-                                 base.gameid, base.order)
-                    ghra = self.session.query(tables.GameHistoryRangeAction)  \
-                        .filter(tables.GameHistoryRangeAction.gameid ==
-                                base.gameid)  \
-                        .filter(tables.GameHistoryRangeAction.order ==
-                                base.order + 1).one()
-                    element = tables.GameHistoryTimeout()
-                    self.session.add(element)
-                    element.userid = ghra.userid
-                    element.gameid = base.gameid
-                    element.order = base.order
-                    count += 1
+                self._timeout_running(rgp)
+            ogps = self.session.query(tables.OpenGameParticipant)  \
+                .filter(tables.OpenGameParticipant.userid == user.userid).all()
+            for ogp in ogps:
+                self._timeout_open(ogp)
         return count
 
     @api
