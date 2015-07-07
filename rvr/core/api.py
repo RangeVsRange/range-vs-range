@@ -928,29 +928,7 @@ class API(object):
             # terminate must not be passed here
             raise ValueError("Invalid action result")
         left_to_act = [p for p in game.rgps if p.left_to_act]
-        remain = [p for p in game.rgps if not p.left_to_act and not p.folded]
-        if len(left_to_act) == 1 and not remain:
-            # BB got a walk, or everyone folded to the button postflop
-            # TODO: REVISIT: I think this never happens
-            # TODO: 0.1: test this scenario, see if this triggers
-            assert False
-            left_to_act[0].left_to_act = False
-            game.game_finished = True
-        elif not left_to_act:
-            if len(remain) == 1 or game.current_round == RIVER:
-                # The last person in folded their entire range, or
-                # We have a range-based showdown on the river.
-                # TODO: REVISIT: I think this never happens
-                # TODO: 0.2: test this scenario, see if this triggers
-                assert False
-                game.game_finished = True
-            else:
-                # Betting round is done. Game is not. This triggers attempting
-                # to start the next betting round, but it is not the only thing
-                # that does - also the players getting all in, which never gets
-                # here because it finished the game!
-                game.current_userid = None
-        else:
+        if left_to_act:
             # Who's up next? And not someone named Who, but the pronoun.
             later = [p for p in left_to_act if p.order > rgp.order]
             earlier = [p for p in left_to_act if p.order < rgp.order]
@@ -960,6 +938,12 @@ class API(object):
             logging.debug("Next to act in game %d: userid %d, order %d",
                           game.gameid, next_rgp.userid, next_rgp.order)
             notify_current_player(game)
+        else:
+            # Betting round is done. Game is not. This triggers attempting
+            # to start the next betting round, but it is not the only thing
+            # that does - also the players getting all in, which never gets
+            # here because it finished the game!
+            game.current_userid = None
 
     def _inner_perform_action(self, game, rgp, range_action, current_options):
         """
