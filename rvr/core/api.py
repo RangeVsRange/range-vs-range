@@ -376,11 +376,11 @@ class API(object):
             .filter(tables.RunningGameParticipant.userid == userid).all()
         running_games =  \
             [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
-             for rgp in rgps if rgp.game.game_finished
+             for rgp in rgps if not rgp.game.game_finished
              and not rgp.game.public_ranges]
         finished_games =  \
             [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
-             for rgp in rgps if not rgp.game.game_finished
+             for rgp in rgps if rgp.game.game_finished
              and not rgp.game.public_ranges]
         group_ids = set(rgp.game.spawn_group for rgp in rgps
                         if rgp.game.public_ranges)
