@@ -30,6 +30,7 @@ class User(BASE, object):
     screenname_raw = Column(String(20), nullable=True, unique=True)
     email = Column(String(256), nullable=False)
     unsubscribed = Column(Boolean, nullable=False)
+    last_seen = Column(DateTime, nullable=False)
 
     # attributes
     def get_screenname(self):

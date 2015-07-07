@@ -9,6 +9,7 @@ from functools import wraps
 from rvr.local_settings import SQLALCHEMY_DATABASE_URI
 
 ENGINE = create_engine(SQLALCHEMY_DATABASE_URI, echo=False,
+# Changing isolation level could cause race conditions. Be very careful.
                        isolation_level='SERIALIZABLE'
                        if SQLALCHEMY_DATABASE_URI.startswith('sqlite')
                        else 'READ COMMITTED',
@@ -70,14 +71,14 @@ if __name__ == '__main__':
         """
         def __init__(self):
             self.session = None
-            
+
         @create_session
         def method(self, arg):
             """ recurse iff arg """
             print arg, self.session
             if arg:
                 self.method(False)
-    
+
     CLS = Class()
     print "cls.method(True):"
     CLS.method(True)

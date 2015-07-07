@@ -206,6 +206,7 @@ class API(object):
             user.email = request.email
             user.screenname = None
             user.unsubscribed = False
+            user.last_seen = datetime.datetime.utcnow()
             self.session.commit()
             logging.debug("Created user %d with screenname '%s'",
                           user.userid, user.screenname)
@@ -1337,12 +1338,18 @@ class API(object):
         Fold players' hands where those players have not acted for the
         standard timeout time period.
         """
+        # TODO: 1.1: users should time out - of everything - not RGPs
+        # seven days is probably the right length of time
+        # - collect users to be timed out
+        # - for each user
+        #   - for each RunningGame
+        #     - make user fold
+        #   - for each OpenGame
+        #     - make user leave the game
         count = 0
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_userid != None).all()
         for game in games:
-            # TODO: 1.1: users should time out - of everything - not RGPs
-            # seven days is probably the right length of time
             if game.last_action_time + datetime.timedelta(weeks=7) <  \
                     datetime.datetime.utcnow():
                 # This doesn't cause a race condition because we have isolation
