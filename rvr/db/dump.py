@@ -79,7 +79,8 @@ def read_users(session):
 
 def write_users(session, users):
     """ Write User table from memory into DB """
-    for userid, identity, screenname_raw, email, unsubscribed  in users:
+    for userid, identity, screenname_raw, email, unsubscribed, last_seen  \
+            in users:
         user = User()
         session.add(user)
         user.userid = userid
@@ -87,7 +88,7 @@ def write_users(session, users):
         user.screenname_raw = screenname_raw
         user.email = email
         user.unsubscribed = unsubscribed
-        user.last_seen = datetime.datetime.utcnow()  # TODO: 0: last_seen
+        user.last_seen = last_seen
         session.commit()
 
 def read_situations(session):

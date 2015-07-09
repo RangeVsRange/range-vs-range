@@ -152,9 +152,6 @@ class AnalysisReplayer(object):
         logging.debug("gameid %d, AnalysisReplayer, initialising",
                       game.gameid)
         if not game.game_finished:
-            # TODO: 0.3: set currently finished games street to FINISHED
-            # i.e. set current round to FINISHED where analysis_performed = 1
-            # In the mean time, we can't analyse any old games!
             raise ValueError("Can't analyse game until finished.")
         if game.analysis_performed:
             raise ValueError("Game is already analysed.")
