@@ -628,6 +628,7 @@ class API(object):
         start_game = game.participants == game.situation.participants
         if start_game:
             running_game = self._start_game(game, ogp)
+            self._see_user(user)
         else:
             # add user to game
             self.session.add(ogp)
@@ -1025,6 +1026,13 @@ class API(object):
         return None is self.session.query(tables.GameHistoryRangeAction)  \
             .filter(tables.GameHistoryRangeAction.userid == userid).first()
 
+    def _see_user(self, user):
+        """
+        Record that user has logged in and done something constructive. They
+        won't be timed out, for now.
+        """
+        user.last_seen = datetime.datetime.utcnow()
+
     @api
     def perform_action(self, gameid, userid, range_action):
         """
@@ -1056,6 +1064,7 @@ class API(object):
                           + "userid %r, range_action %r",
                           _err, gameid, userid, range_action)
             return API.ERR_INVALID_RANGES
+        self._see_user(rgp.user)
         is_first_action = self._has_never_acted(userid)
         results, spawned_gameids = self._perform_action(
             game, rgp, range_action, current_options)
