@@ -8,7 +8,8 @@ from rvr.core.api import API, APIError
 from rvr.app import OIDC
 from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,  \
     GameItemUserRange, GameItemBoard, GameItemActionResult,  \
-    GameItemRangeAction, GameItemTimeout, GameItemChat, GameItemShowdown
+    GameItemRangeAction, GameItemTimeout, GameItemChat, GameItemShowdown,\
+    game_line_key
 import logging
 from flask.helpers import flash, make_response
 from flask.globals import request, session, g
@@ -1185,7 +1186,7 @@ def group_page():
 
     # TODO: 1: (big work!) betting line "roll-up" and/or EV tree view
 
-    games = sorted(games, key=lambda game: -game.spawn_factor)
+    games = sorted(games, key=game_line_key)
 
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),

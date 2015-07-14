@@ -265,6 +265,7 @@ def calculate_betting_line(game):
     return results
 
 ROUND_ORDER = [PREFLOP, FLOP, TURN, RIVER]
+LINE_STREET_SEPARATOR = ' - '
 
 def line_description(line):
     """ e.g. "XBC | XBRC | B" """
@@ -275,7 +276,15 @@ def line_description(line):
         if street not in line:
             continue
         results.append(''.join([SHORTENING[verb] for verb in line[street]]))
-    return ' - '.join(results)
+    return LINE_STREET_SEPARATOR.join(results)
+
+def game_line_key(game):
+    """
+    Key for sorting game's betting lines: fold < check < call < bet < raise.
+    """
+    map_number = {'F': 0, 'X': 1, 'C': 2, 'B': 3, 'R': 4}
+    return [[map_number[c] for c in token]
+            for token in game.line.split(LINE_STREET_SEPARATOR)]
 
 class RunningGameSummary(object):
     """
