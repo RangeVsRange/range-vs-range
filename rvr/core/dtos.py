@@ -13,6 +13,7 @@ from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card, FINISHED
+from sqlalchemy.orm.session import object_session
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -215,13 +216,54 @@ class OpenGameDetails(object):
         situation = SituationDetails.from_situation(open_game.situation)
         return cls(open_game.gameid, open_game.public_ranges, users, situation)
 
+FOLD = 'fold'
+CHECK = 'check'
+CALL = 'call'
+RAISE = 'raise'
+BET = 'bet'
+
+def calculate_betting_line(game):
+    """
+    Calculate betting line for game.
+
+    E.g. {'flop': ['check', 'fold', 'bet', 'call'], 'turn': ['bet']} ...
+    ... would mean: on the flop, Player A checks , Player B folds, Player C
+    bets, Player A calls; on the turn, Player A donks all in. There is nothing
+    else because we only return non-terminal actions. (Which is what constitutes
+    a game on RvR.)
+    """
+    session = object_session(game)
+    actions = session.query(tables.GameHistoryActionResult).filter(
+        tables.GameHistoryActionResult.gameid == game.gameid).all()
+    boards = session.query(tables.GameHistoryBoard).filter(
+        tables.GameHistoryBoard.gameid == game.gameid).all()
+    combined = sorted(actions + boards, key=lambda a: a.order)
+    current_round = game.situation.current_round
+    results = {}
+    for item in combined:
+        if isinstance(item, tables.GameHistoryBoard):
+            current_round = item.street
+        else:
+            if item.is_fold:
+                entry = FOLD
+            elif item.is_passive and item.call_cost == 0:
+                entry = CHECK
+            elif item.is_passive:
+                entry = CALL
+            elif item.is_raise:
+                entry = RAISE
+            else:
+                entry = BET
+            results.setdefault(current_round, []).append(entry)
+    return results
+
 class RunningGameSummary(object):
     """
     list of users in game, and details of situation
     """
     def __init__(self, gameid, public_ranges, users, situation,
                  is_on_me, is_finished, is_analysed, rgp_details, spawn_group,
-                 spawn_factor):
+                 spawn_factor, line):
         self.gameid = gameid
         self.public_ranges = public_ranges
         self.users = users  # TODO: REVISIT: replace this with rgp_details
@@ -232,14 +274,15 @@ class RunningGameSummary(object):
         self.rgp_details = rgp_details
         self.spawn_group = spawn_group
         self.spawn_factor = spawn_factor
+        self.line = line
 
     def __repr__(self):
-        return ("RunningGameSummary(gameid=%r, public_ranges=%r, users=%r, "
-                "situation=%r, is_on_me=%r, is_finished=%r, is_analysed=%r, "
-                "rgp_details=%r, spawn_group=%r, spawn_factor=%r)") %  \
+        return "RunningGameSummary(gameid=%r, public_ranges=%r, users=%r, "  \
+            "situation=%r, is_on_me=%r, is_finished=%r, is_analysed=%r, "  \
+            "rgp_details=%r, spawn_group=%r, spawn_factor=%r, line=%r)" %  \
             (self.gameid, self.users, self.public_ranges, self.situation,
              self.is_on_me, self.is_finished, self.is_analysed,
-             self.rgp_details, self.spawn_group, self.spawn_factor)
+             self.rgp_details, self.spawn_group, self.spawn_factor, self.line)
 
     @classmethod
     def from_running_game(cls, running_game, userid):
@@ -251,11 +294,12 @@ class RunningGameSummary(object):
         situation = SituationDetails.from_situation(running_game.situation)
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in running_game.rgps]
+        line = calculate_betting_line(running_game)  # {street: [action]}
         return cls(running_game.gameid, running_game.public_ranges, users,
                    situation, running_game.current_userid == userid,
                    running_game.game_finished,
                    running_game.analysis_performed, rgp_details,
-                   running_game.spawn_group, running_game.spawn_factor)
+                   running_game.spawn_group, running_game.spawn_factor, line)
 
 class RunningGameParticipantDetails(object):
     """
@@ -323,61 +367,6 @@ class RunningGroup(object):
         users = [users[rgp.userid] for rgp in games[0].rgps]
         return cls(groupid, is_finished, is_on_me, is_analysed,
                    games[0].situation.description, users)
-
-class RunningGameDetails(object):
-    """
-    details of a game, including game state (more than RunningGameSummary)
-    """
-    def __init__(self, gameid, public_ranges, situation, current_player,
-                 board_raw, current_round, pot_pre, increment, bet_count,
-                 current_factor, spawn_factor, spawn_group, rgp_details):
-        self.gameid = gameid
-        self.public_ranges = public_ranges
-        self.situation = situation  # SituationDetails
-        self.current_player = current_player # RGPDetails
-        self.board_raw = board_raw
-        self.current_round = current_round
-        self.pot_pre = pot_pre
-        self.increment = increment
-        self.bet_count = bet_count
-        self.current_factor = current_factor
-        self.spawn_factor = spawn_factor
-        self.spawn_group = spawn_group
-        self.rgp_details = rgp_details  # list of RunningGameParticipantDetails
-
-    def __repr__(self):
-        return ("RunningGameDetails(gameid=%r, public_ranges=%r, situation=%r, "
-                "current_player=%r, board_raw=%r, current_round=%r, "
-                "pot_pre=%r, increment=%r, bet_count=%r, current_factor=%r, "
-                "spawn_factor=%r, spawn_group=%r, rgp_details=%r") %  \
-            (self.gameid, self.public_ranges, self.situation,
-             self.current_player, self.board_raw, self.current_round,
-             self.pot_pre, self.increment, self.bet_count, self.current_factor,
-             self.spawn_factor, self.spawn_group, self.rgp_details)
-
-    @classmethod
-    def from_running_game(cls, game):
-        """
-        Create object from tables.RunningGame
-        """
-        situation = SituationDetails.from_situation(game.situation)
-        rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
-                       for rgp in game.rgps]
-        current_players = [r for r in rgp_details
-                           if r.user.userid == game.current_userid]
-        current_player = current_players[0] if current_players else None
-        spawn_group = game.spawn_group if game.spawn_group is not None  \
-            else game.gameid
-        return cls(game.gameid, game.public_ranges, situation, current_player,
-                   game.board_raw, game.current_round, game.pot_pre,
-                   game.increment, game.bet_count, game.current_factor,
-                   game.spawn_factor, spawn_group, rgp_details)
-
-    def is_finished(self):
-        """
-        True when the game is finished.
-        """
-        return self.current_round == FINISHED
 
 class SituationResult(object):
     """
@@ -849,6 +838,66 @@ MAP_TABLE_DTO = {tables.GameHistoryUserRange: GameItemUserRange,
                  tables.GameHistoryChat: GameItemChat,
                  tables.GameHistoryShowdown: GameItemShowdown}
 
+class RunningGameDetails(object):
+    """
+    Details of a game, including game state.
+
+    More info than RunningGameSummary. Included in a RunningGameHistory.
+    """
+    # TODO: REVISIT: Perhaps the 1:1 relationship between RunningGameDetails and
+    # RunningGameHistory implies that they should be combined. But perhaps it
+    # doesn't!
+    def __init__(self, gameid, public_ranges, situation, current_player,
+                 board_raw, current_round, pot_pre, increment, bet_count,
+                 current_factor, spawn_factor, spawn_group, rgp_details):
+        self.gameid = gameid
+        self.public_ranges = public_ranges
+        self.situation = situation  # SituationDetails
+        self.current_player = current_player # RGPDetails
+        self.board_raw = board_raw
+        self.current_round = current_round
+        self.pot_pre = pot_pre
+        self.increment = increment
+        self.bet_count = bet_count
+        self.current_factor = current_factor
+        self.spawn_factor = spawn_factor
+        self.spawn_group = spawn_group
+        self.rgp_details = rgp_details  # list of RunningGameParticipantDetails
+
+    def __repr__(self):
+        return ("RunningGameDetails(gameid=%r, public_ranges=%r, situation=%r, "
+                "current_player=%r, board_raw=%r, current_round=%r, "
+                "pot_pre=%r, increment=%r, bet_count=%r, current_factor=%r, "
+                "spawn_factor=%r, spawn_group=%r, rgp_details=%r") %  \
+            (self.gameid, self.public_ranges, self.situation,
+             self.current_player, self.board_raw, self.current_round,
+             self.pot_pre, self.increment, self.bet_count, self.current_factor,
+             self.spawn_factor, self.spawn_group, self.rgp_details)
+
+    @classmethod
+    def from_running_game(cls, game):
+        """
+        Create object from tables.RunningGame
+        """
+        situation = SituationDetails.from_situation(game.situation)
+        rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
+                       for rgp in game.rgps]
+        current_players = [r for r in rgp_details
+                           if r.user.userid == game.current_userid]
+        current_player = current_players[0] if current_players else None
+        spawn_group = game.spawn_group if game.spawn_group is not None  \
+            else game.gameid
+        return cls(game.gameid, game.public_ranges, situation, current_player,
+                   game.board_raw, game.current_round, game.pot_pre,
+                   game.increment, game.bet_count, game.current_factor,
+                   game.spawn_factor, spawn_group, rgp_details)
+
+    def is_finished(self):
+        """
+        True when the game is finished.
+        """
+        return self.current_round == FINISHED
+
 class RunningGameHistory(object):
     """
     Everything about a running game.
@@ -858,6 +907,8 @@ class RunningGameHistory(object):
     a public view of a running game.
 
     It will contain analysis only if the game is finished.
+
+    Includes a RunningGameDetails.
     """
     def __init__(self, game_details, current_options, history_items,
                  payment_items, analysis_items):
