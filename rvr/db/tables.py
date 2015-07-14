@@ -297,10 +297,6 @@ class RunningGame(BASE, object):
         """
         Is the game finished?
         """
-        # TODO: 0.3: set currently finished games street to FINISHED
-        # i.e. set current round to FINISHED where analysis_performed = 1
-        # In the mean time, we can't analyse any old games!
-        # TODO: 0.3: and then probably remove this legacy support
         # legacy support:
         if self.current_round == RIVER and self.current_userid == None:
             # old-style finishments on river
@@ -310,6 +306,7 @@ class RunningGame(BASE, object):
                 any(rgp.stack == 0 for rgp in self.rgps):
             # old-style finishments pre-river
             return True
+        # TODO: 3: remove the above legacy support; prod is updated now
         # real logic:
         return self.current_round == FINISHED
     def set_game_finished(self, value):

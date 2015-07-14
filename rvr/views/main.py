@@ -1177,8 +1177,13 @@ def group_page():
     total_weight = sum(game.spawn_factor
                        for game in games if game.is_analysed)
 
-    # TODO: 1.2: betting line in group table (and elsewhere)
-    # TODO: 1.3: betting line "roll-up" and/or EV tree view
+    # TODO: 0.1: betting line in group table (and elsewhere)
+    # For each game, simply take all actual actions, and simply their type:
+    # check (X), call (C), bet (B), raise (R), fold (F).
+    # Note that (F) is only present in multi-way pots, because folding in only
+    # an actual action in a multi-way pot!
+
+    # TODO: 1: (big work!) betting line "roll-up" and/or EV tree view
 
     games = sorted(games, key=lambda game: -game.spawn_factor)
 

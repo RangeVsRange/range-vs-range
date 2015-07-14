@@ -773,8 +773,23 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.spawn_group ==
                     spawn_group).all()
-        return not any(g.current_round == current_round
-                       and not g.round_finished for g in games)
+        for g in games:
+            # TODO: REVISIT: Legacy support: this game has already advanced.
+            if g.current_round != current_round:
+                continue
+            # This one is already waiting, not holding others up.
+            if g.round_finished:
+                continue
+            # Is any player all in in this game? If they are, all other games
+            # are free to continue to the next street, because the remaining
+            # players knowing what the future board cards will be cannot help
+            # them, because when players get all in, they have a
+            # subject-all-in-equity showdown, not an actual board runout.
+            for rgp in g.rgps:
+                if rgp.stack == 0:
+                    continue
+            return False
+        return True
 
     def _attempt_start_next_round(self, gameid, spawn_group, current_round):
         """
