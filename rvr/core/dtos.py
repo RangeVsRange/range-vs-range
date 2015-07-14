@@ -222,6 +222,13 @@ CALL = 'call'
 RAISE = 'raise'
 BET = 'bet'
 
+SHORTENING = {
+    FOLD: 'F',
+    CHECK: 'X',
+    CALL: 'C',
+    RAISE: 'R',
+    BET: 'B'}
+
 def calculate_betting_line(game):
     """
     Calculate betting line for game.
@@ -256,6 +263,19 @@ def calculate_betting_line(game):
                 entry = BET
             results.setdefault(current_round, []).append(entry)
     return results
+
+ROUND_ORDER = [PREFLOP, FLOP, TURN, RIVER]
+
+def line_description(line):
+    """ e.g. "XBC | XBRC | B" """
+    # Maybe not the best place for this, but the line is not currently used
+    # anywhere else.
+    results = []
+    for street in ROUND_ORDER:
+        if street not in line:
+            continue
+        results.append(''.join([SHORTENING[verb] for verb in line[street]]))
+    return ' - '.join(results)
 
 class RunningGameSummary(object):
     """
@@ -295,6 +315,7 @@ class RunningGameSummary(object):
         rgp_details = [RunningGameParticipantDetails.from_rgp(rgp)
                        for rgp in running_game.rgps]
         line = calculate_betting_line(running_game)  # {street: [action]}
+        line = line_description(line)  # e.g. "XBC | XBRC | B"
         return cls(running_game.gameid, running_game.public_ranges, users,
                    situation, running_game.current_userid == userid,
                    running_game.game_finished,
