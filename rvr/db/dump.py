@@ -40,7 +40,6 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     RunningGameParticipantResult
 from rvr.db.creation import SESSION
 import logging
-import datetime
 
 #pylint:disable=C0103
 
