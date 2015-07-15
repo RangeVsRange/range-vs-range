@@ -1258,6 +1258,11 @@ class API(object):
         # (and completely separate from competition mode stats)
         # (though competition mode stats could include optimisation mode game
         # data weighted by line weight)
+
+        # TODO: 3: confidence for a situation
+        # sd = sqrt(n1.sd1^2 + n2.sd2^2 + n3.sd3^2 + ...)
+
+        # TODO: 3: global confidence, in the same fashion
         matches = self.session.query(tables.User)  \
             .filter(tables.User.userid == userid).all()
         if not matches:

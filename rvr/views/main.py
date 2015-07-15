@@ -26,8 +26,9 @@ from functools import wraps
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 3.1: poll /r/poker for the most common/important/profitable postflop
-# TODO: 3.2: ... two-handed situation and create that as a second situation
+# TODO: 0: poll /r/poker for the most common/important/profitable postflop
+# TODO: 0: ... two-handed situation and create that as a second situation
+# TODO: 1: finish a HU game and show it off!
 
 # TODO: 5: a 'situation' page that describes the situation...
 # TODO: 5: reused in situation tab of game page - with starting pot!...
@@ -302,14 +303,9 @@ def home_page():
     """
     Generates the authenticated landing page. AKA the main or home page.
     """
-    # TODO: 2: 'updated!' indicator on finished games (on the RGPs)
+    # TODO: 3: 'updated!' indicator on finished games (on the RGPs)
 
-    # TODO: 2: account page with email preferences, screenname, and spawn
-
-    # TODO: 3: confidence for a situation
-    # sd = sqrt(n1.sd1^2 + n2.sd2^2 + n3.sd3^2 + ...)
-
-    # TODO: 3: global confidence, in the same fashion
+    # TODO: 3: account page with email preferences, screenname, and spawn
 
     if not is_authenticated():
         if local_settings.ALLOW_BACKDOOR:
@@ -1178,7 +1174,7 @@ def group_page():
     total_weight = sum(game.spawn_factor
                        for game in games if game.is_analysed)
 
-    # TODO: 1: (big work!) betting line "roll-up" and/or EV tree view
+    # TODO: 2: (big work! awesome!) betting line "roll-up" and/or EV tree view
 
     games = sorted(games, key=game_line_key)
 

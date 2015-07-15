@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 #pylint:disable=W0232,R0903
 
-# TODO: 2: add indexes (index=True parameter) to all columns that are searched
+# TODO: 3: add indexes (index=True parameter) to all columns that are searched
 # http://docs.sqlalchemy.org/en/latest/core/constraints.html#indexes
 
 MAX_CHAT = 10000
