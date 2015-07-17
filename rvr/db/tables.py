@@ -332,7 +332,7 @@ class RunningGame(BASE, object):
         betting round?
         """
         return self.round_finished and not self.game_finished
-    game_waiting = property(get_game_finished)
+    game_waiting = property(get_game_waiting)
 
 class RunningGameParticipant(BASE, object):
     """
