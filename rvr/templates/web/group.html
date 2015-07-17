@@ -26,9 +26,15 @@
       </td>
       <td>{{"%0.2f%%" % (game.spawn_factor * 100.0,)}}</td>
       <td>{{game.line}}</td>
-      {% for rgp in game.rgp_details %}
-      <td>{% if game.is_waiting %}(waiting){% elif not game.is_finished %}(running){% elif not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % (rgp.results['ev'],)}}{% endif %}</td>
-      {% endfor %}
+      {% if game.is_waiting %}
+        <td colspan=6><div class='text-center'><em>(waiting)</em></div></td>
+      {% elif not game.is_finished %}
+        <td colspan=6><div class='text-center'><em>(running)</em></div></td>
+      {% else %}
+        {% for rgp in game.rgp_details %}
+        <td>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % (rgp.results['ev'],)}}{% endif %}</td>
+        {% endfor %}
+      {% endif %}
     </tr>
     {%- endfor %}
   </table>
