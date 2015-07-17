@@ -1027,7 +1027,7 @@ class API(object):
         # Deal, change round, set new game state. If it is time to!
         # condition: the betting round is finished for this game, and
         # it wasn't the river (the game may or may not be finished)
-        if round_initially != RIVER and game.current_userid is None:
+        if round_initially != RIVER:
             self.session.commit()
             self._attempt_start_next_round(game.gameid, game.spawn_group,
                                            round_initially)
