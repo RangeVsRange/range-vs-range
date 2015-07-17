@@ -26,10 +26,11 @@ from functools import wraps
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 0: poll /r/poker for the most common/important/profitable postflop
-# TODO: 0: ... two-handed situation and create that as a second situation
+# TODO: 0: poll /r/poker for ranges for:
+# TODO: 0.1: BTN vs. BB
+# TODO: 0.2: MP vs. BTN
+# TODO: 0.3: BB 3bet vs. BTN
 # TODO: 1: finish a HU game and show it off!
-
 # TODO: 5: a 'situation' page that describes the situation...
 # TODO: 5: reused in situation tab of game page - with starting pot!...
 # TODO: 5: and card removal effects of board (change to range editor)

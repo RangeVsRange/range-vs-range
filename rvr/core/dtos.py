@@ -291,8 +291,8 @@ class RunningGameSummary(object):
     list of users in game, and details of situation
     """
     def __init__(self, gameid, public_ranges, users, situation,
-                 is_on_me, is_finished, is_analysed, rgp_details, spawn_group,
-                 spawn_factor, line):
+                 is_on_me, is_finished, is_waiting, is_analysed, rgp_details,
+                 spawn_group, spawn_factor, line):
         self.gameid = gameid
         self.public_ranges = public_ranges
         self.users = users  # TODO: REVISIT: replace this with rgp_details
@@ -300,6 +300,7 @@ class RunningGameSummary(object):
         self.is_on_me = is_on_me
         self.is_analysed = is_analysed
         self.is_finished = is_finished
+        self.is_waiting = is_waiting
         self.rgp_details = rgp_details
         self.spawn_group = spawn_group
         self.spawn_factor = spawn_factor
@@ -307,10 +308,11 @@ class RunningGameSummary(object):
 
     def __repr__(self):
         return "RunningGameSummary(gameid=%r, public_ranges=%r, users=%r, "  \
-            "situation=%r, is_on_me=%r, is_finished=%r, is_analysed=%r, "  \
+            "situation=%r, is_on_me=%r, is_finished=%r, is_waiting=%r, "  \
+            "is_analysed=%r, "  \
             "rgp_details=%r, spawn_group=%r, spawn_factor=%r, line=%r)" %  \
             (self.gameid, self.users, self.public_ranges, self.situation,
-             self.is_on_me, self.is_finished, self.is_analysed,
+             self.is_on_me, self.is_finished, self.is_waiting, self.is_analysed,
              self.rgp_details, self.spawn_group, self.spawn_factor, self.line)
 
     @classmethod
@@ -327,7 +329,7 @@ class RunningGameSummary(object):
         line = line_description(line)  # e.g. "XBC | XBRC | B"
         return cls(running_game.gameid, running_game.public_ranges, users,
                    situation, running_game.current_userid == userid,
-                   running_game.game_finished,
+                   running_game.game_finished, running_game.game_waiting,
                    running_game.analysis_performed, rgp_details,
                    running_game.spawn_group, running_game.spawn_factor, line)
 

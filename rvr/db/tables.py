@@ -326,6 +326,14 @@ class RunningGame(BASE, object):
         return self.current_userid == None
     round_finished = property(get_round_finished)
 
+    def get_game_waiting(self):
+        """
+        Is the game waiting for another game, before proceeding to the next
+        betting round?
+        """
+        return self.round_finished and not self.game_finished
+    game_waiting = property(get_game_finished)
+
 class RunningGameParticipant(BASE, object):
     """
     Association object for the many-to-many relationship between users and
