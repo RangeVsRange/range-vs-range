@@ -162,14 +162,16 @@ def backdoor_page():
     is_enabled = local_settings.ALLOW_BACKDOOR
     # Also show the values of these on the page.
     form = BackdoorForm()
-    if form.validate_on_submit():
+    success = form.validate_on_submit()
+    if success:
         backdoor_sub = form.backdoor_sub.data
         backdoor_email = form.backdoor_email.data
+        response = redirect(url_for('logout'))
     else:
         backdoor_sub, backdoor_email = get_backdoor_details()
-    response = make_response(render_template('web/backdoor.html', form=form,
-        backdoor_sub=backdoor_sub, backdoor_email=backdoor_email,
-        is_enabled=is_enabled))
+        response = make_response(render_template('web/backdoor.html', form=form,
+            backdoor_sub=backdoor_sub, backdoor_email=backdoor_email,
+            is_enabled=is_enabled))
     if backdoor_sub is not None:
         response.set_cookie('backdoor_sub', backdoor_sub)
     if backdoor_email is not None:
