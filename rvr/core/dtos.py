@@ -1136,12 +1136,12 @@ class GameTreeNode(object):
     """
     Partial or full game tree or node, with summary details of current node.
     """
-    # TODO: 0.1: GameTree, which holds a root node, and lists participants
+    # TODO: 0.2: at each node, a range for each player
     def __init__(self, street, action=None, parent=None, children=None):
         self.street = street
         self.action = action  # FOLD ('fold'), CHECK ('check'), etc.
-        self.parent = parent  # GameTree
-        self.children = children or []  # list of GameTree
+        self.parent = parent  # GameTreeNode
+        self.children = children or []  # list of GameTreeNode
     def __repr__(self):
         child_actions = [child.action for child in self.children]
         return "GameTreeNode(street=%r, betting_line=%r, child_actions=%r)" %  \
@@ -1282,13 +1282,25 @@ class GameTreeNode(object):
                 node = child
         return root
 
+class GameTree(object):
+    """
+    Game tree root node, and additional details
+    """
+    # TODO: 0.1: GameTree, which holds a root node, group id, participants
+    # TODO: 0.3: calculate and display all-hands-vs-range equity (main.py?)
+    def __init__(self, root):
+        self.root = root
+
+    def __repr__(self):
+        return "GameTree(root=%r)" % (self.root,)
+
     @classmethod
     def from_games(cls, games):
         """
         Create merged game tree from all games in a group.
         """
         first, others = games[0], games[1:]
-        tree = cls.from_game(first)
+        root = GameTreeNode.from_game(first)
         for game in others:
-            cls._merge(tree, cls.from_game(game))
-        return tree
+            GameTreeNode._merge(root, GameTreeNode.from_game(game))
+        return cls(root)

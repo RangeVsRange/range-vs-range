@@ -425,8 +425,11 @@ class AdminCmd(Cmd):
             result = self.api.get_group_tree(gameid)
         if isinstance(result, APIError):
             print "Error:", result.description
-        else:
+        elif params[0] == 'game':
             display_game_tree(result)
+        else:
+            print result
+            display_game_tree(result.root)
 
     def do_exit(self, _details):
         """

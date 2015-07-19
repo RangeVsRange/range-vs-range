@@ -16,7 +16,8 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, WhatCouldBe,\
     generate_excluded_cards
-from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult, GameTreeNode
+from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult, GameTreeNode,\
+    GameTree
 from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW, TURN, FINISHED
@@ -1455,7 +1456,7 @@ class API(object):
             .filter(tables.RunningGame.spawn_group == groupid).all()
         if not games:
             return self.ERR_NO_SUCH_RUNNING_GAME
-        return GameTreeNode.from_games(games)
+        return GameTree.from_games(games)
 
 def _create_hu():
     """
