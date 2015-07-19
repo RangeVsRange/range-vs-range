@@ -1254,7 +1254,7 @@ class API(object):
         """
         Return user's site-wide results for all situations / positions.
         """
-        # TODO: 2: optimisation mode stats collate group data, not game data
+        # TODO: 3: optimisation mode stats collate group data, not game data
         # (and completely separate from competition mode stats)
         # (though competition mode stats could include optimisation mode game
         # data weighted by line weight)

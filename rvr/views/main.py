@@ -30,7 +30,10 @@ from functools import wraps
 # TODO: 0.1: BTN vs. BB
 # TODO: 0.2: MP vs. BTN
 # TODO: 0.3: BB 3bet vs. BTN
+# TODO: 0: or at least playtest them with StrayJ
+
 # TODO: 1: finish a HU game and show it off!
+
 # TODO: 5: a 'situation' page that describes the situation...
 # TODO: 5: reused in situation tab of game page - with starting pot!...
 # TODO: 5: and card removal effects of board (change to range editor)
