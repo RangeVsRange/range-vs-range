@@ -1250,32 +1250,33 @@ class GameTreeNode(object):
             if isinstance(item, tables.GameHistoryRangeAction):
                 if item.fold_ratio is None:
                     has_fold = item.fold_range != NOTHING
-                    all_fold = item.fold_range == ANYTHING
                 else:
                     has_fold = item.fold_ratio != 0.0
-                    all_fold = item.fold_ratio == 100.0
                 is_final_round = current_round == RIVER or  \
                     not all(stacks.values())
                 heads_up = len(remain) == 2
                 final_action = num_acted == len(game.situation.players) - 1  \
                     and is_final_round
-                if has_fold and (all_fold or final_action or heads_up):
-                    # add fold
+                # There's no (implicit) fold when multi-way and play continues.
+                # TODO: REVISIT: This conditional is probably wrong.
+                if has_fold and (final_action or heads_up):
+                    # add a non-played fold
                     child = cls(current_round, FOLD, node)
                     node.children.append(child)
-            if isinstance(item, tables.GameHistoryActionResult) and  \
-                    not item.is_fold:  # folds are covered by range actions
-                # add check, call, raise or bet, and traverse in
+            if isinstance(item, tables.GameHistoryActionResult):
+                # add fold, check, call, raise or bet, and traverse in
                 if item.is_aggressive:
                     if item.is_raise:
                         action = RAISE
                     else:
                         action = BET
-                else:
+                elif item.is_passive:
                     if item.call_cost:
                         action = CALL
                     else:
                         action = CHECK
+                else:
+                    action = FOLD  # and yes, we still traverse in (multi-way)
                 child = cls(current_round, action, node)
                 node.children.append(child)
                 # traverse down
