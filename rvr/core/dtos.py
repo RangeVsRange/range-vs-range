@@ -11,7 +11,7 @@ Data transfer objects:
 """
 from rvr.db import tables
 from argparse import ArgumentError
-from rvr.poker.handrange import HandRange
+from rvr.poker.handrange import HandRange, NOTHING, ANYTHING
 from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card, FINISHED
 from sqlalchemy.orm.session import object_session
 
@@ -1131,3 +1131,163 @@ class ActionResult(object):
                 "is_terminate=%r, is_raise=%r)") %  \
             (self.is_fold, self.is_passive, self.is_aggressive,
              self.call_cost, self.raise_total, self.is_terminate, self.is_raise)
+
+class GameTreeNode(object):
+    """
+    Partial or full game tree or node, with summary details of current node.
+    """
+    # TODO: 0.1: GameTree, which holds a root node, and lists participants
+    def __init__(self, street, action=None, parent=None, children=None):
+        self.street = street
+        self.action = action  # FOLD ('fold'), CHECK ('check'), etc.
+        self.parent = parent  # GameTree
+        self.children = children or []  # list of GameTree
+    def __repr__(self):
+        child_actions = [child.action for child in self.children]
+        return "GameTreeNode(street=%r, betting_line=%r, child_actions=%r)" %  \
+            (self.street, line_description(self.betting_line), child_actions)
+
+    def get_betting_line(self):
+        """
+        Calculate betting line. Same format results as calculate_betting_line.
+        """
+        if self.parent is None:
+            return {}
+        partial = self.parent.get_betting_line()
+        partial.setdefault(self.street, []).append(self.action)
+        return partial
+    betting_line = property(get_betting_line)
+
+    @classmethod
+    def _merge(cls, node, partial):
+        """
+        Merge this partial tree into this node.
+
+        Also creates child nodes and merges partial's nodes into new children.
+        """
+        if node.street != partial.street:
+            raise ValueError('Inconsistent streets')
+        if node.action != partial.action:
+            raise ValueError('Inconsistent actions')
+        for template in partial.children:
+            # look for a child with this action
+            for child in node.children:
+                if child.action == template.action:
+                    break
+            else:
+                # or create a new one
+                child = cls(template.street, template.action, node, [])
+            cls._merge(child, template)
+
+    @classmethod
+    def from_game(cls, game):
+        """
+        Create a partial game tree from a single game. Note that this still
+        creates branches (multi-child nodes) due to non-terminal folds and
+        showdowns.
+        """
+        # TODO: REVISIT: Blackbox testing? Unit testing? Something!
+        # Any error in any of this logic will create some obscure bug in some
+        # game tree.
+        root = cls(game.situation.current_round)
+        session = object_session(game)
+        # We need to look for:
+        # - GameHistoryActionResult, to find actions that happened
+        # - GameHistoryRangeAction, to find folds
+        # - GameHistoryShowdown, to find showdown calls
+        # - GameHistoryBoard, to know its the river, because then three-handed folds can be terminal
+        history = []
+        for table in [tables.GameHistoryActionResult,
+                      tables.GameHistoryRangeAction,
+                      tables.GameHistoryShowdown,
+                      tables.GameHistoryBoard]:
+            history.extend(session.query(table)  \
+                .filter(table.gameid == game.gameid).all())
+        history.sort(key=lambda row: row.order)
+        node = root  # where we're adding actions
+        current_round = game.situation.current_round
+        stacks = {rgp.userid: player.stack
+                  for rgp, player in zip(game.rgps, game.situation.players)}
+        contrib = {rgp.userid: player.contributed
+                   for rgp, player in zip(game.rgps, game.situation.players)}
+        num_acted = len([p for p in game.situation.players
+                         if not p.left_to_act])
+        raise_total = max(p.contributed for p in game.situation.players)
+        remain = {rgp.userid for rgp in game.rgps}
+        for item in history:
+            # reset game state for new round
+            if isinstance(item, tables.GameHistoryBoard):
+                current_round = item.street
+                num_acted = 0
+                contrib = {rgp.userid: 0 for rgp in game.rgps}
+                raise_total = 0
+            # maintain game state
+            if isinstance(item, tables.GameHistoryActionResult):
+                if item.is_passive:
+                    stacks[item.userid] -= item.call_cost
+                    contrib[item.userid] -= item.call_cost
+                if item.is_aggressive:
+                    chips = item.raise_total - contrib[item.userid]
+                    stacks[item.userid] -= chips
+                    contrib[item.userid] += chips
+                    raise_total = item.raise_total
+                if item.is_fold:
+                    remain.remove(item.userid)
+                num_acted += 1
+            if isinstance(item, tables.GameHistoryShowdown):
+                # add call
+                action = CALL if raise_total else CHECK
+                child = cls(current_round, action, node)
+                node.children.append(child)
+            # Only if the fold is terminal is it part of the tree.
+            # Folds are terminal when:
+            # - two-handed; or,
+            # - three-handed when:
+            #   - all other players have acted on the river; or,
+            #   - are all in before the river; or,
+            # - they fold 100%
+            if isinstance(item, tables.GameHistoryRangeAction):
+                if item.fold_ratio is None:
+                    has_fold = item.fold_range != NOTHING
+                    all_fold = item.fold_range == ANYTHING
+                else:
+                    has_fold = item.fold_ratio != 0.0
+                    all_fold = item.fold_ratio == 100.0
+                is_final_round = current_round == RIVER or  \
+                    not all(stacks.values())
+                heads_up = len(remain) == 2
+                final_action = num_acted == len(game.situation.players) - 1  \
+                    and is_final_round
+                if has_fold and (all_fold or final_action or heads_up):
+                    # add fold
+                    child = cls(current_round, FOLD, node)
+                    node.children.append(child)
+            if isinstance(item, tables.GameHistoryActionResult) and  \
+                    not item.is_fold:  # folds are covered by range actions
+                # add check, call, raise or bet, and traverse in
+                if item.is_aggressive:
+                    if item.is_raise:
+                        action = RAISE
+                    else:
+                        action = BET
+                else:
+                    if item.call_cost:
+                        action = CALL
+                    else:
+                        action = CHECK
+                child = cls(current_round, action, node)
+                node.children.append(child)
+                # traverse down
+                node = child
+        return root
+
+    @classmethod
+    def from_games(cls, games):
+        """
+        Create merged game tree from all games in a group.
+        """
+        first, others = games[0], games[1:]
+        tree = cls.from_game(first)
+        for game in others:
+            cls._merge(tree, cls.from_game(game))
+        return tree

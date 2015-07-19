@@ -16,7 +16,7 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, WhatCouldBe,\
     generate_excluded_cards
-from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult
+from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult, GameTreeNode
 from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW, TURN, FINISHED
@@ -1431,6 +1431,31 @@ class API(object):
         return root.gameid, [dtos.RunningGameSummary.from_running_game(game,
                                                                        userid)
                              for game in games]
+
+    @api
+    def get_game_tree(self, gameid):
+        """
+        Retrieve game tree for given game.
+        """
+        # TODO: 1: remove this / change to retrieve from DB
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.gameid == gameid).all()
+        if not games:
+            return self.ERR_NO_SUCH_RUNNING_GAME
+        game = games[0]
+        return GameTreeNode.from_game(game)
+
+    @api
+    def get_group_tree(self, groupid):
+        """
+        Retrieve game tree for given group.
+        """
+        # TODO: 1: remove this / change to retrieve from DB
+        games = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.spawn_group == groupid).all()
+        if not games:
+            return self.ERR_NO_SUCH_RUNNING_GAME
+        return GameTreeNode.from_games(games)
 
 def _create_hu():
     """

@@ -12,6 +12,14 @@ from rvr import local_settings
 
 #pylint:disable=R0201,R0904,E1103,unused-argument
 
+def display_game_tree(tree):
+    """
+    Display every node of tree.
+    """
+    print tree
+    for node in tree.children:
+        display_game_tree(node)
+
 class AdminCmd(Cmd):
     """
     Cmd class to make calls to an API instance
@@ -44,6 +52,43 @@ class AdminCmd(Cmd):
             print "Error:", result
         else:
             print "Open games refreshed."
+
+    def do_dump(self, params):
+        """
+        dump { out | in }
+
+        dump out pickles the database to db.pkl
+        dump in unpickles it
+
+        To restore a database from a db.pkl file:
+        1. delete the database file (rvr.db)
+        2. "createdb"
+        3. "dump in"
+        4. "initialise"
+
+        The "initiialise" does things like refreshing open games, because open
+        games are not dumped out by "dump out".
+        """
+        filename = 'db.pkl'
+        if params == 'out':
+            dump(filename)
+            print "Successfully exported database to %s." % (filename,)
+        elif params == 'in':
+            try:
+                load(filename)
+            except IntegrityError as err:
+                print "IntegrityError. Is the database empty?"
+                print "Perhaps delete the database and try the 'createdb' command."  # pylint:disable=C0301
+                print "Details:", err
+                return
+            except OperationalError as err:
+                print "OperationalError. Does the database exist?"
+                print "Perhaps try the 'createdb' command."
+                print "Details:", err
+                return
+            print "Successfully read %s into database." % (filename,)
+        else:
+            print "Bad syntax. See 'help dump'."
 
     def do_situation(self, details):
         """
@@ -357,42 +402,31 @@ class AdminCmd(Cmd):
         else:
             print result, "timeouts processed."
 
-    def do_dump(self, params):
+    def do_tree(self, params):
         """
-        dump { out | in }
-
-        dump out pickles the database to db.pkl
-        dump in unpickles it
-
-        To restore a database from a db.pkl file:
-        1. delete the database file (rvr.db)
-        2. "createdb"
-        3. "dump in"
-        4. "initialise"
-
-        The "initiialise" does things like refreshing open games, because open
-        games are not dumped out by "dump out".
+        tree game <gameid>
+        tree group <groupid>
+        Print game tree for game or group.
         """
-        filename = 'db.pkl'
-        if params == 'out':
-            dump(filename)
-            print "Successfully exported database to %s." % (filename,)
-        elif params == 'in':
-            try:
-                load(filename)
-            except IntegrityError as err:
-                print "IntegrityError. Is the database empty?"
-                print "Perhaps delete the database and try the 'createdb' command."  # pylint:disable=C0301
-                print "Details:", err
-                return
-            except OperationalError as err:
-                print "OperationalError. Does the database exist?"
-                print "Perhaps try the 'createdb' command."
-                print "Details:", err
-                return
-            print "Successfully read %s into database." % (filename,)
+        params = params.split(None, 1)
+        if len(params) != 2:
+            print "Need exactly 2 parameters."
+            print "For more info, help tree"
+            return
+        if params[0] not in ['game', 'group']:
+            print "Bad syntax. See 'help tree'. (1)"
+        try:
+            gameid = int(params[1])
+        except ValueError:
+            print "Bad syntax. See 'help tree'. (2)"
+        if params[0] == 'game':
+            result = self.api.get_game_tree(gameid)
         else:
-            print "Bad syntax. See 'help dump'."
+            result = self.api.get_group_tree(gameid)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        else:
+            display_game_tree(result)
 
     def do_exit(self, _details):
         """
