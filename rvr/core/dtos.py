@@ -1142,6 +1142,7 @@ class GameTreeNode(object):
         self.action = action  # FOLD ('fold'), CHECK ('check'), etc.
         self.parent = parent  # GameTreeNode
         self.children = children or []  # list of GameTreeNode
+
     def __repr__(self):
         child_actions = [child.action for child in self.children]
         return "GameTreeNode(street=%r, betting_line=%r, child_actions=%r)" %  \
@@ -1211,15 +1212,16 @@ class GameTreeNode(object):
                   for rgp, player in zip(game.rgps, game.situation.players)}
         contrib = {rgp.userid: player.contributed
                    for rgp, player in zip(game.rgps, game.situation.players)}
-        num_acted = len([p for p in game.situation.players
-                         if not p.left_to_act])
+        to_act = {rgp.userid
+                  for rgp, player in zip(game.rgps, game.situation.players)
+                  if player.left_to_act}
         raise_total = max(p.contributed for p in game.situation.players)
         remain = {rgp.userid for rgp in game.rgps}
         for item in history:
             # reset game state for new round
             if isinstance(item, tables.GameHistoryBoard):
                 current_round = item.street
-                num_acted = 0
+                to_act = set(remain)
                 contrib = {rgp.userid: 0 for rgp in game.rgps}
                 raise_total = 0
             # maintain game state
@@ -1232,9 +1234,10 @@ class GameTreeNode(object):
                     stacks[item.userid] -= chips
                     contrib[item.userid] += chips
                     raise_total = item.raise_total
+                    to_act = set(remain)
                 if item.is_fold:
                     remain.remove(item.userid)
-                num_acted += 1
+                to_act.remove(item.userid)
             if isinstance(item, tables.GameHistoryShowdown):
                 # add call
                 action = CALL if raise_total else CHECK
@@ -1255,8 +1258,7 @@ class GameTreeNode(object):
                 is_final_round = current_round == RIVER or  \
                     not all(stacks.values())
                 heads_up = len(remain) == 2
-                final_action = num_acted == len(game.situation.players) - 1  \
-                    and is_final_round
+                final_action = len(to_act) == 1 and is_final_round
                 # There's no (implicit) fold when multi-way and play continues.
                 if has_fold and (final_action or heads_up):
                     # add a non-played fold
