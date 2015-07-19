@@ -1258,7 +1258,6 @@ class GameTreeNode(object):
                 final_action = num_acted == len(game.situation.players) - 1  \
                     and is_final_round
                 # There's no (implicit) fold when multi-way and play continues.
-                # TODO: REVISIT: This conditional is probably wrong.
                 if has_fold and (final_action or heads_up):
                     # add a non-played fold
                     child = cls(current_round, FOLD, node)
