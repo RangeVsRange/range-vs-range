@@ -757,10 +757,10 @@ def _calc_is_new_chat(game_history, userid):
     """
     is_new_chat = False
     for item in game_history:
-        if isinstance(item, GameItemChat):
+        if isinstance(item, GameItemChat) and item.user.userid != userid:
             is_new_chat = True
-        if isinstance(item, (GameItemActionResult, GameItemChat)) and  \
-                item.user.userid == userid:
+        if isinstance(item, (GameItemRangeAction,
+                             GameItemChat)) and item.user.userid == userid:
             is_new_chat = False
     return is_new_chat
 
