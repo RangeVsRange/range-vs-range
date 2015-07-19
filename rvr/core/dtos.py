@@ -1177,6 +1177,7 @@ class GameTreeNode(object):
             else:
                 # or create a new one
                 child = cls(template.street, template.action, node, [])
+                node.children.append(child)
             cls._merge(child, template)
 
     @classmethod
