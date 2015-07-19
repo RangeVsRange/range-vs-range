@@ -17,7 +17,7 @@ def create_situation():
         range_raw='JJ-22,AQs-A2s,KJs+,KsTs,KhTh,Kd9d,QJs,QdTd,QcTc,Qh9h,JTs,Jh9h,Jd9d,Jd8d,T9s,Ts8s,Tc8c,Tc7c,98s,9s7s,87s,8h6h,76s,7d5d,65s,6c4c,54s,5s3s,5d2d,4h3h,4c2c,3h2h,AQo-AJo,AsTh,AsTd,AsTc,AhTd,AhTc,AdTc,Ad9h,Ac9s,Ac9d,Ah8s,Ad8s,Ac8h,As7c,Ah7d,Ad7h,As6h,As6d,Ah6c,Ah5s,Ad5h,Ac5s,Ad4s,Ac4h,Ac4d,As3c,Ah3d,Ac3h,As2d,Ad2h,Ac2s,KQo,KhJs,KdJs,KdJh,KcJs,KcJh,KcJd,KsTh,KsTd,KhTc,QhJs,QdJs,QcJh,JsTc,JhTd,JdTc')
     situation = dtos.SituationDetails(  # @UndefinedVariable
         situationid=None,
-        description="2bet, aggressor OOP (MP opens to 3bb, BTN calls)",
+        description="2bet, aggressor OOP (MP opens to 3bb, BTN calls) (alpha)",
         players=[mp, btn],  # MP acts first in future rounds
         current_player=0,  # MP acts first this round
         is_limit=False,

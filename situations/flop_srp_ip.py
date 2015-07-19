@@ -17,7 +17,7 @@ def create_situation():
         range_raw='22+,A2s+,K5s+,Kh4h,Kd4d,Kd3d,Kc3c,Ks2s,Kh2h,Q7s+,Qs6s,Qd6d,Qs5s,Qc5c,Qc4c,Qs3s,Qd2d,J8s+,Jh7h,Jc7c,Js6s,Jh5h,Jd4d,Jc3c,Js2s,T7s+,Ts6s,Th6h,Ts5s,Th4h,Td3d,Tc2c,96s+,9d5d,9c5c,9s4s,9h3h,9d2d,85s+,8s4s,8c4c,8s3s,8h2h,74s+,7s3s,7c2c,63s+,6s2s,52s+,42s+,32s,A2o+,K5o+,Kd4s,Kd4h,Kd4c,Kh3s,Kh3d,Kh3c,Ks2h,Ks2d,Ks2c,Q8o+,Qs7h,Qs7d,Qs7c,Qh7s,Qh7d,Qh7c,Qh6s,Qd6s,Qd6h,Qc6s,Qc6h,Qc6d,Qs5h,Qs5d,Qs5c,Qh5d,Qh5c,Qd5c,J8o+,Jd7s,Jd7h,Jd7c,Jc7s,Jc7h,Jc7d,T8o+,Tc7s,Tc7h,Tc7d,98o,9s7h,9h7s,9d7s,9d7h,9c7s,9c7h,9s6c,9h6c,9d6c,87o,8s6d,8h6d,8c6d,7s6d,7s6c,7h6d,7h6c,7d6c,7c6d,7s5h,7d5h,7c5h,6s5h,6s5d,6h5d,6d5h,6c5h,6c5d,6h4s,6d4s,6c4s,5s4c,5h4s,5h4c,5d4s,5d4c,5c4s,5s3c,5h3d,5c3h')
     situation = dtos.SituationDetails(  # @UndefinedVariable
         situationid=None,
-        description="2bet, aggressor IP (BTN opens to 3bb, BB calls)",
+        description="2bet, aggressor IP (BTN opens to 3bb, BB calls) (alpha)",
         players=[bb, btn],  # BB acts first in future rounds
         current_player=0,  # BB acts first this round
         is_limit=False,
