@@ -1282,25 +1282,37 @@ class GameTreeNode(object):
                 node = child
         return root
 
-class GameTree(object):
-    """
-    Game tree root node, and additional details
-    """
-    # TODO: 0.1: GameTree, which holds a root node, group id, participants
-    # TODO: 0.3: calculate and display all-hands-vs-range equity (main.py?)
-    def __init__(self, root):
-        self.root = root
-
-    def __repr__(self):
-        return "GameTree(root=%r)" % (self.root,)
-
     @classmethod
     def from_games(cls, games):
         """
         Create merged game tree from all games in a group.
         """
         first, others = games[0], games[1:]
-        root = GameTreeNode.from_game(first)
+        root = cls.from_game(first)
         for game in others:
-            GameTreeNode._merge(root, GameTreeNode.from_game(game))
-        return cls(root)
+            cls._merge(root, cls.from_game(game))
+        return root
+
+class GameTree(object):
+    """
+    Game tree root node, and additional details
+    """
+    # TODO: 0.3: calculate and display all-hands-vs-range equity (main.py?)
+    def __init__(self, groupid, users, root):
+        self.groupid = groupid
+        self.users = users  # list of UserDetails
+        self.root = root
+
+    def __repr__(self):
+        return "GameTree(groupid=%r, users=%r, root=%r)" %  \
+            (self.groupid, self.users, self.root)
+
+    @classmethod
+    def from_games(cls, games):
+        """
+        Create merged game tree from all games in a group.
+        """
+        root = GameTreeNode.from_games(games)
+        groupid = games[0].spawn_group
+        users = [UserDetails.from_user(rgp.user) for rgp in games[0].rgps]
+        return cls(groupid, users, root)
