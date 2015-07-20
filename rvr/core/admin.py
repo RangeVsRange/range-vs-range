@@ -9,6 +9,7 @@ from rvr.poker import cards  # (for dynamic situations) @UnusedImport pylint:dis
 from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
 from rvr import local_settings
+from rvr.poker.cards import Card
 
 #pylint:disable=R0201,R0904,E1103,unused-argument
 
@@ -19,6 +20,15 @@ def display_game_tree(tree):
     print tree
     for node in tree.children:
         display_game_tree(node)
+        if not node.children:  # TODO: 0.3: remove this condition
+            for userid in tree.ranges_by_userid:
+                ev_map = {}
+                for combo, equity in node.all_combos_ev(userid).items():
+                    lower_card, higher_card = sorted(combo)
+                    desc = higher_card.to_mnemonic() + lower_card.to_mnemonic()
+                    ev_map[desc] = "%0.04f" % (equity,)
+                print "Userid %d:" % (userid,), ev_map
+        print
 
 class AdminCmd(Cmd):
     """

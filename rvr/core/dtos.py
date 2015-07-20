@@ -12,9 +12,10 @@ Data transfer objects:
 from rvr.db import tables
 from argparse import ArgumentError
 from rvr.poker.handrange import HandRange, NOTHING, ANYTHING,\
-    remove_board_from_range
+    remove_board_from_range, unweighted_options_to_description
 from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card, FINISHED
 from sqlalchemy.orm.session import object_session
+from rvr.poker.showdown import showdown_equity
 
 #pylint:disable=R0903,R0913,R0902
 
@@ -1163,10 +1164,10 @@ class GameTreeNode(object):
     """
     Partial or full game tree or node, with summary details of current node.
     """
-    # TODO: 0.2: at each node, a range for each player
-    def __init__(self, street, actor, action, parent, children,
+    def __init__(self, street, board, actor, action, parent, children,
             ranges_by_userid, winners=None, total_contrib=None, final_pot=None):
         self.street = street
+        self.board = board  # raw, string
         self.actor = actor
         self.action = action  # ActionResult
         self.parent = parent  # GameTreeNode
@@ -1179,10 +1180,10 @@ class GameTreeNode(object):
 
     def __repr__(self):
         child_actions = [child.action.to_action() for child in self.children]
-        return "GameTreeNode(street=%r, actor=%r, action='%s', "  \
+        return "GameTreeNode(street=%r, board=%r, actor=%r, action='%s', "  \
             "betting_line=%r, child_actions=%r, ranges_by_userid=%r, "  \
             "winners=%r, total_contrib=%r, final_pot=%r)" %  \
-            (self.street, self.actor, self.action,
+            (self.street, self.board, self.actor, self.action,
              line_description(self.betting_line),
              child_actions, self.ranges_by_userid, self.winners,
              self.total_contrib, self.final_pot)
@@ -1197,6 +1198,44 @@ class GameTreeNode(object):
         partial.setdefault(self.street, []).append(self.action.to_action())
         return partial
     betting_line = property(get_betting_line)
+
+    def all_combos_ev(self, userid):
+        """
+        Return a mapping of combo to EV at this point in the game tree, for each
+        combo in the user's range at this point.
+
+        Recall that a combo is a frozenset of two cards.
+        """
+        user_range = HandRange(self.ranges_by_userid[userid])
+        combos = user_range.generate_options(Card.many_from_text(self.board))
+        return {combo: self.combo_ev(combo, userid) for combo in combos}
+
+    def combo_ev(self, combo, userid):
+        """
+        EV for a combo at this point in the game tree.
+        """
+        if self.children:
+            # intermediate node, EV is combination of children's
+            # oh, each child needs a weight / probability
+            # oh, it's combo specific... "it depends" ;)
+            return 0.0  # TODO: 0.3
+        elif userid not in self.winners:
+            # they folded
+            return 0.0 - self.total_contrib[userid]
+        elif len(self.winners) == 1:
+            # uncontested pot
+            return 0.0 + self.final_pot - self.total_contrib[userid]
+        else:
+            # showdown
+            ranges = {userid: HandRange(desc)
+                      for userid, desc in self.ranges_by_userid.items()}
+            combos = set([combo])
+            description = unweighted_options_to_description(combos)
+            ranges[userid] = HandRange(description)
+            equities, _iteration =  \
+                showdown_equity(ranges, Card.many_from_text(self.board))
+            equity = equities[userid]
+            return equity * self.final_pot - self.total_contrib[userid]
 
     @classmethod
     def _merge(cls, node, partial):
@@ -1217,8 +1256,8 @@ class GameTreeNode(object):
             else:
                 # create a new one, a copy of template, without children yet
                 # (because this line is in the other, but not in this)
-                child = cls(template.street, template.actor, template.action,
-                            node, [],
+                child = cls(template.street, template.board,
+                            template.actor, template.action, node, [],
                             template.ranges_by_userid, template.winners,
                             template.total_contrib, template.final_pot)
                 node.children.append(child)
@@ -1242,8 +1281,9 @@ class GameTreeNode(object):
             new_range = remove_board_from_range(player.range,
                 game.situation.board)
             actual_ranges[rgp.userid] = new_range.description
-        root = cls(game.situation.current_round, None, None, None, [],
-                   actual_ranges)
+        board_raw = game.situation.board_raw
+        root = cls(game.situation.current_round, board_raw, None,
+                   None, None, [], actual_ranges)
         session = object_session(game)
         # We need to look for:
         # - GameHistoryActionResult, to find actions that happened
@@ -1278,6 +1318,7 @@ class GameTreeNode(object):
             # reset game state for new round
             if isinstance(item, tables.GameHistoryBoard):
                 current_round = item.street
+                board_raw = item.cards
                 to_act = set(remain)
                 contrib = {rgp.userid: 0 for rgp in game.rgps}
                 raise_total = 0
@@ -1295,7 +1336,8 @@ class GameTreeNode(object):
                 showdown_contrib = dict(total_contrib)
                 showdown_contrib[prev_range_action.userid] += call_cost
                 showdown_pot = pot + call_cost
-                child = cls(current_round, prev_range_action.userid, action,
+                child = cls(current_round, board_raw,
+                            prev_range_action.userid, action,
                             node, [], ranges,
                             winners=remain, total_contrib=showdown_contrib,
                             final_pot=showdown_pot)
@@ -1328,8 +1370,8 @@ class GameTreeNode(object):
                     winners = set(remain)
                     winners.remove(item.userid)
                     # winners may be one (HU) or multiple (multiway)
-                    child = cls(current_round, item.userid, ActionResult.fold(),
-                                node, [], actual_ranges,
+                    child = cls(current_round, board_raw, item.userid,
+                                ActionResult.fold(), node, [], actual_ranges,
                                 winners=winners, total_contrib=total_contrib,
                                 final_pot=pot)
                     node.children.append(child)
@@ -1360,8 +1402,8 @@ class GameTreeNode(object):
                     # and yes, we still traverse in (multi-way)
                 to_act.remove(item.userid)
                 # add fold, check, call, raise or bet, and traverse in
-                child = cls(current_round, item.userid, action, node, [],
-                            actual_ranges)
+                child = cls(current_round, board_raw, item.userid, action, node,
+                            [], actual_ranges)
                 node.children.append(child)
                 # traverse down
                 node = child
@@ -1382,7 +1424,8 @@ class GameTree(object):
     """
     Game tree root node, and additional details
     """
-    # TODO: 0.3: calculate and display all-hands-vs-range equity (main.py?)
+    # TODO: 0.2: calculate all terminal nodes' combos' EV (un/contested)
+    # TODO: 0.3: calculate and display all combos EV (main.py?)
     def __init__(self, groupid, users, root):
         self.groupid = groupid
         self.users = users  # list of UserDetails
