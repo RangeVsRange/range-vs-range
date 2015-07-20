@@ -1424,6 +1424,7 @@ class GameTree(object):
     """
     Game tree root node, and additional details
     """
+    # TODO: 0.1: efficient exhaustive equity for hands-vs-range pre-river
     # TODO: 0.2: calculate all terminal nodes' combos' EV (un/contested)
     # TODO: 0.3: calculate and display all combos EV (main.py?)
     def __init__(self, groupid, users, root):
