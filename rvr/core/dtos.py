@@ -1108,6 +1108,20 @@ class ActionResult(object):
         """
         return ActionResult(is_terminate=True)
 
+    def to_action(self):
+        """
+        Convert to game tree action code
+        """
+        if self.is_fold:
+            return FOLD
+        if self.is_passive:
+            if self.call_cost:
+                return CALL
+            return CHECK
+        if self.is_raise:
+            return RAISE
+        return BET
+
     def __str__(self):
         # pylint:disable=R0911
         if self.is_fold:
@@ -1133,15 +1147,28 @@ class ActionResult(object):
             (self.is_fold, self.is_passive, self.is_aggressive,
              self.call_cost, self.raise_total, self.is_terminate, self.is_raise)
 
+    def __eq__(self, other):
+        return self.is_fold == other.is_fold and  \
+               self.is_passive == other.is_passive and  \
+               self.is_aggressive == other.is_aggressive and  \
+               self.call_cost == other.call_cost and  \
+               self.raise_total == other.raise_total and  \
+               self.is_terminate == other.is_terminate and  \
+               self.is_raise == other.is_raise
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 class GameTreeNode(object):
     """
     Partial or full game tree or node, with summary details of current node.
     """
     # TODO: 0.2: at each node, a range for each player
-    def __init__(self, street, action, parent, children, ranges_by_userid,
-                 winners=None, total_contrib=None, final_pot=None):
+    def __init__(self, street, actor, action, parent, children,
+            ranges_by_userid, winners=None, total_contrib=None, final_pot=None):
         self.street = street
-        self.action = action  # FOLD ('fold'), CHECK ('check'), etc.
+        self.actor = actor
+        self.action = action  # ActionResult
         self.parent = parent  # GameTreeNode
         self.children = children  # list of GameTreeNode
         self.ranges_by_userid = dict(ranges_by_userid)  # int to str
@@ -1151,13 +1178,14 @@ class GameTreeNode(object):
         self.final_pot = final_pot
 
     def __repr__(self):
-        child_actions = [child.action for child in self.children]
-        return "GameTreeNode(street=%r, betting_line=%r, child_actions=%r, "  \
-            "ranges_by_userid=%r, winners=%r, total_contrib=%r, "  \
-            "final_pot=%r)" %  \
-            (self.street, line_description(self.betting_line), child_actions,
-             self.ranges_by_userid, self.winners, self.total_contrib,
-             self.final_pot)
+        child_actions = [child.action.to_action() for child in self.children]
+        return "GameTreeNode(street=%r, actor=%r, action='%s', "  \
+            "betting_line=%r, child_actions=%r, ranges_by_userid=%r, "  \
+            "winners=%r, total_contrib=%r, final_pot=%r)" %  \
+            (self.street, self.actor, self.action,
+             line_description(self.betting_line),
+             child_actions, self.ranges_by_userid, self.winners,
+             self.total_contrib, self.final_pot)
 
     def get_betting_line(self):
         """
@@ -1166,7 +1194,7 @@ class GameTreeNode(object):
         if self.parent is None:
             return {}
         partial = self.parent.get_betting_line()
-        partial.setdefault(self.street, []).append(self.action)
+        partial.setdefault(self.street, []).append(self.action.to_action())
         return partial
     betting_line = property(get_betting_line)
 
@@ -1184,12 +1212,13 @@ class GameTreeNode(object):
         for template in partial.children:
             # look for a child with this action
             for child in node.children:
-                if child.action == template.action:
+                if child.action.to_action() == template.action.to_action():
                     break
             else:
                 # create a new one, a copy of template, without children yet
                 # (because this line is in the other, but not in this)
-                child = cls(template.street, template.action, node, [],
+                child = cls(template.street, template.actor, template.action,
+                            node, [],
                             template.ranges_by_userid, template.winners,
                             template.total_contrib, template.final_pot)
                 node.children.append(child)
@@ -1213,7 +1242,8 @@ class GameTreeNode(object):
             new_range = remove_board_from_range(player.range,
                 game.situation.board)
             actual_ranges[rgp.userid] = new_range.description
-        root = cls(game.situation.current_round, None, None, [], actual_ranges)
+        root = cls(game.situation.current_round, None, None, None, [],
+                   actual_ranges)
         session = object_session(game)
         # We need to look for:
         # - GameHistoryActionResult, to find actions that happened
@@ -1257,15 +1287,16 @@ class GameTreeNode(object):
                     actual_ranges[userid] = new_range.description
             if isinstance(item, tables.GameHistoryShowdown):
                 # add call
-                action = CALL if raise_total else CHECK
+                call_cost = raise_total - contrib[prev_range_action.userid]
+                action = ActionResult.call(call_cost)
                 ranges = dict(actual_ranges)
                 ranges[prev_range_action.userid] =  \
                     prev_range_action.passive_range
-                chips = raise_total - contrib[prev_range_action.userid]
                 showdown_contrib = dict(total_contrib)
-                showdown_contrib[prev_range_action.userid] += chips
-                showdown_pot = pot + chips
-                child = cls(current_round, action, node, [], ranges,
+                showdown_contrib[prev_range_action.userid] += call_cost
+                showdown_pot = pot + call_cost
+                child = cls(current_round, prev_range_action.userid, action,
+                            node, [], ranges,
                             winners=remain, total_contrib=showdown_contrib,
                             final_pot=showdown_pot)
                 node.children.append(child)
@@ -1297,7 +1328,8 @@ class GameTreeNode(object):
                     winners = set(remain)
                     winners.remove(item.userid)
                     # winners may be one (HU) or multiple (multiway)
-                    child = cls(current_round, FOLD, node, [], actual_ranges,
+                    child = cls(current_round, item.userid, ActionResult.fold(),
+                                node, [], actual_ranges,
                                 winners=winners, total_contrib=total_contrib,
                                 final_pot=pot)
                     node.children.append(child)
@@ -1309,10 +1341,7 @@ class GameTreeNode(object):
                     contrib[item.userid] += item.call_cost
                     total_contrib[item.userid] += item.call_cost
                     pot += item.call_cost
-                    if item.call_cost:
-                        action = CALL
-                    else:
-                        action = CHECK
+                    action = ActionResult.call(item.call_cost)
                 if item.is_aggressive:
                     actual_ranges[item.userid] =  \
                         prev_range_action.aggressive_range
@@ -1323,17 +1352,16 @@ class GameTreeNode(object):
                     pot += chips
                     raise_total = item.raise_total
                     to_act = set(remain)
-                    if item.is_raise:
-                        action = RAISE
-                    else:
-                        action = BET
+                    action = ActionResult.raise_to(raise_total, item.is_raise)
                 if item.is_fold:
                     actual_ranges.pop(item.userid)
                     remain.remove(item.userid)
-                    action = FOLD  # and yes, we still traverse in (multi-way)
+                    action = ActionResult.fold()
+                    # and yes, we still traverse in (multi-way)
                 to_act.remove(item.userid)
                 # add fold, check, call, raise or bet, and traverse in
-                child = cls(current_round, action, node, [], actual_ranges)
+                child = cls(current_round, item.userid, action, node, [],
+                            actual_ranges)
                 node.children.append(child)
                 # traverse down
                 node = child
