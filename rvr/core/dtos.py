@@ -1138,19 +1138,26 @@ class GameTreeNode(object):
     Partial or full game tree or node, with summary details of current node.
     """
     # TODO: 0.2: at each node, a range for each player
-    def __init__(self, street, action, parent, children, ranges_by_userid):
+    def __init__(self, street, action, parent, children, ranges_by_userid,
+                 winners=None, total_contrib=None, final_pot=None):
         self.street = street
         self.action = action  # FOLD ('fold'), CHECK ('check'), etc.
         self.parent = parent  # GameTreeNode
         self.children = children  # list of GameTreeNode
         self.ranges_by_userid = dict(ranges_by_userid)  # int to str
+        self.winners = set(winners) if winners else None  # set of userid
+        # total chips put in
+        self.total_contrib = dict(total_contrib) if total_contrib else None
+        self.final_pot = final_pot
 
     def __repr__(self):
         child_actions = [child.action for child in self.children]
         return "GameTreeNode(street=%r, betting_line=%r, child_actions=%r, "  \
-            "ranges_by_userid=%r)" %  \
+            "ranges_by_userid=%r, winners=%r, total_contrib=%r, "  \
+            "final_pot=%r)" %  \
             (self.street, line_description(self.betting_line), child_actions,
-             self.ranges_by_userid)
+             self.ranges_by_userid, self.winners, self.total_contrib,
+             self.final_pot)
 
     def get_betting_line(self):
         """
@@ -1180,9 +1187,11 @@ class GameTreeNode(object):
                 if child.action == template.action:
                     break
             else:
-                # or create a new one, a copy of template, without children yet
+                # create a new one, a copy of template, without children yet
+                # (because this line is in the other, but not in this)
                 child = cls(template.street, template.action, node, [],
-                            dict(template.ranges_by_userid))  # int to str
+                            template.ranges_by_userid, template.winners,
+                            template.total_contrib, template.final_pot)
                 node.children.append(child)
             cls._merge(child, template)
 
@@ -1196,6 +1205,9 @@ class GameTreeNode(object):
         # TODO: REVISIT: Blackbox testing? Unit testing? Something!
         # Any error in any of this logic will create some obscure bug in some
         # game tree.
+        # TODO: 4: A general purpose replayer. How many times do we have to
+        # write this code before we refactor it into something reusable... and
+        # demonstrably correct!
         actual_ranges = {}
         for rgp, player in zip(game.rgps, game.situation.players):
             new_range = remove_board_from_range(player.range,
@@ -1223,9 +1235,12 @@ class GameTreeNode(object):
                   for rgp, player in zip(game.rgps, game.situation.players)}
         contrib = {rgp.userid: player.contributed
                    for rgp, player in zip(game.rgps, game.situation.players)}
+        total_contrib = dict(contrib)
         to_act = {rgp.userid
                   for rgp, player in zip(game.rgps, game.situation.players)
                   if player.left_to_act}
+        pot = game.situation.pot_pre +  \
+            sum(p.contributed for p in game.situation.players)
         raise_total = max(p.contributed for p in game.situation.players)
         remain = {rgp.userid for rgp in game.rgps}
         prev_range_action = None
@@ -1246,7 +1261,13 @@ class GameTreeNode(object):
                 ranges = dict(actual_ranges)
                 ranges[prev_range_action.userid] =  \
                     prev_range_action.passive_range
-                child = cls(current_round, action, node, [], ranges)
+                chips = raise_total - contrib[prev_range_action.userid]
+                showdown_contrib = dict(total_contrib)
+                showdown_contrib[prev_range_action.userid] += chips
+                showdown_pot = pot + chips
+                child = cls(current_round, action, node, [], ranges,
+                            winners=remain, total_contrib=showdown_contrib,
+                            final_pot=showdown_pot)
                 node.children.append(child)
             # Only if the fold is terminal is it part of the tree.
             # Folds are terminal when:
@@ -1267,17 +1288,27 @@ class GameTreeNode(object):
                 final_action = len(to_act) == 1 and is_final_round
                 # There's no (implicit) fold when multi-way and play continues.
                 if has_fold and (final_action or heads_up):
-                    # add a non-played fold
-                    ranges = dict(actual_ranges)
-                    ranges.pop(item.userid)
-                    child = cls(current_round, FOLD, node, [], ranges)
+                    # Play would not continue with a fold here, so there will be
+                    # no actual fold action.
+                    # TODO: 3: use game_continues?
+                    # Add a non-played fold. We keep the folded player's range
+                    # in here, because it is relevant to consider the EV of each
+                    # folded combo.
+                    winners = set(remain)
+                    winners.remove(item.userid)
+                    # winners may be one (HU) or multiple (multiway)
+                    child = cls(current_round, FOLD, node, [], actual_ranges,
+                                winners=winners, total_contrib=total_contrib,
+                                final_pot=pot)
                     node.children.append(child)
             if isinstance(item, tables.GameHistoryActionResult):
                 # maintain game state
                 if item.is_passive:
                     actual_ranges[item.userid] = prev_range_action.passive_range
                     stacks[item.userid] -= item.call_cost
-                    contrib[item.userid] -= item.call_cost
+                    contrib[item.userid] += item.call_cost
+                    total_contrib[item.userid] += item.call_cost
+                    pot += item.call_cost
                     if item.call_cost:
                         action = CALL
                     else:
@@ -1288,6 +1319,8 @@ class GameTreeNode(object):
                     chips = item.raise_total - contrib[item.userid]
                     stacks[item.userid] -= chips
                     contrib[item.userid] += chips
+                    total_contrib[item.userid] += chips
+                    pot += chips
                     raise_total = item.raise_total
                     to_act = set(remain)
                     if item.is_raise:
