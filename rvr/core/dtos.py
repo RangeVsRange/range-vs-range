@@ -11,7 +11,8 @@ Data transfer objects:
 """
 from rvr.db import tables
 from argparse import ArgumentError
-from rvr.poker.handrange import HandRange, NOTHING, ANYTHING
+from rvr.poker.handrange import HandRange, NOTHING, ANYTHING,\
+    remove_board_from_range
 from rvr.poker.cards import FLOP, TURN, RIVER, PREFLOP, Card, FINISHED
 from sqlalchemy.orm.session import object_session
 
@@ -1137,16 +1138,19 @@ class GameTreeNode(object):
     Partial or full game tree or node, with summary details of current node.
     """
     # TODO: 0.2: at each node, a range for each player
-    def __init__(self, street, action=None, parent=None, children=None):
+    def __init__(self, street, action, parent, children, ranges_by_userid):
         self.street = street
         self.action = action  # FOLD ('fold'), CHECK ('check'), etc.
         self.parent = parent  # GameTreeNode
-        self.children = children or []  # list of GameTreeNode
+        self.children = children  # list of GameTreeNode
+        self.ranges_by_userid = dict(ranges_by_userid)  # int to str
 
     def __repr__(self):
         child_actions = [child.action for child in self.children]
-        return "GameTreeNode(street=%r, betting_line=%r, child_actions=%r)" %  \
-            (self.street, line_description(self.betting_line), child_actions)
+        return "GameTreeNode(street=%r, betting_line=%r, child_actions=%r, "  \
+            "ranges_by_userid=%r)" %  \
+            (self.street, line_description(self.betting_line), child_actions,
+             self.ranges_by_userid)
 
     def get_betting_line(self):
         """
@@ -1176,8 +1180,9 @@ class GameTreeNode(object):
                 if child.action == template.action:
                     break
             else:
-                # or create a new one
-                child = cls(template.street, template.action, node, [])
+                # or create a new one, a copy of template, without children yet
+                child = cls(template.street, template.action, node, [],
+                            dict(template.ranges_by_userid))  # int to str
                 node.children.append(child)
             cls._merge(child, template)
 
@@ -1191,13 +1196,19 @@ class GameTreeNode(object):
         # TODO: REVISIT: Blackbox testing? Unit testing? Something!
         # Any error in any of this logic will create some obscure bug in some
         # game tree.
-        root = cls(game.situation.current_round)
+        actual_ranges = {}
+        for rgp, player in zip(game.rgps, game.situation.players):
+            new_range = remove_board_from_range(player.range,
+                game.situation.board)
+            actual_ranges[rgp.userid] = new_range.description
+        root = cls(game.situation.current_round, None, None, [], actual_ranges)
         session = object_session(game)
         # We need to look for:
         # - GameHistoryActionResult, to find actions that happened
         # - GameHistoryRangeAction, to find folds
         # - GameHistoryShowdown, to find showdown calls
-        # - GameHistoryBoard, to know its the river, because then three-handed folds can be terminal
+        # - GameHistoryBoard, to know its the river, because then three-handed
+        #   folds can be terminal
         history = []
         for table in [tables.GameHistoryActionResult,
                       tables.GameHistoryRangeAction,
@@ -1217,6 +1228,7 @@ class GameTreeNode(object):
                   if player.left_to_act}
         raise_total = max(p.contributed for p in game.situation.players)
         remain = {rgp.userid for rgp in game.rgps}
+        prev_range_action = None
         for item in history:
             # reset game state for new round
             if isinstance(item, tables.GameHistoryBoard):
@@ -1224,24 +1236,17 @@ class GameTreeNode(object):
                 to_act = set(remain)
                 contrib = {rgp.userid: 0 for rgp in game.rgps}
                 raise_total = 0
-            # maintain game state
-            if isinstance(item, tables.GameHistoryActionResult):
-                if item.is_passive:
-                    stacks[item.userid] -= item.call_cost
-                    contrib[item.userid] -= item.call_cost
-                if item.is_aggressive:
-                    chips = item.raise_total - contrib[item.userid]
-                    stacks[item.userid] -= chips
-                    contrib[item.userid] += chips
-                    raise_total = item.raise_total
-                    to_act = set(remain)
-                if item.is_fold:
-                    remain.remove(item.userid)
-                to_act.remove(item.userid)
+                for userid, old_range in actual_ranges.iteritems():
+                    new_range = remove_board_from_range(HandRange(old_range),
+                        Card.many_from_text(item.cards))
+                    actual_ranges[userid] = new_range.description
             if isinstance(item, tables.GameHistoryShowdown):
                 # add call
                 action = CALL if raise_total else CHECK
-                child = cls(current_round, action, node)
+                ranges = dict(actual_ranges)
+                ranges[prev_range_action.userid] =  \
+                    prev_range_action.passive_range
+                child = cls(current_round, action, node, [], ranges)
                 node.children.append(child)
             # Only if the fold is terminal is it part of the tree.
             # Folds are terminal when:
@@ -1251,6 +1256,7 @@ class GameTreeNode(object):
             #   - are all in before the river; or,
             # - they fold 100%
             if isinstance(item, tables.GameHistoryRangeAction):
+                prev_range_action = item
                 if item.fold_ratio is None:
                     has_fold = item.fold_range != NOTHING
                 else:
@@ -1262,23 +1268,39 @@ class GameTreeNode(object):
                 # There's no (implicit) fold when multi-way and play continues.
                 if has_fold and (final_action or heads_up):
                     # add a non-played fold
-                    child = cls(current_round, FOLD, node)
+                    ranges = dict(actual_ranges)
+                    ranges.pop(item.userid)
+                    child = cls(current_round, FOLD, node, [], ranges)
                     node.children.append(child)
             if isinstance(item, tables.GameHistoryActionResult):
-                # add fold, check, call, raise or bet, and traverse in
-                if item.is_aggressive:
-                    if item.is_raise:
-                        action = RAISE
-                    else:
-                        action = BET
-                elif item.is_passive:
+                # maintain game state
+                if item.is_passive:
+                    actual_ranges[item.userid] = prev_range_action.passive_range
+                    stacks[item.userid] -= item.call_cost
+                    contrib[item.userid] -= item.call_cost
                     if item.call_cost:
                         action = CALL
                     else:
                         action = CHECK
-                else:
+                if item.is_aggressive:
+                    actual_ranges[item.userid] =  \
+                        prev_range_action.aggressive_range
+                    chips = item.raise_total - contrib[item.userid]
+                    stacks[item.userid] -= chips
+                    contrib[item.userid] += chips
+                    raise_total = item.raise_total
+                    to_act = set(remain)
+                    if item.is_raise:
+                        action = RAISE
+                    else:
+                        action = BET
+                if item.is_fold:
+                    actual_ranges.pop(item.userid)
+                    remain.remove(item.userid)
                     action = FOLD  # and yes, we still traverse in (multi-way)
-                child = cls(current_round, action, node)
+                to_act.remove(item.userid)
+                # add fold, check, call, raise or bet, and traverse in
+                child = cls(current_round, action, node, [], actual_ranges)
                 node.children.append(child)
                 # traverse down
                 node = child
