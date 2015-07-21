@@ -34,6 +34,7 @@ class GameTreeNode(object):
         # total chips put in
         self.total_contrib = dict(total_contrib) if total_contrib else None
         self.final_pot = final_pot
+        self.combo_evs = {}
 
     def __repr__(self):
         child_actions = [child.action.to_action() for child in self.children]
@@ -73,9 +74,9 @@ class GameTreeNode(object):
                 pass
         return results
 
-    def combo_ev(self, combo, userid):
+    def calculate_combo_ev(self, combo, userid):
         """
-        EV for a combo at this point in the game tree.
+        Calculate EV for a combo at this point in the game tree.
         """
         if self.children:
             # intermediate node, EV is combination of children's
@@ -162,6 +163,16 @@ class GameTreeNode(object):
                     hard_limit=1000)  # TODO: 1: this is not good enough
             equity = equities[userid]
             return equity * self.final_pot - self.total_contrib[userid]
+
+    def combo_ev(self, combo, userid):
+        """
+        EV for a combo at this point in the game tree, potentially
+        pre-calculated.
+        """
+        key = (combo, userid)
+        if not self.combo_evs.has_key(key):
+            self.combo_evs[key] = self.calculate_combo_ev(combo, userid)
+        return self.combo_evs[key]
 
     @classmethod
     def _merge(cls, node, partial):
