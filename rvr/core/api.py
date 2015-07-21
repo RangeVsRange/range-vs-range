@@ -16,8 +16,7 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, WhatCouldBe,\
     generate_excluded_cards
-from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult, GameTreeNode,\
-    GameTree
+from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult
 from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
     SUITS_HIGH_TO_LOW, TURN, FINISHED
@@ -32,6 +31,7 @@ import re
 from rvr.analysis import statistics
 from rvr.analysis.statistics import recalculate_global_statistics
 from sqlalchemy.orm.session import sessionmaker
+from rvr.core.gametree import GameTreeNode, GameTree
 
 def exception_mapper(fun):
     """

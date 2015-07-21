@@ -22,7 +22,7 @@ def __showdown_equity(wins_by_player, fixed, options_by_player, board, memo):
     fixed maps player to fixed option
     range maps player to range
     board is the board, obv.
-    
+
     returns a dict mapping player to number of pots won (may be fractional)
     """
     # if this ever needs to be more efficient, the solution is equivalence
@@ -98,7 +98,7 @@ def showdown_equity(ranges, board, hard_limit=MAX_ITERATIONS):
     """
     ranges: maps player to range
     board: community cards (may have Nones if not river)
-    
+
     returns a dict mapping player to equity (between 0.0 and 1.0)
     """
     options_by_player = {player: range_.generate_options(board)
@@ -123,11 +123,12 @@ def showdown_equity(ranges, board, hard_limit=MAX_ITERATIONS):
 def showdown(board, players_cards, memo=None):
     """
     board is a list of five board cards
-    
+
     players_cards is a dict of {player: cards}
     order of this list is the order in which players will show down
-    
+
     returns a list of tuples: (player, hand shown down), and a list of winners
+
     will return a hand for every player, with None representing a fold (because
     the player did not show down a hand)
     """
@@ -140,7 +141,7 @@ def showdown(board, players_cards, memo=None):
     for player, cards_ in players_cards.iteritems():
         all_cards = frozenset(board + list(cards_))
         if memo is None:
-            hand = BestHandEval7(all_cards)            
+            hand = BestHandEval7(all_cards)
         elif memo.has_key(all_cards):
             hand = memo[all_cards]
         else:
