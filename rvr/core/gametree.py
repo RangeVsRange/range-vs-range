@@ -117,10 +117,11 @@ class GameTreeNode(object):
                 total = len(concatenate(buckets.values()))
                 probabilities = {child: 1.0 * len(buckets[child]) / total
                                  for child in self.children}
-                return sum(probabilities[child] * child.combo_ev(combo, userid)
+                ev = sum(probabilities[child] * child.combo_ev(combo, userid)
                     for child in self.children
                     if range_contains_hand(child.ranges_by_userid[userid],
                         combo))
+                return ev
                 # TODO: REVISIT: remove total board from range
                 # TODO: 0.0: Yes! If As7s is in one child range and not in
                 # another child range due to a difference of board cards in the
@@ -297,8 +298,10 @@ class GameTreeNode(object):
                     winners = set(remain)
                     winners.remove(item.userid)
                     # winners may be one (HU) or multiple (multiway)
+                    ranges = actual_ranges
+                    ranges[item.userid] = item.fold_range
                     child = cls(current_round, board_raw, item.userid,
-                                ActionResult.fold(), node, [], actual_ranges,
+                                ActionResult.fold(), node, [], ranges,
                                 winners=winners, total_contrib=total_contrib,
                                 final_pot=pot)
                     node.children.append(child)
@@ -323,7 +326,6 @@ class GameTreeNode(object):
                     to_act = set(remain)
                     action = ActionResult.raise_to(raise_total, item.is_raise)
                 if item.is_fold:
-                    actual_ranges.pop(item.userid)
                     remain.remove(item.userid)
                     action = ActionResult.fold()
                     # and yes, we still traverse in (multi-way)
