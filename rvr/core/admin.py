@@ -20,7 +20,7 @@ def display_game_tree(tree):
     print tree
     for userid in tree.ranges_by_userid:  # TODO: 0.3: do for all nodes?
         ev_map = {}
-        for combo, equity in tree.all_combos_ev(userid).items():
+        for combo, equity in tree.all_combos_ev(userid, True).items():
             lower_card, higher_card = sorted(combo)
             desc = higher_card.to_mnemonic() + lower_card.to_mnemonic()
             ev_map[desc] = "%0.04f" % (equity,)
@@ -30,7 +30,7 @@ def display_game_tree(tree):
         if not node.children:  # TODO: 0.3: remove this condition
             for userid in tree.ranges_by_userid:
                 ev_map = {}
-                for combo, equity in node.all_combos_ev(userid).items():
+                for combo, equity in node.all_combos_ev(userid, True).items():
                     lower_card, higher_card = sorted(combo)
                     desc = higher_card.to_mnemonic() + lower_card.to_mnemonic()
                     ev_map[desc] = "%0.04f" % (equity,)
