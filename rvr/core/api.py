@@ -1402,7 +1402,7 @@ class API(object):
             for game in games:
                 if game.game_finished:
                     continue
-                rgp = game.current_user
+                rgp = game.current_rgp
                 if rgp is None or rgp.userid != user.userid:
                     continue  # avoid race condition of user returning right now
                 count += 1
