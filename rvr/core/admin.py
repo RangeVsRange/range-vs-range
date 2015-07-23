@@ -3,7 +3,8 @@ Admin Cmd class for interacting with API
 """
 from cmd import Cmd
 from rvr.core.api import APIError, API
-from rvr.core.dtos import LoginRequest, ChangeScreennameRequest
+from rvr.core.dtos import LoginRequest, ChangeScreennameRequest,\
+    line_description
 from rvr.core import dtos
 from rvr.poker import cards  # (for dynamic situations) @UnusedImport pylint:disable=unused-import
 from rvr.db.dump import load, dump
@@ -13,29 +14,20 @@ from rvr.poker.cards import Card
 
 #pylint:disable=R0201,R0904,E1103,unused-argument
 
-def display_game_tree(tree):
+def display_game_tree(tree, local=False):
     """
     Display every node of tree.
     """
-    print tree
-    for userid in tree.ranges_by_userid:  # TODO: 0.3: do for all nodes?
+    for node in tree.children:
+        display_game_tree(node, local)
+    for userid in tree.ranges_by_userid:
         ev_map = {}
-        for combo, equity in tree.all_combos_ev(userid, True).items():
+        for combo, equity in tree.all_combos_ev(userid, local).items():
             lower_card, higher_card = sorted(combo)
             desc = higher_card.to_mnemonic() + lower_card.to_mnemonic()
             ev_map[desc] = "%0.04f" % (equity,)
-        print "Userid %d root EV:" % (userid,), ev_map
-    for node in tree.children:
-        display_game_tree(node)
-        if not node.children:  # TODO: 0.3: remove this condition
-            for userid in tree.ranges_by_userid:
-                ev_map = {}
-                for combo, equity in node.all_combos_ev(userid, True).items():
-                    lower_card, higher_card = sorted(combo)
-                    desc = higher_card.to_mnemonic() + lower_card.to_mnemonic()
-                    ev_map[desc] = "%0.04f" % (equity,)
-                print "Userid %d:" % (userid,), ev_map
-        print
+        print "Line '%s', userid %d:" %  \
+            (line_description(tree.betting_line), userid), ev_map
 
 class AdminCmd(Cmd):
     """
@@ -425,13 +417,19 @@ class AdminCmd(Cmd):
         tree group <groupid>
         Print game tree for game or group.
         """
-        params = params.split(None, 1)
+        params = params.split(None, 2)
+        if len(params) == 3 and params[2] == 'local':
+            local = True
+            del params[2]
+        else:
+            local = False
         if len(params) != 2:
             print "Need exactly 2 parameters."
             print "For more info, help tree"
             return
         if params[0] not in ['game', 'group']:
             print "Bad syntax. See 'help tree'. (1)"
+            return
         try:
             gameid = int(params[1])
         except ValueError:
@@ -443,10 +441,10 @@ class AdminCmd(Cmd):
         if isinstance(result, APIError):
             print "Error:", result.description
         elif params[0] == 'game':
-            display_game_tree(result)
+            display_game_tree(result, local)
         else:
             print result
-            display_game_tree(result.root)
+            display_game_tree(result.root, local)
 
     def do_exit(self, _details):
         """

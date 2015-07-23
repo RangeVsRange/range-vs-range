@@ -173,6 +173,10 @@ class GameTreeNode(object):
         if not self.combo_evs.has_key(key):
             self.combo_evs[key] = self.calculate_combo_ev(combo, userid)
         if local:
+            # To their true EV for the whole game at this point, add back their
+            # total contributions so far. This yields their EV compared to
+            # folding at this point. Basically, you don't want this ever to
+            # be negative.
             return self.combo_evs[key] + self.total_contrib[userid]
         else:
             return self.combo_evs[key]
