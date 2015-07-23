@@ -110,7 +110,7 @@ showdown_view = function(criterion) {
 {% set position = game_details.situation.players[i] %}
 <tr id='position-table-{{i}}'>
   <td>{{position.name}}</td>
-  <td><button class="btn btn-primary" type=button id="view-position-{{i}}" onclick="range_view('current-position-row', 'view-position-{{i}}', 'position-table-{{i}}', '{{position.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View starting range</button></td>
+  <td><button class="btn btn-primary" type=button id="view-position-{{i}}" onclick="range_view('current-position-row', 'view-position-{{i}}', 'position-table-{{i}}', '{{position.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View</button></td>
   <td>{{position.contributed}}</td>
   <td>{{rgp.user.screenname}}</td>
 </tr>
@@ -136,7 +136,7 @@ showdown_view = function(criterion) {
       <td><strong>{{rgp.user.screenname}}</strong></td>
       <td>{{rgp.stack}}</td>
       <td>{{rgp.contributed}}</td>
-      {% if game_details.public_ranges %}<td><button class="btn btn-primary" type=button id="view-player-{{i}}" onclick="range_view('current-player-row', 'view-player-{{i}}', 'player-table-{{i}}', '{{rgp.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View current range</button></td>{% endif %}
+      {% if game_details.public_ranges %}<td><button class="btn btn-primary" type=button id="view-player-{{i}}" onclick="range_view('current-player-row', 'view-player-{{i}}', 'player-table-{{i}}', '{{rgp.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View</button></td>{% endif %}
       <td>
       {% if game_details.current_player and rgp.user.screenname == game_details.current_player.user.screenname %}
         <em>(acting now)</em>
