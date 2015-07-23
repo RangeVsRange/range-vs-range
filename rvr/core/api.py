@@ -629,7 +629,6 @@ class API(object):
         start_game = game.participants == game.situation.participants
         if start_game:
             running_game = self._start_game(game, ogp)
-            self._see_user(user)
         else:
             # add user to game
             self.session.add(ogp)
@@ -650,6 +649,8 @@ class API(object):
             running_game = self.join_game(userid, gameid)
 
         logging.debug("User %d joined game %d", userid, gameid)
+
+        self._see_user(user)
 
         self.ensure_open_games()
 
