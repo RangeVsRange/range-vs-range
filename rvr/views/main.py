@@ -23,6 +23,7 @@ from rvr import local_settings
 from rvr.forms.backdoor import BackdoorForm
 from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 from functools import wraps
+from rvr.poker.cards import Card
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -764,6 +765,15 @@ def _calc_is_new_chat(game_history, userid):
             is_new_chat = False
     return is_new_chat
 
+
+def inject_range_sizes(situation):
+    """
+    Inject a range size into each situation player
+    """
+    for player in situation.players:
+        player.range_size = len(HandRange(player.range_raw).generate_options(
+            Card.many_from_text(situation.board_raw)))
+
 def _running_game(game, gameid, userid, api):
     """
     Response from game page when the requested game is still running.
@@ -800,6 +810,7 @@ def _running_game(game, gameid, userid, api):
     is_me = (userid == game.game_details.current_player.user.userid)
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
+    inject_range_sizes(game.game_details.situation)
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
@@ -824,6 +835,7 @@ def _paused_game(game, gameid, userid):
     board = [board_raw[i:i+2] for i in range(0, len(board_raw), 2)]
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
+    inject_range_sizes(game.game_details.situation)
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
@@ -848,6 +860,7 @@ def _finished_game(game, gameid, userid):
     analyses = []  # TODO: 5: fold equity analysis: game.analysis.keys()
     is_mine = (userid in [rgp.user.userid
                           for rgp in game.game_details.rgp_details])
+    inject_range_sizes(game.game_details.situation)
     navbar_items = [('', url_for('home_page'), 'Home'),
                     ('', url_for('about_page'), 'About'),
                     ('', url_for('faq_page'), 'FAQ')]
