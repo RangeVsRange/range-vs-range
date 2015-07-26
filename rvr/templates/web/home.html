@@ -7,7 +7,7 @@
       <tr>
         <th style="min-width: 100px; width: 100px">Game</th>
         <th>Players</th>
-        <th>Description</th>
+        <th>Situation</th>
       </tr>
     </thead>
     {%- for game in my_open %}{% if game.public_ranges == is_public %}
@@ -45,7 +45,7 @@
         <th>Details</th>
         {% endif %}
         <th>Players</th>
-        <th>Description</th>
+        <th>Situation</th>
       </tr>
     </thead>
     {%- for game in games_details %}
@@ -108,7 +108,7 @@
       <th>Details</th>
       {% endif %}
       <th>Players</th>
-      <th>Description</th>
+      <th>Situation</th>
     </tr>
   </thead>
   {%- for group in groups_details %}

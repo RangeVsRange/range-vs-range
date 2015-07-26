@@ -117,6 +117,7 @@ def showdown_equity(ranges, board, hard_limit=MAX_ITERATIONS):
                                                    hard_limit)
         iterations = hard_limit
     total = sum(wins_by_player.values())
+    # TODO: 0.0: BUG: division by zero here, game group 1002
     return {player: wins / total
             for player, wins in wins_by_player.iteritems()}, iterations
 
