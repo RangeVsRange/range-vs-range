@@ -27,17 +27,21 @@ from rvr.poker.cards import Card
 
 # pylint:disable=R0911,R0912,R0914
 
-# TODO: 0: poll /r/poker for ranges for:
-# TODO: 0.1: BTN vs. BB
-# TODO: 0.2: MP vs. BTN
-# TODO: 0.3: BB 3bet vs. BTN
-# TODO: 0: or at least playtest them with StrayJ
-
-# TODO: 1: finish a HU game and show it off!
-
 # TODO: 5: a 'situation' page that describes the situation...
 # TODO: 5: reused in situation tab of game page - with starting pot!...
 # TODO: 5: and card removal effects of board (change to range editor)
+
+# TODO: 5: "play all positions" option
+# TODO: 5: options to start game: all-positions; public-ranges; spawn
+# (not that you'd ever want to play all positions without spawn... perhaps those
+# two can be combined into a three-state spectrum: single betting line; spawn
+# all-positions)
+# TODO: 5: choose your seating
+
+# TODO: 5: to solve the problem of people timing out and messing up the stats:
+# TODO: 5: allow a user to disclaim a game; this removes it from their stats.
+# TODO: 5: if a user times out, they automatically disclaim the game.
+# TODO: 5: if all users disclaim a game, it is removed from the global stats.
 
 def auth_check(view_func):
     """
@@ -1217,5 +1221,38 @@ def group_page():
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         is_first_action=is_what_now(),
+        url=request.url,
+        my_screenname=get_my_screenname())
+
+
+@APP.route('/tree', methods=['GET'])
+def tree_page():
+    groupid = request.args.get('groupid', None)
+    if groupid is None:
+        flash("Invalid group ID.")
+        return redirect(url_for('error_page'))
+    try:
+        groupid = int(groupid)
+    except ValueError:
+        flash("Invalid group ID.")
+        return redirect(url_for('error_page'))
+
+    api = API()
+    result = api.get_group_tree(groupid)
+    if result == API.ERR_NO_SUCH_RUNNING_GAME:
+        flash("No such group.")
+        return redirect(url_for('error_page'))
+    group_tree = result
+    _groupid, games = api.get_group_games(gameid=groupid)
+
+    # TODO: 0.0: https://github.com/jonmiles/bootstrap-treeview
+    navbar_items = [('', url_for('home_page'), 'Home'),
+                    ('', url_for('about_page'), 'About'),
+                    ('', url_for('faq_page'), 'FAQ')]
+    return render_template('web/tree.html',
+        description=games[0].situation.description,
+        group_tree=group_tree,
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
         url=request.url,
         my_screenname=get_my_screenname())

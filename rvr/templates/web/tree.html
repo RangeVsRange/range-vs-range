@@ -1,0 +1,22 @@
+{% extends "web/base.html" %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %}
+
+{% block title %}Range vs. Range - Game Tree {{group_tree.groupid}}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>
+      Game Tree for <a href="{{url_for('group_page', gameid=group_tree.groupid)}}">Group {{group_tree.groupid}}</a><br>
+      <small>{{description}}</small>
+    </h1>
+  </div>
+
+{{ flash_messages() }}
+
+{{ share_buttons() }}
+</div>
+{% endblock %}

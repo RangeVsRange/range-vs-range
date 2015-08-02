@@ -43,7 +43,7 @@ class GameTreeNode(object):
             "total_contrib=%r, winners=%r, final_pot=%r)" %  \
             (self.street, self.board, self.actor, self.action,
              line_description(self.betting_line),
-             child_actions, self.ranges_by_userid, self.total_contrib, 
+             child_actions, self.ranges_by_userid, self.total_contrib,
              self.winners, self.final_pot)
 
     def get_betting_line(self):
@@ -123,28 +123,7 @@ class GameTreeNode(object):
                     if range_contains_hand(child.ranges_by_userid[userid],
                         combo))
                 return ev
-                # TODO: REVISIT: remove total board from range
-                # TODO: 0.0: Yes! If As7s is in one child range and not in
-                # another child range due to a difference of board cards in the
-                # children... how can we say what the combined EV is?
-                # This implies we need to calculate the EVs through the tree
-                # only for combos that are not excluded due to the board.
-                # This also implies that we simply cannot calculate EVs for
-                # game trees that have different boards between games.
-                # This also means we need to remember that these hands are in
-                # these ranges for all in spots; we need to know each user's
-                # objective range and their subjective range. In an all-in
-                # situation, only the combos that are not excluded by future
-                # board cards can be evaluated, but they must be evaluated
-                # against a range that does include such combos! Oh dear, this
-                # is very complicated.
-
-                # How about we just don't ask, never call this function, for
-                # combos that are excluded by future board cards, but do keep
-                # future board cards in players' ranges. Also blow up if this
-                # functionality is called for a non-total-board group.
-                # TODO: 0.0: the above paragraph.
-                # Or just blow up if called for invalid combos?
+                # Invalid combos are ignored / not calculated or aggregated.
         elif userid not in self.winners:
             # they folded
             return 0.0 - self.total_contrib[userid]
@@ -285,7 +264,7 @@ class GameTreeNode(object):
                 child = cls(current_round, board_raw,
                             prev_range_action.userid, action,
                             node, ranges,
-                            total_contrib=showdown_contrib, winners=remain, 
+                            total_contrib=showdown_contrib, winners=remain,
                             final_pot=showdown_pot)
                 node.children.append(child)
             # Only if the fold is terminal is it part of the tree.
@@ -320,7 +299,7 @@ class GameTreeNode(object):
                     ranges[item.userid] = item.fold_range
                     child = cls(current_round, board_raw, item.userid,
                                 ActionResult.fold(), node, ranges,
-                                total_contrib=total_contrib, winners=winners, 
+                                total_contrib=total_contrib, winners=winners,
                                 final_pot=pot)
                     node.children.append(child)
             if isinstance(item, tables.GameHistoryActionResult):
@@ -371,8 +350,11 @@ class GameTree(object):
     """
     Game tree root node, and additional details
     """
-    # TODO: 0.1: efficient exhaustive equity for hands-vs-range pre-river
-    # TODO: 0.3: calculate and display all combos EV (main.py?)
+    # TODO: 1.1: efficient exhaustive equity for hands-vs-range pre-river
+    # TODO: 0.0: display all combos EV (main.py?)
+    # TODO: 1.0: record whether nodes have complete subtree or not
+    # (i.e. exclude nodes with unplayed children, incomplete children, or
+    # pre-river non-all-in)
     def __init__(self, groupid, users, root):
         self.groupid = groupid
         self.users = users  # list of UserDetails

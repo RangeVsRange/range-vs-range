@@ -434,10 +434,12 @@ class AdminCmd(Cmd):
             gameid = int(params[1])
         except ValueError:
             print "Bad syntax. See 'help tree'. (2)"
+
         if params[0] == 'game':
             result = self.api.get_game_tree(gameid)
         else:
             result = self.api.get_group_tree(gameid)
+
         if isinstance(result, APIError):
             print "Error:", result.description
         elif params[0] == 'game':
