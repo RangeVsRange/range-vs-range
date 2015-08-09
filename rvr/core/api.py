@@ -1009,7 +1009,7 @@ class API(object):
         results = what_could_be.calculate_what_will_be(game.is_auto_spawn)
 
         if not results:
-            logging.debug("gameid %r, determined to terminate", game.gameid)
+            logging.debug("gameid %d, determined to terminate", game.gameid)
             rgp.left_to_act = False
             game.game_finished = True
             return ActionResult.terminate(), []

@@ -351,7 +351,6 @@ class GameTree(object):
     Game tree root node, and additional details
     """
     # TODO: 1.1: efficient exhaustive equity for hands-vs-range pre-river
-    # TODO: 0.0: display all combos EV (main.py?)
     # TODO: 1.0: record whether nodes have complete subtree or not
     # (i.e. exclude nodes with unplayed children, incomplete children, or
     # pre-river non-all-in)
