@@ -75,7 +75,7 @@ showdown_view = function(criterion) {
 {% if is_running %}
 <div class="alert alert-warning" role="alert">This is an optimization mode game. All players' ranges are visible during play, and the game will split to play out all betting lines.</div>
 {% endif %}
-<div class="alert alert-warning" role="alert">The betting line played out in this game constitutes {{"%0.2f%%" % (game_details.spawn_factor * 100.0,)}} of <a href="{{url_for('group_page', gameid=game_details.spawn_group)}}">Group {{game_details.spawn_group}}</a>.</div>
+<div class="alert alert-warning" role="alert">The betting line played out in this game constitutes {{"%0.2f%%" % (game_details.spawn_factor * 100.0,)}} of <a href="{{url_for('group_page', id=game_details.spawn_group)}}">Group {{game_details.spawn_group}}</a>.</div>
 {% endif %}
 
 <ul class="nav nav-tabs">

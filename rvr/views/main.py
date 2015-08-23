@@ -1164,7 +1164,7 @@ def whatnow():
 
 @APP.route('/group', methods=['GET'])
 def group_page():
-    gameid = request.args.get('gameid', None)
+    gameid = request.args.get('id', None)
     if gameid is None:
         flash("Invalid game ID.")
         return redirect(url_for('error_page'))
@@ -1224,10 +1224,31 @@ def group_page():
         url=request.url,
         my_screenname=get_my_screenname())
 
+def make_treeview_data_node(tree_node):
+    """
+    make_treeview_data for a single node.
+
+    returns a single dict per
+    https://github.com/jonmiles/bootstrap-treeview#data-structure
+    """
+    # TODO: 0.0: better words, buttons to view local EV
+    return {'text': 'street: %s, board: %s, actor: %s, action: %s' %
+        (tree_node.street, tree_node.board, tree_node.actor, tree_node.action),
+        'nodes': [make_treeview_data_node(child)
+                  for child in tree_node.children]}
+
+def make_treeview_data(group_tree):
+    """
+    Convert result of an API.get_group_tree into a json object for displaying
+    using bootstrap-treeview.
+
+    per https://github.com/jonmiles/bootstrap-treeview#data-structure
+    """
+    return [make_treeview_data_node(group_tree.root)]
 
 @APP.route('/tree', methods=['GET'])
 def tree_page():
-    groupid = request.args.get('groupid', None)
+    groupid = request.args.get('id', None)
     if groupid is None:
         flash("Invalid group ID.")
         return redirect(url_for('error_page'))
@@ -1243,6 +1264,7 @@ def tree_page():
         flash("No such group.")
         return redirect(url_for('error_page'))
     group_tree = result
+    treeview_data = make_treeview_data(group_tree)
     _groupid, games = api.get_group_games(gameid=groupid)
 
     # TODO: 0.0: https://github.com/jonmiles/bootstrap-treeview
@@ -1251,7 +1273,8 @@ def tree_page():
                     ('', url_for('faq_page'), 'FAQ')]
     return render_template('web/tree.html',
         description=games[0].situation.description,
-        group_tree=group_tree,
+        groupid=group_tree.groupid,
+        treeview_data=treeview_data,
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         url=request.url,

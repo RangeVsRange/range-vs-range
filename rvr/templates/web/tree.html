@@ -1,21 +1,45 @@
 {% extends "web/base.html" %}
 
-{% block scripts %}
-{{ super() }}
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-treeview.min.css') }}">
+<style>
+  html {
+    overflow-y: scroll;
+  }
+</style>
 {% endblock %}
 
-{% block title %}Range vs. Range - Game Tree {{group_tree.groupid}}{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/bootstrap-treeview.min.js') }}"></script>
+
+<script>
+  getTree = function() {
+    var tree = {{ treeview_data|tojson|safe }};
+    return tree;
+  }
+</script>
+
+<script>
+  $('#tree').treeview({data: getTree()});
+</script>
+{% endblock %}
+
+{% block title %}Range vs. Range - Game Tree {{groupid}}{% endblock %}
 
 {% block content %}
 <div class="container">
   <div class="page-header">
     <h1>
-      Game Tree for <a href="{{url_for('group_page', gameid=group_tree.groupid)}}">Group {{group_tree.groupid}}</a><br>
+      Game Tree for <a href="{{url_for('group_page', id=groupid)}}">Group {{groupid}}</a><br>
       <small>{{description}}</small>
     </h1>
   </div>
 
 {{ flash_messages() }}
+
+  <div id="tree"></div>
 
 {{ share_buttons() }}
 </div>
