@@ -1232,6 +1232,7 @@ def make_treeview_data_node(tree_node):
     https://github.com/jonmiles/bootstrap-treeview#data-structure
     """
     # TODO: 0.0: better words, buttons to view local EV
+    # All the info in tree_node should be displayed (if relevant)
     return {'text': 'street: %s, board: %s, actor: %s, action: %s' %
         (tree_node.street, tree_node.board, tree_node.actor, tree_node.action),
         'nodes': [make_treeview_data_node(child)
