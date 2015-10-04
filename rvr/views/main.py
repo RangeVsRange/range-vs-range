@@ -163,7 +163,7 @@ def is_what_now():
 def default_navbar_items(active=None):
     navbar_items = [['', url_for('home_page'), 'Home'],
                     ['', url_for('about_page'), 'About'],
-                    ['', local_settings.VIDEOS_URL, 'Videos'],
+                    ['', url_for('videos_page'), 'Videos'],
                     ['', url_for('faq_page'), 'FAQ']]
     for item in navbar_items:
         if active == item[2]:
@@ -308,6 +308,17 @@ def faq_page():
     """
     navbar_items = default_navbar_items('FAQ')
     return render_template('web/faq.html', title="FAQ",
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname())
+
+@APP.route('/videos', methods=['GET'])
+def videos_page():
+    """
+    Videos (unauthenticated).
+    """
+    navbar_items = default_navbar_items('Videos')
+    return render_template('web/videos.html', title="Videos",
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         my_screenname=get_my_screenname())
