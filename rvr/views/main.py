@@ -160,6 +160,16 @@ def is_what_now():
     """
     return request.cookies.has_key("first_action")
 
+def default_navbar_items(active=None):
+    navbar_items = [['', url_for('home_page'), 'Home'],
+                    ['', url_for('about_page'), 'About'],
+                    ['', local_settings.VIDEOS_URL, 'Videos'],
+                    ['', url_for('faq_page'), 'FAQ']]
+    for item in navbar_items:
+        if active == item[2]:
+            item[0] = 'active'
+    return navbar_items
+
 @APP.route('/backdoor', methods=['GET', 'POST'])
 def backdoor_page():
     """
@@ -213,9 +223,8 @@ def change_screenname():
                   (new_screenname, ))
             return redirect(url_for('home_page'))
     current = session['screenname']
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+
+    navbar_items = default_navbar_items()
     return render_template('web/change.html', title='Change Your Screenname',
         current=current, form=form, navbar_items=navbar_items,
         is_logged_in=is_logged_in(), is_account=True,
@@ -276,9 +285,7 @@ def error_page():
     """
     Unauthenticated page for showing errors to user.
     """
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/flash.html', title='Sorry',
         navbar_items=navbar_items, is_logged_in=is_logged_in(),
         my_screenname=get_my_screenname())
@@ -288,9 +295,7 @@ def about_page():
     """
     Unauthenticated information page.
     """
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('active', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items('About')
     return render_template('web/about.html', title="About",
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
@@ -301,9 +306,7 @@ def faq_page():
     """
     Frequently asked questions (unauthenticated).
     """
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('active', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items('FAQ')
     return render_template('web/faq.html', title="FAQ",
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
@@ -371,9 +374,7 @@ def home_page():
     my_finished_groups = my_finished_groups[(ofp - 1) * 20: ofp * 20]
 
     form = ChangeForm()
-    navbar_items = [('active', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items('Home')
     return render_template('web/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
         my_running_games=my_running_games,
@@ -817,9 +818,7 @@ def _running_game(game, gameid, userid, api):
                        game.game_details.situation.board_raw)
     inject_range_sizes(game.game_details.rgp_details,
                        game.game_details.board_raw)
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/game.html', title=title, form=form,
         board=board, game_details=game.game_details,
         num_players=len(game.game_details.rgp_details), history=history,
@@ -845,9 +844,7 @@ def _paused_game(game, gameid, userid):
                        game.game_details.situation.board_raw)
     inject_range_sizes(game.game_details.rgp_details,
                        game.game_details.board_raw)
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/game.html', title=title,
         board=board, game_details=game.game_details,
         num_players=len(game.game_details.rgp_details), history=history,
@@ -871,9 +868,7 @@ def _finished_game(game, gameid, userid):
                           for rgp in game.game_details.rgp_details])
     inject_range_sizes(game.game_details.situation.players,
                        game.game_details.situation.board_raw)
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/game.html', title=title,
         game_details=game.game_details, history=history, payments=payments,
         num_players=len(game.game_details.rgp_details), analyses=analyses,
@@ -1067,9 +1062,7 @@ def analysis_page():
     else:
         action_text = "bets %d" % (item.action_result.raise_total,)
 
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     items_aggressive = [i for i in aife.items if i.is_aggressive]
     items_passive = [i for i in aife.items if i.is_passive]
     items_fold = [i for i in aife.items if i.is_fold]
@@ -1123,9 +1116,7 @@ def user_page():
             if position.played < min_visible:
                 situation.average = None
 
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/user.html',
         screenname=screenname,
         situations=result,
@@ -1139,9 +1130,7 @@ def user_page():
 
 @APP.route('/alpha', methods=['GET'])
 def alpha():
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/alpha.html',
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
@@ -1150,10 +1139,7 @@ def alpha():
 
 @APP.route('/whatnow', methods=['GET'])
 def whatnow():
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
-
+    navbar_items = default_navbar_items()
     response = make_response(render_template('web/whatnow.html',
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
@@ -1207,9 +1193,7 @@ def group_page():
 
     games = sorted(games, key=game_line_key)
 
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/group.html',
         description=games[0].situation.description,
         games=games,
@@ -1269,9 +1253,7 @@ def tree_page():
     _groupid, games = api.get_group_games(gameid=groupid)
 
     # TODO: 0.0: https://github.com/jonmiles/bootstrap-treeview
-    navbar_items = [('', url_for('home_page'), 'Home'),
-                    ('', url_for('about_page'), 'About'),
-                    ('', url_for('faq_page'), 'FAQ')]
+    navbar_items = default_navbar_items()
     return render_template('web/tree.html',
         description=games[0].situation.description,
         groupid=group_tree.groupid,
