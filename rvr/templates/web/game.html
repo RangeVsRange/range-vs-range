@@ -131,7 +131,8 @@ showdown_view = function(criterion) {
     <tr><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td>{% if game_details.public_ranges %}<td><strong>Current range</strong></td>{% endif %}<td><strong>Status</strong></td></tr>
     </thead>
     <tbody>
-    {% for rgp in game_details.rgp_details %}
+    {% for i in range(num_players) %}
+    {% set rgp = game_details.rgp_details[i] %}
     <tr id='player-table-{{i}}'>
       <td><strong>{{rgp.user.screenname}}</strong></td>
       <td>{{rgp.stack}}</td>
