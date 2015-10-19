@@ -900,7 +900,7 @@ def authenticated_game_page(gameid):
     api = API()
     response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
-        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+        if response is api.ERR_NO_SUCH_GAME:
             msg = "Invalid game ID."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
@@ -922,7 +922,7 @@ def unauthenticated_game_page(gameid):
     api = API()
     response = api.get_public_game(gameid)
     if isinstance(response, APIError):
-        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+        if response is api.ERR_NO_SUCH_GAME:
             msg = "Invalid game ID."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
@@ -999,7 +999,7 @@ def chat_page():
     api = API()
     response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
-        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+        if response is api.ERR_NO_SUCH_GAME:
             msg = "Invalid game ID."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
@@ -1033,7 +1033,7 @@ def analysis_page():
     api = API()
     response = api.get_public_game(gameid)
     if isinstance(response, APIError):
-        if response is api.ERR_NO_SUCH_RUNNING_GAME:
+        if response is api.ERR_NO_SUCH_GAME:
             msg = "Invalid game ID."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
@@ -1178,7 +1178,7 @@ def group_page():
 
     api = API()
     result = api.get_group_games(gameid=gameid, userid=userid)
-    if result == API.ERR_NO_SUCH_RUNNING_GAME:
+    if result == API.ERR_NO_SUCH_GAME:
         flash("No such game.")
         return redirect(url_for('error_page'))
     del gameid
@@ -1256,7 +1256,7 @@ def tree_page():
 
     api = API()
     result = api.get_group_tree(groupid)
-    if result == API.ERR_NO_SUCH_RUNNING_GAME:
+    if result == API.ERR_NO_SUCH_GAME:
         flash("No such group.")
         return redirect(url_for('error_page'))
     group_tree = result

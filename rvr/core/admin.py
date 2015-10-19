@@ -442,8 +442,6 @@ class AdminCmd(Cmd):
 
         if isinstance(result, APIError):
             print "Error:", result.description
-        elif params[0] == 'game':
-            display_game_tree(result, local)
         else:
             print result
             display_game_tree(result.root, local)

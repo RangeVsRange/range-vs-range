@@ -102,7 +102,7 @@ class API(object):
     ERR_UNKNOWN = APIError("Internal error")
     ERR_NO_SUCH_USER = APIError("No such user")
     ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
-    ERR_NO_SUCH_RUNNING_GAME = APIError("No such running game")
+    ERR_NO_SUCH_GAME = APIError("No such running game")
     ERR_DUPLICATE_SCREENNAME = APIError("Duplicate screenname")
     ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
     ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
@@ -1064,7 +1064,7 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.gameid == gameid).all()
         if not games:
-            return self.ERR_NO_SUCH_RUNNING_GAME
+            return self.ERR_NO_SUCH_GAME
         game = games[0]
 
         # check that they're in the game and it's their turn
@@ -1095,7 +1095,7 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.gameid == gameid).all()
         if not games:
-            return self.ERR_NO_SUCH_RUNNING_GAME
+            return self.ERR_NO_SUCH_GAME
         game = games[0]
 
         # check that they're in the game
@@ -1186,7 +1186,7 @@ class API(object):
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.gameid == gameid).all()
         if not games:
-            return self.ERR_NO_SUCH_RUNNING_GAME
+            return self.ERR_NO_SUCH_GAME
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
         history_items, payment_items = self._get_history_items(game,
@@ -1392,6 +1392,9 @@ class API(object):
         # have been timed out, so we will keep seeing them as needing to be
         # timed out. This is okay, because they won't actually have any running
         # or open games to be timed out of, so nothing will happen.
+
+        # TODO: BUG: user can be timed out without even the option to move!
+        # TODO: BUG: ...should timeout game+user, not user
         cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=7)
         users = self.session.query(tables.User)  \
             .filter(tables.User.last_seen < cutoff).all()
@@ -1427,7 +1430,7 @@ class API(object):
             root = self.session.query(tables.RunningGame)  \
                 .filter(tables.RunningGame.gameid == gameid).one()
         except NoResultFound:
-            return API.ERR_NO_SUCH_RUNNING_GAME
+            return API.ERR_NO_SUCH_GAME
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.spawn_group == root.gameid).all()
         return root.gameid, [dtos.RunningGameSummary.from_running_game(game,
@@ -1437,26 +1440,25 @@ class API(object):
     @api
     def get_game_tree(self, gameid):
         """
-        Retrieve game tree for given game.
+        Retrieve game tree for given single game.
         """
-        # TODO: 1: remove this / change to retrieve from DB
+        # TODO: 1: remove this / change to retrieve from DB instead of calc
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.gameid == gameid).all()
         if not games:
-            return self.ERR_NO_SUCH_RUNNING_GAME
-        game = games[0]
-        return GameTreeNode.from_game(game)
+            return self.ERR_NO_SUCH_GAME
+        return GameTree.from_games(games)
 
     @api
     def get_group_tree(self, groupid):
         """
         Retrieve game tree for given group.
         """
-        # TODO: 1: remove this / change to retrieve from DB
+        # TODO: 1: remove this / change to retrieve from DB instead of calc
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.spawn_group == groupid).all()
         if not games:
-            return self.ERR_NO_SUCH_RUNNING_GAME
+            return self.ERR_NO_SUCH_GAME
         return GameTree.from_games(games)
 
 def _create_hu():

@@ -5,8 +5,8 @@ from rvr.poker.showdown import showdown_equity
 from sqlalchemy.orm.session import object_session
 from rvr.core.dtos import line_description, ActionResult, UserDetails
 from rvr.poker.action import range_contains_hand
-from numpy.core.multiarray import concatenate
 from rvr.db import tables
+from rvr.infrastructure.util import concatenate
 
 class InvalidComboForTree(Exception):
     """
@@ -70,8 +70,8 @@ class GameTreeNode(object):
         for combo in combos:
             try:
                 results[combo] = self.combo_ev(combo, userid, local)
-            except InvalidComboForTree:
-                pass
+            except InvalidComboForTree as ex:
+                pass  # TODO: 0.0: happening way too often!
         return results
 
     def calculate_combo_ev(self, combo, userid):
@@ -106,22 +106,27 @@ class GameTreeNode(object):
                                            combo):
                         return node.combo_ev(combo, userid)
                 raise InvalidComboForTree('Combo not in child ranges for userid'
-                    ' %d at line %s.' %
+                    ' %d at betting line %s.' %
                     (userid, line_description(self.betting_line)))
             else:
                 # probabilistic weighting of child EVs
                 # size of bucket is probability of this child
+                valid_children = [child for child in self.children
+                    if range_contains_hand(child.ranges_by_userid[userid],
+                                           combo)]
                 buckets = {child: child.ranges_by_userid[actor]  \
                     .generate_options(Card.many_from_text(child.board) +
                                       list(combo))
-                    for child in self.children}
+                    for child in valid_children}
                 total = len(concatenate(buckets.values()))
+                if total == 0:
+                    raise InvalidComboForTree('Combo not in child ranges for'
+                        ' userid %d at betting line %s. ' % (userid,
+                        line_description(self.betting_line)))
                 probabilities = {child: 1.0 * len(buckets[child]) / total
-                                 for child in self.children}
+                                 for child in valid_children}
                 ev = sum(probabilities[child] * child.combo_ev(combo, userid)
-                    for child in self.children
-                    if range_contains_hand(child.ranges_by_userid[userid],
-                        combo))
+                    for child in valid_children)
                 return ev
                 # Invalid combos are ignored / not calculated or aggregated.
         elif userid not in self.winners:
@@ -355,7 +360,7 @@ class GameTree(object):
     # (i.e. exclude nodes with unplayed children, incomplete children, or
     # pre-river non-all-in)
     def __init__(self, groupid, users, root):
-        self.groupid = groupid
+        self.groupid = groupid  # TODO: 0: this is overloaded, game and group
         self.users = users  # list of UserDetails
         self.root = root
 

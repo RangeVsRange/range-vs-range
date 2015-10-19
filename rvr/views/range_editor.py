@@ -1,13 +1,15 @@
 """
 The main pages for the site
 """
-from flask import render_template
+from flask import render_template, redirect
 from rvr.app import APP
-from flask.helpers import flash
+from flask.helpers import flash, url_for
 from flask.globals import request
 from rvr.poker.handrange import NOTHING, ANYTHING, HandRange,  \
     unweighted_options_to_description
 from rvr.poker.cards import Card, SUIT_INVERT, SUITS_HIGH_TO_LOW
+from rvr.core.api import API
+from flask.json import jsonify
 
 # pylint:disable=R0903,R0913,R0914
 
@@ -33,7 +35,7 @@ SUITS_SELECTED = 's_sel'
 
 POS_TO_SUIT = ['s', 'h', 'd', 'c']  # i.e. s.svg, h.svg, etc.
 
-class ColorMaker(object):  
+class ColorMaker(object):
     """
     Chooses a class for a cell of the range chooser
     """
@@ -47,7 +49,7 @@ class ColorMaker(object):
         self.opt_fol = set(opt_fol)
         self.opt_pas = set(opt_pas)
         self.opt_agg = set(opt_agg)
-    
+
     def get_color(self, options):
         """
         Hidden when no options in original
@@ -175,7 +177,7 @@ def get_selected_options(original, board):
 def safe_hand_range(arg_name, fallback):
     """
     Pull a HandRange object from request arg <arg_name>.
-    
+
     If there is a problem, return HandRange(fallback).
     """
     value = request.args.get(arg_name, fallback, type=str)
@@ -187,7 +189,7 @@ def safe_hand_range(arg_name, fallback):
 def safe_hand_range_form(field_name, fallback):
     """
     Pull a HandRange object from request form field <field_name>.
-    
+
     If there is a problem, return HandRange(fallback).
     """
     value = request.form.get(field_name, fallback, type=str)
@@ -199,7 +201,7 @@ def safe_hand_range_form(field_name, fallback):
 def safe_board(arg_name):
     """
     Pull a board (list of Card) from request arg <arg_name>.
-    
+
     If there is a problem, return an empty list.
     """
     value = request.args.get(arg_name, '', type=str)
@@ -211,7 +213,7 @@ def safe_board(arg_name):
 def safe_board_form(field_name):
     """
     Pull a board (list of Card) from request form field <field_name>.
-    
+
     If there is a problem, return an empty list.
     """
     value = request.form.get(field_name, '', type=str)
@@ -267,7 +269,7 @@ def rank_hover_part(name, options):
 def rank_hover(row, col, color_maker, board, is_raised, is_can_check):
     """
     Hover text for this rank combo.
-    
+
     Something like "calling As8s, Ah8h; folding Ad8d".
     """
     txt = rank_text(row, col)
@@ -287,7 +289,7 @@ def suit_text(row, col, is_left):
 
 def suit_id(row, col, table):
     """
-    Give the appropriate id for this suit combo 
+    Give the appropriate id for this suit combo
     """
     if table == SUITED:
         return "s_%s" % (POS_TO_SUIT[row])
@@ -376,7 +378,7 @@ def make_suited_table():
               'id': suit_id(row, col, SUITED),
               'class': suit_class(row, col, SUITED),
               'hover': suit_hover(row, col, SUITED)}
-             for col in range(4)] for row in range(4)] 
+             for col in range(4)] for row in range(4)]
 
 def make_pair_table():
     """
@@ -388,7 +390,7 @@ def make_pair_table():
               'class': suit_class(row, col, PAIR),
               'hover': suit_hover(row, col, PAIR)}
              for col in range(4)] for row in range(3)]
-    
+
 def make_offsuit_table():
     """
     Details for display of the offsuit table
@@ -486,7 +488,7 @@ def range_editor_post():
     can_raise = request.form.get('can_raise', 'true')
     min_raise = request.form.get('min_raise', '0')
     max_raise = request.form.get('max_raise', '200')
-    rng_original = request.form.get('rng_original', ANYTHING)    
+    rng_original = request.form.get('rng_original', ANYTHING)
     board_raw = request.form.get('board', '')
     board = safe_board_form('board')
     images = card_names(board_raw)
@@ -570,9 +572,9 @@ def range_editor():
     Combined these here (cf. decorating one with 'GET' and one with 'POST')
     because Yawe suggested it was the more normal way. It didn't fix his 405
     error though :(
-    
+
     Note: I believe the 405 error is caused by excessively long (~3000 bytes)
-    referer URIs. 
+    referer URIs. Actually: unlikely, it happens in history review.
     """
     # TODO: REVISIT: see if we can go back to decorating each method
     # and not need this one
@@ -580,3 +582,44 @@ def range_editor():
         return range_editor_get()
     else:
         return range_editor_post()
+
+@APP.route('/game-ev', methods=['GET'])
+def game_ev():
+    """
+    Displays a range viewer type thing with popovers to show EV of each combo.
+
+    Only for a single game - not for a group!
+
+    Params: id
+    """
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        flash("Invalid gameid.")
+        return redirect(url_for('error_page'))
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        flash("Invalid gameid.")
+        return redirect(url_for('error_page'))
+
+    screenname = request.args.get('user', None)
+    if screenname is None:
+        flash("Invalid user.")
+        return redirect(url_for('error_page'))
+
+    api = API()
+    result = api.get_game_tree(gameid)
+    if result == API.ERR_NO_SUCH_GAME:
+        flash("No such game.")
+        return redirect(url_for('error_page'))
+    game_tree = result
+    matches = [user for user in game_tree.users
+               if user.screenname == screenname]
+    if len(matches) != 1:
+        flash("Invalid user.")
+        return redirect(url_for('error_page'))
+    userid = matches[0].userid
+
+    # TODO: 0.0: this is showing the wrong combos / keys.
+    ev_by_combo = game_tree.root.all_combos_ev(userid, local=False)
+    return jsonify({str(k): v for k, v in ev_by_combo.iteritems()})
