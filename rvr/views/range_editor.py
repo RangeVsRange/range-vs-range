@@ -9,7 +9,6 @@ from rvr.poker.handrange import NOTHING, ANYTHING, HandRange,  \
     unweighted_options_to_description
 from rvr.poker.cards import Card, SUIT_INVERT, SUITS_HIGH_TO_LOW
 from rvr.core.api import API
-from flask.json import jsonify
 
 # pylint:disable=R0903,R0913,R0914
 
@@ -583,6 +582,41 @@ def range_editor():
     else:
         return range_editor_post()
 
+def ev_class(ev_by_combo, row, col):
+    """
+    Class that determines show/hide status for this cell of the rank table.
+    """
+    txt = rank_text(row, col)
+    options = HandRange(txt).generate_options()
+    options = set(options).intersection(set(ev_by_combo.keys()))
+    if not options:
+        return RANKS_HIDDEN
+    else:
+        return RANKS_UNASSIGNED
+
+def ev_hover_text(ev_by_combo, row, col):
+    """
+    Hover text showing EV of each combo for this cell of the rank table.
+    """
+    txt = rank_text(row, col)
+    options = HandRange(txt).generate_options()
+    options = set(options).intersection(set(ev_by_combo.keys()))
+    pairs = [("".join([c.to_mnemonic() for c in option]),
+              ev_by_combo[option])
+             for option in options]
+    return repr(pairs)
+
+def make_ev_rank_table(ev_by_combo):
+    """
+    Details for appropriate display of an EV rank table
+    """
+    return [[{'text': rank_text(row, col),
+              'id': rank_id(row, col),
+              'class': ev_class(ev_by_combo, row, col),
+              'hover': ev_hover_text(ev_by_combo, row, col),
+              'topthree': row < 3}
+             for col in range(13)] for row in range(13)]
+
 @APP.route('/game-ev', methods=['GET'])
 def game_ev():
     """
@@ -620,6 +654,8 @@ def game_ev():
         return redirect(url_for('error_page'))
     userid = matches[0].userid
 
-    # TODO: 0.0: this is showing the wrong combos / keys.
     ev_by_combo = game_tree.root.all_combos_ev(userid, local=False)
-    return jsonify({str(k): v for k, v in ev_by_combo.iteritems()})
+    rank_table = make_ev_rank_table(ev_by_combo)
+    return render_template('web/range_viewer.html', title='EV Viewer',
+        next_map=NEXT_MAP, rank_table=rank_table)
+    # return jsonify({str(k): v for k, v in ev_by_combo.iteritems()})
