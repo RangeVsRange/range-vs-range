@@ -7,7 +7,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script>$('[data-toggle="tooltip"]').tooltip()</script>
+<script>$('[data-toggle="tooltip"]').tooltip({html: true})</script>
 {% endblock %}
 
 {% block content %}

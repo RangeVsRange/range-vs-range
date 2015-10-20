@@ -4,7 +4,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{url_for('static', filename="js/range-editor.js")}}"></script>
-<script>$('[data-toggle="tooltip"]').tooltip()</script>
+<script>$('[data-toggle="tooltip"]').tooltip({html: true})</script>
 <script>
     $MIN_RAISE = Number({{min_raise}});
     $MAX_RAISE = Number({{max_raise}});
@@ -118,7 +118,7 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
 <!-- Start Rank Combos -->
   <label>Select rank combos:</label> <div class="btn-group"><a class="btn btn-default" onclick="select_all_rank(false)">None</a><a class="btn btn-default" onclick="select_all_rank(true)">All</a></div>
   <div class="pad-above">
-  {{ rt.formatted_rank_table(rank_table, False) }}  
+  {{ rt.formatted_rank_table(rank_table, False) }}
   </div>
 <!-- End Rank Combos -->
 

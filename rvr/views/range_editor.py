@@ -582,38 +582,42 @@ def range_editor():
     else:
         return range_editor_post()
 
-def ev_class(ev_by_combo, row, col):
+def ev_class(combos, row, col):
     """
     Class that determines show/hide status for this cell of the rank table.
     """
     txt = rank_text(row, col)
     options = HandRange(txt).generate_options()
-    options = set(options).intersection(set(ev_by_combo.keys()))
+    options = set(options).intersection(set(combos))
     if not options:
         return RANKS_HIDDEN
     else:
         return RANKS_UNASSIGNED
 
-def ev_hover_text(ev_by_combo, row, col):
+def ev_hover_text(combos, ev_by_combo, row, col):
     """
     Hover text showing EV of each combo for this cell of the rank table.
     """
     txt = rank_text(row, col)
     options = HandRange(txt).generate_options()
-    options = set(options).intersection(set(ev_by_combo.keys()))
-    pairs = [("".join([c.to_mnemonic() for c in option]),
-              ev_by_combo[option])
+    options = set(options).intersection(set(combos))
+    options = [sorted(option, reverse=True) for option in options]
+    options = sorted(options, reverse=True)
+    items = ["%s: %0.4f" % ("".join([c.to_mnemonic() for c in option]),
+                            ev_by_combo[frozenset(option)])
              for option in options]
-    return repr(pairs)
+    return "<br>".join(items)
+    # TODO: 0.0: display in finished games, have a 'winnings' tab and a 'EV' tab
 
 def make_ev_rank_table(ev_by_combo):
     """
     Details for appropriate display of an EV rank table
     """
+    combos = ev_by_combo.keys()
     return [[{'text': rank_text(row, col),
               'id': rank_id(row, col),
-              'class': ev_class(ev_by_combo, row, col),
-              'hover': ev_hover_text(ev_by_combo, row, col),
+              'class': ev_class(combos, row, col),
+              'hover': ev_hover_text(combos, ev_by_combo, row, col),
               'topthree': row < 3}
              for col in range(13)] for row in range(13)]
 

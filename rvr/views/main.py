@@ -1263,7 +1263,7 @@ def tree_page():
     treeview_data = make_treeview_data(group_tree)
     _groupid, games = api.get_group_games(gameid=groupid)
 
-    # TODO: 0.0: https://github.com/jonmiles/bootstrap-treeview
+    # TODO: 0.2: https://github.com/jonmiles/bootstrap-treeview
     navbar_items = default_navbar_items()
     return render_template('web/tree.html',
         description=games[0].situation.description,
