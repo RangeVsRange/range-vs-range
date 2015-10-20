@@ -618,7 +618,7 @@ def make_ev_rank_table(ev_by_combo):
               'id': rank_id(row, col),
               'class': ev_class(combos, row, col),
               'hover': ev_hover_text(combos, ev_by_combo, row, col),
-              'topthree': row < 3}
+              'topthree': row < 7}
              for col in range(13)] for row in range(13)]
 
 @APP.route('/game-ev', methods=['GET'])
@@ -627,8 +627,6 @@ def game_ev():
     Displays a range viewer type thing with popovers to show EV of each combo.
 
     Only for a single game - not for a group!
-
-    Params: id
     """
     gameid = request.args.get('gameid', None)
     if gameid is None:
@@ -662,4 +660,43 @@ def game_ev():
     rank_table = make_ev_rank_table(ev_by_combo)
     return render_template('web/range_viewer.html', title='EV Viewer',
         next_map=NEXT_MAP, rank_table=rank_table)
-    # return jsonify({str(k): v for k, v in ev_by_combo.iteritems()})
+
+@APP.route('/group-ev', methods=['GET'])
+def group_ev():
+    """
+    Displays a range viewer type thing with popovers to show EV of each combo.
+
+    Only for a single game - not for a group!
+    """
+    groupid = request.args.get('groupid', None)
+    if groupid is None:
+        flash("Invalid groupid.")
+        return redirect(url_for('error_page'))
+    try:
+        groupid = int(groupid)
+    except ValueError:
+        flash("Invalid groupid.")
+        return redirect(url_for('error_page'))
+
+    screenname = request.args.get('user', None)
+    if screenname is None:
+        flash("Invalid user.")
+        return redirect(url_for('error_page'))
+
+    api = API()
+    result = api.get_group_tree(groupid)
+    if result == API.ERR_NO_SUCH_GAME:
+        flash("No such group.")
+        return redirect(url_for('error_page'))
+    game_tree = result
+    matches = [user for user in game_tree.users
+               if user.screenname == screenname]
+    if len(matches) != 1:
+        flash("Invalid user.")
+        return redirect(url_for('error_page'))
+    userid = matches[0].userid
+
+    ev_by_combo = game_tree.root.all_combos_ev(userid, local=False)
+    rank_table = make_ev_rank_table(ev_by_combo)
+    return render_template('web/range_viewer.html', title='EV Viewer',
+        next_map=NEXT_MAP, rank_table=rank_table)
