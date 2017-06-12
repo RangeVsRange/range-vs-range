@@ -794,6 +794,24 @@ class RangeItem(BASE):
     higher_card = Column(String(2), primary_key=True)
     lower_card = Column(String(2), primary_key=True)
 
+"""
+There is no such thing as "the EV of a AhKh", it's not a meaningful concept. But
+there are:
+ - EV of AhKh in Position X of Situation Y (situation EV)
+ - EV of AhKh in Position X of Game W (game EV, comparable to situation EV)
+ - EV of AhKh after Betting Z of Position X of Game W (node EV)
+"""
+
+class SituationComboEV(BASE):
+    __tablename__ = "situation_combo_ev"
+    higher_card = Column(String(2), primary_key=True)
+    lower_card = Column(String(2), primary_key=True)
+
+    __table_args__ = (
+        ForeignKeyConstraint([higher_card, lower_card],
+            [RangeItem.higher_card, RangeItem.lower_card]),
+        {})
+
 class AnalysisFoldEquity(BASE):
     """
     Profitability, or required semibluff EV, of a bet, on any street.
