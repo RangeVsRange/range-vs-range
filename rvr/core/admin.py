@@ -75,7 +75,7 @@ class AdminCmd(Cmd):
         3. "dump in"
         4. "initialise"
 
-        The "initiialise" does things like refreshing open games, because open
+        The "initialise" does things like refreshing open games, because open
         games are not dumped out by "dump out".
         """
         filename = 'db.pkl'

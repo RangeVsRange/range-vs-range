@@ -16,7 +16,7 @@ $('.mode-button').popover({trigger: 'hover'})
     <div class="btn-group">
       <button type="button" class="btn {% if mode == 'optimization' %}btn-warning{% else %}btn-primary{% endif %} dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
         {% if mode == 'optimization' %}Optimization mode{% else %}Competition mode{% endif %} <span class="caret"></span>
-      </button>      
+      </button>
       <ul class="dropdown-menu" role="menu">
         {% if mode == 'optimization' %}
         <li><a href="{{url_for('user_page', screenname=screenname, mode='competition')}}">Switch to competition mode</a></li>
@@ -26,7 +26,7 @@ $('.mode-button').popover({trigger: 'hover'})
       </ul>
     </div>
   </div>
-  
+
   {{ flash_messages() }}
 
 {% for situation in situations %}
@@ -39,12 +39,12 @@ $('.mode-button').popover({trigger: 'hover'})
       <td><strong>EV for {{screenname}} (amount won / hands played)</strong></td>
       <td><strong>Confidence</strong></td>
     </tr></thead>
-    <tbody>     
+    <tbody>
       {% for position in situation.positions %}<tr>
         <td>{{position.name}}</td>
         <td>{% if position.ev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.ev,)}} (sd: {% if position.stddev is none %}N/A (0 hands){% else %}{{"%0.04f" % (position.stddev,)}}{% endif %}){% endif %}</td>
         {% if position.played < min_visible %}
-        <td colspan=2><div class="text-center"><em>play at least {{min_visible}} hands to see statistics &mdash; only {{position.played}} played</em></div></td>
+        <td colspan=2><div class="text-center"><em>play at least {{min_visible}} hands to see statistics &mdash; only {{position.played}} finished</em></div></td>
         {% else %}
         <td>{% if position.average is none %}N/A (0 hands){% else %}<strong>{{"%0.04f" % (position.average,)}}</strong> chips per hand ({{"%0.04f" % (position.total,)}} chips / {{position.played}} hands){% endif %}</td>
         <td>{% if position.confidence is none %}N/A (0 hands){% else %}{{"%0.1f%%" % (position.confidence * 100,)}}{% endif %}</td>
