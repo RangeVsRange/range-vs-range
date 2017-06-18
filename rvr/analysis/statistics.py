@@ -1,5 +1,5 @@
 from rvr.db import tables
-from rvr.local_settings import SUPPRESSED_GAME_MAX
+from rvr.local_settings import SUPPRESSED_GAME_MAX, SUPPRESSED_SITUATIONS
 import numpy
 from rvr.core.dtos import PositionResult, SituationResult
 import math
@@ -10,22 +10,22 @@ def _calculate_confidence(total_result, num_games,
                          be_mean, stddev):
     """
     total_result is the user's total chips won in a position.
-    
+
     num_games is the number of games over which the user has won these chips.
-    
+
     be_mean is the expected result for a breakeven player playing one game in
     this position.
-    
+
     stddev is the standard deviation for this position.
-    
+
     Returns a confidence rating between 0.0 and 1.0. This should be interpreted
     as follows:
         "If you are a breakeven player, you are in the luckiest
          ((1 - confidence) * 100)% of players on the site."
-    
+
     Mathematically, what is the chance of a variable with given mean and stddev
     when summed over N trials being less than the given total?
-    
+
     Well if X has mean M and std S, then N*X has mean N*M and std sqrt(N)*S
     """
     # pylint:disable=no-member
@@ -37,7 +37,7 @@ def _calculate_confidence(total_result, num_games,
         elif total_result < be_total:
             return 0.0
         else:
-            return 0.5  # now that's just silly! 
+            return 0.5  # now that's just silly!
     # the following is what the average player's results total looks like after
     # num_games games
     be_norm = stats.norm(loc=be_total, scale=be_stddev)
@@ -54,6 +54,14 @@ def _get_ev(game, order, userid):
                     return result.result
     return None
 
+def _game_timed_out(session, game):
+    """
+    Did this game time out?
+    """
+    return session.query(tables.GameHistoryTimeout)  \
+        .filter(tables.GameHistoryTimeout.gameid == game.gameid)  \
+        .count() > 0
+
 def get_user_statistics(session, userid, min_hands, is_competition):
     """
     Get user's personal stats
@@ -63,6 +71,8 @@ def get_user_statistics(session, userid, min_hands, is_competition):
     # For now, there are only situation-specific results (nothing global).
     situation_results = []
     for situation in all_situations:
+        if situation.situationid in SUPPRESSED_SITUATIONS:
+            continue
         if any(player.average_result is None
                for player in situation.players):
             # This can happen before global analysis is run.
@@ -75,6 +85,7 @@ def get_user_statistics(session, userid, min_hands, is_competition):
                     situation.situationid)  \
             .filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX)  \
             .all()
+        games = [game for game in games if not _game_timed_out(session, game)]
         grand_total = 0.0 - situation.pot_pre
         total_played = 0
         for player in situation.players:
@@ -125,6 +136,8 @@ def recalculate_global_statistics(session):
     """
     Calculate situation players' averages
     """
+    suppressed_game_ids = [h.gameid for h in  \
+                           session.query(tables.GameHistoryTimeout).all()]
     positions = session.query(tables.SituationPlayer).all()
     for position in positions:
         results = []
@@ -136,7 +149,8 @@ def recalculate_global_statistics(session):
             .filter(tables.RunningGameParticipant.order == position.order) \
             .all()
         for rgp in [r for r in rgps
-                    if r.game.situationid == position.situationid]:
+                    if r.game.situationid == position.situationid
+                    and r.gameid not in suppressed_game_ids]:
             for result in rgp.results:
                 if result.scheme == 'ev':
                     results.append(result.result)
