@@ -11,6 +11,7 @@ from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
 from rvr import local_settings
 from rvr.poker.cards import Card
+import time
 
 #pylint:disable=R0201,R0904,E1103,unused-argument
 
@@ -46,6 +47,21 @@ class AdminCmd(Cmd):
             print "Error:", result
         else:
             print "Database created"
+
+    def do_deletedb(self, details):
+        """
+        Delete the database, and everything in it
+        """
+        if details != "048250":
+            print "Let me think about it..."
+            time.sleep(3)
+            print "No."
+            return
+        result = self.api.delete_db()
+        if result:
+            print "Error:", result
+        else:
+            print "Database deleted"
 
     def do_initialise(self, _details):
         """

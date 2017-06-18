@@ -123,6 +123,14 @@ class API(object):
         BASE.metadata.create_all(ENGINE)  # @UndefinedVariable
         self._add_card_combos()
 
+    @exception_mapper
+    def delete_db(self):
+        """
+        Delete database, and everything in it
+        """
+        #pylint:disable=R0201
+        BASE.metadata.drop_all(ENGINE)  # @UndefinedVariable
+
     def _add_all_situations(self):
         """
         Add all situations
