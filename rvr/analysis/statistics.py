@@ -136,8 +136,9 @@ def recalculate_global_statistics(session):
     """
     Calculate situation players' averages
     """
-    suppressed_game_ids = [h.gameid for h in  \
-                           session.query(tables.GameHistoryTimeout).all()]
+    suppressed_game_ids = set([h.gameid for h in  \
+                              session.query(tables.GameHistoryTimeout).all()])
+    logging.debug('%d timed-out games suppressed', len(suppressed_game_ids))
     positions = session.query(tables.SituationPlayer).all()
     for position in positions:
         results = []
