@@ -151,6 +151,7 @@ def recalculate_global_statistics(session):
             .all()
         for rgp in [r for r in rgps
                     if r.game.situationid == position.situationid
+                    and not r.game.public_ranges
                     and r.gameid not in suppressed_game_ids]:
             for result in rgp.results:
                 if result.scheme == 'ev':
