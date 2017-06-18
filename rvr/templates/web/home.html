@@ -18,7 +18,7 @@
         </div>
       </td>
       <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
+      <td><a href="{{ url_for('situation_page', situationid=game.situation.situationid, public=game.public_ranges) }}">{{game.situation.description}}</a></td>
     </tr>
     {% endif %}{%- endfor %}
     {%- for game in others_open %}{% if game.public_ranges == is_public %}
@@ -29,7 +29,7 @@
         </div>
       </td>
       <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
+      <td><a href="{{ url_for('situation_page', situationid=game.situation.situationid, public=game.public_ranges) }}">{{game.situation.description}}</a></td>
     </tr>
     {% endif %}{%- endfor %}
   </table>
@@ -69,7 +69,7 @@
       <td>
         {% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}
       </td>
-      <td>{{game.situation.description}}</td>
+      <td><a href="{{ url_for('situation_page', situationid=game.situation.situationid, public=game.public_ranges) }}">{{game.situation.description}}</a></td>
     </tr>
     <tr class="game-row hidden" id="row-game-{{game.gameid}}">
       <td colspan=4>
@@ -130,7 +130,7 @@
       </td>
       {% endif %}
       <td>{% set pipe = joiner('; ') %}{% for user in group.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{group.description}}</td>
+      <td><a href="{{ url_for('situation_page', situationid=group.situationid, public=True) }}">{{group.description}}</a></td>
   </tr>
     <tr class="group-row hidden" id="row-group-{{group.groupid}}">
       <td colspan=4>

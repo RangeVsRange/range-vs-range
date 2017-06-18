@@ -43,6 +43,10 @@ from rvr.poker.cards import Card
 # TODO: 5: if a user times out, they automatically disclaim the game.
 # TODO: 5: if all users disclaim a game, it is removed from the global stats.
 
+@APP.before_request
+def make_session_permanent():
+    session.permanent = True
+
 def auth_check(view_func):
     """
     Like OIDC.check, but respects the backdoor, and lets sessions live forever.
@@ -1008,6 +1012,19 @@ def chat_page():
         return redirect(url_for('error_page'))
 
     return _chat_page(response, gameid, userid, api)
+
+@APP.route('/situation', methods=['GET'])
+def situation_page():
+    """
+    Details about a situation, and (most interestingly) leaderboard.
+    """
+    situationid = request.args.get('situationid', None)
+    is_public = request.args.get('is_public', None)
+    navbar_items = default_navbar_items()
+    return render_template('web/situation.html',
+        navbar_items=navbar_items,
+        is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname())
 
 @APP.route('/analysis', methods=['GET'])
 def analysis_page():

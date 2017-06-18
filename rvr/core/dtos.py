@@ -370,19 +370,20 @@ class RunningGroup(object):
     Summary of a spawn group
     """
     def __init__(self, groupid, is_finished, is_on_me, is_analysed,
-                 description, users):
+                 description, situationid, users):
         self.groupid = groupid
         self.is_finished = is_finished
         self.is_on_me = is_on_me
         self.is_analysed = is_analysed
         self.description = description
+        self.situationid = situationid
         self.users = users
 
     def __repr__(self):
         return ("RunningGroup(groupid=%r, is_finished=%r, is_on_me=%r, "
-                "is_analysed=%r, description=%r, users=%r)") %  \
+                "is_analysed=%r, description=%r, situationid=%r, users=%r)") % \
             (self.groupid, self.is_finished, self.is_on_me, self.is_analysed,
-             self.description, self.users)
+             self.description, self.situationid, self.users)
 
     @classmethod
     def from_rgps(cls, groupid, is_finished, is_on_me, games):
@@ -397,8 +398,9 @@ class RunningGroup(object):
                         users[rgp.userid]['result'] +=  \
                             result.result * game.spawn_factor
         users = [users[rgp.userid] for rgp in games[0].rgps]
+        situationid = games[0].situation.situationid
         return cls(groupid, is_finished, is_on_me, is_analysed,
-                   games[0].situation.description, users)
+                   games[0].situation.description, situationid, users)
 
 class SituationResult(object):
     """
