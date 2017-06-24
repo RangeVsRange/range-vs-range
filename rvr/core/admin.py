@@ -462,6 +462,15 @@ class AdminCmd(Cmd):
             print result
             display_game_tree(result.root, local)
 
+    def do_volume(self, _details):
+        """
+        List the players who have completed the most games.
+        """
+        result = self.api.get_player_volumes()
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        print result
+
     def do_exit(self, _details):
         """
         Close the admin interface

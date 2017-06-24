@@ -1229,6 +1229,25 @@ class API(object):
         return self._get_game(gameid, userid=userid)
 
     @api
+    def get_player_volumes(self):
+        """
+        How many games has each player completed?
+        """
+        games = self.session.query(tables.RunningGame).all()
+        games_by_player = {}
+        for game in games:
+            if not game.game_finished:
+                continue
+            timeouts = self.session.query(tables.GameHistoryTimeout)  \
+                .filter(tables.GameHistoryTimeout.gameid == game.gameid).all()
+            if timeouts:
+                continue
+            for rgp in game.rgps:
+                games_by_player.setdefault(rgp.userid, 0)
+                games_by_player[rgp.userid] += 1
+        return sorted(games_by_player.items(), key=lambda x: x[1], reverse=True)
+
+    @api
     def ensure_open_games(self):
         """
         Ensure there is exactly one empty open game for each situation in the
