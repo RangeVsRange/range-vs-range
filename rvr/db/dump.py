@@ -22,11 +22,14 @@ At deployment time:
   - create a new database (but don't initialise it)
   - try loading the dump (from production) into the new database
     (using the updated code)
-  - if it works, this is your new database file
   - run some serious local testing
 - in production:
-  - backup the old database
-  - copy in the new database
+  - update the source code ('git pull' from command line)
+  - dump out again ('dump out')
+  - delete the database ('deletedb')
+  - recreate the database ('createdb')
+  - load in the dump file ('dump in')
+  - because the dump file worked locally, it should also work in production
 - if this file was doing special things to read dump files from older versions,
   update it to be correct
 """
