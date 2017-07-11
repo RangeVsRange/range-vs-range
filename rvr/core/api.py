@@ -394,7 +394,7 @@ class API(object):
              and not rgp.game.public_ranges]
         c = 0; c_less = False; c_more = False
         finished_games = []
-        for rgp in rgps:
+        for rgp in sorted(rgps, key=lambda rgp: rgp.gameid, reverse=True):
             if not rgp.game.game_finished:
                 continue
             if not (rgp.game.game_finished and not rgp.game.public_ranges):
@@ -412,7 +412,7 @@ class API(object):
         running_groups = []
         o = 0; o_less = False; o_more = False
         finished_groups = []
-        for group in group_ids:
+        for group in sorted(group_ids, reverse=True):
             spawns = [rgp for rgp in rgps if rgp.game.spawn_group == group
                       and rgp.game.public_ranges]
             is_finished = all(spawn.game.game_finished for spawn in spawns)

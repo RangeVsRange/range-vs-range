@@ -371,12 +371,10 @@ def home_page():
     selected_mode = request.cookies.get("selected-mode", "mode-competition")
     my_running_games = sorted(my_games.running_details,
                               key=lambda g: not g.is_on_me)
-    my_finished_games = sorted(my_games.finished_details,
-                               key=lambda g: g.gameid, reverse=True)
+    my_finished_games = my_games.finished_details
     my_running_groups = sorted(my_games.running_groups,
                                key=lambda g: not g.is_on_me)
-    my_finished_groups = sorted(my_games.finished_groups,
-                                key=lambda g: g.groupid, reverse=True)
+    my_finished_groups = my_games.finished_groups
     my_open = [og for og in open_games
                if any([u.userid == userid for u in og.users])]
     others_open = [og for og in open_games
