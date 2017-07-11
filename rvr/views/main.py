@@ -354,6 +354,8 @@ def home_page():
         ofp = int(ofp)
     except ValueError:
         ofp = 1
+    cstart = (cfp - 1) * 20
+    ostart = (ofp - 1) * 20
     api = API()
     userid = session['userid']
     screenname = session['screenname']
@@ -361,7 +363,7 @@ def home_page():
     if isinstance(open_games, APIError):
         flash("An unknown error occurred retrieving your open games.")
         return redirect(url_for("error_page"))
-    my_games = api.get_user_running_games(userid)
+    my_games = api.get_user_running_games(userid, cstart, ostart, 20)
     if isinstance(my_games, APIError):
         flash("An unknown error occurred retrieving your running games.")
         return redirect(url_for("error_page"))
@@ -380,14 +382,6 @@ def home_page():
     others_open = [og for og in open_games
                    if not any([u.userid == userid for u in og.users])]
 
-    cfp_less = cfp > 1
-    cfp_more = len(my_finished_games) > cfp * 20
-    my_finished_games = my_finished_games[(cfp - 1) * 20: cfp * 20]
-
-    ofp_less = ofp > 1
-    ofp_more = len(my_finished_groups) > ofp * 20
-    my_finished_groups = my_finished_groups[(ofp - 1) * 20: ofp * 20]
-
     form = ChangeForm()
     navbar_items = default_navbar_items('Home')
     return render_template('web/home.html', title='Home',
@@ -398,8 +392,8 @@ def home_page():
         my_finished_groups=my_finished_groups,
         my_open=my_open,
         others_open=others_open,
-        cfp=cfp, cfp_less=cfp_less, cfp_more=cfp_more,
-        ofp=ofp, ofp_less=ofp_less, ofp_more=ofp_more,
+        cfp=cfp, cfp_less=my_games.c_less, cfp_more=my_games.c_more,
+        ofp=ofp, ofp_less=my_games.o_less, ofp_more=my_games.o_more,
         navbar_items=navbar_items,
         selected_heading=selected_heading,
         selected_mode=selected_mode,

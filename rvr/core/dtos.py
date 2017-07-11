@@ -438,12 +438,17 @@ class UsersGameDetails(object):
     lists of open game details, running game details, for a specific user
     """
     def __init__(self, userid, running_details, finished_details,
-                 running_groups, finished_groups):
+                 running_groups, finished_groups,
+                 c_less, c_more, o_less, o_more):
         self.userid = userid
         self.running_details = running_details
         self.finished_details = finished_details
         self.running_groups = running_groups
         self.finished_groups = finished_groups
+        self.c_less = c_less
+        self.c_more = c_more
+        self.o_less = o_less
+        self.o_more = o_more
 
 class GameItem(object):
     """
