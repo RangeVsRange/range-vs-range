@@ -149,6 +149,11 @@ def recalculate_global_statistics(session):
                     SUPPRESSED_GAME_MAX)  \
             .filter(tables.RunningGameParticipant.order == position.order) \
             .all()
+        # Note: we're only including competition mode - because it's more
+        # popular. We can't include both (unless we track them separately).
+        # Optimisation mode would be a better estimator, but we'd have to
+        # calculate over groups, not games, because optimisation mode makes
+        # rare lines more likely - it makes them 100% likely.
         for rgp in [r for r in rgps
                     if r.game.situationid == position.situationid
                     and not r.game.public_ranges

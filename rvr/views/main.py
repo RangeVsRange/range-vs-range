@@ -380,6 +380,15 @@ def home_page():
     others_open = [og for og in open_games
                    if not any([u.userid == userid for u in og.users])]
 
+    # if they have *any* running games, we will show them, regardless
+    if selected_heading == "heading-my":
+        has_games = my_running_games and my_running_games[0].is_on_me
+        has_groups = my_running_groups and my_running_groups[0].is_on_me
+        if has_groups and not has_games:
+            selected_mode = "mode-public"
+        if has_games and not has_groups:
+            selected_mode = "mode-competition"
+
     form = ChangeForm()
     navbar_items = default_navbar_items('Home')
     return render_template('web/home.html', title='Home',
