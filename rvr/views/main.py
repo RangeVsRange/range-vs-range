@@ -391,7 +391,7 @@ def home_page():
 
     form = ChangeForm()
     navbar_items = default_navbar_items('Home')
-    return render_template('web/home.html', title='Home',
+    response = make_response(render_template('web/home.html', title='Home',
         screenname=screenname, userid=userid, change_form=form,
         my_running_games=my_running_games,
         my_finished_games=my_finished_games,
@@ -406,7 +406,9 @@ def home_page():
         selected_mode=selected_mode,
         is_logged_in=is_logged_in(),
         is_first_action=is_what_now(),
-        my_screenname=get_my_screenname())
+        my_screenname=get_my_screenname()))
+    response.set_cookie('selected-mode', selected_mode)  # may have changed
+    return response
 
 @APP.route('/join', methods=['GET'])
 @auth_check
