@@ -211,7 +211,9 @@ def change_screenname():
     if alternate_response:
         return alternate_response
     form = ChangeForm()
-    if form.validate_on_submit():
+    if session['screenname'] in ['screenname', 'Cwlrs2']:
+        flash("Unwilling to change your screenname, sorry.")
+    elif form.validate_on_submit():
         new_screenname = form.change.data
         req = ChangeScreennameRequest(session['userid'],
                                       new_screenname)
