@@ -1220,9 +1220,10 @@ class API(object):
             return self.ERR_NO_SUCH_GAME
         game = games[0]
         game_details = dtos.RunningGameDetails.from_running_game(game)
+        # TODO: 0: DODGY HACK!
         screennames = [details.user.screenname
                        for details in game_details.rgp_details]
-        is_hack = set(screennames) == set(['screenname', 'Cwlrs2'])
+        is_hack = set(screennames) == set(['Cwlrs2', 'screenname'])
         public_ranges = game_details.public_ranges and not is_hack
         history_items, payment_items = self._get_history_items(game,
             userid=userid, public_ranges=public_ranges)

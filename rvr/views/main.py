@@ -211,7 +211,8 @@ def change_screenname():
     if alternate_response:
         return alternate_response
     form = ChangeForm()
-    if session['screenname'] in ['screenname', 'Cwlrs2']:
+    # TODO: 0: DODGY HACK!
+    if session['screenname'] in ['Cwlrs2', 'screenname']:
         flash("Unwilling to change your screenname, sorry.")
     elif form.validate_on_submit():
         new_screenname = form.change.data
@@ -838,13 +839,15 @@ def _running_game(game, gameid, userid, api):
                        game.game_details.situation.board_raw)
     inject_range_sizes(game.game_details.rgp_details,
                        game.game_details.board_raw)
+    all_names = [rgp.user.screenname for rgp in game.game_details.rgp_details]
+    is_hack = set(all_names) == set(['Cwlrs2', 'screenname'])
     navbar_items = default_navbar_items()
     return render_template('web/game.html', title=title, form=form,
         board=board, game_details=game.game_details,
         num_players=len(game.game_details.rgp_details), history=history,
         current_options=game.current_options,
         is_me=is_me, is_mine=is_mine, is_new_chat=is_new_chat, is_running=True,
-        range_editor_url=range_editor_url,
+        range_editor_url=range_editor_url, is_hack=is_hack,
         navbar_items=navbar_items, is_logged_in=is_logged_in(),
         is_first_action=is_what_now(), url=request.url,
         my_screenname=get_my_screenname())

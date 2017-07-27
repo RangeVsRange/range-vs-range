@@ -128,7 +128,7 @@ showdown_view = function(criterion) {
 
     <table class="table table-bordered">
     <thead>
-    <tr><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td>{% if game_details.public_ranges %}<td><strong>Current range</strong></td>{% endif %}<td><strong>Status</strong></td></tr>
+    <tr><td><strong>Player</strong></td><td><strong>Stack</strong></td><td><strong>In the pot</strong></td>{% if game_details.public_ranges and not is_hack %}<td><strong>Current range</strong></td>{% endif %}<td><strong>Status</strong></td></tr>
     </thead>
     <tbody>
     {% for i in range(num_players) %}
@@ -137,7 +137,7 @@ showdown_view = function(criterion) {
       <td><strong>{{rgp.user.screenname}}</strong></td>
       <td>{{rgp.stack}}</td>
       <td>{{rgp.contributed}}</td>
-      {% if game_details.public_ranges %}<td><button class="btn btn-primary" type=button id="view-player-{{i}}" onclick="range_view('current-player-row', 'view-player-{{i}}', 'player-table-{{i}}', '{{rgp.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View</button>&nbsp; {{rgp.range_size}} combos</td>{% endif %}
+      {% if game_details.public_ranges and not is_hack %}<td><button class="btn btn-primary" type=button id="view-player-{{i}}" onclick="range_view('current-player-row', 'view-player-{{i}}', 'player-table-{{i}}', '{{rgp.range_raw}}', 'nothing', 'nothing', 'nothing', {{False|tojson}}, {{False|tojson}});">View</button>&nbsp; {{rgp.range_size}} combos</td>{% endif %}
       <td>
       {% if game_details.current_player and rgp.user.screenname == game_details.current_player.user.screenname %}
         <em>(acting now)</em>
