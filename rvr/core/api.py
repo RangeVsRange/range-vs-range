@@ -1167,7 +1167,7 @@ class API(object):
             results.append(GamePayment(payment))
         return results
 
-    def _get_history_items(self, game, userid, public_ranges):
+    def _get_history_items(self, game, userid, public_ranges, hide):
         """
         Returns a list of game history items (tables.GameHistoryBase with
         additional details from child tables), with private data only for
@@ -1182,8 +1182,8 @@ class API(object):
                       for child in all_child_items]
         all_userids = [rgp.userid for rgp in game.rgps]
         history = [dto for dto in child_dtos if
-            dto.should_include_for(userid, all_userids, game.game_finished,
-                                   public_ranges)]
+            dto.should_include_for(userid, all_userids,
+                game.game_finished and not hide, public_ranges)]
         payments = {} # map order to map reason to list payments
         for child in all_child_items:
             payments[child.order] = {}
@@ -1225,8 +1225,15 @@ class API(object):
                        for details in game_details.rgp_details]
         is_hack = set(screennames) == set(['Cwlrs2', 'screenname'])
         public_ranges = game_details.public_ranges and not is_hack
+        hide = False
+        if is_hack and game.game_finished:
+            group_games = self.session.quert(tables.RunningGame)  \
+                .filter(tables.RunningGame.spawn_group ==
+                        game.spawn_group).all()
+            hide = not all(g.game_finished for g in group_games)
         history_items, payment_items = self._get_history_items(game,
-            userid=userid, public_ranges=public_ranges)
+            userid=userid, public_ranges=public_ranges,
+            hide=hide)
         analysis_items = self._get_analysis_items(game)
         if game.current_userid is None:
             current_options = None
