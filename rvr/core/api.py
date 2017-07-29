@@ -1227,7 +1227,7 @@ class API(object):
         public_ranges = game_details.public_ranges and not is_hack
         hide = False
         if is_hack and game.game_finished:
-            group_games = self.session.quert(tables.RunningGame)  \
+            group_games = self.session.query(tables.RunningGame)  \
                 .filter(tables.RunningGame.spawn_group ==
                         game.spawn_group).all()
             hide = not all(g.game_finished for g in group_games)
