@@ -1,5 +1,5 @@
 Cython==0.22
-Flask==0.10.1
+Flask==1.0
 Flask-Bootstrap==3.3.2.1
 Flask-Mail==0.9.1
 Flask-WTF==0.11
