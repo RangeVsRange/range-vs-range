@@ -1341,6 +1341,7 @@ class API(object):
 
         If you need to RE-analyse the database, delete existing analysis first.
         """
+        found = False
         games = self.session.query(tables.RunningGame)  \
             .filter(tables.RunningGame.current_round == FINISHED).all()
         for game in games:
@@ -1348,7 +1349,9 @@ class API(object):
                 replayer = AnalysisReplayer(self.session, game)
                 replayer.analyse()
                 replayer.finalise()
-        recalculate_global_statistics(self.session)
+                found = True
+        if found:
+            recalculate_global_statistics(self.session)
 
     def _analyse_immediately(self, gameid):
         """
