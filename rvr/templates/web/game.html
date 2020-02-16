@@ -256,6 +256,13 @@ showdown_view = function(criterion) {
       <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity * item.pot}}{% endif %}</td>
     </tr>
     {% endfor %}
+    <tr>
+      <td colspan=3>
+        <div class="pull-right">
+          <a class="btn btn-primary" href="{{url_for('showdown_page', gameid=game_details.gameid, order=item.order)}}">All Combos EV</a>
+        </div>
+      </td>
+    </tr>
     </tbody>
     </table>
     </td>

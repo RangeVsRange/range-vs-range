@@ -24,6 +24,7 @@ from rvr.forms.backdoor import BackdoorForm
 from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 from functools import wraps
 from rvr.poker.cards import Card
+from rvr.poker.showdown import showdown_equity
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -1033,6 +1034,116 @@ def situation_page():
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
         my_screenname=get_my_screenname())
+
+# TODO: 1: combine into AnalysisReplayer, store in database.
+def _all_combos_ev(board_raw, showdown, all_ranges):
+    """
+    all_ranges maps userid to raw range.
+    showdown is a dtos.GameItemShowdown.
+
+    returns a list of tuples of (user, list of tuples of (raw combo, EV))
+    users ordered according to showdown.equities, EV ordered low to high
+    """
+    board = Card.many_from_text(board_raw)
+    users = [e.user for e in showdown.equities]
+    results = []
+    for user in users:  # for each player, generate all combos
+        range_ = all_ranges[user.userid]
+        combos = range_.generate_options(board)
+        ranges = {}
+        all_combos_ev = []
+        for combo in combos:  # for each combo, calculate EV
+            desc = unweighted_options_to_description([combo])
+            ranges = {}
+            for u in users:  # generate ranges
+                if u.userid == user.userid:
+                    ranges[u.userid] = HandRange(desc)
+                else:
+                    ranges[u.userid] = all_ranges[u.userid]
+            equities, _ = showdown_equity(ranges, board)
+            ev = equities[user.userid]
+            all_combos_ev.append((desc, ev * showdown.pot))
+        all_combos_ev.sort(key=lambda a: a[1])
+        results.append((user, all_combos_ev))
+    return results
+
+@APP.route('/showdown', methods=['GET'])
+def showdown_page():
+    """
+    All combos EV at showdown. Maybe even combos that weren't played!
+
+    E.g. if I just folded a hand, I'd like to know if it would have been worth
+    playing. Either as a bluff, or as a call.
+
+    And then of course I guess I'm also curious about all those other hands I
+    folded along the way.
+    """
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        return error("Invalid game ID.")
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        return error("Invalid game ID (not a number).")
+
+    api = API()
+    response = api.get_public_game(gameid)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_GAME:
+            msg = "Invalid game ID."
+        else:
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
+        return error(msg)
+    game = response
+
+    order = request.args.get('order', None)
+    if order is None:
+        return error("Invalid order.")
+    try:
+        order = int(order)
+    except ValueError:
+        return error("Invalid order (not a number).")
+
+    item = None
+    all_ranges = {}
+    board_raw = game.game_details.situation.board_raw
+    last_range_action = None
+    for item in game.history:
+        if isinstance(item, dtos.GameItemUserRange):
+            all_ranges[item.user.userid] = HandRange(item.range_raw)
+        if isinstance(item, dtos.GameItemBoard):
+            board_raw = item.cards
+        if isinstance(item, dtos.GameItemRangeAction):
+            last_range_action = item
+        if item.order == order:
+            break
+    else:
+        return error("Invalid order (not in game).")
+    
+    if not isinstance(item, dtos.GameItemShowdown):
+        return error("Invalid order (not a showdown).")
+
+    showdown = item
+
+    # last_range_action will tell us to take the passive range of one player,
+    # and then update their range to it. It was this call or check that created
+    # this showdown, and so we use that range
+    all_ranges[last_range_action.user.userid] =  \
+        last_range_action.range_action.passive_range
+
+    # all_ranges maps userid to raw range (text).
+    # showdown.equities is a list with UserDetails members.
+    # This tells us who was in the showdown, i.e. which ranges to use.
+    # Now let's make some data.
+    combo_and_ev_by_user = _all_combos_ev(board_raw, showdown, all_ranges)
+    # list of (user, list of (raw combo, EV)) sorted by EV low to high
+
+    navbar_items = default_navbar_items()
+    return render_template('web/showdown.html',
+        navbar_items=navbar_items, is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname(),
+        combo_and_ev_by_user=combo_and_ev_by_user)
 
 @APP.route('/analysis', methods=['GET'])
 def analysis_page():
