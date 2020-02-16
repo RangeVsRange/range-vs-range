@@ -1060,7 +1060,7 @@ def _all_combos_ev(board_raw, showdown, all_ranges):
                     ranges[u.userid] = HandRange(desc)
                 else:
                     ranges[u.userid] = all_ranges[u.userid]
-            equities, _ = showdown_equity(ranges, board)
+            equities, _ = showdown_equity(ranges, board, 100)
             ev = equities[user.userid]
             all_combos_ev.append((desc, ev * showdown.pot))
         all_combos_ev.sort(key=lambda a: a[1])
