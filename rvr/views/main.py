@@ -1235,9 +1235,11 @@ def user_page():
     screenname = request.args.get('screenname', None)
     if screenname is None:
         return error("Invalid screenname.")
-    min_hands = request.args.get('min', '1')
+    min_hands = 1  # situation only shown if 1 hands played
+    min_visible = request.args.get('min', '5')
+    # stats only shown if 5 hands played
     try:
-        min_hands = int(min_hands)
+        min_visible = int(min_visible)
     except ValueError:
         return error("Invalid min.")
     is_competition = request.args.get('mode', 'competition') == 'competition'
@@ -1254,8 +1256,6 @@ def user_page():
         return error("No such user.")
     if isinstance(result, APIError):
         return error("An unknown error occurred retrieving results.")
-
-    min_visible = 5  # stats only shown if 5 hands played
 
     # suppress user's situation results where insufficient position hands
     for situation in result:
