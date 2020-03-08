@@ -95,17 +95,15 @@ def get_user_statistics(session, userid, min_hands, is_competition):
         orbit_average = 0.0 - situation.pot_pre
         total_played = 0
         for player in situation.players:
-            results = {spawn_group: None for spawn_group in groups.iterkeys()}
+            results = {}
             for spawn_group, games in groups.iteritems():
                 for game in games:
                     ev = _get_ev(game=game, order=player.order,
                                  userid=userid)
                     if ev is None:  # they didn't play this position
                         continue
-                    if results[spawn_group] is None:
-                        results[spawn_group] = ev * game.spawn_factor
-                    else:
-                        results[spawn_group] += ev * game.spawn_factor
+                    results.setdefault(spawn_group, 0.0)
+                    results[spawn_group] += ev * game.spawn_factor
             data = filter(lambda x: x is not None, results.values())
             total = sum(data)
             # Note: this is user's stddev for this position, not position's

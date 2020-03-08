@@ -11,6 +11,7 @@ from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
 from rvr import local_settings
 from rvr.poker.cards import Card
+from rvr.poker.handrange import ANYTHING
 import time
 
 #pylint:disable=R0201,R0904,E1103,unused-argument
