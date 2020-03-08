@@ -103,9 +103,9 @@ def get_user_statistics(session, userid, min_hands, is_competition):
                     if ev is None:  # they didn't play this position
                         continue
                     if results[spawn_group] is None:
-                        results[spawn_group] = ev
+                        results[spawn_group] = ev * game.spawn_factor
                     else:
-                        results[spawn_group] += ev
+                        results[spawn_group] += ev * game.spawn_factor
             data = filter(lambda x: x is not None, results.values())
             total = sum(data)
             # Note: this is user's stddev for this position, not position's
