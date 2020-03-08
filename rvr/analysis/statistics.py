@@ -64,7 +64,7 @@ def _game_timed_out(session, game):
 
 def get_user_statistics(session, userid, min_hands, is_competition):
     """
-    Get user's personal stats
+    Get user's personal stats for all situations
     """
     # pylint:disable=no-member
     all_situations = session.query(tables.Situation).all()
@@ -85,28 +85,39 @@ def get_user_statistics(session, userid, min_hands, is_competition):
                     situation.situationid)  \
             .filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX)  \
             .all()
-        games = [game for game in games if not _game_timed_out(session, game)]
-        grand_total = 0.0 - situation.pot_pre
+        groups = {}
+        for game in games:
+            groups.setdefault(game.spawn_group, []).append(game)
+        for spawn_group in groups.keys():
+            if any(_game_timed_out(session, g) or not g.game_finished
+                   for g in groups[spawn_group]):
+                groups.pop(spawn_group)
+        orbit_average = 0.0 - situation.pot_pre
         total_played = 0
         for player in situation.players:
-            # TODO: REVISIT: could iterate over games only once
-            results = []
-            for game in games:
-                ev = _get_ev(game=game, order=player.order,
-                             userid=userid)
-                if ev is not None:
-                    results.append(ev)
-            total = sum(results)
+            results = {spawn_group: None for spawn_group in groups.iterkeys()}
+            for spawn_group, games in groups.iteritems():
+                for game in games:
+                    ev = _get_ev(game=game, order=player.order,
+                                 userid=userid)
+                    if ev is None:  # they didn't play this position
+                        continue
+                    if results[spawn_group] is None:
+                        results[spawn_group] = ev
+                    else:
+                        results[spawn_group] += ev
+            data = filter(lambda x: x is not None, results.values())
+            total = sum(data)
             # Note: this is user's stddev for this position, not position's
             # stddev - because user having a different style of play can
             # make a difference to stddev. We have ddof=1 to help make up
             # for the smaller sample size.
             ddof = 1
-            if len(results) > ddof + 1:
-                user_stddev = numpy.std(results, ddof=ddof)
+            if len(data) > ddof + 1:
+                user_stddev = numpy.std(data, ddof=ddof)
                 confidence = _calculate_confidence(
                     total_result=total,
-                    num_games=len(results),
+                    num_games=len(data),
                     be_mean=player.average_result,
                     stddev=user_stddev)
             else:
@@ -115,20 +126,20 @@ def get_user_statistics(session, userid, min_hands, is_competition):
                 name=player.name,
                 ev=player.average_result,
                 stddev=player.stddev,  # site stddev okay?
-                played=len(results),
-                total=total if results else None,
-                average=total / len(results) if results else None,
+                played=len(data),
+                total=total if data else None,
+                average=total / len(data) if data else None,
                 confidence=confidence))
-            if results and grand_total is not None:
-                grand_total += total / len(results)
-                grand_total -= player.contributed
+            if data and orbit_average is not None:
+                orbit_average += total / len(data)
+                orbit_average -= player.contributed
             else:
-                grand_total = None
-            total_played += len(results)
+                orbit_average = None
+            total_played += len(data)
         if total_played >= min_hands:
             situation_results.append(SituationResult(
                 name=situation.description,
-                average=grand_total,
+                average=orbit_average,
                 positions=position_results))
     return situation_results
 

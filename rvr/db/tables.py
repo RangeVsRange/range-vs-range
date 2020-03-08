@@ -202,7 +202,7 @@ class RunningGame(BASE, object):
     pot_pre = Column(Integer, nullable=False)
     increment = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
-    # keeping track of how unlikely this line is
+    # keeping track of how unlikely this line is, considering folds don't happen
     current_factor = Column(Float, nullable=False)
     # keeping track of timeouts
     last_action_time = Column(DateTime, nullable=False)  # or game start time
