@@ -24,7 +24,7 @@ def create_situation():
         big_blind=2,
         board_raw='6s5h4d',
         current_round=cards.FLOP,  # @UndefinedVariable
-        pot_pre=12,  # pot at start of this betting round
+        pot_pre=12,  # antes, or pot at end of last betting round
         increment=2,  # minimum raise amount right now
         bet_count=0)
     return situation
