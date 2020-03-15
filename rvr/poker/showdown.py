@@ -117,9 +117,9 @@ def showdown_equity(ranges, board, hard_limit=MAX_ITERATIONS):
                                                    hard_limit)
         iterations = hard_limit
     total = sum(wins_by_player.values())
-    # There once appeared to be division by zero here, game group 1002
-    # (but I can't recreate it).
-    return {player: wins / total if total != 0.0 else -1.0  # clearly not
+    if total == 0.0:  # impossible ranges, e.g. 6h6d vs Ah6h
+        return {}, 0
+    return {player: wins / total
             for player, wins in wins_by_player.iteritems()}, iterations
 
 def showdown(board, players_cards, memo=None):
