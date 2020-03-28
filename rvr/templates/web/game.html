@@ -17,6 +17,7 @@
 $CURRENT_BUTTON = null;
 range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, is_raise) {
     $('#' + new_id).remove();  // if any
+    $('#ori_' + new_id).remove();  // if any
     if (button_id == $CURRENT_BUTTON) {
         $CURRENT_BUTTON = null;
         return;
@@ -27,6 +28,17 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
     iframe.width(470);  // Could be as low as 461 (@ 2014-06-08)
     iframe.height(410);  // Could be as low as 399 (@ 2014-06-08)
     iframe.text('Sorry, your browser does not support iframes.');
+
+    {# letting user see raw range #}
+    {# note that adding it in earlier means it's displayed later #}
+    p = $('<p>');
+    p.text(ori);
+    td = $('<td colspan=9>'); {# needed for table in situation tab #}
+    td.append(p);
+    tr = $('<tr>').attr('id', 'ori_' + new_id);
+    tr.append(td);
+    $('#' + row_id).after(tr);
+
     td = $('<td colspan=9>'); {# needed for table in situation tab #}
     td.append(iframe);
     tr = $('<tr>').attr('id', new_id);
