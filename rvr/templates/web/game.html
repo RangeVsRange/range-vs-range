@@ -31,10 +31,10 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
 
     {# letting user see raw range #}
     {# note that adding it in earlier means it's displayed later #}
-    p = $('<p>');
-    p.text(ori);
+    d = $('<div>', {style: 'word-break: break-word'});
+    d.append($('<p>', {text: ori}))
     td = $('<td colspan=9>'); {# needed for table in situation tab #}
-    td.append(p);
+    td.append(d);
     tr = $('<tr>').attr('id', 'ori_' + new_id);
     tr.append(td);
     $('#' + row_id).after(tr);
