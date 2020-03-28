@@ -313,8 +313,13 @@ class WhatCouldBe(object):
         # - Villain happens to draw AA for dealt/excluded cards
         # - board has two aces also
         # - Hero has only Ax in his calling range
-        # - result is that villain has 0% calls for this game
+        # - result is that Hero has 0% calls for this game
         # - blech!
+        # But you have to account for card removal effects somehow, and this
+        # seems unbiased at least, which is at least a fair result.
+        # TODO: REVISIT: we could make it slightly more normal in the above...
+        # situation by generating excluded cards once for each hand in Hero's
+        # range instead of once for Hero's entire range.
         dead_cards = generate_excluded_cards(self.game, hero=self.rgp)
         fold_options = self.range_action.fold_range  \
             .generate_options(dead_cards)
