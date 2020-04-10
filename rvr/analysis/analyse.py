@@ -446,7 +446,10 @@ class AnalysisReplayer(object):
             .filter(GameHistoryShowdown.gameid == self.game.gameid)  \
             .filter(GameHistoryShowdown.order == order)  \
             .filter(GameHistoryShowdown.is_passive == is_passive).all()
-        assert len(showdowns) == 1
+        if len(showdowns) != 1:
+            logging.warning("gameid %d, order %d, has %d showdowns",
+                            self.game.gameid, order, len(showdowns))
+            return
         logging.debug("gameid %d, order %d, confirmed existing showdown",
                       self.game.gameid, order)
         showdown = showdowns[0]
