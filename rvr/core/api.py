@@ -918,18 +918,22 @@ class API(object):
         prev_contrib = None
         any_stack = None
         for rgp in game.rgps:
-            if not rgp.folded:
-                remain.append(rgp)
+            if rgp.folded:
+                continue
+            remain.append(rgp)
             if rgp.userid == actor.userid:
                 continue
             if rgp.left_to_act:
+                # everyone else must have acted
                 return  # no showdown yet
             if prev_contrib is not None and rgp.contributed != prev_contrib:
+                # everyone else must have contributed equally to the pot
                 return  # no showdown yet
             prev_contrib = rgp.contributed
-            any_stack = rgp.stack
+            any_stack = rgp.stack  # they should all be the same at this point
         if any_stack > 0 and game.current_round != RIVER:
-            # not all in, nor river showdown
+            # what would be a showdown on the river, won't be on any other
+            # street, if there are still chips in play
             return
         fold_ratio = range_ratios['fold']
         passive_ratio = range_ratios['passive']

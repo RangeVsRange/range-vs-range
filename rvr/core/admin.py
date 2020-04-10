@@ -10,9 +10,11 @@ from rvr.poker import cards  # (for dynamic situations) @UnusedImport pylint:dis
 from rvr.db.dump import load, dump
 from sqlalchemy.exc import IntegrityError, OperationalError
 from rvr import local_settings
-from rvr.poker.cards import Card
+from rvr.poker.cards import Card, RIVER
 from rvr.poker.handrange import ANYTHING
 import time
+from rvr.db.creation import create_session
+from rvr.db import tables
 
 #pylint:disable=R0201,R0904,E1103,unused-argument
 
@@ -38,6 +40,7 @@ class AdminCmd(Cmd):
     def __init__(self):
         Cmd.__init__(self)
         self.api = API()
+        self.session = None
 
     def do_createdb(self, _details):
         """
@@ -427,6 +430,14 @@ class AdminCmd(Cmd):
             print "Error:", result.description
         else:
             print result, "timeouts processed."
+
+    @create_session
+    def do_hack(self, _details):
+        """
+        hack
+        Some hack
+        """
+        self.session.commit()
 
     def do_tree(self, params):
         """
