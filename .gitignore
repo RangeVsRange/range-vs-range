@@ -11,3 +11,4 @@ local_settings.py
 /db.pkl
 /client_secrets.json
 /db production.pkl
+/db (2017).pkl
