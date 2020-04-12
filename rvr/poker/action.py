@@ -3,15 +3,17 @@ action functionality, imported from the previous versions
 """
 from rvr.poker.cards import Card, FLOP, PREFLOP, RIVER, TURN
 import unittest
-from rvr.poker.handrange import HandRange, _cmp_options, deal_from_ranges
+from rvr.poker.handrange import HandRange, _cmp_options, deal_from_ranges,\
+    NOTHING
 from rvr.infrastructure.util import concatenate
 from rvr.core.dtos import ActionOptions, ActionDetails, ActionResult
-import random
 from collections import namedtuple
 import logging
+import numpy
 
 NEXT_ROUND = {PREFLOP: FLOP, FLOP: TURN, TURN: RIVER}
 TOTAL_COMMUNITY_CARDS = {PREFLOP: 0, FLOP: 3, TURN: 4, RIVER: 5}
+WEIGHT_SAMPLES = 10
 
 def _option_to_text(option):
     """
@@ -118,12 +120,11 @@ def range_contains_hand(range_, hand):
     """
     return set(hand) in range_.generate_options()
 
-def generate_excluded_cards(game, hero=None):
+def generate_excluded_cards(game, exclude=None):
     """
     calculate excluded cards, as if players had been dealt cards
     """
-    map_to_range = {rgp: rgp.range for rgp in game.rgps
-                    if rgp is not hero}
+    map_to_range = {rgp: rgp.range for rgp in game.rgps}
     # We consider the future board. By doing this here, we make action
     # probabilities consistent with calculated range sizes.
     # Implications:
@@ -144,7 +145,9 @@ def generate_excluded_cards(game, hero=None):
     board = game.total_board or game.board
     player_to_dealt = deal_from_ranges(map_to_range, board)
     # note: this catches cards dealt to folded RGPs - as it should!
-    excluded_cards = concatenate(player_to_dealt.values())
+    values = [dealt for rgp, dealt in player_to_dealt.iteritems()
+              if rgp != exclude]
+    excluded_cards = concatenate(values)
     excluded_cards.extend(board)
     return excluded_cards
 
@@ -233,9 +236,14 @@ def act_terminate(game, rgp):
 
 Branch = namedtuple("Branch",  # pylint:disable=C0103
                     ["is_continue",  # For this option, does play continue?
-                     "options",  # Combos that lead to this option
+                     "weight",  # Relative likelihood of this option
                      "action",  # Action that results from this option
                      "range"])  # Range for player making the action
+
+OptionWeights = namedtuple("OptionWeights",  # pylint:disable=C0103
+                           ['fold',
+                            'passive',
+                            'aggressive'])
 
 class WhatCouldBe(object):
     """
@@ -289,7 +297,71 @@ class WhatCouldBe(object):
         return game_continues(self.game.current_round, self.all_in,
                               will_remain, will_act)
 
+    def sample_weights(self):
+        # Deal a hand, and then based on the hands dealt to the others,
+        # calculate how likely each betting line would continue.
+        # (If done infinite times, this would give an answer equivalent
+        # to dealing infinite times, and counting how many deals go into each
+        # betting line.)
+        # (That would also be equivalent to considering all possible combos vs.
+        # all possible combos, excluding those that share cards (card removal
+        # effects), and counting how many combos lead to each betting line.)
+        # (There is a bias from those Villain combos where Hero has more combos
+        # and therefore these Villain combos are more likely to be selected, but
+        # this is accounted for by the returned weights being divided by the
+        # total number of Hero combos for the selected Villain combos.)
+        dead_cards = generate_excluded_cards(self.game, exclude=self.rgp)
+        fold = len(self.range_action.fold_range
+                   .generate_options(dead_cards))
+        passive = len(self.range_action.passive_range
+                      .generate_options(dead_cards))
+        aggressive = len(self.range_action.aggressive_range
+                         .generate_options(dead_cards))
+        # It's very important to divide through by the total here.
+        # Okay I'm kidding, probably no one would ever notice the difference.
+        # (Except the unit test I made to check that's it's correct.)
+        # The above sampling over-represents Hero combos that are more common.
+        # The reason is that generate_excluded_cards() perfectly samples all
+        # possibilities equally, but then generate_options results in more
+        # options being generated when the villains happened to be sampled
+        # combos that give Hero more combos.
+        # Dividing through by the total precisely counteracts that bias.
+        total = fold + passive + aggressive
+        return 1.0 * fold / total,  \
+            1.0 * passive / total,  \
+            1.0 * aggressive / total
+
+    def calculate_weights(self):
+        """
+        Answers the question "Given player X continues with subrange A of
+        original range B, while player Y holds range C, what is the probability
+        that each line is taken?
+
+        This is a VERY hard question to answer.
+
+        The most accurate and correct way would be slow: consider all combos of
+        each player multiplied by each other, then count the possibilities that
+        fall in each of Hero's fold, passive and aggressive ranges.
+
+        This estimates it through random sampling a few times instead.
+        """
+        # after much consideration, this is the best, most practical way:
+        # - deal a hand (all players)
+        # - holding other players' dealt card, calculate weights (range-vs-hand)
+        # - these weights are unbiased estimators of true weights
+        # - do this multiple times, and average them
+        # this is two changes from the previous way:
+        # 1) cards dealt reflect true card removal effects by including Hero
+        # 2) average over multiple
+        # 3) and therefore no longer really defines "which combos do what"
+        samples = [self.sample_weights() for _ in xrange(WEIGHT_SAMPLES)]
+        fold = sum(sample[0] for sample in samples) / len(samples)
+        passive = sum(sample[1] for sample in samples) / len(samples)
+        aggressive = sum(sample[2] for sample in samples) / len(samples)
+        return fold, passive, aggressive
+
     def consider_all(self):
+        # mostly copied from the old re_deal (originally!)
         """
         Plays every action in range_action, except the zero-weighted ones.
         If the game can continue, this will return an appropriate action_result.
@@ -306,57 +378,33 @@ class WhatCouldBe(object):
          - analyse effects of a fold, a passive play, or an aggressive play
         """
         # note that we only consider the possible
-        # mostly copied from the old re_deal (originally!)
-
-        # TODO: REVISIT: sometimes this considers something not to be an...
-        # option when it truly is, e.g:
-        # - Villain happens to draw AA for dealt/excluded cards
-        # - board has two aces also
-        # - Hero has only Ax in his calling range
-        # - result is that Hero has 0% calls for this game
-        # - blech!
-        # But you have to account for card removal effects somehow, and this
-        # seems unbiased at least, which is at least a fair result.
-        # TODO: REVISIT: we could make it slightly more normal in the above...
-        # situation by generating excluded cards once for each hand in Hero's
-        # range instead of once for Hero's entire range.
-        dead_cards = generate_excluded_cards(self.game, hero=self.rgp)
-        fold_options = self.range_action.fold_range  \
-            .generate_options(dead_cards)
-        passive_options = self.range_action.passive_range  \
-            .generate_options(dead_cards)
-        aggressive_options = self.range_action.aggressive_range  \
-            .generate_options(dead_cards)
+        fold_weight, passive_weight, aggressive_weight =  \
+            self.calculate_weights()
         # Consider fold
         fold_action = ActionResult.fold()
-        if len(fold_options) > 0:
+        if fold_weight > 0.0:
             self.bough.append(Branch(self.fold_continue(),
-                                     fold_options,
+                                     fold_weight,
                                      fold_action,
                                      self.range_action.fold_range))
         # Consider call
         passive_action = ActionResult.call(self.current_options.call_cost)
-        if len(passive_options) > 0:
+        if passive_weight > 0.0:
             self.bough.append(Branch(self.passive_continue(),
-                                     passive_options,
+                                     passive_weight,
                                      passive_action,
                                      self.range_action.passive_range))
         # Consider raise
         aggressive_action = ActionResult.raise_to(
             self.range_action.raise_total, self.current_options.is_raise)
-        if len(aggressive_options) > 0:
+        if aggressive_weight > 0.0:
             self.bough.append(Branch(self.aggressive_continue(),
-                                     aggressive_options,
+                                     aggressive_weight,
                                      aggressive_action,
                                      self.range_action.aggressive_range))
-        len_fol = len(fold_options)
-        len_pas = len(passive_options)
-        len_agg = len(aggressive_options)
-        total = len_fol + len_pas + len_agg
-        return {
-            'fold': 1.0 * len_fol / total,
-            'passive': 1.0 * len_pas / total,
-            'aggressive': 1.0 * len_agg / total}
+        return OptionWeights(fold=fold_weight,
+                             passive=passive_weight,
+                             aggressive=aggressive_weight)
 
     def calculate_what_will_be(self, auto_spawn):
         """
@@ -368,54 +416,56 @@ class WhatCouldBe(object):
 
         If auto_spawn, there may be multiple. If not, then only one.
         """
-        # reduce current factor by the ratio of non-terminal-to-terminal options
-        non_terminal = []
-        terminal = []
+        # reduce current factor by the weighted ratio of
+        # non-terminal-to-terminal lines
+        non_terminal = 0.0
+        terminal = 0.0
         for branch in self.bough:
-            if not branch.options:
+            if not branch.weight:
+                # specifically, this continue means that zero-weighted lines
+                # won't be played, even when playing out all betting lines
                 continue
             if branch.is_continue:
                 logging.debug("gameid %d, potential action %r would continue",
                               self.game.gameid, branch.action)
-                non_terminal.extend(branch.options)
+                non_terminal += branch.weight
             else:
                 logging.debug("gameid %d, potential action %r would terminate",
                               self.game.gameid, branch.action)
-                terminal.extend(branch.options)
-        total = len(non_terminal) + len(terminal)
-        reduction = float(len(non_terminal)) / total
-        logging.debug("gameid %d, with %d non-terminal and %d terminal, " +
-                      "multiplying current factor by %0.4f from %0.4f to %0.4f",
-                      self.game.gameid, len(non_terminal), len(terminal),
+                terminal += branch.weight
+        total = non_terminal + terminal
+        reduction = non_terminal / total
+        logging.debug("gameid %d, with %0.4f non-terminal and %0.4f " +
+                      "terminal, multiplying current factor by %0.4f from " +
+                      "%0.4f to %0.4f",
+                      self.game.gameid, non_terminal, terminal,
                       reduction, self.game.current_factor,
                       self.game.current_factor * reduction)
-        # TODO: REVISIT: use true probability of play continuing
-        # (This uses a statistically unbiased approximation, by actually dealing
-        # cards to the other players. It's normally very accurate, but for small
-        # ranges against tight ranges, it can give significant - but
-        # statistically unbiased - errors.)
-        # (But it's really hard to accurately answer the question "Given player
-        # X continues with subrange A of original range B, while player Y holds
-        # range C, what is the probability that play continues?)
         self.game.current_factor *= reduction
-        if not non_terminal:
+        if non_terminal == 0.0:
             logging.debug("gameid %d, what will be is to terminate",
                           self.game.gameid)
             return []
         elif not auto_spawn:
-            # TODO: REVISIT: should use real probability, not flat list choice
-            chosen_option = random.choice(non_terminal)
-            # but which action was chosen?
-            for branch in self.bough:
-                if chosen_option in branch.options:
-                    logging.debug("gameid %d, chosen %r for action %r",
-                        self.game.gameid, chosen_option, branch.action)
-                    return [(1.0, branch.action, branch.range.description)]
+            # pick a branch that continues
+            indices = [i for i, branch in enumerate(self.bough)
+                       if branch.is_continue]
+            weights = [self.bough[index].weight / non_terminal
+                       for index in indices]
+            # numpy.random.choice does not cope with a list of Branch
+            # so we're picking from indices, and then converting to Branch
+            index = numpy.random.choice(indices, p=weights)
+            branch = self.bough[index]
+            logging.debug("gameid %d, chosen action %r",
+                self.game.gameid, branch.action)
+            return [(1.0, branch.action, branch.range.description)]
         else:
             results = []
             for branch in self.bough:
-                if branch.options and branch.is_continue:
-                    weight = 1.0 * len(branch.options) / len(non_terminal)
+                if branch.weight > 0.0 and branch.is_continue:
+                    # dividing by non_terminal is actually scaling *up* so that
+                    # all (non-terminal) weights add to 1.0
+                    weight = branch.weight / non_terminal
                     logging.debug("gameid %d, action %r will happen or spawn,"
                                   " with weight %0.4f",
                                   self.game.gameid, branch.action, weight)
@@ -596,6 +646,76 @@ class Test(unittest.TestCase):
             self.assertTrue(range_contains_hand(range_, hand_in))
         for hand_out in hands_out:
             self.assertFalse(range_contains_hand(range_, hand_out))
+
+    def test_game_5564(self):
+        """
+        Board is TcAdAcTh3h
+        BTN jams As4s,Ah4h,As3s,As2s,Ah2h,As4h,As4d,As4c,Ah4s,Ah4d,Ah4c,As3d,As3c,Ah3s,Ah3d,Ah3c,As2h,As2d,As2c,Ah2s,Ah2d,Ah2c
+        BB folds 3d3c,Ah9h,Ah8h,Ah7h,Ah6h,Ah5h,Ah4h,Ah2h,QsTs,QdTd,JsTs,JdTd,Td9d,Td8d,As9c,Ah9d,Ah9c,As8c,Ah8d,Ah8c,As7c,Ah7d,Ah7c,As6c,Ah6d,Ah6c,As5c,Ah5d,Ah5c,As4c,Ah4d,Ah4c,As2c,Ah2d,Ah2c,KsTd,KhTd,KcTd,QsTd,QhTd,QcTd,JsTd,JhTd,JcTd,Td8s,Td8h
+        BB calls AhTd,As3c,Ah3d,Ah3c
+
+        BB is calling 8% of his range, but with blockers, the call weight
+        should be between 0% and 8%, but never 0%.
+        """
+        class MockRGP:
+            def __init__(self, stack, range, folded, left_to_act):
+                self.stack = stack
+                self.range = range
+                self.folded = folded
+                self.left_to_act = left_to_act
+        btn = MockRGP(
+            0,
+            # 22 jams
+            HandRange("As4s,Ah4h,As3s,As2s,Ah2h,As4h,As4d,As4c,Ah4s,Ah4d,Ah4c,As3d,As3c,Ah3s,Ah3d,Ah3c,As2h,As2d,As2c,Ah2s,Ah2d,Ah2c"),
+            False,
+            False)
+        bb = MockRGP(
+            178,
+            # 50 combos to act
+            HandRange("3d3c,Ah9h,Ah8h,Ah7h,Ah6h,Ah5h,Ah4h,Ah2h,QsTs,QdTd,JsTs,JdTd,Td9d,Td8d,As9c,Ah9d,Ah9c,As8c,Ah8d,Ah8c,As7c,Ah7d,Ah7c,As6c,Ah6d,Ah6c,As5c,Ah5d,Ah5c,As4c,Ah4d,Ah4c,As2c,Ah2d,Ah2c,KsTd,KhTd,KcTd,QsTd,QhTd,QcTd,JsTd,JhTd,JcTd,Td8s,Td8h,AhTd,As3c,Ah3d,Ah3c"),
+            False,
+            True)
+
+        class MockGame:
+            def __init__(self, rgps, total_board, current_round, gameid,
+                         current_factor):
+                self.rgps = rgps
+                self.total_board = total_board
+                self.current_round = current_round
+                self.gameid = gameid
+                self.current_factor = current_factor
+        game = MockGame([bb, btn],
+                        Card.many_from_text("TcAdAcTh3h"),
+                        RIVER,
+                        5564,
+                        0.00475263)
+
+        range_action = ActionDetails(
+            # 46 folds, 4 calls
+            fold_range=HandRange("3d3c,Ah9h,Ah8h,Ah7h,Ah6h,Ah5h,Ah4h,Ah2h,QsTs,QdTd,JsTs,JdTd,Td9d,Td8d,As9c,Ah9d,Ah9c,As8c,Ah8d,Ah8c,As7c,Ah7d,Ah7c,As6c,Ah6d,Ah6c,As5c,Ah5d,Ah5c,As4c,Ah4d,Ah4c,As2c,Ah2d,Ah2c,KsTd,KhTd,KcTd,QsTd,QhTd,QcTd,JsTd,JhTd,JcTd,Td8s,Td8h"),
+            passive_range=HandRange("AhTd,As3c,Ah3d,Ah3c"),
+            aggressive_range=HandRange(NOTHING),
+            raise_total=0)
+        current_options = ActionOptions(
+            call_cost=178,
+            is_raise=True)
+        wcb = WhatCouldBe(game, bb, range_action, current_options)
+        weights = wcb.consider_all()
+        f = weights.fold
+        p = weights.passive
+        a = weights.aggressive
+        self.assertAlmostEqual(f + p + a, 1.0)
+        self.assertEqual(a, 0.0)
+        # call is about 0.0559
+        # (733 total combos of combos)
+        # (equals 41 calls, 692 folds)
+        self.assertAlmostEqual(p, 41.0 / 733, 2)
+        # also updates current_factor
+        weighted_actions = wcb.calculate_what_will_be(False)
+        self.assertFalse(weighted_actions)
+        # also updates current_factor
+        weighted_actions = wcb.calculate_what_will_be(True)
+        self.assertFalse(weighted_actions)
 
 if __name__ == '__main__':
     # 9.7s 20130205 (client-server)

@@ -22,9 +22,9 @@ APP.SERVER_NAME = local_settings.SERVER_NAME_
 with APP.app_context():
     NOTIFICATION_SETTINGS.suppress_email = local_settings.SUPPRESS_EMAIL
     NOTIFICATION_SETTINGS.async_email = False
-    
+
     CMD = AdminCmd()
-    
+
     CMDLINE = " ".join(sys.argv[1:])
     if CMDLINE:
         CMD.onecmd(CMDLINE)

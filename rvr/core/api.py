@@ -573,9 +573,9 @@ class API(object):
         element.raise_total = range_action.raise_total
         element.is_check = is_check
         element.is_raise = is_raise
-        element.fold_ratio = range_ratios['fold']
-        element.passive_ratio = range_ratios['passive']
-        element.aggressive_ratio = range_ratios['aggressive']
+        element.fold_ratio = range_ratios.fold
+        element.passive_ratio = range_ratios.passive
+        element.aggressive_ratio = range_ratios.aggressive
         self._record_hand_history_item(rgp.game, element)
 
     def _record_board(self, game):
@@ -865,7 +865,7 @@ class API(object):
                 self._start_next_round(g)
         else:
             # ... do nothing
-            logging.debug("gameid %d, waiting for others in group", gameid)
+            logging.debug("gameid %d, waiting ready for next street", gameid)
 
     def _start_next_round(self, game):
         """
@@ -935,8 +935,8 @@ class API(object):
             # what would be a showdown on the river, won't be on any other
             # street, if there are still chips in play
             return
-        fold_ratio = range_ratios['fold']
-        passive_ratio = range_ratios['passive']
+        fold_ratio = range_ratios.fold
+        passive_ratio = range_ratios.passive
         pot = game.pot_pre + sum(rgp.contributed for rgp in game.rgps)
         # TODO: REVISIT: use true probability of fold or call
         # (This assumes that each option in a user's range is as likely to be

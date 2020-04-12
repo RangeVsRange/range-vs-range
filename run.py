@@ -10,11 +10,14 @@ from rvr.views import range_editor  # @UnusedImport
 from rvr.views import ajax  # registers ajax functions @UnusedImport
 from rvr.core.api import API
 import logging
+from rvr.mail.notifications import NOTIFICATION_SETTINGS
+from rvr import local_settings
 
 def _main():
     """
     Does some initialisation, then runs the website.
     """
+    NOTIFICATION_SETTINGS.suppress_email = local_settings.SUPPRESS_EMAIL
     # Initialise database
     api = API()
     api.create_db()
