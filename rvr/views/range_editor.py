@@ -90,7 +90,7 @@ class OptionMover(object):
         opt_* = original, unassigned, fold, passive, aggressive options
         l_* = locked ranges
         options_selected = options selected
-        action = reset, fold, passive, aggressive
+        action = clear, fold, passive, aggressive
         """
         opt_ori = set(opt_ori)
         opt_una = set(opt_una)
@@ -110,7 +110,7 @@ class OptionMover(object):
         if l_agg:
             self.did_lock = remove_moving(moving, opt_agg) or self.did_lock
         # now move moving to target, remove from the others
-        if action == 'reset':
+        if action == 'clear':
             target = opt_una
         elif action == 'fold':
             target = opt_fol
