@@ -17,11 +17,11 @@ from rvr.core.api import API
 
 RANKS_HIDDEN = 'r_hdn'
 RANKS_SELECTED = 'r_sel'
-RANKS_UNASSIGNED = 'r_una'
-RANKS_FOLD = 'r_fol'
-RANKS_PASSIVE = 'r_pas'
-RANKS_AGGRESSIVE = 'r_agg'
-RANKS_MIXED = 'r_mix'
+RANKS_UNASSIGNED = 'btn-default'  # 'r_una'
+RANKS_FOLD = 'btn-danger'  # 'r_fol'
+RANKS_PASSIVE = 'btn-warning'  # 'r_pas'
+RANKS_AGGRESSIVE = 'btn-success'  # 'r_agg'
+RANKS_MIXED = 'btn-primary'  # 'r_mix'
 
 POS_TO_RANK = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
 
