@@ -158,7 +158,7 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
 <div class="pad-above">
 <table class="table table-condensed" style="width:400px">
   <tr>
-    <td><button class="btn btn-light" type=submit name=submit value="clear">Clear</button></td>
+    <td><button class="btn btn-default" type=submit name=submit value="clear">Clear</button></td>
     <td><button class="btn btn-danger" type=submit name=submit value="fold">Fold</button></td>
     <td><button class="btn btn-warning" type=submit name=submit value="passive">{% if can_check == "true" %}Check{% else %}Call{% endif %}</button></td>
     {% if can_raise == 'true' %}<td><button class="btn btn-success" type=submit name=submit value="aggressive">{% if raised == "true" %}Raise{% else %}Bet{% endif %}</button></td>{% endif %}
