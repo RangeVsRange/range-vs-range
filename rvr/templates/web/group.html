@@ -24,7 +24,7 @@
           </div>
         </div>
       </td>
-      <td>{% if game.spawn_factor < 0.01 %}0.01%{% else %}{{"%0.2f%%" % (game.spawn_factor * 100.0,)}}{% endif %}</td>
+      <td>{% if game.spawn_factor < 0.0001 %}0.01%{% else %}{{"%0.2f%%" % (game.spawn_factor * 100.0,)}}{% endif %}</td>
       <td>{{game.line}}</td>
       {% if game.is_waiting %}
         <td colspan=6><div class='text-center'><em>(waiting)</em></div></td>
