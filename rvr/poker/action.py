@@ -124,6 +124,7 @@ def generate_excluded_cards(game, exclude=None):
     """
     calculate excluded cards, as if players had been dealt cards
     """
+    # Yep, even if they're folded, we include them.
     map_to_range = {rgp: rgp.range for rgp in game.rgps}
     # We consider the future board. By doing this here, we make action
     # probabilities consistent with calculated range sizes.
@@ -647,6 +648,78 @@ class Test(unittest.TestCase):
         for hand_out in hands_out:
             self.assertFalse(range_contains_hand(range_, hand_out))
 
+    class MockRGP:
+        def __init__(self, stack, range, folded, left_to_act):
+            self.stack = stack
+            self.range = range
+            self.folded = folded
+            self.left_to_act = left_to_act
+
+    class MockGame:
+        def __init__(self, rgps, total_board, current_round, gameid,
+                     current_factor):
+            self.rgps = rgps
+            self.total_board = total_board
+            self.current_round = current_round
+            self.gameid = gameid
+            self.current_factor = current_factor
+
+    def test_game_5643(self):
+        """
+        Board is Ts3sAh
+        MP bets AsAd,AsAc,AdAc,KK-JJ,ThTd,ThTc,TdTc,99-44,3h3d,3h3c,3d3c,22,AsKs,AdKd,AcKc,AsQs,AdQd,AcQc,AsJs,AdJd,AcJc,AdTd,AcTc,As9s,Ad9d,Ac9c,As8s,Ad8d,Ac8c,As7s,Ad7d,As6s,Ad6d,As5s,Ad5d,Ac5c,As4s,Ad4d,Ac4c,Ad3d,Ac3c,As2s,Ad2d,Ac2c,KJs+,KhTh,KdTd,KcTc,Ks9s,QJs,QdTd,QcTc,Qh9h,JhTh,JdTd,JcTc,Js9s,Jh9h,Jd8d,Th9h,Td9d,Tc9c,Tc8c,Tc7c,98s,9h7h,9d7d,9s6s,87s,8h6h,8c6c,8h5h,76s,7s5s,7d5d,7d4d,65s,6d4d,6c4c,6c3c,54s,5h3h,4h3h,4d3d,4c3c,AsKh,AsKd,AsKc,AdKs,AdKh,AdKc,AcKs,AcKh,AcKd,AsQh,AsQd,AsQc,AdQs,AdQh,AdQc,AcQs,AcQh,AcQd,AsJh,AsJd,AsJc,AdJs,AdJh,AdJc,AcJs,AcJh,AcJd,AsTh,AsTd,AsTc,AdTh,AdTc,AcTh,AcTd,KQo
+        BTN folds 99-66,22,Kd9d,Jd9d,Jd8d,Td9d,Tc9c,9d8d,9c8c,8d7d,8c7c,7d6d,7c6c,7d5d,6d5d,6c5c,6c4c
+        BTN calls JJ,ThTd,ThTc,TdTc,55-44,3h3d,3h3c,3d3c,AsQs,AdQd,AcQc,AsJs,AdJd,AcJc,AdTd,AcTc,As9s,Ad9d,Ac9c,As8s,Ad8d,Ac8c,As7s,Ad7d,Ac7c,As6s,Ad6d,Ac6c,As5s,Ad5d,Ac5c,As4s,Ad4d,Ac4c,Ad3d,Ac3c,As2s,Ad2d,Ac2c,KJs+,KhTh,QJs,QdTd,QcTc,Qh9h,JhTh,JdTd,JcTc,Jh9h,Th9h,Tc8c,Tc7c,9s8s,9h8h,9s7s,8s7s,8h7h,8h6h,7s6s,7h6h,6s5s,6h5h,54s,5d2d,4h3h,4c2c,3h2h,AsQh,AsQd,AsQc,AdQs,AdQh,AdQc,AcQs,AcQh,AcQd,AsJh,AsJd,AsJc,AdJs,AdJh,AdJc,AcJs,AcJh,AcJd,AsTh,AsTd,AsTc,AdTc,Ad9h,Ac9s,Ac9d,Ad8s,Ac8h,As7c,Ad7h,As6h,As6d,Ad5h,Ac5s,Ad4s,Ac4h,Ac4d,As3c,Ac3h,As2d,Ad2h,Ac2s,KQo,KhJs,KdJs,KdJh,KcJs,KcJh,KcJd,KsTh,KsTd,KhTc,QhJs,QdJs,QcJh,JsTc,JhTd,JdTc
+
+        MP is betting 1/3 pot.
+        BTN calls more than 3 times in 4, yet MP makes a profit!
+        """
+        mp = self.MockRGP(
+            189,
+            HandRange("AsAd,AsAc,AdAc,KK-JJ,ThTd,ThTc,TdTc,99-44,3h3d,3h3c,3d3c,22,AsKs,AdKd,AcKc,AsQs,AdQd,AcQc,AsJs,AdJd,AcJc,AdTd,AcTc,As9s,Ad9d,Ac9c,As8s,Ad8d,Ac8c,As7s,Ad7d,As6s,Ad6d,As5s,Ad5d,Ac5c,As4s,Ad4d,Ac4c,Ad3d,Ac3c,As2s,Ad2d,Ac2c,KJs+,KhTh,KdTd,KcTc,Ks9s,QJs,QdTd,QcTc,Qh9h,JhTh,JdTd,JcTc,Js9s,Jh9h,Jd8d,Th9h,Td9d,Tc9c,Tc8c,Tc7c,98s,9h7h,9d7d,9s6s,87s,8h6h,8c6c,8h5h,76s,7s5s,7d5d,7d4d,65s,6d4d,6c4c,6c3c,54s,5h3h,4h3h,4d3d,4c3c,AsKh,AsKd,AsKc,AdKs,AdKh,AdKc,AcKs,AcKh,AcKd,AsQh,AsQd,AsQc,AdQs,AdQh,AdQc,AcQs,AcQh,AcQd,AsJh,AsJd,AsJc,AdJs,AdJh,AdJc,AcJs,AcJh,AcJd,AsTh,AsTd,AsTc,AdTh,AdTc,AcTh,AcTd,KQo"),
+            False,
+            False)
+        btn = self.MockRGP(
+            194,
+            HandRange("JJ,ThTd,ThTc,TdTc,99-44,3h3d,3h3c,3d3c,22,AsQs,AdQd,AcQc,AsJs,AdJd,AcJc,AdTd,AcTc,As9s,Ad9d,Ac9c,As8s,Ad8d,Ac8c,As7s,Ad7d,Ac7c,As6s,Ad6d,Ac6c,As5s,Ad5d,Ac5c,As4s,Ad4d,Ac4c,Ad3d,Ac3c,As2s,Ad2d,Ac2c,KJs+,KhTh,Kd9d,QJs,QdTd,QcTc,Qh9h,JhTh,JdTd,JcTc,Jh9h,Jd9d,Jd8d,Th9h,Td9d,Tc9c,Tc8c,Tc7c,98s,9s7s,87s,8h6h,76s,7d5d,65s,6c4c,54s,5d2d,4h3h,4c2c,3h2h,AsQh,AsQd,AsQc,AdQs,AdQh,AdQc,AcQs,AcQh,AcQd,AsJh,AsJd,AsJc,AdJs,AdJh,AdJc,AcJs,AcJh,AcJd,AsTh,AsTd,AsTc,AdTc,Ad9h,Ac9s,Ac9d,Ad8s,Ac8h,As7c,Ad7h,As6h,As6d,Ad5h,Ac5s,Ad4s,Ac4h,Ac4d,As3c,Ac3h,As2d,Ad2h,Ac2s,KQo,KhJs,KdJs,KdJh,KcJs,KcJh,KcJd,KsTh,KsTd,KhTc,QhJs,QdJs,QcJh,JsTc,JhTd,JdTc"),
+            False,
+            True)
+
+        game = self.MockGame([mp, btn],
+                             Card.many_from_text("Ts3sAhQhAc"),
+                             FLOP,
+                             5643,
+                             1.0)  # it's not 1.0, but doesn't matter
+
+        range_action = ActionDetails(
+            fold_range=HandRange("99-66,22,Kd9d,Jd9d,Jd8d,Td9d,Tc9c,9d8d,9c8c,8d7d,8c7c,7d6d,7c6c,7d5d,6d5d,6c5c,6c4c"),
+            passive_range=HandRange("JJ,ThTd,ThTc,TdTc,55-44,3h3d,3h3c,3d3c,AsQs,AdQd,AcQc,AsJs,AdJd,AcJc,AdTd,AcTc,As9s,Ad9d,Ac9c,As8s,Ad8d,Ac8c,As7s,Ad7d,Ac7c,As6s,Ad6d,Ac6c,As5s,Ad5d,Ac5c,As4s,Ad4d,Ac4c,Ad3d,Ac3c,As2s,Ad2d,Ac2c,KJs+,KhTh,QJs,QdTd,QcTc,Qh9h,JhTh,JdTd,JcTc,Jh9h,Th9h,Tc8c,Tc7c,9s8s,9h8h,9s7s,8s7s,8h7h,8h6h,7s6s,7h6h,6s5s,6h5h,54s,5d2d,4h3h,4c2c,3h2h,AsQh,AsQd,AsQc,AdQs,AdQh,AdQc,AcQs,AcQh,AcQd,AsJh,AsJd,AsJc,AdJs,AdJh,AdJc,AcJs,AcJh,AcJd,AsTh,AsTd,AsTc,AdTc,Ad9h,Ac9s,Ac9d,Ad8s,Ac8h,As7c,Ad7h,As6h,As6d,Ad5h,Ac5s,Ad4s,Ac4h,Ac4d,As3c,Ac3h,As2d,Ad2h,Ac2s,KQo,KhJs,KdJs,KdJh,KcJs,KcJh,KcJd,KsTh,KsTd,KhTc,QhJs,QdJs,QcJh,JsTc,JhTd,JdTc"),
+            aggressive_range=HandRange(NOTHING),
+            raise_total=0)
+        current_options = ActionOptions(
+            call_cost=5,
+            is_raise=True,
+            min_raise=10,
+            max_raise=194)
+        wcb = WhatCouldBe(game, btn, range_action, current_options)
+        weights = wcb.consider_all()
+        f = weights.fold
+        p = weights.passive
+        a = weights.aggressive
+        self.assertAlmostEqual(f + p + a, 1.0)
+        self.assertEqual(a, 0.0)
+        self.assertAlmostEqual(p, 0.734, delta=0.014)
+        # also updates current_factor
+        weighted_actions = wcb.calculate_what_will_be(False)
+        self.assertTrue(weighted_actions)
+        self.assertEqual(len(weighted_actions), 1)
+        weight, action, _description = weighted_actions[0]
+        self.assertEqual(weight, 1.0)
+        self.assertTrue(action.is_passive)
+        # also updates current_factor
+        weighted_actions = wcb.calculate_what_will_be(True)
+        self.assertTrue(weighted_actions)
+
     def test_game_5564(self):
         """
         Board is TcAdAcTh3h
@@ -657,38 +730,24 @@ class Test(unittest.TestCase):
         BB is calling 8% of his range, but with blockers, the call weight
         should be between 0% and 8%, but never 0%.
         """
-        class MockRGP:
-            def __init__(self, stack, range, folded, left_to_act):
-                self.stack = stack
-                self.range = range
-                self.folded = folded
-                self.left_to_act = left_to_act
-        btn = MockRGP(
+        btn = self.MockRGP(
             0,
             # 22 jams
             HandRange("As4s,Ah4h,As3s,As2s,Ah2h,As4h,As4d,As4c,Ah4s,Ah4d,Ah4c,As3d,As3c,Ah3s,Ah3d,Ah3c,As2h,As2d,As2c,Ah2s,Ah2d,Ah2c"),
             False,
             False)
-        bb = MockRGP(
+        bb = self.MockRGP(
             178,
             # 50 combos to act
             HandRange("3d3c,Ah9h,Ah8h,Ah7h,Ah6h,Ah5h,Ah4h,Ah2h,QsTs,QdTd,JsTs,JdTd,Td9d,Td8d,As9c,Ah9d,Ah9c,As8c,Ah8d,Ah8c,As7c,Ah7d,Ah7c,As6c,Ah6d,Ah6c,As5c,Ah5d,Ah5c,As4c,Ah4d,Ah4c,As2c,Ah2d,Ah2c,KsTd,KhTd,KcTd,QsTd,QhTd,QcTd,JsTd,JhTd,JcTd,Td8s,Td8h,AhTd,As3c,Ah3d,Ah3c"),
             False,
             True)
 
-        class MockGame:
-            def __init__(self, rgps, total_board, current_round, gameid,
-                         current_factor):
-                self.rgps = rgps
-                self.total_board = total_board
-                self.current_round = current_round
-                self.gameid = gameid
-                self.current_factor = current_factor
-        game = MockGame([bb, btn],
-                        Card.many_from_text("TcAdAcTh3h"),
-                        RIVER,
-                        5564,
-                        0.00475263)
+        game = self.MockGame([bb, btn],
+                             Card.many_from_text("TcAdAcTh3h"),
+                             RIVER,
+                             5564,
+                             0.00475263)
 
         range_action = ActionDetails(
             # 46 folds, 4 calls
