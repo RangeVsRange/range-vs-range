@@ -50,7 +50,7 @@
 <div class="container">
   <div class="page-header">
     <h1>
-      Game Group {{groupid}}<br>
+      {% if groupid==5653 %}The Epic{% else %}Game Group {{groupid}}{% endif %}<br>
       <small>{{description}}</small>
     </h1>
   </div>
