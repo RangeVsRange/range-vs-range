@@ -8,7 +8,7 @@ def create_situation():
         stack=198,
         contributed=2,  # so far this betting round
         left_to_act=True,
-        range_raw=ANYTHING)
+        range_raw=ANYTHING)  # @UndefinedVariable
     utg = dtos.SituationPlayerDetails(  # @UndefinedVariable
         name="UTG",
         stack=195,
