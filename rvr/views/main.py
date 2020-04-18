@@ -24,7 +24,7 @@ from rvr.forms.backdoor import BackdoorForm
 from rvr.db.tables import PaymentToPlayer, RunningGameParticipantResult
 from functools import wraps
 from rvr.poker.cards import Card
-from rvr.poker.showdown import showdown_equity
+from rvr.poker.showdown import all_combos_ev
 
 # pylint:disable=R0911,R0912,R0914
 
@@ -1035,48 +1035,6 @@ def situation_page():
         is_logged_in=is_logged_in(),
         my_screenname=get_my_screenname())
 
-# TODO: 1: combine into AnalysisReplayer, store in database.
-def _all_combos_ev(board_raw, showdown, all_ranges):
-    """
-    all_ranges maps userid to raw range.
-    showdown is a dtos.GameItemShowdown.
-
-    returns a list of tuples of (user, list of tuples of (raw combo, EV))
-    users ordered according to showdown.equities, EV ordered low to high
-    """
-    board = Card.many_from_text(board_raw)
-    users = [e.user for e in showdown.equities]
-    results = []
-    for user in users:  # for each player, generate all combos
-        range_ = all_ranges[user.userid]
-        combos = range_.generate_options(board)
-        ranges = {}
-        all_combos_ev = []
-        for combo in combos:  # for each combo, calculate EV
-            desc = unweighted_options_to_description([combo])
-            ranges = {}
-            for u in users:  # generate ranges
-                if u.userid == user.userid:
-                    ranges[u.userid] = HandRange(desc)
-                else:
-                    ranges[u.userid] = all_ranges[u.userid]
-            equities, iterations = showdown_equity(ranges, board, 100)
-            if iterations:
-                ev = equities[user.userid]
-                all_combos_ev.append((desc, ev * showdown.pot))
-            else:
-                # It happens that sometime a hand in a range is up against such
-                # a narrow range that card removal effects mean that this hand
-                # will never show down. The showdown EV is therefore undefined.
-                # Later, we will also need to recognise that this means that for
-                # this combo, the showdown was not possible, and needs to be
-                # given zero weight in earlier actions' EV.
-                # TODO: 1: recognise zero weight showdowns in combo EV calcs.
-                pass
-        all_combos_ev.sort(key=lambda a: a[1])
-        results.append((user, all_combos_ev))
-    return results
-
 @APP.route('/showdown', methods=['GET'])
 def showdown_page():
     """
@@ -1146,7 +1104,7 @@ def showdown_page():
     # showdown.equities is a list with UserDetails members.
     # This tells us who was in the showdown, i.e. which ranges to use.
     # Now let's make some data.
-    combo_and_ev_by_user = _all_combos_ev(board_raw, showdown, all_ranges)
+    combo_and_ev_by_user = all_combos_ev(board_raw, showdown, all_ranges)
     # list of (user, list of (raw combo, EV)) sorted by EV low to high
 
     navbar_items = default_navbar_items()

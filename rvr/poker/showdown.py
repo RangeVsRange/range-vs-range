@@ -8,6 +8,12 @@ from rvr.poker import cards
 from rvr.poker.evaluate import BestHandEval7
 import unittest
 import random
+from rvr.poker.cards import Card
+from rvr.poker.handrange import unweighted_options_to_description, HandRange,\
+    deal_from_ranges, IncompatibleRangesError
+from rvr.core.dtos import GameItemShowdown, GameItemShowdownEquity, UserDetails
+from rvr.db.tables import GameHistoryShowdownEquity
+import logging
 
 def _impossible_deal(fixed):
     """
@@ -58,12 +64,27 @@ def _simulate_showdown(wins_by_player, options_by_player, board, memo):
     Run one simulated showdown based on ranges.
     """
     selected = {}
+    # TODO: REVISIT: this duplicates functionality from deal_from_ranges()
+    count = 0
     while True:
         for player, options in options_by_player.iteritems():
             selected[player] = random.choice(options)
         fixed = {player: hand for player, hand in selected.iteritems()}
         if not _impossible_deal(fixed.values() + [board]):
             break
+        count += 1
+        if count == 10:
+            logging.warning(
+                "apparently incompatible set of options: %r (board is %r)",
+                options_by_player, board)
+        # Worst case scenario is 1/2704 chance of hitting matching combos.
+        # We can't figure that out with confidence by trying.
+        # So it's possible for this to happen in real spots,
+        # and must be dealt with.
+        if count > 100:
+            raise IncompatibleRangesError(
+                "apparently incompatible set of options: %r (board is %r)" %
+                (options_by_player, board))
     excluded = concatenate(fixed.values())
     fixed_board = []
     for i in range(5):
@@ -88,9 +109,12 @@ def _estimate_showdown_equity(options_by_player, board, iterations):
     memo = {}
     i = 0
     while i < iterations:
-        _simulate_showdown(wins_by_player, options_by_player, board, memo)
+        try:
+            _simulate_showdown(wins_by_player, options_by_player, board, memo)
+        except IncompatibleRangesError:
+            return wins_by_player, 0
         i += 1
-    return wins_by_player
+    return wins_by_player, iterations
 
 MAX_ITERATIONS = 10000
 
@@ -113,9 +137,8 @@ def showdown_equity(ranges, board, hard_limit=MAX_ITERATIONS):
         iterations = __showdown_equity(wins_by_player, {}, options_by_player,
                                        board, {})
     else:
-        wins_by_player = _estimate_showdown_equity(options_by_player, board,
-                                                   hard_limit)
-        iterations = hard_limit
+        wins_by_player, iterations = _estimate_showdown_equity(
+            options_by_player, board, hard_limit)
     total = sum(wins_by_player.values())
     if total == 0.0:  # impossible ranges, e.g. 6h6d vs Ah6h
         return {}, 0
@@ -158,8 +181,86 @@ def showdown(board, players_cards, memo=None):
     winners = [player for player, hand in shown_down if hand == best]
     return shown_down, winners
 
+# TODO: 1: This is a hack. Combine into AnalysisReplayer, store in database.
+def all_combos_ev(board_raw, showdown, all_ranges):
+    """
+    all_ranges maps userid to raw range.
+    showdown is a dtos.GameItemShowdown.
+
+    returns a list of tuples of (user, list of tuples of (raw combo, EV))
+    users ordered according to showdown.equities, EV ordered low to high
+    """
+    board = Card.many_from_text(board_raw)
+    users = [e.user for e in showdown.equities]
+    results = []
+    for user in users:  # for each player, generate all combos
+        range_ = all_ranges[user.userid]
+        combos = range_.generate_options(board)
+        ranges = {}
+        all_combos_ev = []
+        for combo in combos:  # for each combo, calculate EV
+            desc = unweighted_options_to_description([combo])
+            ranges = {}
+            for u in users:  # generate ranges
+                if u.userid == user.userid:
+                    ranges[u.userid] = HandRange(desc)
+                else:
+                    ranges[u.userid] = all_ranges[u.userid]
+            equities, iterations = showdown_equity(ranges, board, 100)
+            if iterations:
+                ev = equities[user.userid]
+                all_combos_ev.append((desc, ev * showdown.pot))
+            else:
+                # It happens that sometime a hand in a range is up against such
+                # a narrow range that card removal effects mean that this hand
+                # will never show down. The showdown EV is therefore undefined.
+                # Later, we will also need to recognise that this means that for
+                # this combo, the showdown was not possible, and needs to be
+                # given zero weight in earlier actions' EV.
+                # TODO: 1: recognise zero weight showdowns in combo EV calcs.
+                pass
+        all_combos_ev.sort(key=lambda a: a[1])
+        results.append((user, all_combos_ev))
+    return results
+
 class Test(unittest.TestCase):
     #pylint:disable=C0111
+    def test_all_combos_ev_game_5969_order_44(self):
+        """
+        First of two showdowns, this one not passive (two players).
+        """
+        board_raw = "Qs3dKc"
+        equity1 = GameHistoryShowdownEquity()
+        equity1.equity = 0.32875
+        equity1.gameid = 5969
+        equity1.is_passive = False
+        equity1.order = 44
+        equity1.showdown_order = 0
+        equity1.userid = 2176
+        equity1.user = UserDetails(2176, "NotPhilGalfond")
+        equity2 = GameHistoryShowdownEquity()
+        equity2.equity = 0.67125
+        equity2.gameid = 5969
+        equity2.is_passive = False
+        equity2.order = 44
+        equity2.showdown_order = 1
+        equity2.userid = 2374
+        equity2.user = UserDetails(2374, "gettohhole")
+        equities = [
+            GameItemShowdownEquity(equity1),
+            GameItemShowdownEquity(equity2)]
+        showdown = GameItemShowdown(
+            44,
+            0.485,
+            False,
+            463,
+            equities)
+        all_ranges = {
+            2176: HandRange("KdQd"),
+            2374: HandRange("KsKh,KsKd,KhKd,QhQd,QhQc,3s3h,3s3c,3h3c,KhQh,KdQd,KsQh,KsQd,KsQc,KhQd,KhQc,KdQh,KdQc")}
+        results = all_combos_ev(board_raw, showdown, all_ranges)
+        self.assertTrue(results)
+
     def assert_equity_almost_equal(self, first, second):
         self.assertEqual(first.keys(), second.keys())
         for key in first.keys():
@@ -254,7 +355,7 @@ class Test(unittest.TestCase):
                            for i in range(len(expect))}
         options_by_player = {p: r.generate_options(board)
                              for p, r in ranges.iteritems()}
-        wins_by_player = _estimate_showdown_equity(options_by_player,
+        wins_by_player, _ = _estimate_showdown_equity(options_by_player,
                                                    board, iterations)
         print "\nwins_by_player: %r\n" % wins_by_player
         self.assert_wins_almost_equal(wins_by_player, expected_results,
@@ -274,7 +375,7 @@ class Test(unittest.TestCase):
                            for i in range(len(expect))}
         options_by_player = {p: r.generate_options(board)
                              for p, r in ranges.iteritems()}
-        wins_by_player = _estimate_showdown_equity(options_by_player,
+        wins_by_player, _ = _estimate_showdown_equity(options_by_player,
                                                    board, iterations)
         print "\nwins_by_player: %r\n" % wins_by_player
         self.assert_wins_almost_equal(wins_by_player, expected_results,
