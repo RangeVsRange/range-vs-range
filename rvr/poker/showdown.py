@@ -14,6 +14,7 @@ from rvr.poker.handrange import unweighted_options_to_description, HandRange,\
 from rvr.core.dtos import GameItemShowdown, GameItemShowdownEquity, UserDetails
 from rvr.db.tables import GameHistoryShowdownEquity
 import logging
+from rvr.compiled.eval7 import py_all_hands_vs_range
 
 def _impossible_deal(fixed):
     """
@@ -194,31 +195,50 @@ def all_combos_ev(board_raw, showdown, all_ranges):
     users = [e.user for e in showdown.equities]
     results = []
     for user in users:  # for each player, generate all combos
-        range_ = all_ranges[user.userid]
-        combos = range_.generate_options(board)
-        ranges = {}
         all_combos_ev = []
-        for combo in combos:  # for each combo, calculate EV
-            desc = unweighted_options_to_description([combo])
-            ranges = {}
-            for u in users:  # generate ranges
-                if u.userid == user.userid:
-                    ranges[u.userid] = HandRange(desc)
-                else:
-                    ranges[u.userid] = all_ranges[u.userid]
-            equities, iterations = showdown_equity(ranges, board, 100)
-            if iterations:
-                ev = equities[user.userid]
-                all_combos_ev.append((desc, ev * showdown.pot))
+        if len(all_ranges) == 2:
+            (key1, range1), (_key2, range2) = all_ranges.items()
+            if key1 == user.userid:
+                hero = range1
+                villain = range2
             else:
-                # It happens that sometime a hand in a range is up against such
-                # a narrow range that card removal effects mean that this hand
-                # will never show down. The showdown EV is therefore undefined.
-                # Later, we will also need to recognise that this means that for
-                # this combo, the showdown was not possible, and needs to be
-                # given zero weight in earlier actions' EV.
-                # TODO: 1: recognise zero weight showdowns in combo EV calcs.
-                pass
+                hero = range2
+                villain = range1
+            # 990: heads up on the river will always be exact
+            # for reasons that probably aren't obvious
+            # (that's the number of combos in "anything" once you remove 2 Hero
+            # combos and 5 board cards)
+            # screw it let's make it an eve 1,000 for those other spots
+            equities = py_all_hands_vs_range(hero, villain, board, 1000)
+            for combo, eq in equities.iteritems():
+                desc = unweighted_options_to_description([combo])
+                all_combos_ev.append((desc, eq * showdown.pot))
+        else:
+            range_ = all_ranges[user.userid]
+            combos = range_.generate_options(board)
+            ranges = {}
+            for combo in combos:  # for each combo, calculate EV
+                desc = unweighted_options_to_description([combo])
+                ranges = {}
+                for u in users:  # generate ranges
+                    if u.userid == user.userid:
+                        ranges[u.userid] = HandRange(desc)
+                    else:
+                        ranges[u.userid] = all_ranges[u.userid]
+                equities, iterations = showdown_equity(ranges, board, 1000)
+                if iterations:
+                    eq = equities[user.userid]
+                    all_combos_ev.append((desc, eq * showdown.pot))
+                else:
+                    # It happens that sometime a hand in a range is up against
+                    # such a narrow range that card removal effects mean that
+                    # this hand will never show down. The showdown EV is
+                    # therefore undefined. Later, we will also need to recognise
+                    # that this means that for this combo, the showdown was not
+                    # possible, and needs to be given zero weight in earlier
+                    # actions' EV.
+                    # TODO: 1: recognise impossibilities in combo EV calcs.
+                    pass
         all_combos_ev.sort(key=lambda a: a[1])
         results.append((user, all_combos_ev))
     return results
