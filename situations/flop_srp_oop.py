@@ -3,28 +3,28 @@ def create_situation():
     Single raised flop, MP opens 3bb, BTN calls. Aggressor out of position.
     """
     # pylint:disable=undefined-variable
-    mp = dtos.SituationPlayerDetails(  # @UndefinedVariable
-        name="MP",
-        stack=194,
+    hj = dtos.SituationPlayerDetails(  # @UndefinedVariable
+        name="HJ",
+        stack=195,
         contributed=0,  # so far this betting round
         left_to_act=True,
-        range_raw='22+,A8s+,As7s,Ad7d,As6s,Ad6d,A5s-A2s,KTs+,Ks9s,QJs,QdTd,QcTc,Qh9h,JTs,Js9s,Jh9h,Jd8d,T9s,Ts8s,Tc8c,Tc7c,98s,9h7h,9d7d,9s6s,87s,8h6h,8c6c,8h5h,76s,7s5s,7d5d,7d4d,65s,6d4d,6c4c,6c3c,54s,5s3s,5h3h,43s,ATo+,KQo')
+        range_raw='55+,4d4h,4d4s,4h4c,4s4c,3d3c,2h2s,A2s+,K8s+,Q8s+,J9s+,T8s+,98s,Js8s,Kh7h,Ks7s,9h7h,9s7s,8d7d,8h7h,8s7s,Kd6d,Kc6c,8d6d,8s6s,7h6h,7s6s,7c6c,7s5s,6d5d,6s5s,6c5c,6d4d,5d4d,5h4h,5c4c,ATo+,KJo+,Ah9c,Ac9s,KhTc,KsTd,KsTc,KcTh,QdJh,QdJc,QhJd,QhJs,QhJc,QsJd,QsJc,QcJh,QcJs')
     btn = dtos.SituationPlayerDetails(  # @UndefinedVariable
         name="BTN",
-        stack=194,
+        stack=195,
         contributed=0,  # so far this betting round
         left_to_act=True,
-        range_raw='JJ-22,AQs-A2s,KJs+,KsTs,KhTh,Kd9d,QJs,QdTd,QcTc,Qh9h,JTs,Jh9h,Jd9d,Jd8d,T9s,Ts8s,Tc8c,Tc7c,98s,9s7s,87s,8h6h,76s,7d5d,65s,6c4c,54s,5s3s,5d2d,4h3h,4c2c,3h2h,AQo-AJo,AsTh,AsTd,AsTc,AhTd,AhTc,AdTc,Ad9h,Ac9s,Ac9d,Ah8s,Ad8s,Ac8h,As7c,Ah7d,Ad7h,As6h,As6d,Ah6c,Ah5s,Ad5h,Ac5s,Ad4s,Ac4h,Ac4d,As3c,Ah3d,Ac3h,As2d,Ad2h,Ac2s,KQo,KhJs,KdJs,KdJh,KcJs,KcJh,KcJd,KsTh,KsTd,KhTc,QhJs,QdJs,QcJh,JsTc,JhTd,JdTc')
+        range_raw='TT-44,3d3h,3h3s,3s3c,2d2s,2h2c,ATs-A8s,KJs-K9s,Q9s+,J9s+,T9s,98s,87s,76s,Td8d,Tc8c,9s7s,6d5d,6h5h,5s4s,AJo,KQo,AdQh,AhQc,AsQd,AcQs')
     situation = dtos.SituationDetails(  # @UndefinedVariable
         situationid=None,
-        description="2bet, aggressor OOP (MP opens to 3bb, BTN calls) (alpha)",
-        players=[mp, btn],  # MP acts first in future rounds
+        description="Flop: BTN called HJ open",
+        players=[hj, btn],  # MP acts first in future rounds
         current_player=0,  # MP acts first this round
         is_limit=False,
         big_blind=2,
         board_raw='',
         current_round=cards.FLOP,  # @UndefinedVariable
-        pot_pre=15,  # antes, or pot at end of last betting round
+        pot_pre=13,  # antes, or pot at end of last betting round
         increment=2,  # minimum raise amount right now
         bet_count=0)
     return situation
