@@ -1,41 +1,5 @@
 {% extends "web/base.html" %}
 
-{% macro open_games(is_public) %}
-  <div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th style="min-width: 100px; width: 100px">Game</th>
-        <th>Players</th>
-        <th>Situation</th>
-      </tr>
-    </thead>
-    {%- for game in my_open %}{% if game.public_ranges == is_public %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <a class="btn {% if is_public %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url_for('leave_game', gameid=game.gameid) }}">Leave</a>
-        </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {% endif %}{%- endfor %}
-    {%- for game in others_open %}{% if game.public_ranges == is_public %}
-    <tr>
-      <td>
-        <div class="btn-group btn-group-justified">
-          <a class="btn {% if is_public %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url_for('join_game', gameid=game.gameid) }}">Join</a>
-        </div>
-      </td>
-      <td>{% set pipe = joiner('; ') %}{% for user in game.users %}{{pipe()}}{{user.screenname}}{% endfor %}</td>
-      <td>{{game.situation.description}}</td>
-    </tr>
-    {% endif %}{%- endfor %}
-  </table>
-  </div>
-{% endmacro %}
-
 {% macro running_games(games_details, userid, show_details) %}
   <table class="table">
     <thead>
@@ -183,32 +147,6 @@ show_group_details = function(groupid) {
 };
 </script>
 <script>
-  $('#heading-my').click(function() {
-    $.cookie('selected-heading', 'heading-my', { expires: 7 });
-  });
-  $('#heading-open').click(function() {
-    $.cookie('selected-heading', 'heading-open', { expires: 7 });
-  });
-  $('#mode-open-competition').click(function() {
-    $.cookie('selected-mode', 'mode-competition', { expires: 7 });
-  });
-  $('#mode-open-public').click(function() {
-    $.cookie('selected-mode', 'mode-public', { expires: 7 });
-  });
-  $('#mode-finished-competition').click(function() {
-    $.cookie('selected-mode', 'mode-competition', { expires: 7 });
-  });
-  $('#mode-finished-public').click(function() {
-    $.cookie('selected-mode', 'mode-public', { expires: 7 });
-  });
-  $('#mode-running-competition').click(function() {
-    $.cookie('selected-mode', 'mode-competition', { expires: 7 });
-  });
-  $('#mode-running-public').click(function() {
-    $.cookie('selected-mode', 'mode-public', { expires: 7 });
-  });
-</script>
-<script>
 $('.mode-header').popover({trigger: 'hover'})
 </script>
 {% endblock %}
@@ -225,7 +163,7 @@ $('.mode-header').popover({trigger: 'hover'})
 {% block content %}
 <div class="container">
   <div class="page-header">
-    <h1>Home <br><small>play, join or review games</small></h1>
+    <h1>Finished games <br></h1>
   </div>
 </div>
 
@@ -233,60 +171,6 @@ $('.mode-header').popover({trigger: 'hover'})
 
 <div class="container">
 
-<ul class="nav nav-tabs">
-  <li{% if selected_heading == "heading-my" %} class="active"{% endif %}><a id="heading-my" href="#my" data-toggle="tab">My games</a></li>
-  <li{% if selected_heading == "heading-open" %} class="active"{% endif %}><a id="heading-open" href="#open" data-toggle="tab">Open games</a></li>
-  <li class="navbar-right"><a id="heading-finished" href="{{url_for('finished_games')}}">Finished games</a></li>
-</ul>
-
-<div class="tab-content">
-
-<!-- My games -->
-  <div class="tab-pane{% if selected_heading == "heading-my" %} active{% endif %}" id="my">
-    <ul class="nav nav-tabs">
-      <li{% if selected_mode == "mode-competition" %} class="active"{% endif %}><a id="mode-running-competition" href="#running-competition" class="mode-header" data-toggle="tab">Competition mode</a></li>
-      <li{% if selected_mode == "mode-public" %} class="active"{% endif %}><a id="mode-running-public" href="#running-public" class="mode-header" data-toggle="tab">Optimization mode</a></li>
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane{% if selected_mode == "mode-competition" %} active{% endif %}" id="running-competition">
-            {%- if my_running_games %}
-              <div class="table-responsive">
-              {{ running_games(my_running_games, userid, False) }}
-              </div>
-            {%- else %}
-              <div class="alert alert-info">You don't have any running competition games. Click the 'Open games' tab to see games you can join.</div>
-            {%- endif %}
-        </div>
-        <div class="tab-pane{% if selected_mode == "mode-public" %} active{% endif %}" id="running-public">
-            {%- if my_running_groups %}
-              <div class="table-responsive">
-                {{ running_groups(my_running_groups, False) }}
-              </div>
-            {%- else %}
-                <div class="alert alert-info">You don't have any running optimization games. Click the 'Open games' tab to see games you can join.</div>
-            {%- endif %}
-        </div>
-    </div>
-  </div><!-- /#my -->
-
-<!-- Open games -->
-  <div class="tab-pane{% if selected_heading == "heading-open" %} active{% endif %}" id="open">
-    <ul class="nav nav-tabs">
-      <li{% if selected_mode == "mode-competition" %} class="active"{% endif %}><a id="mode-open-competition" href="#open-competition" class="mode-header" data-toggle="tab" data-container="body" data-placement="top" data-content="This is real poker, played range vs. range. It gives you the opportunity to train your hand-reading skills, and practice exploitative play.">Competition mode</a></li>
-      <li{% if selected_mode == "mode-public" %} class="active"{% endif %}><a id="mode-open-public" href="#open-public" class="mode-header" data-toggle="tab" data-container="body" data-placement="top" data-content="This is for the game theory enthusiast. Players can see each other's ranges during play, and all betting lines are played out.">Optimization mode</a></li>
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane{% if selected_mode == "mode-competition" %} active{% endif %}" id="open-competition">
-          {{open_games(False)}}
-        </div>
-        <div class="tab-pane{% if selected_mode == "mode-public" %} active{% endif %}" id="open-public">
-          {{open_games(True)}}
-        </div>
-    </div>
-  </div><!-- /#open -->
-
-<!-- Finished games -->
-  <div class="tab-pane{% if selected_heading == "heading-finished" %} active{% endif %}" id="finished">
     <ul class="nav nav-tabs">
       <li{% if selected_mode == "mode-competition" %} class="active"{% endif %}><a id="mode-finished-competition" href="#finished-competition" class="mode-header" data-toggle="tab">Competition mode</a></li>
       <li{% if selected_mode == "mode-public" %} class="active"{% endif %}><a id="mode-finished-public" href="#finished-public" class="mode-header" data-toggle="tab">Optimization mode</a></li>
@@ -299,10 +183,10 @@ $('.mode-header').popover({trigger: 'hover'})
               </div>
               <div class='text-center'>
                 {% if cfp_less %}
-                <a class="btn btn-sm btn-default" aria-label="Previous" href="{{url_for('home_page', cfp=cfp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> prev</a>
+                <a class="btn btn-sm btn-default" aria-label="Previous" href="{{url_for('finished_games', cfp=cfp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> prev</a>
                 {% endif %}
                 {% if cfp_more %}
-                <a class="btn btn-sm btn-default" aria-label="Next" href="{{url_for('home_page', cfp=cfp+1)}}">next <span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
+                <a class="btn btn-sm btn-default" aria-label="Next" href="{{url_for('finished_games', cfp=cfp+1)}}">next <span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
                 {% endif %}
               </div>
             {%- else %}
@@ -316,18 +200,16 @@ $('.mode-header').popover({trigger: 'hover'})
               </div>
               <div class='text-center'>
                 {% if ofp_less %}
-                <a class="btn btn-sm btn-default" aria-label="Previous" href="{{url_for('home_page', ofp=ofp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> prev</a>
+                <a class="btn btn-sm btn-default" aria-label="Previous" href="{{url_for('finished_games', ofp=ofp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> prev</a>
                 {% endif %}
                 {% if ofp_more %}
-                <a class="btn btn-sm btn-default" aria-label="Next" href="{{url_for('home_page', ofp=ofp+1)}}">next <span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
+                <a class="btn btn-sm btn-default" aria-label="Next" href="{{url_for('finished_games', ofp=ofp+1)}}">next <span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
                 {% endif %}
               </div>
             {%- else %}
                 <div class="alert alert-info">You don't have any finished optimization games. Click the 'Open games' tab to see games you can join.</div>
             {%- endif %}
         </div>
-    </div>
-  </div><!-- /#finished -->
 </div>
 
 </div><!-- /.container -->

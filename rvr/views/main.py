@@ -334,7 +334,7 @@ def videos_page():
 @APP.route('/', methods=['GET'])
 def home_page():
     """
-    Generates the authenticated landing page. AKA the main or home page.
+    Generates the authenticated landing page. AKA the main page or home page.
     """
     # TODO: 3: 'updated!' indicator on finished games (on the RGPs)
 
@@ -367,7 +367,7 @@ def home_page():
     if isinstance(open_games, APIError):
         flash("An unknown error occurred retrieving your open games.")
         return redirect(url_for("error_page"))
-    my_games = api.get_user_running_games(userid, cstart, ostart, 20)
+    my_games = api.get_user_running_games(userid, cstart, ostart, 0)
     if isinstance(my_games, APIError):
         flash("An unknown error occurred retrieving your running games.")
         return redirect(url_for("error_page"))
@@ -407,6 +407,79 @@ def home_page():
         ofp=ofp, ofp_less=my_games.o_less, ofp_more=my_games.o_more,
         navbar_items=navbar_items,
         selected_heading=selected_heading,
+        selected_mode=selected_mode,
+        is_logged_in=is_logged_in(),
+        is_first_action=is_what_now(),
+        my_screenname=get_my_screenname()))
+    response.set_cookie('selected-mode', selected_mode)  # may have changed
+    return response
+
+@APP.route('/finished', methods=['GET'])
+def finished_games():
+    """
+    Generates the authenticated landing page. AKA the main page or home page.
+    """
+    # TODO: 3: 'updated!' indicator on finished games (on the RGPs)
+
+    # TODO: 3: account page with email preferences, screenname, and spawn
+
+    if not is_authenticated():
+        if local_settings.ALLOW_BACKDOOR:
+            return redirect(url_for('backdoor_page'))
+        else:
+            return render_template('web/landing.html')
+    alternate_response = ensure_user()
+    if alternate_response:
+        return alternate_response
+    cfp = request.args.get('cfp', '1')
+    ofp = request.args.get('ofp', '1')
+    try:
+        cfp = int(cfp)
+    except ValueError:
+        cfp = 1
+    try:
+        ofp = int(ofp)
+    except ValueError:
+        ofp = 1
+    cstart = (cfp - 1) * 20
+    ostart = (ofp - 1) * 20
+    api = API()
+    userid = session['userid']
+    screenname = session['screenname']
+    open_games = api.get_open_games()
+    if isinstance(open_games, APIError):
+        flash("An unknown error occurred retrieving your open games.")
+        return redirect(url_for("error_page"))
+    my_games = api.get_user_running_games(userid, cstart, ostart, 20)
+    if isinstance(my_games, APIError):
+        flash("An unknown error occurred retrieving your running games.")
+        return redirect(url_for("error_page"))
+    selected_mode = request.cookies.get("selected-mode", "mode-competition")
+    my_running_games = sorted(my_games.running_details,
+                              key=lambda g: not g.is_on_me)
+    my_finished_games = my_games.finished_details
+    my_running_groups = sorted(my_games.running_groups,
+                               key=lambda g: not g.is_on_me)
+    my_finished_groups = my_games.finished_groups
+    my_open = [og for og in open_games
+               if any([u.userid == userid for u in og.users])]
+    others_open = [og for og in open_games
+                   if not any([u.userid == userid for u in og.users])]
+
+    form = ChangeForm()
+    navbar_items = default_navbar_items('Home')
+    response = make_response(render_template('web/finished.html',
+        title='Finished Games',
+        screenname=screenname, userid=userid, change_form=form,
+        my_running_games=my_running_games,
+        my_finished_games=my_finished_games,
+        my_running_groups=my_running_groups,
+        my_finished_groups=my_finished_groups,
+        my_open=my_open,
+        others_open=others_open,
+        cfp=cfp, cfp_less=my_games.c_less, cfp_more=my_games.c_more,
+        ofp=ofp, ofp_less=my_games.o_less, ofp_more=my_games.o_more,
+        navbar_items=navbar_items,
         selected_mode=selected_mode,
         is_logged_in=is_logged_in(),
         is_first_action=is_what_now(),

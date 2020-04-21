@@ -386,8 +386,11 @@ class API(object):
 
         Note: we don't validate that userid is a real userid!
         """
-        rgps = self.session.query(tables.RunningGameParticipant)  \
-            .filter(tables.RunningGameParticipant.userid == userid).all()
+        q = self.session.query(tables.RunningGameParticipant)  \
+            .filter(tables.RunningGameParticipant.userid == userid)
+        if page == 0:
+            q = q.filter(tables.RunningGame.current_round != FINISHED)
+        rgps = q.all()
         running_games =  \
             [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
              for rgp in rgps if not rgp.game.game_finished
