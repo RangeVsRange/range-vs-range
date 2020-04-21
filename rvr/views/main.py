@@ -1263,6 +1263,9 @@ def whatnow():
     response.set_cookie('first_action', expires=0)
     return response
 
+def _group_key(game):
+    return [not game.is_on_me] + game_line_key(game)
+
 @APP.route('/group', methods=['GET'])
 def group_page():
     gameid = request.args.get('id', None)
@@ -1305,8 +1308,7 @@ def group_page():
                        for game in games if game.is_analysed)
 
     # TODO: 2: (big work! awesome!) betting line "roll-up" and/or EV tree view
-
-    games = sorted(games, key=game_line_key)
+    games = sorted(games, key=_group_key)
 
     navbar_items = default_navbar_items()
     return render_template('web/group.html',
