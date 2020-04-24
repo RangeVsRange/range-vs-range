@@ -14,8 +14,8 @@ reads below need to be aware of the changes since the previous version.
 At deployment time:
 - make sure the existing production dump code is up to date for the database you
   want to dump (visually)
-- make sure this code can write (to the database) what the previous version will
-  be reading (from the file) (visually)
+- make sure this code can write (to the database) what will be read from the
+  previous version (from the file) (visually)
 - in production:
   - dump the previous version of the database ('dump out' from the console)
 - in a local development environment:
@@ -43,6 +43,7 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     RunningGameParticipantResult
 from rvr.db.creation import SESSION
 import logging
+from rvr.poker.cards import FINISHED
 
 #pylint:disable=C0103
 
@@ -216,11 +217,18 @@ def read_running_games(session):
              rg.last_action_time,
              rg.analysis_performed,
              rg.spawn_factor,
-             rg.spawn_group)
+             rg.spawn_group,
+             rg.spawn_finished)
             for rg in rgs]
 
 def write_running_games(session, rgs):
     """ Write RunningGame from memory into DB """
+    # TODO: 0: REMOVE: temporary code
+    only_running_groups = set()
+    for rg in rgs:
+        if rg[7] != FINISHED:
+            only_running_groups.add(rg[15])
+
     for gameid, situationid, public_ranges, current_userid, next_hh,  \
             board_raw, total_board_raw, current_round, pot_pre, increment,  \
             bet_count, current_factor, last_action_time, analysis_performed,  \
@@ -243,6 +251,7 @@ def write_running_games(session, rgs):
         rg.analysis_performed = analysis_performed
         rg.spawn_factor = spawn_factor
         rg.spawn_group = spawn_group
+        rg.spawn_finished = spawn_group not in only_running_groups
         session.commit()
 
 def read_running_game_participants(session):

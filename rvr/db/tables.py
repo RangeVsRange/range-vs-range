@@ -27,7 +27,7 @@ class User(BASE, object):
     """
     __tablename__ = 'user'
     userid = Column(Integer, Sequence('user_seq'), primary_key=True)
-    identity = Column(String(120), nullable=False)
+    identity = Column(String(120), nullable=False, index=True)
     screenname_raw = Column(String(20), nullable=True, unique=True)
     email = Column(String(256), nullable=False)
     unsubscribed = Column(Boolean, nullable=False)
@@ -205,12 +205,13 @@ class RunningGame(BASE, object):
     # keeping track of how unlikely this line is, considering folds don't happen
     current_factor = Column(Float, nullable=False)
     # keeping track of timeouts
-    last_action_time = Column(DateTime, nullable=False)  # or game start time
+    last_action_time = Column(DateTime, nullable=False, index=True)
     # shortcut to know if analysis has been done
-    analysis_performed = Column(Boolean, nullable=False)
+    analysis_performed = Column(Boolean, nullable=False, index=True)
     # game this was (originally) spawned from, if any
     spawn_group = Column(Integer, ForeignKey("running_game.gameid"),
-                           nullable=True)
+                         nullable=True, index=True)
+    spawn_finished = Column(Boolean, nullable=False, index=True)
     # starts at 1.0, reduces when spawned
     # across all games with this spawn_group, this will sum to 1.0
     spawn_factor = Column(Float, nullable=False)
