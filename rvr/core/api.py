@@ -15,7 +15,7 @@ from rvr.poker.action import range_action_fits, calculate_current_options,  \
     PREFLOP, RIVER, FLOP,  \
     NEXT_ROUND, TOTAL_COMMUNITY_CARDS,\
     act_passive, act_fold, act_aggressive, WhatCouldBe,\
-    generate_excluded_cards
+    generate_excluded_cards, act_terminate
 from rvr.core.dtos import MAP_TABLE_DTO, GamePayment, ActionResult
 from rvr.infrastructure.util import concatenate, on_a_different_thread
 from rvr.poker.cards import deal_cards, Card, RANKS_HIGH_TO_LOW,  \
@@ -1048,8 +1048,7 @@ class API(object):
 
         if not results:
             logging.debug("gameid %d, determined to terminate", game.gameid)
-            rgp.left_to_act = False
-            game.game_finished = True
+            act_terminate(game, rgp)
             return ActionResult.terminate(), []
 
         games = [game] + [self._spawn_game(game) for _ in results[1:]]
@@ -1123,8 +1122,6 @@ class API(object):
         is_first_action = self._has_never_acted(userid)
         results, spawned_gameids = self._perform_action(
             game, rgp, range_action, current_options)
-        if game.game_finished:
-            
         return results, spawned_gameids, is_first_action
 
     @api
