@@ -318,6 +318,15 @@ class RunningGame(BASE, object):
             raise ValueError("can't restart a game")
         self.current_round = FINISHED
         self.current_userid = None
+        # check if group is finished
+        session = object_session(self)
+        unfinished = session.query(RunningGame)  \
+            .filter(RunningGame.spawn_group == self.spawn_group)  \
+            .filter(RunningGame.current_round != FINISHED).count()
+        if not unfinished:
+            session.update(RunningGame)  \
+            .values(spawn_finished=True)  \
+            .where(RunningGame.spawn_group == self.spawn_group)
     game_finished = property(get_game_finished, set_game_finished)
 
     def get_round_finished(self):

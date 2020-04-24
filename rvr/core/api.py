@@ -1123,6 +1123,8 @@ class API(object):
         is_first_action = self._has_never_acted(userid)
         results, spawned_gameids = self._perform_action(
             game, rgp, range_action, current_options)
+        if game.game_finished:
+            
         return results, spawned_gameids, is_first_action
 
     @api
