@@ -323,10 +323,11 @@ class RunningGame(BASE, object):
         unfinished = session.query(RunningGame)  \
             .filter(RunningGame.spawn_group == self.spawn_group)  \
             .filter(RunningGame.current_round != FINISHED).count()
-        if not unfinished:
-            session.update(RunningGame)  \
-            .values(spawn_finished=True)  \
-            .where(RunningGame.spawn_group == self.spawn_group)
+        if not unfinished:  # they're all finished
+            # not using ORM for this, just update rows
+            session.query(RunningGame)  \
+                .filter(RunningGame.spawn_group == self.spawn_group)  \
+                .update(spawn_finished=True)
     game_finished = property(get_game_finished, set_game_finished)
 
     def get_round_finished(self):

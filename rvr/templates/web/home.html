@@ -285,49 +285,6 @@ $('.mode-header').popover({trigger: 'hover'})
     </div>
   </div><!-- /#open -->
 
-<!-- Finished games -->
-  <div class="tab-pane{% if selected_heading == "heading-finished" %} active{% endif %}" id="finished">
-    <ul class="nav nav-tabs">
-      <li{% if selected_mode == "mode-competition" %} class="active"{% endif %}><a id="mode-finished-competition" href="#finished-competition" class="mode-header" data-toggle="tab">Competition mode</a></li>
-      <li{% if selected_mode == "mode-public" %} class="active"{% endif %}><a id="mode-finished-public" href="#finished-public" class="mode-header" data-toggle="tab">Optimization mode</a></li>
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane{% if selected_mode == "mode-competition" %} active{% endif %}" id="finished-competition">
-            {%- if my_finished_games or cfp > 1 %}
-              <div class="table-responsive">
-              {{ running_games(my_finished_games, userid, True) }}
-              </div>
-              <div class='text-center'>
-                {% if cfp_less %}
-                <a class="btn btn-sm btn-default" aria-label="Previous" href="{{url_for('home_page', cfp=cfp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> prev</a>
-                {% endif %}
-                {% if cfp_more %}
-                <a class="btn btn-sm btn-default" aria-label="Next" href="{{url_for('home_page', cfp=cfp+1)}}">next <span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
-                {% endif %}
-              </div>
-            {%- else %}
-              <div class="alert alert-info">You don't have any finished competition games. Click the 'Open games' tab to see games you can join.</div>
-            {%- endif %}
-        </div>
-        <div class="tab-pane{% if selected_mode == "mode-public" %} active{% endif %}" id="finished-public">
-            {%- if my_finished_groups or ofp > 1%}
-              <div class="table-responsive">
-                {{ running_groups(my_finished_groups, True) }}
-              </div>
-              <div class='text-center'>
-                {% if ofp_less %}
-                <a class="btn btn-sm btn-default" aria-label="Previous" href="{{url_for('home_page', ofp=ofp-1)}}"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> prev</a>
-                {% endif %}
-                {% if ofp_more %}
-                <a class="btn btn-sm btn-default" aria-label="Next" href="{{url_for('home_page', ofp=ofp+1)}}">next <span class="glyphicon glyphicon-forward" aria-hidden="true"></span></a>
-                {% endif %}
-              </div>
-            {%- else %}
-                <div class="alert alert-info">You don't have any finished optimization games. Click the 'Open games' tab to see games you can join.</div>
-            {%- endif %}
-        </div>
-    </div>
-  </div><!-- /#finished -->
 </div>
 
 </div><!-- /.container -->

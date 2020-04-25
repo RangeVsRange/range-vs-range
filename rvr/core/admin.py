@@ -272,6 +272,11 @@ class AdminCmd(Cmd):
         print "Running games:"
         for game in result.running_details:
             print game
+
+        result = self.api.get_user_finished_games(userid, 0, 0, 20)
+        if isinstance(result, APIError):
+            print "Error:", result.description  # pylint:disable=E1101
+            return
         print "Finished games:"
         for game in result.finished_details:
             print game
@@ -479,6 +484,24 @@ class AdminCmd(Cmd):
         List the players who have completed the most games.
         """
         result = self.api.get_player_volumes()
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        print result
+
+    def do_update_spawn_finished(self, _details):
+        """
+        update_spawn_finished <max_gameid>
+
+        This sets spawn_finished to the correct value for all games.
+
+        Hopefully never needed again.
+        """
+        try:
+            gameid = int(_details)
+        except:
+            print "Specify max gameid."
+            return
+        result = self.api.update_spawn_finished(gameid)
         if isinstance(result, APIError):
             print "Error:", result.description
         print result

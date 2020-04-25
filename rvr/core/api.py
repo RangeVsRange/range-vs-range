@@ -373,34 +373,83 @@ class API(object):
         return results
 
     @api
-    def get_user_running_games(self, userid, cstart=0, ostart=0, page=20):
+    def update_spawn_finished(self, max_game):
         """
-        3. Retrieve user's games and their statuses
+        A bit of a hack, hopefully never needed again.
+        """
+        count = 0
+        for groupid in range(max_game):
+            games = self.session.query(tables.RunningGame)  \
+                .filter(tables.RunningGame.spawn_group == groupid).all()
+            is_running = any(not game.game_finished for game in games)
+            for game in games:
+                if game.spawn_finished == is_running:
+                    game.spawn_finished = not is_running
+                    count += 1
+            self.session.commit()
+        return count
+
+    @api
+    def get_user_running_games(self, userid):
+        """
+        Retrieve user's running games and running groups, and if it's our turn.
+
+        Note that running groups will include some finished games!
+
+        inputs: userid
+        outputs: list of user's running games, and running groups
+
+        Note: we don't validate that userid is a real userid!
+        """
+        # games
+        q = self.session.query(tables.RunningGameParticipant)  \
+            .join(tables.RunningGameParticipant.game)  \
+            .filter(tables.RunningGameParticipant.userid == userid)  \
+            .filter(tables.RunningGame.spawn_finished == False)
+        rgps = q.all()
+        running_games =  \
+            [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
+             for rgp in rgps if not rgp.game.public_ranges]
+        # groups
+        group_ids = set(rgp.game.spawn_group for rgp in rgps
+                        if rgp.game.public_ranges)
+        running_groups = []
+        for group in sorted(group_ids, reverse=True):
+            spawns = [rgp for rgp in rgps if rgp.game.spawn_group == group
+                      and rgp.game.public_ranges]
+            is_on_me = any(spawn.game.current_userid == userid
+                           for spawn in spawns)
+            running_groups.append(
+                dtos.RunningGroup.from_rgps(group, False, is_on_me,
+                    [rgp.game for rgp in spawns]))
+        return dtos.UsersGameDetails(userid, running_games, [],
+                                     running_groups, [],
+                                     0, 0, 0, 0)
+
+    @api
+    def get_user_finished_games(self, userid, cstart, ostart, page):
+        """
+        Retrieve user's finished games and finished groups
+
         inputs:
          - userid
          - starting index for finished competition mode games
          - starting index for finished optimisation mode games
          - number of finished games of each mode to return
-        outputs: list of user's games. each may be open game, running (not our
-        turn), running (our turn), finished. no more details of each game.
+
+        outputs: list of user's finished games and finished groups.
 
         Note: we don't validate that userid is a real userid!
         """
         q = self.session.query(tables.RunningGameParticipant)  \
-            .filter(tables.RunningGameParticipant.userid == userid)
-        if page == 0:
-            q = q.filter(tables.RunningGame.current_round != FINISHED)
+            .join(tables.RunningGameParticipant.game)  \
+            .filter(tables.RunningGameParticipant.userid == userid)  \
+            .filter(tables.RunningGame.spawn_finished == True)
         rgps = q.all()
-        running_games =  \
-            [dtos.RunningGameSummary.from_running_game(rgp.game, userid)
-             for rgp in rgps if not rgp.game.game_finished
-             and not rgp.game.public_ranges]
         c = 0; c_less = False; c_more = False
         finished_games = []
         for rgp in sorted(rgps, key=lambda rgp: rgp.gameid, reverse=True):
-            if not rgp.game.game_finished:
-                continue
-            if not (rgp.game.game_finished and not rgp.game.public_ranges):
+            if rgp.game.public_ranges:
                 continue
             if c < cstart:
                 c_less = True
@@ -412,31 +461,22 @@ class API(object):
             c += 1
         group_ids = set(rgp.game.spawn_group for rgp in rgps
                         if rgp.game.public_ranges)
-        running_groups = []
         o = 0; o_less = False; o_more = False
         finished_groups = []
         for group in sorted(group_ids, reverse=True):
             spawns = [rgp for rgp in rgps if rgp.game.spawn_group == group
                       and rgp.game.public_ranges]
-            is_finished = all(spawn.game.game_finished for spawn in spawns)
-            is_on_me = any(spawn.game.current_userid == userid
-                           for spawn in spawns)
-            if is_finished:
-                if o < ostart:
-                    o_less = True
-                elif o >= ostart + page:
-                    o_more = True
-                else:
-                    finished_groups.append(
-                        dtos.RunningGroup.from_rgps(group, is_finished,
-                            is_on_me, [rgp.game for rgp in spawns]))
-                o += 1
+            if o < ostart:
+                o_less = True
+            elif o >= ostart + page:
+                o_more = True
             else:
-                running_groups.append(
-                    dtos.RunningGroup.from_rgps(group, is_finished, is_on_me,
-                        [rgp.game for rgp in spawns]))
-        return dtos.UsersGameDetails(userid, running_games, finished_games,
-                                     running_groups, finished_groups,
+                finished_groups.append(
+                    dtos.RunningGroup.from_rgps(group, True,
+                        False, [rgp.game for rgp in spawns]))
+            o += 1
+        return dtos.UsersGameDetails(userid, [], finished_games,
+                                     [], finished_groups,
                                      c_less, c_more, o_less, o_more)
 
     def _start_game(self, open_game, final_ogp):
