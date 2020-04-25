@@ -175,7 +175,7 @@ class AnalysisReplayer(object):
         board_before = self.board
         self.board = Card.many_from_text(item.cards)
         board_after = self.board
-        self.board_payment(item, board_before, board_after)
+        # self.board_payment(item, board_before, board_after)
 
     def process_action_result(self, item):
         """
@@ -590,7 +590,7 @@ class AnalysisReplayer(object):
         if isinstance(item, GameHistoryBoard):
             self.process_board(item)
         if isinstance(item, GameHistoryActionResult):
-            self.equity_payments(item)
+            # self.equity_payments(item)
             self.process_action_result(item)
         if isinstance(item, GameHistoryRangeAction):
             self.process_range_action(item)
