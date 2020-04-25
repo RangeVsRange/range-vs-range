@@ -504,7 +504,11 @@ class AdminCmd(Cmd):
         result = self.api.update_spawn_finished(gameid)
         if isinstance(result, APIError):
             print "Error:", result.description
-        print result
+            return
+        if result:
+            print result
+        else:
+            print "No need."
 
     def do_exit(self, _details):
         """

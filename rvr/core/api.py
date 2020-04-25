@@ -517,6 +517,7 @@ class API(object):
         running_game.last_action_time = datetime.datetime.utcnow()
         running_game.analysis_performed = False
         running_game.spawn_factor = 1.0
+        running_game.spawn_finished = False
         running_game.total_board = total_board
         self.session.add(running_game)
         self.session.flush()  # get gameid from database

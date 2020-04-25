@@ -327,7 +327,7 @@ class RunningGame(BASE, object):
             # not using ORM for this, just update rows
             session.query(RunningGame)  \
                 .filter(RunningGame.spawn_group == self.spawn_group)  \
-                .update(spawn_finished=True)
+                .update({RunningGame.spawn_finished: True})
     game_finished = property(get_game_finished, set_game_finished)
 
     def get_round_finished(self):
