@@ -531,11 +531,12 @@ class AnalysisReplayer(object):
                       for key, txt in self.ranges.iteritems()}
             # They (temporarily) fold
             ranges.pop(item.userid)
-            self.analyse_showdown(ranges=ranges,
-                order=order,
-                is_passive=False,
-                userids=[userid for userid in self.remaining_userids
-                         if userid != item.userid])
+            with self.session.no_autoflush:
+                self.analyse_showdown(ranges=ranges,
+                    order=order,
+                    is_passive=False,
+                    userids=[userid for userid in self.remaining_userids
+                             if userid != item.userid])
         ranges = {key: HandRange(txt)
                   for key, txt in self.ranges.iteritems()}
         # They (temporarily) call
@@ -548,10 +549,11 @@ class AnalysisReplayer(object):
                 self.showdown_call(gameid=item.gameid, order=order,
                     caller=item.userid, call_cost=call_cost,
                     call_ratio=call_ratio, factor=item.factor)
-            self.analyse_showdown(ranges=ranges,
-                order=order,
-                is_passive=True,
-                userids=self.remaining_userids)
+            with self.session.no_autoflush:
+                self.analyse_showdown(ranges=ranges,
+                    order=order,
+                    is_passive=True,
+                    userids=self.remaining_userids)
 
     def process_range_action(self, item):
         """
