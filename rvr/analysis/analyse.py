@@ -499,7 +499,7 @@ class AnalysisReplayer(object):
         """
         return max(self.contrib.values()) - self.contrib[userid]
 
-    def range_action_showdown(self, item, call_ratio):
+    def range_action_showdowns(self, item, fold_ratio, call_ratio):
         """
         Consider showdowns based on this range action resulting in a fold, and
         another based on this resulting in a check or call.
@@ -524,24 +524,23 @@ class AnalysisReplayer(object):
             return
         order = item.order
         # Note that fold is arbitrarily considered to be before call
-        if len(self.remaining_userids) > 2:
-            order += 1
+        if len(self.remaining_userids) > 2 and fold_ratio > 0.0:
             # this player folds, but the pot is contested, so we have a showdown
+            order += 1
             ranges = {key: HandRange(txt)
                       for key, txt in self.ranges.iteritems()}
             # They (temporarily) fold
             ranges.pop(item.userid)
-            with self.session.no_autoflush:
-                self.analyse_showdown(ranges=ranges,
-                    order=order,
-                    is_passive=False,
-                    userids=[userid for userid in self.remaining_userids
-                             if userid != item.userid])
+            self.analyse_showdown(ranges=ranges,
+                order=order,
+                is_passive=False,
+                userids=[userid for userid in self.remaining_userids
+                         if userid != item.userid])
         ranges = {key: HandRange(txt)
                   for key, txt in self.ranges.iteritems()}
         # They (temporarily) call
         ranges[item.userid] = HandRange(item.passive_range)
-        if call_ratio > 0:
+        if call_ratio > 0.0:
             # It's a real call, not folding 100%
             order += 1
             call_cost = self._calculate_call_cost(item.userid)
@@ -549,11 +548,10 @@ class AnalysisReplayer(object):
                 self.showdown_call(gameid=item.gameid, order=order,
                     caller=item.userid, call_cost=call_cost,
                     call_ratio=call_ratio, factor=item.factor)
-            with self.session.no_autoflush:
-                self.analyse_showdown(ranges=ranges,
-                    order=order,
-                    is_passive=True,
-                    userids=self.remaining_userids)
+            self.analyse_showdown(ranges=ranges,
+                order=order,
+                is_passive=True,
+                userids=self.remaining_userids)
 
     def process_range_action(self, item):
         """
@@ -569,7 +567,8 @@ class AnalysisReplayer(object):
             else 1.0 * legacy_pas / total
         self.fold_equity_payments(range_action=item, fold_ratio=fold_ratio)
         self.range_action_fea(item)
-        self.range_action_showdown(item, call_ratio=call_ratio)
+        self.range_action_showdowns(item, fold_ratio=fold_ratio,
+                                    call_ratio=call_ratio)
         will_act = set(self.left_to_act).difference({item.userid})
         fold_will_remain = set(self.remaining_userids).difference({item.userid})
         all_in = any([stack == 0 for stack in self.stacks.values()])
