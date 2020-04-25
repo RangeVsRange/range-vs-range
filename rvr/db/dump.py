@@ -24,8 +24,8 @@ At deployment time:
     (using the updated code)
   - run some serious local testing
 - in production:
-  - update the source code ('git pull' from command line)
   - dump out again ('dump out')
+  - update the source code ('git pull' from command line)
   - delete the database ('deletedb')
   - recreate the database ('createdb')
   - load in the dump file ('dump in')
@@ -224,15 +224,14 @@ def read_running_games(session):
 def write_running_games(session, rgs):
     """ Write RunningGame from memory into DB """
     # TODO: 0: REMOVE: temporary code
-    only_running_groups = set()
-    for rg in rgs:
-        if rg[7] != FINISHED:
-            only_running_groups.add(rg[15])
-
+    # only_running_groups = set()
+    # for rg in rgs:
+    #     if rg[7] != FINISHED:
+    #         only_running_groups.add(rg[15])
     for gameid, situationid, public_ranges, current_userid, next_hh,  \
             board_raw, total_board_raw, current_round, pot_pre, increment,  \
             bet_count, current_factor, last_action_time, analysis_performed,  \
-            spawn_factor, spawn_group in rgs:
+            spawn_factor, spawn_group, spawn_finished in rgs:
         rg = RunningGame()
         session.add(rg)
         rg.gameid = gameid
@@ -251,7 +250,8 @@ def write_running_games(session, rgs):
         rg.analysis_performed = analysis_performed
         rg.spawn_factor = spawn_factor
         rg.spawn_group = spawn_group
-        rg.spawn_finished = spawn_group not in only_running_groups
+        rg.spawn_finished = spawn_finished
+        # TODO: 0: REMOVE: rg.spawn_finished = spawn_group not in only_running_groups
         session.commit()
 
 def read_running_game_participants(session):
