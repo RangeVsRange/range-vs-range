@@ -1443,9 +1443,9 @@ class API(object):
             .filter(tables.AnalysisFoldEquityItem.gameid == gameid).delete()
         self.session.query(tables.AnalysisFoldEquity)  \
             .filter(tables.AnalysisFoldEquity.gameid == gameid).delete()
-        for equity in self.session.query(tables.GameHistoryShowdownEquity)  \
-                .filter(tables.GameHistoryShowdownEquity.gameid == gameid).all():
-            equity.equity = None
+        self.session.query(tables.GameHistoryShowdownEquity)  \
+            .filter(tables.GameHistoryShowdownEquity.gameid == gameid)  \
+            .update({tables.GameHistoryShowdownEquity.equity: None})
         self.session.query(tables.RunningGameParticipantResult)  \
             .filter(tables.RunningGameParticipantResult.gameid == gameid)  \
             .delete()
@@ -1464,13 +1464,12 @@ class API(object):
         """
         self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
-        for equity in self.session.query(tables.GameHistoryShowdownEquity)  \
-                .all():
-            equity.equity = None
+        self.session.query(tables.GameHistoryShowdownEquity)  \
+            .update({tables.GameHistoryShowdownEquity: None})
         self.session.query(tables.RunningGameParticipantResult).delete()
         self.session.query(tables.PaymentToPlayer).delete()
-        for game in self.session.query(tables.RunningGame).all():
-            game.analysis_performed = False
+        self.session.query(tables.RunningGame)  \
+            .update({tables.RunningGame.analysis_performed: False})
         self.session.commit()
         return self._run_pending_analysis()
 

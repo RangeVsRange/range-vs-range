@@ -144,7 +144,7 @@ class GameTreeNode(object):
             ranges[userid] = HandRange(description)
             equities, _iteration =  \
                 showdown_equity(ranges, Card.many_from_text(self.board),
-                    hard_limit=10000)  # TODO: 1: this is not good enough
+                    hard_limit=10000)
             equity = equities[userid]
             return equity * self.final_pot - self.total_contrib[userid]
 
