@@ -1382,7 +1382,13 @@ class API(object):
                 usp.amount_won = pos.total
                 usp.hands_played = pos.played
                 usp.confidence = pos.confidence
-                self.session.merge(usp)  # insert or update
+                _merged = self.session.merge(usp)  # insert or update
+                logging.info("Added UserSituationPlayer(userid=%r, "
+                    "situationid=%r, order=%r, public_ranges=%r, "
+                    "amount_won=%r, hands_played=%r, confidence=%r",
+                    _merged.userid, _merged.situationid, _merged.order,
+                    _merged.public_ranges, _merged.amount_won,
+                    _merged.hands_played, _merged.confidence)
 
     @api
     def get_user_statistics(self, userid, min_hands=1, is_competition=True):

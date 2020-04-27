@@ -89,7 +89,7 @@ def get_user_statistics(session, userid, min_hands, is_competition):
         for game in games:
             groups.setdefault(game.spawn_group, []).append(game)
         for spawn_group in groups.keys():
-            if any(_game_timed_out(session, g) or not g.game_finished
+            if not g.game_finished or any(_game_timed_out(session, g)
                    for g in groups[spawn_group]):
                 groups.pop(spawn_group)
         orbit_average = 0.0 - situation.pot_pre
