@@ -1360,6 +1360,30 @@ class API(object):
                     logging.debug("Created open game %d for situation %d",
                                   new_game.gameid, situation.situationid)
 
+    def _write_statistics(self, userid, is_competition, results):
+        """
+        Write these results to the database, so we can have leaderboards.
+
+        Note the strange approach of write-on-request, not centralised
+        calculations. The justification here is that people who aren't
+        interested in their results won't be shown in the leaderboards, but
+        they're probably irrelevant anyway. But I'll probably change it at some
+        point.
+        """
+        # TODO: REVISIT: Don't wait for user to request it, do it daily.
+        # TODO: REVISIT: Change get_user_statistics to read from DB, not write.
+        for sr in results:
+            for pos in sr.positions:
+                usp = tables.UserSituationPlayer()
+                usp.userid = userid
+                usp.situationid = pos.situationid
+                usp.order = pos.order
+                usp.public_ranges = not is_competition
+                usp.amount_won = pos.total
+                usp.hands_played = pos.played
+                usp.confidence = pos.confidence
+                self.session.merge(usp)  # insert or update
+
     @api
     def get_user_statistics(self, userid, min_hands=1, is_competition=True):
         """
@@ -1378,8 +1402,10 @@ class API(object):
             .filter(tables.User.userid == userid).all()
         if not matches:
             return self.ERR_NO_SUCH_USER
-        return statistics.get_user_statistics(self.session, userid, min_hands,
-                                              is_competition)
+        results = statistics.get_user_statistics(self.session, userid,
+            min_hands, is_competition)
+        self._write_statistics(userid, is_competition, results)
+        return results
 
     def _run_pending_analysis(self):
         """

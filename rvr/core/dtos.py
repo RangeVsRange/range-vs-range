@@ -419,7 +419,10 @@ class PositionResult(object):
     """
     Everything a user might want to know about their results for a position.
     """
-    def __init__(self, name, ev, played, total, average, stddev, confidence):
+    def __init__(self, situationid, order, name, ev, played, total, average,
+                 stddev, confidence):
+        self.situationid = situationid
+        self.order = order
         self.name = name
         self.ev = ev
         self.played = played
@@ -429,9 +432,10 @@ class PositionResult(object):
         self.confidence = confidence
 
     def __repr__(self):
-        return "PositionResult(name=%r, ev=%r, played=%r, total=%r, "  \
-            "average=%r, stddev=%r, confidence=%r)" % (self.name, self.ev,
-            self.played, self.total, self.average, self.stddev, self.confidence)
+        return "PositionResult(situationid=%r, order=%r, name=%r, ev=%r, "  \
+            "played=%r, total=%r, average=%r, stddev=%r, confidence=%r)" %  \
+            (self.situationid, self.order, self.name, self.ev, self.played,
+             self.total, self.average, self.stddev, self.confidence)
 
 class UsersGameDetails(object):
     """

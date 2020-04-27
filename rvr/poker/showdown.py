@@ -74,17 +74,17 @@ def _simulate_showdown(wins_by_player, options_by_player, board, memo):
         if not _impossible_deal(fixed.values() + [board]):
             break
         count += 1
-        if count == 10:
+        if count == 1000:
             logging.warning(
-                "apparently incompatible set of options: %r (board is %r)",
+                "simulate apparently incompatible set of options: %r (board is %r)",
                 options_by_player, board)
         # Worst case scenario is 1/2704 chance of hitting matching combos.
         # We can't figure that out with confidence by trying.
         # So it's possible for this to happen in real spots,
         # and must be dealt with.
-        if count > 100:
+        if count > 10000:
             raise IncompatibleRangesError(
-                "apparently incompatible set of options: %r (board is %r)" %
+                "simulate evidently incompatible set of options: %r (board is %r)" %
                 (options_by_player, board))
     excluded = concatenate(fixed.values())
     fixed_board = []

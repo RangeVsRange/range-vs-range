@@ -121,8 +121,10 @@ def get_user_statistics(session, userid, min_hands, is_competition):
             else:
                 confidence = 0.5  # they either are, or they aren't
             position_results.append(PositionResult(
+                situationid=situation.situationid,
+                order=player.order,
                 name=player.name,
-                ev=player.average_result,
+                ev=player.average_result,  # situation ev
                 stddev=player.stddev,  # site stddev okay?
                 played=len(data),
                 total=total if data else None,
