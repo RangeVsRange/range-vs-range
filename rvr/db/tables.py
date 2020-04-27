@@ -143,6 +143,34 @@ class SituationPlayer(BASE, object):
         self.name_raw = name
     name = property(get_name, set_name)
 
+class UserSituationPlayer(BASE, object):
+    """
+    Details of the same user in the same seat across all games.
+
+    (Many-to-many relationship between User and SituationPlayer, for the
+    purpose of tracking results and having leaderboards.)
+    """
+    __tablename__ = 'user_situation_player'
+    userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
+    situationid = Column(Integer, primary_key=True)
+    order = Column(Integer, primary_key=True)
+    __table_args__ = (
+        ForeignKeyConstraint([situationid, order],
+            [SituationPlayer.situationid, SituationPlayer.order]),
+        {})
+    public_ranges = Column(Boolean, primary_key=True)
+
+    amount_won = Column(Float, nullable=True)  # games or groups
+    hands_played = Column(Integer, nullable=True)  # games or groups
+    confidence = Column(Float, nullable=True, index=True)  # for leaderboards
+
+    def get_ev(self):
+        if self.amount_won is None or self.hands_played is None:
+            return None
+        else:
+            return 1.0 * self.amount_won / self.hands_played
+    ev = property(get_ev)
+
 class OpenGame(BASE):
     """
     Details of an open game, not yet full of registered participants.
@@ -237,6 +265,7 @@ class RunningGame(BASE, object):
         game.last_action_time = self.last_action_time
         game.analysis_performed = self.analysis_performed
         game.spawn_group = self.spawn_group
+        game.spawn_finished = self.spawn_finished
         game.spawn_factor = self.spawn_factor
         return game
 
