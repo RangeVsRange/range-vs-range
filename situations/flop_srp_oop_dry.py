@@ -17,12 +17,12 @@ def create_situation():
         range_raw='TT-44,3d3h,3h3s,3s3c,2d2s,2h2c,ATs-A8s,KJs-K9s,Q9s+,J9s+,T9s,98s,87s,76s,Td8d,Tc8c,9s7s,6d5d,6h5h,5s4s,AJo,KQo,AdQh,AhQc,AsQd,AcQs')
     situation = dtos.SituationDetails(  # @UndefinedVariable
         situationid=None,
-        description="Flop: BTN called HJ open",
-        players=[hj, btn],  # MP acts first in future rounds
-        current_player=0,  # MP acts first this round
+        description="Flop: HJ opened, BTN called, flop is Kc 8d 3h",
+        players=[hj, btn],  # HJ acts first in future rounds
+        current_player=0,  # HJ acts first this round
         is_limit=False,
         big_blind=2,
-        board_raw='',
+        board_raw='Kc8d3h',
         current_round=cards.FLOP,  # @UndefinedVariable
         pot_pre=13,  # antes, or pot at end of last betting round
         increment=2,  # minimum raise amount right now

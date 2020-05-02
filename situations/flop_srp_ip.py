@@ -1,6 +1,6 @@
 def create_situation():
     """
-    Single raised flop, BTN opens 3bb, BB calls. Aggressor in position.
+    Single raised flop, BTN opens 2.5bb, BB calls. Aggressor in position.
     """
     # pylint:disable=undefined-variable
     bb = dtos.SituationPlayerDetails(  # @UndefinedVariable
