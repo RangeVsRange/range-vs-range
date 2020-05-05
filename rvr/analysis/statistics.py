@@ -7,7 +7,7 @@ from scipy import stats
 import logging
 
 def _calculate_confidence(total_result, num_games,
-                         be_mean, stddev):
+                          be_mean, stddev):
     """
     total_result is the user's total chips won in a position.
 
@@ -29,6 +29,8 @@ def _calculate_confidence(total_result, num_games,
     Well if X has mean M and std S, then N*X has mean N*M and std sqrt(N)*S
     """
     # pylint:disable=no-member
+    if num_games == 0:
+        return 0.5
     be_total = be_mean * num_games
     be_stddev = stddev * math.sqrt(num_games)
     if be_stddev == 0.0:  # too few games
@@ -106,26 +108,17 @@ def get_user_statistics(session, userid, min_hands, is_competition):
                     results[spawn_group] += ev * game.spawn_factor
             data = filter(lambda x: x is not None, results.values())
             total = sum(data)
-            # Note: this is user's stddev for this position, not position's
-            # stddev - because user having a different style of play can
-            # make a difference to stddev. We have ddof=1 to help make up
-            # for the smaller sample size.
-            ddof = 1
-            if len(data) > ddof + 1:
-                user_stddev = numpy.std(data, ddof=ddof)
-                confidence = _calculate_confidence(
-                    total_result=total,
-                    num_games=len(data),
-                    be_mean=player.average_result,
-                    stddev=user_stddev)
-            else:
-                confidence = 0.5  # they either are, or they aren't
+            confidence = _calculate_confidence(
+                total_result=total,
+                num_games=len(data),
+                be_mean=player.average_result,
+                stddev=player.stddev)  # population stats are more reliable
             position_results.append(PositionResult(
                 situationid=situation.situationid,
                 order=player.order,
                 name=player.name,
                 ev=player.average_result,  # situation ev
-                stddev=player.stddev,  # site stddev okay?
+                stddev=player.stddev,  # population stats are more reliable
                 played=len(data),
                 total=total if data else None,
                 average=total / len(data) if data else None,
