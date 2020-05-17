@@ -370,15 +370,15 @@ class AdminCmd(Cmd):
 
     def do_leaderboards(self, params):
         """
-        leaderboards <situationid> <size>
+        leaderboards <situationid> <size> <min_played>
         Display leaderboards for all positions of situation, to max size size.
         """
-        args = params.split(None, 1)
-        if len(args) != 2:
-            print "Need exactly 2 parameters. Try <help leaderboard>."
+        args = params.split(None, 2)
+        if len(args) != 3:
+            print "Need exactly 3 parameters. Try <help leaderboard>."
             return
-        situationid, size = args
-        result = self.api.get_leaderboards(situationid, size)
+        situationid, size, min_played = args
+        result = self.api.get_leaderboards(situationid, size, min_played)
         if isinstance(result, APIError):
             print "Error:", result.description
             return

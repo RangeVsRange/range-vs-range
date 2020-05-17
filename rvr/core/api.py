@@ -1414,7 +1414,7 @@ class API(object):
         return results
 
     @api
-    def get_leaderboards(self, situationid, size):
+    def get_leaderboards(self, situationid, size, min_played=1):
         """
         Return leaderboards of given size for all positions in given situation.
 
@@ -1431,7 +1431,7 @@ class API(object):
                 .filter(tables.UserSituationPlayer.situationid == situationid) \
                 .filter(tables.UserSituationPlayer.order == player.order)  \
                 .filter(tables.UserSituationPlayer.public_ranges == False)  \
-                .filter(tables.UserSituationPlayer.hands_played > 0)  \
+                .filter(tables.UserSituationPlayer.hands_played >= min_played) \
                 .order_by(tables.UserSituationPlayer.confidence.desc())  \
                 .limit(size).all()
             leaderboards = []
