@@ -1424,12 +1424,14 @@ class API(object):
          - list (with max length size) of LeaderboardEntry
         """
         situation = self.session.query(tables.Situation)  \
-            .filter(tables.Situation.situationid==situationid).one()
+            .filter(tables.Situation.situationid == situationid).one()
         results = []
         for player in situation.players:
             usps = self.session.query(tables.UserSituationPlayer)  \
-                .filter(tables.UserSituationPlayer.situationid==situationid)  \
-                .filter(tables.UserSituationPlayer.order==player.order)  \
+                .filter(tables.UserSituationPlayer.situationid == situationid) \
+                .filter(tables.UserSituationPlayer.order == player.order)  \
+                .filter(tables.UserSituationPlayer.public_ranges == False)  \
+                .filter(tables.UserSituationPlayer.hands_played > 0)  \
                 .order_by(tables.UserSituationPlayer.confidence.desc())  \
                 .limit(size).all()
             leaderboards = []
