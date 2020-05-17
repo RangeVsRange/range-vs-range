@@ -406,14 +406,16 @@ class SituationResult(object):
     """
     Everything a user might want to know about their results for a situation.
     """
-    def __init__(self, name, average, positions):
+    def __init__(self, situationid, name, average, positions):
+        self.situationid = situationid
         self.name = name
         self.average = average
         self.positions = positions
 
     def __repr__(self):
-        return "SituationResult(name=%r, average=%r, positions=%r)" %  \
-            (self.name, self.average, self.positions)
+        return "SituationResult(situationid=%r, name=%r, average=%r, "  \
+            "positions=%r)" % (self.situationid, self.name, self.average,
+                               self.positions)
 
 class PositionResult(object):
     """

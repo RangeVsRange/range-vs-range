@@ -131,6 +131,7 @@ def get_user_statistics(session, userid, min_hands, is_competition):
             total_played += len(data)
         if total_played >= min_hands:
             situation_results.append(SituationResult(
+                situationid=situation.situationid,
                 name=situation.description,
                 average=orbit_average,
                 positions=position_results))

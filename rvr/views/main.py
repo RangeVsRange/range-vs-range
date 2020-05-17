@@ -469,12 +469,12 @@ def join_game():
     api = API()
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
     userid = session['userid']
     response = api.join_game(userid, gameid)
@@ -483,7 +483,7 @@ def join_game():
     elif response is api.ERR_JOIN_GAME_GAME_FULL:
         msg = "Game %d is full." % (gameid,)
     elif response is api.ERR_NO_SUCH_OPEN_GAME:
-        msg = "Invalid game ID."
+        msg = "Invalid game id."
     elif response is api.ERR_NO_SUCH_USER:
         msg = "Oddly, your account does not seem to exist. " +  \
             "Try logging out and logging back in."
@@ -516,19 +516,19 @@ def leave_game():
     api = API()
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
     userid = session['userid']
     response = api.leave_game(userid, gameid)
     if response is api.ERR_USER_NOT_IN_GAME:
         msg = "You are not registered in game %s." % (gameid,)
     elif response is api.ERR_NO_SUCH_OPEN_GAME:
-        msg = "Invalid game ID."
+        msg = "Invalid game id."
     elif isinstance(response, APIError):
         msg = "An unknown error occurred leaving game %d, sorry." % (gameid,)
     else:
@@ -956,7 +956,7 @@ def authenticated_game_page(gameid):
     response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_GAME:
-            msg = "Invalid game ID."
+            msg = "Invalid game id."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
                 (gameid,)
@@ -978,7 +978,7 @@ def unauthenticated_game_page(gameid):
     response = api.get_public_game(gameid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_GAME:
-            msg = "Invalid game ID."
+            msg = "Invalid game id."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
                 (gameid,)
@@ -997,12 +997,12 @@ def game_page():
     """
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
 
     if is_authenticated():
@@ -1041,12 +1041,12 @@ def chat_page():
     """
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
 
     userid = session['userid']
@@ -1055,7 +1055,7 @@ def chat_page():
     response = api.get_private_game(gameid, userid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_GAME:
-            msg = "Invalid game ID."
+            msg = "Invalid game id."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
                 (gameid,)
@@ -1070,12 +1070,43 @@ def situation_page():
     Details about a situation, and (most interestingly) leaderboard.
     """
     situationid = request.args.get('situationid', None)
-    is_public = request.args.get('is_public', None)
+    if situationid is None:
+        flash("Invalid situation id.")
+        return redirect(url_for('error_page'))
+    try:
+        situationid = int(situationid)
+    except ValueError:
+        flash("Invalid situation.")
+        return redirect(url_for('error_page'))
+
+    size = request.args.get('size', '3')
+    try:
+        size = int(size)
+    except ValueError:
+        flash("Invalid leaderboard size.")
+        return redirect(url_for('error_page'))
+
+    min_played = request.args.get('min', '5')
+    try:
+        min_played = int(min_played)
+    except ValueError:
+        flash("Invalid min hands played.")
+        return redirect(url_for('error_page'))
+
+    api = API()
+    result = api.get_leaderboards(situationid, size, min_played)
+    if isinstance(result, APIError):
+        flash("An unknown error occurred, sorry.")
+        return redirect(url_for('error_page'))
+    description, leaderboards = result
+
     navbar_items = default_navbar_items()
     return render_template('web/situation.html',
         navbar_items=navbar_items,
         is_logged_in=is_logged_in(),
-        my_screenname=get_my_screenname())
+        my_screenname=get_my_screenname(),
+        description=description,
+        leaderboards=leaderboards)
 
 @APP.route('/showdown', methods=['GET'])
 def showdown_page():
@@ -1090,17 +1121,17 @@ def showdown_page():
     """
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        return error("Invalid game ID.")
+        return error("Invalid game id.")
     try:
         gameid = int(gameid)
     except ValueError:
-        return error("Invalid game ID (not a number).")
+        return error("Invalid game id (not a number).")
 
     api = API()
     response = api.get_public_game(gameid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_GAME:
-            msg = "Invalid game ID."
+            msg = "Invalid game id."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
                 (gameid,)
@@ -1170,17 +1201,17 @@ def analysis_page():
     # like a normal range viewer (green / yellow / red / blue).
     gameid = request.args.get('gameid', None)
     if gameid is None:
-        return error("Invalid game ID.")
+        return error("Invalid game id.")
     try:
         gameid = int(gameid)
     except ValueError:
-        return error("Invalid game ID (not a number).")
+        return error("Invalid game id (not a number).")
 
     api = API()
     response = api.get_public_game(gameid)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_GAME:
-            msg = "Invalid game ID."
+            msg = "Invalid game id."
         else:
             msg = "An unknown error occurred retrieving game %d, sorry." %  \
                 (gameid,)
@@ -1312,12 +1343,12 @@ def _group_key(game):
 def group_page():
     gameid = request.args.get('id', None)
     if gameid is None:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
     try:
         gameid = int(gameid)
     except ValueError:
-        flash("Invalid game ID.")
+        flash("Invalid game id.")
         return redirect(url_for('error_page'))
 
     if is_logged_in():
@@ -1394,12 +1425,12 @@ def make_treeview_data(group_tree):
 def tree_page():
     groupid = request.args.get('id', None)
     if groupid is None:
-        flash("Invalid group ID.")
+        flash("Invalid group id.")
         return redirect(url_for('error_page'))
     try:
         groupid = int(groupid)
     except ValueError:
-        flash("Invalid group ID.")
+        flash("Invalid group id.")
         return redirect(url_for('error_page'))
 
     api = API()
