@@ -385,10 +385,11 @@ class AdminCmd(Cmd):
         description, leaderboards = result
         print "Situation '%s'." % (description,)
         for name, entries in leaderboards:
-            print "Leaderboard for position '%s'" % (name,)
+            print
+            print "Leaderboard for position '%s':" % (name,)
             for entry in entries:
                 print "%s achieved an average result of %0.4f over %d "  \
-                    "hands, for confidence of %0.1f%%" % (entry.screenname,
+                    "hands, for confidence of %0.1f%%." % (entry.screenname,
                     entry.average, entry.played, entry.confidence * 100.0)
 
     def do_statistics(self, params):
