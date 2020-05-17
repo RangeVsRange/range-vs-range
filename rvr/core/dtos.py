@@ -437,6 +437,21 @@ class PositionResult(object):
             (self.situationid, self.order, self.name, self.ev, self.played,
              self.total, self.average, self.stddev, self.confidence)
 
+class LeaderboardEntry(object):
+    """
+    a player's entry on a leaderboard: screenname, average, confidence, #games
+    """
+    def __init__(self, screenname, average, confidence, played):
+        self.screenname = screenname
+        self.average = average
+        self.confidence = confidence
+        self.played = played
+
+    def __repr__(self):
+        return "LeaderboardEntry(screenname=%r, average=%r, confidence=%r, "  \
+            "played=%r)" %  \
+            (self.screenname, self.average, self.confidence, self.played)
+
 class UsersGameDetails(object):
     """
     lists of open game details, running game details, for a specific user

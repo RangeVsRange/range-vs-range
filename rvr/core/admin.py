@@ -368,6 +368,29 @@ class AdminCmd(Cmd):
         result.analysis = None
         print result
 
+    def do_leaderboards(self, params):
+        """
+        leaderboards <situationid> <size>
+        Display leaderboards for all positions of situation, to max size size.
+        """
+        args = params.split(None, 1)
+        if len(args) != 2:
+            print "Need exactly 2 parameters. Try <help leaderboard>."
+            return
+        situationid, size = args
+        result = self.api.get_leaderboards(situationid, size)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+            return
+        description, leaderboards = result
+        print "Situation '%s'." % (description,)
+        for name, entries in leaderboards:
+            print "Leaderboard for position '%s'" % (name,)
+            for entry in entries:
+                print "%s achieved an average result of %0.4f over %d "  \
+                    "hands, for confidence of %0.1f%%" % (entry.screenname,
+                    entry.average, entry.played, entry.confidence * 100.0)
+
     def do_statistics(self, params):
         """
         statistics <username> <is_competition>

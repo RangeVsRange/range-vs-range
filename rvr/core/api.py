@@ -1413,6 +1413,35 @@ class API(object):
         self._write_statistics(userid, is_competition, results)
         return results
 
+    @api
+    def get_leaderboards(self, situationid, size):
+        """
+        Return leaderboards of given size for all positions in given situation.
+
+        Result is situation description,
+        and a list of tuples, ordered by seating:
+         - position name
+         - list (with max length size) of LeaderboardEntry
+        """
+        situation = self.session.query(tables.Situation)  \
+            .filter(tables.Situation.situationid==situationid).one()
+        results = []
+        for player in situation.players:
+            usps = self.session.query(tables.UserSituationPlayer)  \
+                .filter(tables.UserSituationPlayer.situationid==situationid)  \
+                .filter(tables.UserSituationPlayer.order==player.order)  \
+                .order_by(tables.UserSituationPlayer.confidence.desc())  \
+                .limit(size).all()
+            leaderboards = []
+            for usp in usps:
+                leaderboards.append(dtos.LeaderboardEntry(
+                    screenname=usp.user.screenname,
+                    average=usp.amount_won / usp.hands_played,
+                    confidence=usp.confidence,
+                    played=usp.hands_played))
+            results.append((player.name, leaderboards))
+        return situation.description, results
+
     def _run_pending_analysis(self):
         """
         Look through all games for analysis that has not yet been done, and do

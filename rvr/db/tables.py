@@ -164,6 +164,8 @@ class UserSituationPlayer(BASE, object):
     hands_played = Column(Integer, nullable=True)  # games or groups
     confidence = Column(Float, nullable=True, index=True)  # for leaderboards
 
+    user = relationship("User")
+
     def get_ev(self):
         if self.amount_won is None or self.hands_played is None:
             return None
