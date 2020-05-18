@@ -12,7 +12,7 @@ $('.mode-button').popover({trigger: 'hover'})
 {% block content %}
 <div class="container">
   <div class="page-header">
-    <h1>{{screenname}}<br><small>Results and Statistics</small></h1>
+    <h1>{{screenname}}<br><small>results and statistics</small></h1>
     <div class="btn-group">
       <button type="button" class="btn {% if mode == 'optimization' %}btn-warning{% else %}btn-primary{% endif %} dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
         {% if mode == 'optimization' %}Optimization mode{% else %}Competition mode{% endif %} <span class="caret"></span>
@@ -30,7 +30,7 @@ $('.mode-button').popover({trigger: 'hover'})
   {{ flash_messages() }}
 
 {% for situation in situations %}
-  <h3>"{{situation.name}}" (<a href="{{url_for('situation_page', situationid=situation.situationid)}}">leaderboard</a>)</h3>
+  <h3>"{{situation.name}}" {% if mode == 'competition' %}(<a href="{{url_for('situation_page', situationid=situation.situationid)}}">leaderboard</a>){% endif %}</h3>
   {% if situation.average is not none %}<h3><strong>{{"%0.04f" % (situation.average if situation.average > 0.0 else -situation.average,)}}</strong> chips <strong>{% if situation.average > 0 %}above{% else %}below{% endif %}</strong> the average per orbit</h3>{% endif %}
   <table class="table table-bordered">
     <thead><tr>

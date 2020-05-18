@@ -1432,6 +1432,7 @@ class API(object):
                 .filter(tables.UserSituationPlayer.order == player.order)  \
                 .filter(tables.UserSituationPlayer.public_ranges == False)  \
                 .filter(tables.UserSituationPlayer.hands_played >= min_played) \
+                .filter(tables.UserSituationPlayer.confidence > 0.5)  \
                 .order_by(tables.UserSituationPlayer.confidence.desc())  \
                 .limit(size).all()
             leaderboards = []
