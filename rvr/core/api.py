@@ -26,7 +26,7 @@ from rvr.analysis.analyse import AnalysisReplayer
 from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
     PaymentToPlayer, GAME_HISTORY_TABLES
 import datetime
-from rvr.local_settings import SUPPRESSED_SITUATIONS
+from rvr.local_settings import SUPPRESSED_SITUATIONS, SUPPRESSED_GAME_MAX
 import re
 from rvr.analysis import statistics
 from rvr.analysis.statistics import recalculate_global_statistics
@@ -1454,7 +1454,8 @@ class API(object):
         """
         found = False
         games = self.session.query(tables.RunningGame)  \
-            .filter(tables.RunningGame.current_round == FINISHED).all()
+            .filter(tables.RunningGame.current_round == FINISHED)  \
+            .filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX).all()
         for game in games:
             if not game.analysis_performed:
                 replayer = AnalysisReplayer(self.session, game)

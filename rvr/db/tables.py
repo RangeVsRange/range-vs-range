@@ -760,8 +760,6 @@ class PaymentToPlayer(BASE):
     REASON_SHOWDOWN_CALL = 'showdown-call'
     # Getting money from the pot at showdown
     REASON_SHOWDOWN = 'showdown'
-    REASON_BOARD = 'board'
-    REASON_BRANCH = 'branch'
 
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
@@ -780,33 +778,18 @@ class RunningGameParticipantResult(BASE):
     rgp = relationship("RunningGameParticipant",
         backref=backref("results", cascade="all"))
     SCHEME_EV = 'ev'
-    SCHEME_BOARD = 'board'
-    SCHEME_EQUITY = 'equity'
+    SCHEME_SD = 'sd'
+    SCHEME_NSD = 'nsd'
     SCHEME_DETAILS = {
         # This is the only pure EV scheme, totally unbiased, but high-variance
         SCHEME_EV: {PaymentToPlayer.REASON_POT,
                     PaymentToPlayer.REASON_FOLD_EQUITY,
                     PaymentToPlayer.REASON_SHOWDOWN_CALL,
                     PaymentToPlayer.REASON_SHOWDOWN},
-        # This lowers variance enough that good play should always leads to
-        # positive results
-        SCHEME_BOARD: {PaymentToPlayer.REASON_POT,
-                       PaymentToPlayer.REASON_FOLD_EQUITY,
-                       PaymentToPlayer.REASON_SHOWDOWN_CALL,
-                       PaymentToPlayer.REASON_SHOWDOWN,
-                       PaymentToPlayer.REASON_BOARD},
-        # This is the lowest variance option, but buys into the equity concept
-        # pretty heavily. Remember, equity ignores the effect of position,
-        # ignores stack size, ignores the effects of polarisation, doesn't
-        # include winning any further bets with the nuts (even though they can
-        # never lose), etc.
-        # But it is the one that everyone will look at!
-        SCHEME_EQUITY: {PaymentToPlayer.REASON_POT,
-                        PaymentToPlayer.REASON_FOLD_EQUITY,
-                        PaymentToPlayer.REASON_SHOWDOWN_CALL,
-                        PaymentToPlayer.REASON_SHOWDOWN,
-                        PaymentToPlayer.REASON_BOARD,
-                        PaymentToPlayer.REASON_BRANCH}
+        SCHEME_SD: {PaymentToPlayer.REASON_SHOWDOWN},
+        SCHEME_NSD: {PaymentToPlayer.REASON_POT,
+                     PaymentToPlayer.REASON_FOLD_EQUITY,
+                     PaymentToPlayer.REASON_SHOWDOWN_CALL}
     }
 
     __table_args__ = (

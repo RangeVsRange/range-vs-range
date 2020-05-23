@@ -345,10 +345,24 @@ showdown_view = function(criterion) {
       {% endif %}
     {% endfor %}
     <tr>
+        <td>Non-showdown winnings</td>
+        {% for i in range(num_players) %}
+        {% set rgp = game_details.rgp_details[i] %}
+        <td>{% if not rgp.results or not rgp.results.has_key('nsd') %}(not yet calculated){% else %}{{"%0.4f" % rgp.results['nsd']}}{% endif %}</td>
+        {% endfor %}
+    </tr>
+    <tr>
+        <td>Showdown winnings</td>
+        {% for i in range(num_players) %}
+        {% set rgp = game_details.rgp_details[i] %}
+        <td>{% if not rgp.results or not rgp.results.has_key('sd') %}(not yet calculated){% else %}{{"%0.4f" % rgp.results['sd']}}{% endif %}</td>
+        {% endfor %}
+    </tr>
+    <tr>
         <td><strong>Total</strong></td>
         {% for i in range(num_players) %}
         {% set rgp = game_details.rgp_details[i] %}
-        <td><strong>{% if not rgp.results %}(not yet calculated){% else %}{{"%0.4f" % rgp.results[scheme]}}{% endif %}</strong></td>
+        <td><strong>{% if not rgp.results or not rgp.results.has_key('ev') %}(not yet calculated){% else %}{{"%0.4f" % rgp.results['ev']}}{% endif %}</strong></td>
         {% endfor %}
     </tr>
 </table>

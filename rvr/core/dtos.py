@@ -394,7 +394,7 @@ class RunningGroup(object):
         for game in games:
             for rgp in game.rgps:
                 for result in rgp.results:
-                    if result.scheme == 'ev':
+                    if result.scheme == tables.RunningGameParticipantResult.SCHEME_EV:
                         users[rgp.userid]['result'] +=  \
                             result.result * game.spawn_factor
         users = [users[rgp.userid] for rgp in games[0].rgps]

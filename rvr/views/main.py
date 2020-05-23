@@ -781,11 +781,9 @@ def _make_payments(game_history, game_payments, scheme_includes):
             continue
         by_reason = game_payments[item.order]  # map reason to list
         for reason in [PaymentToPlayer.REASON_FOLD_EQUITY,
-                       PaymentToPlayer.REASON_BRANCH,
                        PaymentToPlayer.REASON_SHOWDOWN_CALL,
                        PaymentToPlayer.REASON_SHOWDOWN,
-                       PaymentToPlayer.REASON_POT,
-                       PaymentToPlayer.REASON_BOARD]:
+                       PaymentToPlayer.REASON_POT]:
             if reason not in scheme_includes:
                 continue
             relevant_payments = by_reason.get(reason, [])
@@ -925,7 +923,7 @@ def _finished_game(game, gameid, userid):
     """
     title = 'Game %d' % (gameid,)
     history = _make_history_list(game.history, game.game_details.situation)
-    scheme = request.args.get('scheme', 'ev')
+    scheme = request.args.get('scheme', RunningGameParticipantResult.SCHEME_EV)
     scheme_includes = RunningGameParticipantResult.SCHEME_DETAILS[scheme]
     payments = _make_payments(game.history, game.payments, scheme_includes)
     is_new_chat = _calc_is_new_chat(game.history, userid)
