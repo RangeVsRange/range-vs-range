@@ -1530,7 +1530,7 @@ class API(object):
         self.session.query(tables.AnalysisFoldEquityItem).delete()
         self.session.query(tables.AnalysisFoldEquity).delete()
         self.session.query(tables.GameHistoryShowdownEquity)  \
-            .update({tables.GameHistoryShowdownEquity: None})
+            .update({tables.GameHistoryShowdownEquity.equity: None})
         self.session.query(tables.RunningGameParticipantResult).delete()
         self.session.query(tables.PaymentToPlayer).delete()
         self.session.query(tables.RunningGame)  \
