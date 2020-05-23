@@ -1366,14 +1366,24 @@ def group_page():
     # least one of them!
     screennames = [rgp.user.screenname for rgp in games[0].rgp_details]
     results_by_player = {screenname: 0.0 for screenname in screennames}
+    nsd_by_player = {screenname: 0.0 for screenname in screennames}
+    sd_by_played = {screenname: 0.0 for screenname in screennames}
     for i, screenname in enumerate(screennames):
         for game in games:
             if not game.rgp_details[i].results:
                 continue
             results_by_player[screenname] += game.spawn_factor *  \
                 game.rgp_details[i].results['ev']
+            if game.rgp_details[i].results.has_key('nsd'):
+                nsd_by_player[screenname] += game.spawn_factor *  \
+                    game.rgp_details[i].results['nsd']
+            if game.rgp_details[i].results.has_key('sd'):
+                sd_by_played[screenname] += game.spawn_factor *  \
+                    game.rgp_details[i].results['sd']
     total_results = [{'screenname': screenname,
-                      'result': results_by_player[screenname]}
+                      'result': results_by_player[screenname],
+                      'nsd': nsd_by_player[screenname],
+                      'sd': sd_by_played[screenname]}
                      for screenname in screennames]
     total_weight = sum(game.spawn_factor
                        for game in games if game.is_analysed)
