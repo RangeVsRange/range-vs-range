@@ -760,6 +760,10 @@ class PaymentToPlayer(BASE):
     REASON_SHOWDOWN_CALL = 'showdown-call'
     # Getting money from the pot at showdown
     REASON_SHOWDOWN = 'showdown'
+    # Showdown winnings and non-showdown winnings
+    # Refer Discord, 00:06am Australian Eastern time, @gettohhole
+    REASON_BLUELINE = 'blueline'  # negative, contribution to showdown
+    REASON_REDLINE = 'redline'  # positive, contribution to showdown
 
     __table_args__ = (
         ForeignKeyConstraint([gameid, order],
@@ -786,10 +790,12 @@ class RunningGameParticipantResult(BASE):
                     PaymentToPlayer.REASON_FOLD_EQUITY,
                     PaymentToPlayer.REASON_SHOWDOWN_CALL,
                     PaymentToPlayer.REASON_SHOWDOWN},
-        SCHEME_SD: {PaymentToPlayer.REASON_SHOWDOWN},
+        SCHEME_SD: {PaymentToPlayer.REASON_SHOWDOWN,
+                    PaymentToPlayer.REASON_BLUELINE},
         SCHEME_NSD: {PaymentToPlayer.REASON_POT,
                      PaymentToPlayer.REASON_FOLD_EQUITY,
-                     PaymentToPlayer.REASON_SHOWDOWN_CALL}
+                     PaymentToPlayer.REASON_SHOWDOWN_CALL,
+                     PaymentToPlayer.REASON_REDLINE}
     }
 
     __table_args__ = (

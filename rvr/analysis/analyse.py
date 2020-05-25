@@ -142,6 +142,48 @@ class FoldEquityAccumulator(object):
                       self.gameid, self.order)
         return afe
 
+class ComboOrderAccumulator(object):
+    """
+    Calculates combo EV for a point in the hand, as it's replayed.
+
+    The convention is that this number represents the EV before the event
+    recorded at the given order. This really only makes a difference for vpip,
+    but it's per user expectations. If I make a call, I want to know if it was
+    a good call (+ev) or a bad call (-ev).
+    """
+    def __init__(self, userid, combo, order):
+        self.userid = userid
+        self.combo = combo
+        self.order = order
+        self.ev = 0.0
+        self.factor = 1.0
+
+    def vpip(self, contribution):
+        """
+        Combo voluntarily puts money in pot, to bet or call
+        """
+        self.ev -= contribution * self.factor
+
+    def _terminal_outcome(self, result, weight):
+        """
+        With a likelihood of weight, result happens.
+        Play continues if weight < 1.0, but factor reduces accordingly.
+        """
+        self.ev += result * weight
+        self.factor *= (1.0 - weight)
+
+    def fold_equity(self, pot, weight):
+        """
+        Combo got folds and so wins pot (some of the time, at least)
+        """
+        self._terminal_outcome(pot, weight)
+
+    def showdown(self, winnings, weight):
+        """
+        Combo goes to showdown (some of the time, at least)
+        """
+        self._terminal_outcome(winnings, weight)
+
 class AnalysisReplayer(object):
     """
     Plays through a hand, performs analysis, and creates analysis items in
@@ -159,6 +201,7 @@ class AnalysisReplayer(object):
         self.game = game
         self.pot = self.game.situation.pot_pre +  \
             sum([p.contributed for p in self.game.situation.players])
+        self.starting_pot = self.pot
         self.street = self.game.situation.current_round
         self.board = self.game.situation.board
         self.fea = None  # current fold equity accumulator
@@ -315,6 +358,35 @@ class AnalysisReplayer(object):
                           showdown.gameid, showdown.order, participant.userid,
                           showdown.factor, showdown.pot, participant.equity,
                           payment.amount)
+            self.session.add(payment)
+            # and redline and blueline
+            total_contrib = showdown.factor *  \
+                (showdown.pot - self.starting_pot) / len(equities)
+            payment = PaymentToPlayer()
+            payment.reason = PaymentToPlayer.REASON_REDLINE
+            payment.gameid = showdown.gameid
+            payment.order = showdown.order
+            payment.userid = participant.userid
+            payment.amount = total_contrib
+            logging.debug('gameid %d, order %d, userid %d, redline payment: '
+                          'factor %0.4f * (pot %d - start %d) / people %d = '
+                          'amount %0.8f',
+                          showdown.gameid, showdown.order, participant.userid,
+                          showdown.factor, showdown.pot, self.starting_pot,
+                          len(equities), payment.amount)
+            self.session.add(payment)
+            payment = PaymentToPlayer()
+            payment.reason = PaymentToPlayer.REASON_BLUELINE
+            payment.gameid = showdown.gameid
+            payment.order = showdown.order
+            payment.userid = participant.userid
+            payment.amount = -total_contrib
+            logging.debug('gameid %d, order %d, userid %d, blueline payment: '
+                          '-factor %0.4f * (pot %d - start %d) / people %d = '
+                          'amount %0.8f',
+                          showdown.gameid, showdown.order, participant.userid,
+                          showdown.factor, showdown.pot, self.starting_pot,
+                          len(equities), payment.amount)
             self.session.add(payment)
 
     def showdown_call(self, gameid, order, caller, call_cost, call_ratio,
@@ -535,6 +607,19 @@ class AnalysisReplayer(object):
         self.left_to_act = [self.game.rgps[i].userid
                             for i in range(len(self.game.situation.players))
                             if self.game.situation.players[i].left_to_act]
+
+        # TODO: 0: maybe this time we can do it, and put it in the database, and be done with oh god please.
+        # map of userid to map of combo to set of ComboOrderAccumulator
+        self.combo_orders = {self.game.rgps[i].userid: {}}
+        # Create new 0.0 for every:
+        # - range action
+        # - action result
+        # Then update all combo orders (including the new ones) for every:
+        # - bet (Hero gets a vpip)
+        # - call (Hero gets a vpip)
+        # - fold (Villain gets a fold equity)
+        # - showdown (everyone gets a showdown)
+
 
         gameid = self.game.gameid
 

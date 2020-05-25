@@ -74,7 +74,7 @@
     <tr>
       <td>{{"%0.2f%%" % (total_weight * 100.0,)}}</td>
       {% for item in total_results %}
-      <td>{{"%0.4f" % (item.result,)}}<!-- [{{"%0.4f" % (item.nsd,)}} nsd + {{"%0.4f" % (item.sd,)}} sd]--></td>
+      <td>{{"%0.4f" % (item.result,)}} [{{"%0.4f" % (item.nsd,)}} nsd + {{"%0.4f" % (item.sd,)}} sd]</td>
       {% endfor %}
     </tr>
     </tbody>
