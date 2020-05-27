@@ -421,38 +421,47 @@ class PositionResult(object):
     """
     Everything a user might want to know about their results for a position.
     """
-    def __init__(self, situationid, order, name, ev, played, total, average,
-                 stddev, confidence):
+    def __init__(self, situationid, order, name, ev, played, total,
+                 redline, blueline, average, stddev, confidence):
         self.situationid = situationid
         self.order = order
         self.name = name
         self.ev = ev
         self.played = played
         self.total = total
+        self.redline = redline
+        self.blueline = blueline
         self.average = average
         self.stddev = stddev
         self.confidence = confidence
 
     def __repr__(self):
         return "PositionResult(situationid=%r, order=%r, name=%r, ev=%r, "  \
-            "played=%r, total=%r, average=%r, stddev=%r, confidence=%r)" %  \
+            "played=%r, total=%r, redline=%r, blueline=%r, average=%r, "  \
+            "stddev=%r, confidence=%r)" %  \
             (self.situationid, self.order, self.name, self.ev, self.played,
-             self.total, self.average, self.stddev, self.confidence)
+             self.total, self.redline, self.blueline, self.average, self.stddev,
+             self.confidence)
 
 class LeaderboardEntry(object):
     """
-    a player's entry on a leaderboard: screenname, average, confidence, #games
+    a player's entry on a leaderboard:
+    screenname, average, redline, blueline, confidence, #games
     """
-    def __init__(self, screenname, average, confidence, played):
+    def __init__(self, screenname, average, redline, blueline, confidence,
+                 played):
         self.screenname = screenname
         self.average = average
+        self.redline = redline
+        self.blueline = blueline
         self.confidence = confidence
         self.played = played
 
     def __repr__(self):
-        return "LeaderboardEntry(screenname=%r, average=%r, confidence=%r, "  \
-            "played=%r)" %  \
-            (self.screenname, self.average, self.confidence, self.played)
+        return "LeaderboardEntry(screenname=%r, average=%r, redline=%r, "  \
+            "blueline=%r, confidence=%r, played=%r)" %  \
+            (self.screenname, self.average, self.redline, self.blueline,
+             self.confidence, self.played)
 
 class UsersGameDetails(object):
     """

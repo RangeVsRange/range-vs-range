@@ -161,6 +161,8 @@ class UserSituationPlayer(BASE, object):
     public_ranges = Column(Boolean, primary_key=True)
 
     amount_won = Column(Float, nullable=True)  # games or groups
+    redline = Column(Float, nullable=True)
+    blueline = Column(Float, nullable=True)
     hands_played = Column(Integer, nullable=True)  # games or groups
     confidence = Column(Float, nullable=True, index=True)  # for leaderboards
 

@@ -388,9 +388,10 @@ class AdminCmd(Cmd):
             print
             print "Leaderboard for position '%s':" % (name,)
             for entry in entries:
-                print "%s achieved an average result of %0.4f over %d "  \
-                    "hands, for confidence of %0.1f%%." % (entry.screenname,
-                    entry.average, entry.played, entry.confidence * 100.0)
+                print "%s achieved an average result of %0.4f over %d hands "  \
+                    "(%0.4f red / %0.4f blue), for confidence of %0.1f%%." %  \
+                    (entry.screenname, entry.average, entry.redline,
+                     entry.blueline, entry.played, entry.confidence * 100.0)
 
     def do_statistics(self, params):
         """

@@ -1380,14 +1380,18 @@ class API(object):
                 usp.order = pos.order
                 usp.public_ranges = not is_competition
                 usp.amount_won = pos.total
+                usp.redline = pos.redline
+                usp.blueline = pos.blueline
                 usp.hands_played = pos.played
                 usp.confidence = pos.confidence
                 _merged = self.session.merge(usp)  # insert or update
                 logging.info("Added UserSituationPlayer(userid=%r, "
                     "situationid=%r, order=%r, public_ranges=%r, "
-                    "amount_won=%r, hands_played=%r, confidence=%r",
+                    "amount_won=%r, redline=%r, blueline=%r, hands_played=%r, "
+                    "confidence=%r",
                     _merged.userid, _merged.situationid, _merged.order,
                     _merged.public_ranges, _merged.amount_won,
+                    _merged.redline, _merged.blueline,
                     _merged.hands_played, _merged.confidence)
 
     @api
@@ -1440,6 +1444,8 @@ class API(object):
                 leaderboards.append(dtos.LeaderboardEntry(
                     screenname=usp.user.screenname,
                     average=usp.amount_won / usp.hands_played,
+                    redline=usp.redline / usp.hands_played,
+                    blueline=usp.blueline / usp.hands_played,
                     confidence=usp.confidence,
                     played=usp.hands_played))
             results.append((player.name, leaderboards))

@@ -45,16 +45,30 @@ def _calculate_confidence(total_result, num_games,
     be_norm = stats.norm(loc=be_total, scale=be_stddev)
     return be_norm.cdf(total_result)
 
-def _get_ev(game, order, userid):
+def _get_ev(game, order, userid, scheme):
     """
-    Return user's 'ev' result, or None
+    Return user's result for scheme, or None
     """
     for rgp in game.rgps:
         if rgp.order == order and rgp.userid == userid:
             for result in rgp.results:
-                if result.scheme == 'ev':
+                if result.scheme == scheme:
                     return result.result
     return None
+
+def _get_all_results(groups, order, userid, scheme):
+    """
+    Return user's results for scheme
+    """
+    results = {}
+    for spawn_group, games in groups.iteritems():
+        for game in games:
+            ev = _get_ev(game=game, order=order,
+                         userid=userid, scheme=scheme)
+            if ev is not None:  # they did play this position
+                results.setdefault(spawn_group, 0.0)
+                results[spawn_group] += ev * game.spawn_factor
+    return filter(lambda x: x is not None, results.values())
 
 def _game_timed_out(session, game):
     """
@@ -97,17 +111,15 @@ def get_user_statistics(session, userid, min_hands, is_competition):
         orbit_average = 0.0 - situation.pot_pre
         total_played = 0
         for player in situation.players:
-            results = {}
-            for spawn_group, games in groups.iteritems():
-                for game in games:
-                    ev = _get_ev(game=game, order=player.order,
-                                 userid=userid)
-                    if ev is None:  # they didn't play this position
-                        continue
-                    results.setdefault(spawn_group, 0.0)
-                    results[spawn_group] += ev * game.spawn_factor
-            data = filter(lambda x: x is not None, results.values())
+            data = _get_all_results(groups=groups, order=player.order,
+                                    userid=userid, scheme='ev')
+            redline_data = _get_all_results(groups=groups, order=player.order,
+                                            userid=userid, scheme='nsd')
+            blueline_data = _get_all_results(groups=groups, order=player.order,
+                                             userid=userid, scheme='sd')
             total = sum(data)
+            redline = sum(redline_data)
+            blueline = sum(blueline_data)
             confidence = _calculate_confidence(
                 total_result=total,
                 num_games=len(data),
@@ -121,6 +133,8 @@ def get_user_statistics(session, userid, min_hands, is_competition):
                 stddev=player.stddev,  # population stats are more reliable
                 played=len(data),
                 total=total if data else None,
+                redline=redline if redline_data else None,
+                blueline=blueline if blueline_data else None,
                 average=total / len(data) if data else None,
                 confidence=confidence))
             if data and orbit_average is not None:

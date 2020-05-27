@@ -21,7 +21,7 @@
     {% for entry in entries %}
     <tr>
         <td>{{number}}. <strong>{{entry.screenname}}</strong></td> {% set number = number + 1 %}
-        <td>{{"%0.4f" % (entry.average,)}} ({{entry.played}} hands)</td>
+        <td>{{"%0.4f" % (entry.average,)}} = {{"%0.4f" % (entry.redline,)}} red + {{"%0.4f" % (entry.blueline,)}} blue ({{entry.played}} hands)</td>
         <td>{{"%0.1f%%" % (entry.confidence * 100.0,)}}</td>
     </tr>
     {% endfor %}
