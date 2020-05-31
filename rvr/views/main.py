@@ -1175,7 +1175,15 @@ def showdown_page():
     # showdown.equities is a list with UserDetails members.
     # This tells us who was in the showdown, i.e. which ranges to use.
     # Now let's make some data.
-    combo_and_ev_by_user = all_combos_ev(board_raw, showdown, all_ranges)
+    combo_and_ev_by_userid = all_combos_ev(
+        board=Card.many_from_text(board_raw),
+        userids=[e.user.userid for e in showdown.equities],
+        pot=showdown.pot,
+        all_ranges=all_ranges)
+    map_userid_to_user = {e.user.userid: e.user for e in showdown.equities}
+    combo_and_ev_by_user = [(map_userid_to_user[userid],
+                             sorted(data, key=lambda a: a[1]))
+                            for userid, data in combo_and_ev_by_userid]
     # list of (user, list of (raw combo, EV)) sorted by EV low to high
 
     navbar_items = default_navbar_items()

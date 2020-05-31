@@ -183,22 +183,22 @@ def showdown(board, players_cards, memo=None):
     return shown_down, winners
 
 # TODO: 1: This is a hack. Combine into AnalysisReplayer, store in database.
-def all_combos_ev(board_raw, showdown, all_ranges):
+def all_combos_ev(board, userids, pot, all_ranges):
     """
+    board is a list of cards
+    userids is a list that gives us order of players
+    pot is the size of the pot
     all_ranges maps userid to raw range.
-    showdown is a dtos.GameItemShowdown.
 
     returns a list of tuples of (user, list of tuples of (raw combo, EV))
     users ordered according to showdown.equities, EV ordered low to high
     """
-    board = Card.many_from_text(board_raw)
-    users = [e.user for e in showdown.equities]
     results = []
-    for user in users:  # for each player, generate all combos
+    for userid in userids:  # for each player, generate all combos
         all_combos_ev = []
         if len(all_ranges) == 2:
             (key1, range1), (_key2, range2) = all_ranges.items()
-            if key1 == user.userid:
+            if key1 == userid:
                 hero = range1
                 villain = range2
             else:
@@ -208,27 +208,27 @@ def all_combos_ev(board_raw, showdown, all_ranges):
             # for reasons that probably aren't obvious
             # (that's the number of combos in "anything" once you remove 2 Hero
             # combos and 5 board cards)
-            # screw it let's make it an eve 1,000 for those other spots
+            # screw it let's make it an even 1,000 for those other spots
             equities = py_all_hands_vs_range(hero, villain, board, 1000)
             for combo, eq in equities.iteritems():
                 desc = unweighted_options_to_description([combo])
-                all_combos_ev.append((desc, eq * showdown.pot))
+                all_combos_ev.append((desc, eq * pot))
         else:
-            range_ = all_ranges[user.userid]
+            range_ = all_ranges[userid]
             combos = range_.generate_options(board)
             ranges = {}
             for combo in combos:  # for each combo, calculate EV
                 desc = unweighted_options_to_description([combo])
                 ranges = {}
-                for u in users:  # generate ranges
-                    if u.userid == user.userid:
-                        ranges[u.userid] = HandRange(desc)
+                for u in userids:  # generate ranges
+                    if u == userid:
+                        ranges[u] = HandRange(desc)
                     else:
-                        ranges[u.userid] = all_ranges[u.userid]
+                        ranges[u] = all_ranges[u]
                 equities, iterations = showdown_equity(ranges, board, 1000)
                 if iterations:
-                    eq = equities[user.userid]
-                    all_combos_ev.append((desc, eq * showdown.pot))
+                    eq = equities[userid]
+                    all_combos_ev.append((desc, eq * pot))
                 else:
                     # It happens that sometime a hand in a range is up against
                     # such a narrow range that card removal effects mean that
@@ -239,8 +239,7 @@ def all_combos_ev(board_raw, showdown, all_ranges):
                     # actions' EV.
                     # TODO: 1: recognise impossibilities in combo EV calcs.
                     pass
-        all_combos_ev.sort(key=lambda a: a[1])
-        results.append((user, all_combos_ev))
+        results.append((userid, all_combos_ev))
     return results
 
 class Test(unittest.TestCase):

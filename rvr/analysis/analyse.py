@@ -12,11 +12,11 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     AnalysisFoldEquityItem, GameHistoryShowdown,  \
     GameHistoryShowdownEquity, \
     PaymentToPlayer, RunningGameParticipantResult
-from rvr.poker.handrange import HandRange
+from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
-from rvr.poker.showdown import showdown_equity
+from rvr.poker.showdown import showdown_equity, all_combos_ev
 from rvr.mail.notifications import notify_finished
 
 # pylint:disable=R0902,R0913,R0914,R0903
@@ -148,9 +148,18 @@ class ComboOrderAccumulator(object):
 
     The convention is that this number represents the EV before the event
     recorded at the given order. This really only makes a difference for vpip,
-    but it's per user expectations. If I make a call, I want to know if it was
-    a good call (+ev) or a bad call (-ev).
+    but it's per user expectations. It doesn't make sense for it to be a 0 ev
+    call in the case that I later fold.
+
+    Note that some combos that are accumulated end up with invalid results.
+    These are the combos that don't get played out. E.g. I have a raise range,
+    but I happen to call. In Optimisation Mode, these will have valid evs in
+    another betting line.
+
+    Ideally we would delete these when a non-terminal betting line is not played
+    out.
     """
+    # TODO: 0: delete combos when non-terminal betting lines are not played out
     def __init__(self, userid, combo, order):
         self.userid = userid
         self.combo = combo
@@ -169,7 +178,7 @@ class ComboOrderAccumulator(object):
         With a likelihood of weight, result happens.
         Play continues if weight < 1.0, but factor reduces accordingly.
         """
-        self.ev += result * weight
+        self.ev += result * weight * self.factor
         self.factor *= (1.0 - weight)
 
     def fold_equity(self, pot, weight):
@@ -206,6 +215,173 @@ class AnalysisReplayer(object):
         self.board = self.game.situation.board
         self.fea = None  # current fold equity accumulator
         self.prev_range_action = None
+        self.ranges = {self.game.rgps[i].userid:
+                       self.game.situation.players[i].range_raw
+                       for i in range(len(self.game.situation.players))}
+        self.stacks = {self.game.rgps[i].userid:
+                       self.game.situation.players[i].stack
+                       for i in range(len(self.game.situation.players))}
+        self.contrib = {self.game.rgps[i].userid:
+                        self.game.situation.players[i].contributed
+                        for i in range(len(self.game.situation.players))}
+        self.remaining_userids = [rgp.userid for rgp in self.game.rgps]
+        self.left_to_act = [self.game.rgps[i].userid
+                            for i in range(len(self.game.situation.players))
+                            if self.game.situation.players[i].left_to_act]
+        # map of userid to (map of combo to (set of ComboOrderAccumulator))
+        self.combo_orders = {
+            self.game.rgps[i].userid: {
+                combo: set([ComboOrderAccumulator(self.game.rgps[i].userid,
+                                                  combo,
+                                                  None)])  # for the whole game
+                for combo in HandRange(self.ranges[self.game.rgps[i].userid])  \
+                    .generate_options(self.board)
+            }
+            for i in range(len(self.game.situation.players))
+        }
+        # TODO: 0: maybe this time we can do it, and put it in the database, and be done with oh god please.
+        #
+        # Create new 0.0 for every order that could be shown to user in history:
+        # - range action
+        # - action result
+        # - showdown
+        #
+        # Then update all combo orders (including the new ones) when we find a:
+        # - (tick) bet (Hero gets a vpip)
+        # - (tick) call (Hero gets a vpip)
+        # - (tick) showdown call (Hero gets a vpip)
+        # - (tick) fold (Villain gets a fold equity)
+        # - showdown (everyone gets a showdown)
+        #
+        # I.e. any time there's a payment.
+
+    def _new_combo_evs(self, userid, range_, order):
+        """
+        Add new ComboOrderAccumulator items for new game node
+        """
+        combo_map = self.combo_orders[userid]
+        combos = range_.generate_options(self.board)
+        for combo in combos:
+            evs = combo_map.setdefault(combo, set())
+            evs.add(ComboOrderAccumulator(userid, combo, order))
+
+    def _combo_vpips(self, userid, range_, contribution):
+        """
+        Apply vpip to Hero's combos
+        """
+        combo_map = self.combo_orders[userid]
+        combos = range_.generate_options(self.board)
+        for combo in combos:
+            for ev in combo_map[combo]:
+                ev.vpip(contribution)
+
+    def _combo_fold_equity(self, userid, combo, pot, weight):
+        """
+        Apply a fold equity payment for a combo
+        """
+        for ev in self.combo_orders[userid][combo]:
+            ev.fold_equity(pot, weight)
+
+    def _fold_ratio(self, hero_combos, fold_combos, villain_combo):
+        """
+        How often does hero fold when Villain holds combo?
+        """
+        count_all = 0
+        count_folds = 0
+        for combo in hero_combos:
+            if len(combo.union(villain_combo)) == 4:
+                count_all += 1
+                if combo in fold_combos:
+                    count_folds += 1
+        if count_all:
+            return 1.0 * count_folds / count_all
+        else:
+            return None
+
+    def _all_combos_fold_equity(self, range_action, folder, nonfolder):
+        """
+        Unique fold equity payment for each combo *of Villain's range*.
+
+        Note that folding has no effect on Heros's combo ev.
+        """
+        villain = HandRange(self.ranges[nonfolder])
+        hero = HandRange(self.ranges[folder])
+        fold = HandRange(range_action.fold_range)
+        villain_combos = villain.generate_options(self.board)
+        hero_combos = hero.generate_options(self.board)
+        fold_combos = fold.generate_options(self.board)
+        for combo in villain_combos:
+            fold_ratio = self._fold_ratio(hero_combos, fold_combos, combo)
+            if fold_ratio is not None:
+                self._combo_fold_equity(nonfolder, combo, self.pot, fold_ratio)
+
+    def _combo_showdown(self, userid, combo, winnings, weight):
+        """
+        Apply a showdown payment for a combo
+        """
+        for ev in self.combo_orders[userid][combo]:
+            ev.showdown(winnings, weight)
+
+    def _combo_showdown_weight(self):
+        pass
+
+    def _all_combos_showdown(self, pot, board, ranges):
+        """
+        Showdown payments for every combo of every player's range
+        """
+        # The hardest spot to deal with is this:
+        # Player A bets
+        # Player B calls
+        # Player C folds some, calls some, and raises some
+        # To evaluate Player C's combos is easy. They are all considered to have
+        # 100% weight, because from their perspective Player A's and Player B's
+        # bet and call happen 100% of the time.
+        # But to evaluate Player A's combos, or Player B's combos is harder.
+        # We have to respect that the three-player showdown only happens some of
+        # the time, because Player C could have folded (a terminal option) or
+        # raise (a non-terminal option). So Player A or Player B's EV for the
+        # three-player showdown is weighted. The weight of Player C's folds
+        # don't contribute to this - instead they contribute to the weight of
+        # a different showdown, between Player A and Player B.
+        #
+        # So I guess it goes like this:
+        #
+        # Player A bets.
+        # Player B calls, but we don't have a showdown yet.
+        # Player C folds some, calls some, and raises some.
+        # The EV of a combo of Player A is a combination of the EV from the
+        # showdown that happens when Player C folds, and the EV from the
+        # showdown that happens when Player C calls, and the EV of whatever
+        # happens when Player C raises.
+        # So it is very important that we know how likely Player C's fold, call
+        # and raise are.
+        # Player A or Player B's EV will be:
+        # - two-player showdown EV * (fold_ratio for this combo)
+        # - three-player showdown EV * (call_ratio for this combo)
+        # - and a reduction of weight equal to (fold_ratio + call_ratio)
+        # This will mimic what happens in-game, where both showdowns are handled
+        # together, with each given a weight appropriate to the action ratios,
+        # and then a total factor reduction of (non_terminal / total).
+        # It'll work exactly the same when the range is a single combo, of
+        # course.
+        #
+        # So finally we realise how complicated this is. For every combo of each
+        # player (except the last player), we must:
+        # - calculate the fold_ratio, call_ratio, raise ratio of the last player
+        # - calculate the EV of the showdown when they fold
+        # - calculate the EV of the showdown when they call
+        # - reduce the factor by (f+c)/(f+c+r)
+        # And this kind of needs to be done atomically.
+        userids_combo_evs = all_combos_ev(board=board,
+                                          userids=ranges.keys(),
+                                          pot=pot,
+                                          ranges=ranges)
+        for userid, combo_evs in userids_combo_evs:
+            for description, ev in combo_evs:
+                combo = Card.many_from_text(description)
+                weight = 1#self._combo_showdown_weight()  # impossible to calculate here
+                if weight is not None:
+                    self._combo_showdown(userid, combo, ev, weight)
 
     def process_board(self, item):
         """
@@ -215,15 +391,15 @@ class AnalysisReplayer(object):
         self.left_to_act = self.remaining_userids[:]
         assert self.fea is None
         self.street = item.street
-        board_before = self.board
         self.board = Card.many_from_text(item.cards)
-        board_after = self.board
-        # self.board_payment(item, board_before, board_after)
 
     def process_action_result(self, item):
         """
         Process a GameHistoryActionResult
         """
+        self._new_combo_evs(userid=item.userid,
+                            range_=HandRange(self.ranges[item.userid]),
+                            order=item.order)
         if item.is_fold:
             self.remaining_userids.remove(item.userid)
             self.ranges[item.userid] = self.prev_range_action.fold_range
@@ -284,6 +460,9 @@ class AnalysisReplayer(object):
         """
         if contribution == 0:
             return
+        self._combo_vpips(action_item.userid,
+                          HandRange(self.ranges[action_item.userid]),
+                          contribution)
         amount = -action_item.factor * contribution
         logging.debug('gameid %d, order %d, userid %d, pot payment: '
                       'factor %0.4f * contribution %d = amount %0.8f',
@@ -304,7 +483,7 @@ class AnalysisReplayer(object):
         current factor multiplied by the fold ratio (up to and including 100% of
         the pot, e.g. when in a HU situation BTN open folds 100%).
 
-        This is not a payment from one player to the other. It is a payment
+        This is not a payment from one player to the other. It is a payment from
         the pot to the player who bet. The bettor gains a portion of the pot
         equal to the fold ratio, and the pot loses this by virtue of a reduction
         in the current factor.
@@ -338,6 +517,9 @@ class AnalysisReplayer(object):
         nonfolder_payment.userid = nonfolder
         nonfolder_payment.amount = amount
         self.session.add(nonfolder_payment)
+        self._all_combos_fold_equity(range_action,
+                                     folder=range_action.userid,
+                                     nonfolder=nonfolder)
 
     def showdown_payments(self, showdown, equities):
         """
@@ -390,12 +572,13 @@ class AnalysisReplayer(object):
             self.session.add(payment)
 
     def showdown_call(self, gameid, order, caller, call_cost, call_ratio,
-                      factor):
+                      factor, range_):
         """
         This is a call that doesn't really happen (it's not in the game tree
         main branch), but it's terminal (like a fold), and we pay out showdowns,
         but to do so we also need to charge for the call that doesn't happen.
         """
+        self._combo_vpips(caller, range_, call_cost)
         payment = PaymentToPlayer()
         payment.reason = PaymentToPlayer.REASON_SHOWDOWN_CALL
         payment.gameid = gameid
@@ -413,6 +596,9 @@ class AnalysisReplayer(object):
         """
         Create a showdown with given userids. Pre-river if pre-river.
         """
+        for userid, range_ in ranges.iteritems():
+            if userid in userids:
+                self._new_combo_evs(userid, range_, order)
         showdowns = self.session.query(GameHistoryShowdown)  \
             .filter(GameHistoryShowdown.gameid == self.game.gameid)  \
             .filter(GameHistoryShowdown.order == order)  \
@@ -435,6 +621,7 @@ class AnalysisReplayer(object):
         # great call!" Well no actually, the card removal effects of the folded
         # players change your equity, and you suck at poker.
         range_map = {k: v for k, v in ranges.iteritems() if k in userids}
+        assert self.board == self.game.board
         equity_map, iterations = showdown_equity(range_map, self.game.board)
         logging.debug('gameid %d, order %d, is_passive %r, factor %0.8f, '
                       'showdown with userids: %r, equity: %r '
@@ -461,6 +648,7 @@ class AnalysisReplayer(object):
             participant.equity = equity_map[userid]
         self.showdown_payments(showdown=showdown,
                                equities=existing_equities.values())
+        self._all_combos_showdown(showdown.pot, self.game.board, range_map)
 
     def _calculate_call_cost(self, userid):
         """
@@ -518,7 +706,8 @@ class AnalysisReplayer(object):
             if call_cost != 0:
                 self.showdown_call(gameid=item.gameid, order=order,
                     caller=item.userid, call_cost=call_cost,
-                    call_ratio=call_ratio, factor=item.factor)
+                    call_ratio=call_ratio, factor=item.factor,
+                    range_=ranges[item.userid])
             self.analyse_showdown(ranges=ranges,
                 order=order,
                 is_passive=True,
@@ -528,6 +717,9 @@ class AnalysisReplayer(object):
         """
         Process a GameHistoryRangeAction
         """
+        self._new_combo_evs(userid=item.userid,
+                            range_=HandRange(self.ranges[item.userid]),
+                            order=item.order)
         legacy_fol = len(HandRange(item.fold_range).generate_options(self.board))
         legacy_pas = len(HandRange(item.passive_range).generate_options(self.board))
         legacy_agg = len(HandRange(item.aggressive_range).generate_options(self.board))
@@ -594,33 +786,6 @@ class AnalysisReplayer(object):
 
         If you need to reanalyse the game, delete the existing analysis first.
         """
-        self.ranges = {self.game.rgps[i].userid:
-                       self.game.situation.players[i].range_raw
-                       for i in range(len(self.game.situation.players))}
-        self.stacks = {self.game.rgps[i].userid:
-                       self.game.situation.players[i].stack
-                       for i in range(len(self.game.situation.players))}
-        self.contrib = {self.game.rgps[i].userid:
-                        self.game.situation.players[i].contributed
-                        for i in range(len(self.game.situation.players))}
-        self.remaining_userids = [rgp.userid for rgp in self.game.rgps]
-        self.left_to_act = [self.game.rgps[i].userid
-                            for i in range(len(self.game.situation.players))
-                            if self.game.situation.players[i].left_to_act]
-
-        # TODO: 0: maybe this time we can do it, and put it in the database, and be done with oh god please.
-        # map of userid to map of combo to set of ComboOrderAccumulator
-        self.combo_orders = {self.game.rgps[i].userid: {}}
-        # Create new 0.0 for every:
-        # - range action
-        # - action result
-        # Then update all combo orders (including the new ones) for every:
-        # - bet (Hero gets a vpip)
-        # - call (Hero gets a vpip)
-        # - fold (Villain gets a fold equity)
-        # - showdown (everyone gets a showdown)
-
-
         gameid = self.game.gameid
 
         logging.debug("gameid %d, AnalysisReplayer, analyse", gameid)
