@@ -1451,7 +1451,7 @@ class API(object):
             results.append((player.name, leaderboards))
         return situation.description, results
 
-    def _run_pending_analysis(self):
+    def _run_pending_analysis(self, gameid=None):
         """
         Look through all games for analysis that has not yet been done, and do
         it, and record the analysis in the database.
@@ -1459,9 +1459,13 @@ class API(object):
         If you need to RE-analyse the database, delete existing analysis first.
         """
         found = False
-        games = self.session.query(tables.RunningGame)  \
-            .filter(tables.RunningGame.current_round == FINISHED)  \
-            .filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX).all()
+        q = self.session.query(tables.RunningGame)  \
+            .filter(tables.RunningGame.current_round == FINISHED)
+        if gameid is not None:
+            q = q.filter(tables.RunningGame.gameid == gameid)
+        else:
+            q = q.filter(tables.RunningGame.gameid > SUPPRESSED_GAME_MAX)
+        games = q.all()
         for game in games:
             if not game.analysis_performed:
                 replayer = AnalysisReplayer(self.session, game)
@@ -1526,7 +1530,7 @@ class API(object):
             .filter(tables.RunningGame.gameid == gameid)  \
             .one().analysis_performed = False
         self.session.commit()
-        return self._run_pending_analysis()
+        return self._run_pending_analysis(gameid)
 
     @api
     def reanalyse_all(self):

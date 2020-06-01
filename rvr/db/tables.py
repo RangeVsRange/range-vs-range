@@ -845,6 +845,28 @@ class SituationComboEV(BASE):
             [RangeItem.higher_card, RangeItem.lower_card]),
         {})
 
+class UserComboGameEV(BASE):
+    __tablename__ = "user_combo_game_ev"
+    userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
+    gameid = Column(Integer, ForeignKey("running_game.gameid"),
+                    primary_key=True)
+    order = Column(Integer, primary_key=True)
+    combo = Column(String(4), primary_key=True)
+    ev = Column(Float, nullable=False)
+    __table_args__ = (
+        # has to be a valid gameid + order
+        ForeignKeyConstraint([gameid, order],
+                             [GameHistoryBase.gameid, GameHistoryBase.order]),
+        {})
+
+class UserComboOrderEV(BASE):
+    __tablename__ = "user_combo_order_ev"
+    userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
+    gameid = Column(Integer, ForeignKey("running_game.gameid"),
+                    primary_key=True)
+    combo = Column(String(4), primary_key=True)
+    ev = Column(Float, nullable=False)
+
 class AnalysisFoldEquity(BASE):
     """
     Profitability, or required semibluff EV, of a bet, on any street.

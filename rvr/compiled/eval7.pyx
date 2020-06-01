@@ -10,12 +10,12 @@ cdef int _wh_seed_x, _wh_seed_y, _wh_seed_z
 
 cdef void wh_init(cython.ulong seed):
     """Initialize internal state from hashable object.
-    
+
     None or no argument seeds from current time or from an operating
     system specific randomness source if available.
-    
+
     If a is not None or an int or long, hash(a) is used instead.
-    
+
     If a is an int or long, a is used directly.  Distinct values between
     0 and 27814431486575L inclusive are guaranteed to yield distinct
     internal states (this guarantee is specific to the default
@@ -24,7 +24,7 @@ cdef void wh_init(cython.ulong seed):
     global _wh_seed_x, _wh_seed_y, _wh_seed_z
     # arbitrarily, statically chosen for this eval7 version.
     cdef cython.ulong a = seed
-    _wh_seed_x = a % 30268; a = a / 30268 
+    _wh_seed_x = a % 30268; a = a / 30268
     _wh_seed_y = a % 30306; a = a / 30306
     _wh_seed_z = a % 30322
 
@@ -152,18 +152,18 @@ cdef cython.uint evaluate(cython.ulonglong cards):
     Cython: 20000 calls in 0.044 seconds (454545 calls/sec)
     """
     cdef cython.uint retval = 0, four_mask, three_mask, two_mask
-    
+
     cdef cython.uint sc = <cython.uint>((cards >> (CLUB_OFFSET)) & 0x1fffUL)
     cdef cython.uint sd = <cython.uint>((cards >> (DIAMOND_OFFSET)) & 0x1fffUL)
     cdef cython.uint sh = <cython.uint>((cards >> (HEART_OFFSET)) & 0x1fffUL)
     cdef cython.uint ss = <cython.uint>((cards >> (SPADE_OFFSET)) & 0x1fffUL)
-    
+
     cdef cython.uint ranks = sc | sd | sh | ss
     cdef cython.uint n_ranks = n_bits_table[ranks]
     cdef cython.uint n_dups = <cython.uint>(7 - n_ranks)
-    
+
     cdef cython.uint st, t, kickers, second, tc, top
-    
+
     if n_ranks >= 5:
         if n_bits_table[ss] >= 5:
             if straight_table[ss] != 0:
@@ -258,7 +258,7 @@ cdef cython.ulonglong hand_to_mask(py_hand):
 
 def py_hand_to_mask(py_hand):
     return hand_to_mask(py_hand)
-    
+
 cdef cython.ulonglong many_to_mask(py_board):
     cdef cython.ulonglong board = 0
     for py_card in py_board:
@@ -301,7 +301,7 @@ cdef cython.float hand_vs_range_monte_carlo(cython.ulonglong hand,
     Return equity of hand vs range.
     Note that only unweighted ranges are supported.
     Note that only heads-up evaluations are supported.
-    
+
     hand is a two-card hand mask
     options is an array of num_options options for opponent's two-card hand
     board is a hand mask of the board; num_board says how many cards are in it
@@ -333,7 +333,7 @@ cdef cython.float hand_vs_range_monte_carlo(cython.ulonglong hand,
     return 0.5 * <cython.double>count / <cython.double>iterations
 
 def py_hand_vs_range_monte_carlo(py_hand, py_villain, py_board, py_iterations):
-    py_options = py_villain.generate_options()
+    py_options = py_villain.generate_options(py_board)
     cdef cython.ulonglong hand = hand_to_mask(py_hand)
     cdef cython.int num_options = len(py_options)
     cdef cython.ulonglong *options = <cython.ulonglong*>malloc(sizeof(cython.ulonglong) * num_options)
@@ -374,14 +374,14 @@ cdef cython.float hand_vs_range_exact(cython.ulonglong hand,
     return (wins + 0.5 * ties) / <cython.double>num_options
 
 def py_hand_vs_range_exact(py_hand, py_villain, py_board):
-    py_options = py_villain.generate_options()
+    py_options = py_villain.generate_options(py_board)
     cdef cython.ulonglong hand = hand_to_mask(py_hand)  # @DuplicatedSignature
     cdef cython.int num_options = len(py_options)  # @DuplicatedSignature
     cdef cython.ulonglong *options = <cython.ulonglong*>malloc(sizeof(cython.ulonglong) * num_options)  # @DuplicatedSignature
     cdef cython.ulonglong complete_board = many_to_mask(py_board)
     cdef cython.float equity
     cdef cython.ulonglong mask  # @DuplicatedSignature
-    cdef cython.ulonglong dead = complete_board | hand  
+    cdef cython.ulonglong dead = complete_board | hand
     for index, option in enumerate(py_options):
         options[index] = hand_to_mask(list(option))
         num_options
@@ -398,7 +398,7 @@ cdef void all_hands_vs_range(cython.ulonglong *hands, cython.uint num_hands,
     Return equity of each hand, versus range.
     Note that only unweighted ranges are supported.
     Note that only heads-up evaluations are supported.
-    
+
     hands are two-card hand mask; num_hands is how many
     options is an array of num_options options for opponent's two-card hand
     board is a hand mask of the board; num_board says how many cards are in it
@@ -423,14 +423,14 @@ cdef void all_hands_vs_range(cython.ulonglong *hands, cython.uint num_hands,
             equity = hand_vs_range_monte_carlo(hand, options, current_num_options, board, num_board, iterations)
         result[i] = equity
     free(options)
-        
+
 def py_all_hands_vs_range(py_hero, py_villain, py_board, py_iterations):
     """
     Return dict mapping hero's hand to equity against villain's range on this board.
-    
+
     hero and villain are ranges.
     board is a list of cards.
-    
+
     TODO: consider randomising the order of opponent's hands at this point
     so that the evenly distributed sampling in hand_vs_range is unbiased.
     """
@@ -444,31 +444,31 @@ def py_all_hands_vs_range(py_hero, py_villain, py_board, py_iterations):
     cdef cython.uint num_board
     cdef cython.long iterations = <cython.long>py_iterations
     cdef cython.float *result = <cython.float *>malloc(sizeof(cython.float) * len(hero_hands))
-    
+
     num_hands = 0
     for hand in hero_hands:
         hands[num_hands] = hand_to_mask(hand)
         num_hands += 1
-        
+
     num_options = 0
     for option in villain_hands:
         options[num_options] = hand_to_mask(option)
         num_options += 1
-        
+
     board = many_to_mask(py_board)
     num_board = len(py_board)
 
     all_hands_vs_range(hands, num_hands, options, num_options, board, num_board, iterations, result)
-    
+
     py_result = {}
     for i in range(num_hands):
         if result[i] != -1:
             py_result[hero_hands[i]] = result[i]
-    
+
     free(hands)
     free(options)
     free(result)
-    
+
     return py_result
 
 cdef cython.uint hand_type(cython.uint hand_value):

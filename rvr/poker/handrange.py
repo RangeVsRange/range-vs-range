@@ -428,7 +428,7 @@ class HandRange(object):
         else:
             return list(set(options))
 
-    def generate_hand(self, board = None):
+    def generate_hand(self, board=None):
         """
         Generate a pair of pocket cards for Holdem, based on self.description
         and excluding board cards.
