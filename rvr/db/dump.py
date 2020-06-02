@@ -40,7 +40,7 @@ from rvr.db.tables import User, SituationPlayer, Situation, OpenGame, \
     GameHistoryUserRange, GameHistoryBase, GameHistoryTimeout,\
     AnalysisFoldEquity, AnalysisFoldEquityItem, GameHistoryChat,\
     GameHistoryShowdown, GameHistoryShowdownEquity, PaymentToPlayer,\
-    RunningGameParticipantResult
+    RunningGameParticipantResult, UserComboOrderEV, UserComboGameEV
 from rvr.db.creation import SESSION
 import logging
 from rvr.poker.cards import FINISHED
@@ -67,7 +67,9 @@ dumpable_tables = [
     GameHistoryShowdownEquity,
     PaymentToPlayer,
     AnalysisFoldEquity,
-    AnalysisFoldEquityItem]
+    AnalysisFoldEquityItem,
+    UserComboGameEV,
+    UserComboOrderEV]
 
 def read_users(session):
     """ Read User table from DB into memory """
@@ -603,6 +605,48 @@ def write_analysis_fold_equity_items(session, afeis):
         afei.semibluff_equity = semibluff_equity
         session.commit()
 
+def read_user_combo_game_ev(session):
+    """ Read UserComboGameEV table from DB into memory """
+    ucges = session.query(UserComboGameEV).all()
+    return [(ucge.userid,
+             ucge.gameid,
+             ucge.combo,
+             ucge.ev)
+            for ucge in ucges]
+
+def write_user_combo_game_ev(session, ucges):
+    """ Write UserComboGameEV table from memory into DB """
+    for userid, gameid, combo, ev in ucges:
+        ucge = UserComboGameEV()
+        session.add(ucge)
+        ucge.userid = userid
+        ucge.gameid = gameid
+        ucge.combo = combo
+        ucge.ev = ev
+        session.commit()
+
+def read_user_combo_order_ev(session):
+    """ Read UserComboOrderEV table from DB into memory """
+    ucoes = session.query(UserComboOrderEV).all()
+    return [(ucoe.userid,
+             ucoe.gameid,
+             ucoe.order,
+             ucoe.combo,
+             ucoe.ev)
+            for ucoe in ucoes]
+
+def write_user_combo_order_ev(session, ucoes):
+    """ Write UserComboOrderEV table from memory into DB """
+    for userid, gameid, order, combo, ev in ucoes:
+        ucoe = UserComboOrderEV()
+        session.add(ucoe)
+        ucoe.userid = userid
+        ucoe.gameid = gameid
+        ucoe.order = order
+        ucoe.combo = combo
+        ucoe.ev = ev
+        session.commit()
+
 TABLE_READERS = {User: read_users,
                  Situation: read_situations,
                  SituationPlayer: read_situation_players,
@@ -622,7 +666,9 @@ TABLE_READERS = {User: read_users,
                  GameHistoryShowdown: read_game_history_showdowns,
                  GameHistoryShowdownEquity: read_game_history_showdown_equities,
                  AnalysisFoldEquity: read_analysis_fold_equities,
-                 AnalysisFoldEquityItem: read_analysis_fold_equity_items}
+                 AnalysisFoldEquityItem: read_analysis_fold_equity_items,
+                 UserComboGameEV: read_user_combo_game_ev,
+                 UserComboOrderEV: read_user_combo_order_ev}
 
 TABLE_WRITERS = {User: write_users,
                  Situation: write_situations,
@@ -643,7 +689,9 @@ TABLE_WRITERS = {User: write_users,
                  GameHistoryShowdown: write_game_history_showdowns,
                  GameHistoryShowdownEquity: write_game_history_showdown_equities,
                  AnalysisFoldEquity: write_analysis_fold_equities,
-                 AnalysisFoldEquityItem: write_analysis_fold_equity_items}
+                 AnalysisFoldEquityItem: write_analysis_fold_equity_items,
+                 UserComboGameEV: write_user_combo_game_ev,
+                 UserComboOrderEV: write_user_combo_order_ev}
 
 def read_db():
     """ Read all tables from DB into memory """

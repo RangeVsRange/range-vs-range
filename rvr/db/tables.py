@@ -845,8 +845,8 @@ class SituationComboEV(BASE):
             [RangeItem.higher_card, RangeItem.lower_card]),
         {})
 
-class UserComboGameEV(BASE):
-    __tablename__ = "user_combo_game_ev"
+class UserComboOrderEV(BASE):
+    __tablename__ = "user_combo_order_ev"
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
@@ -859,8 +859,8 @@ class UserComboGameEV(BASE):
                              [GameHistoryBase.gameid, GameHistoryBase.order]),
         {})
 
-class UserComboOrderEV(BASE):
-    __tablename__ = "user_combo_order_ev"
+class UserComboGameEV(BASE):
+    __tablename__ = "user_combo_game_ev"
     userid = Column(Integer, ForeignKey("user.userid"), primary_key=True)
     gameid = Column(Integer, ForeignKey("running_game.gameid"),
                     primary_key=True)
