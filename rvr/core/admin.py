@@ -461,6 +461,37 @@ class AdminCmd(Cmd):
         else:
             print result, "timeouts processed."
 
+    def do_combo_evs(self, details):
+        """
+        combo_evs <gameid>
+        combo_evs <gameid> <order>
+        Show all combo EVs from the specified hand history item
+        """
+        args = details.split(None, 1)
+        if len(args) not in (1, 2):
+            print "Need 1 or 2 parameters. Try 'help combo_evs'."
+            return
+        try:
+            gameid = int(args[0])
+        except ValueError:
+            print "Bad syntax. See 'help combo_evs'."
+            return
+        if len(args) == 1:
+            order = None
+        else:
+            try:
+                order = int(args[1])
+            except ValueError:
+                print "Bad syntax. See 'help combo_evs'."
+                return
+        result = self.api.get_combo_evs(gameid, order)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+            return
+        for user, data in result:
+            for combo, ev in data:
+                print "'%s': %s = %0.4f" % (user.screenname, combo, ev)
+
     @create_session
     def do_hack(self, _details):
         """

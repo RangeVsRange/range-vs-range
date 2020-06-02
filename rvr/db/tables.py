@@ -853,6 +853,8 @@ class UserComboOrderEV(BASE):
     order = Column(Integer, primary_key=True)
     combo = Column(String(4), primary_key=True)
     ev = Column(Float, nullable=False)
+    user = relationship("User")
+
     __table_args__ = (
         # has to be a valid gameid + order
         ForeignKeyConstraint([gameid, order],
@@ -866,6 +868,7 @@ class UserComboGameEV(BASE):
                     primary_key=True)
     combo = Column(String(4), primary_key=True)
     ev = Column(Float, nullable=False)
+    user = relationship("User")
 
 class AnalysisFoldEquity(BASE):
     """

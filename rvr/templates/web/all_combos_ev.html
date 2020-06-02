@@ -1,0 +1,33 @@
+{% extends "web/base.html" %}
+
+{% block title %}Range vs. Range{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>All combos expected value</h1><br>
+    <h3>This is very new, please let me know if you have issues.</h3>
+  </div>
+
+  {{ flash_messages() }}
+
+<table class="table table-bordered">
+  <thead>
+  <tr><td><strong>Player</strong></td><td><strong>Combo</strong</td><td><strong>EV</strong></td></tr>
+  </thead>
+  <tbody>
+  {% for user, combos_and_ev in user_combo_evs %}
+  {% for combo, ev in combos_and_ev %}
+  <tr>
+    <td>{{user.screenname}}</td>
+    <td>{{combo}}</td>
+    <td>{{"%0.2f" % ev}} chips</td>
+  </tr>
+  {% endfor %}
+  {% endfor %}
+  </tbody>
+  </table>
+  <hr>
+{{ share_buttons() }}
+</div>
+{% endblock %}

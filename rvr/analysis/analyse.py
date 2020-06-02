@@ -11,7 +11,8 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryUserRange, AnalysisFoldEquity, GameHistoryBoard,  \
     AnalysisFoldEquityItem, GameHistoryShowdown,  \
     GameHistoryShowdownEquity, \
-    PaymentToPlayer, RunningGameParticipantResult
+    PaymentToPlayer, RunningGameParticipantResult, UserComboGameEV,\
+    UserComboOrderEV
 from rvr.poker.handrange import HandRange, unweighted_options_to_description
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
@@ -24,6 +25,11 @@ from rvr.compiled.eval7 import py_hand_vs_range_monte_carlo,\
 import random
 
 # pylint:disable=R0902,R0913,R0914,R0903
+
+def _combo_to_mnemonic(combo):
+    """ combo is frozenset of two Card """
+    cards = sorted(list(combo), reverse=True)
+    return "".join([c.to_mnemonic() for c in cards])
 
 def _range_size_vs_combo(description, combo, board):
     return len([o for o in HandRange(description).generate_options()
@@ -173,18 +179,25 @@ class ComboOrderAccumulator(object):
         """
         Combo voluntarily puts money in pot, to bet or call
         """
+        assert contribution > 0
         self.ev -= contribution * self.factor
 
     def showdown_call(self, contribution, weight):
         """
         Combo calls for a showdown that doesn't happen, with weight
         """
+        assert contribution >= 0
+        assert weight >= 0.0
+        assert weight <= 1.0
         self.ev -= contribution * weight * self.factor
 
     def fold_equity(self, pot, weight):
         """
         Combo got folds and so wins pot (some of the time, at least)
         """
+        assert pot > 0
+        assert weight >= 0.0
+        assert weight <= 1.0
         self.ev += pot * weight * self.factor
         self.factor *= (1.0 - weight)
 
@@ -195,6 +208,9 @@ class ComboOrderAccumulator(object):
         It can happen that there are two showdowns but only one (combined)
         reduce.
         """
+        assert winnings >= 0.0
+        assert weight >= 0.0
+        assert weight <= 1.0
         self.ev += winnings * weight * self.factor
 
     def showdown_reduce(self, weight):
@@ -202,6 +218,8 @@ class ComboOrderAccumulator(object):
         After one or two showdowns, apply a single weight reduction for all of
         them.
         """
+        assert weight >= 0.0
+        assert weight <= 1.0
         self.factor *= (1.0 - weight)
 
 class AnalysisReplayer(object):
@@ -937,7 +955,43 @@ class AnalysisReplayer(object):
 
     def finalise_combo_evs(self):
         """ Write combo EVs to UserComboGameEV andUserComboOrderEV """
-        # TODO: 0: This, and upgrade production database with the new tables.
+        for _userid, user_evs in self.combo_orders.iteritems():
+            for _combo, accumulators in user_evs.iteritems():
+                for acc in accumulators:
+                    if acc.factor != 0.0:
+                        # Wormhole to another game?
+                        #
+                        # Hopefully.
+                        #
+                        # Because as I write this I think that this should only
+                        # happen when the combo is not fully played out in this
+                        # game's betting line - but I believe that's probably
+                        # not the case.
+                        #
+                        # Rather than lose the info (the fact that this
+                        # happened), we will very very subtly let people know,
+                        # by not recording an EV for this combo.
+                        #
+                        # Oh, and I'm not even going to log a debug event when
+                        # this happens because it's going to happen far too many
+                        # times to have the patience for that!
+                        continue
+                    if acc.order == None:
+                        gev = UserComboGameEV()
+                        self.session.add(gev)
+                        gev.gameid = self.game.gameid
+                        gev.userid = acc.userid
+                        gev.combo = _combo_to_mnemonic(acc.combo)
+                        gev.ev = acc.ev
+                    else:
+                        oev = UserComboOrderEV()
+                        self.session.add(oev)
+                        oev.gameid = self.game.gameid
+                        oev.userid = acc.userid
+                        oev.order = acc.order
+                        oev.combo = _combo_to_mnemonic(acc.combo)
+                        oev.ev = acc.ev
+            self.session.commit()
 
     def analyse(self):
         """

@@ -1192,6 +1192,46 @@ def showdown_page():
         my_screenname=get_my_screenname(),
         combo_and_ev_by_user=combo_and_ev_by_user)
 
+
+@APP.route('/ev', methods=['GET'])
+def ev_page():
+    """
+    All combos EV at a point in the game.
+    """
+    gameid = request.args.get('gameid', None)
+    if gameid is None:
+        return error("Invalid game id.")
+    try:
+        gameid = int(gameid)
+    except ValueError:
+        return error("Invalid game id (not a number).")
+
+    order = request.args.get('order', None)
+    if order is not None:
+        try:
+            order = int(order)
+        except ValueError:
+            return error("Invalid order (not a number).")
+
+    api = API()
+    response = api.get_combo_evs(gameid, order)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_GAME:
+            msg = "Invalid game id."
+        elif response is api.ERR_NO_SUCH_ORDER:
+            msg = "Invalid order."
+        else:
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
+        return error(msg)
+    user_combo_evs = response
+
+    navbar_items = default_navbar_items()
+    return render_template('web/all_combos_ev.html',
+        navbar_items=navbar_items, is_logged_in=is_logged_in(),
+        my_screenname=get_my_screenname(),
+        user_combo_evs=user_combo_evs)
+
 @APP.route('/analysis', methods=['GET'])
 def analysis_page():
     """

@@ -103,6 +103,7 @@ class API(object):
     ERR_NO_SUCH_USER = APIError("No such user")
     ERR_NO_SUCH_OPEN_GAME = APIError("No such open game")
     ERR_NO_SUCH_GAME = APIError("No such running game")
+    ERR_NO_SUCH_ORDER = APIError("No such hand history item")
     ERR_DUPLICATE_SCREENNAME = APIError("Duplicate screenname")
     ERR_JOIN_GAME_ALREADY_IN = APIError("User is already registered")
     ERR_JOIN_GAME_GAME_FULL = APIError("Game is full")
@@ -1451,6 +1452,30 @@ class API(object):
             results.append((player.name, leaderboards))
         return situation.description, results
 
+    @api
+    def get_combo_evs(self, gameid, order):
+        """
+        returns list of tuples: (user, data)
+
+        data is list of tuples: (combo, ev)
+        """
+        if order is None:
+            q = self.session.query(tables.UserComboGameEV)  \
+                .filter(tables.UserComboGameEV.gameid == gameid)
+        else:
+            q = self.session.query(tables.UserComboOrderEV)  \
+                .filter(tables.UserComboOrderEV.gameid == gameid)  \
+                .filter(tables.UserComboOrderEV.order == order)
+        combo_evs = q.all()
+        user_to_data = {}
+        for ev in combo_evs:
+            user = dtos.UserDetails.from_user(ev.user)
+            data = user_to_data.setdefault(user, [])
+            data.append((ev.combo, ev.ev))
+        for data in user_to_data.values():
+            data.sort(key=lambda ev: ev[1])
+        return user_to_data.items()
+
     def _run_pending_analysis(self, gameid=None):
         """
         Look through all games for analysis that has not yet been done, and do
@@ -1518,6 +1543,10 @@ class API(object):
             .filter(tables.AnalysisFoldEquityItem.gameid == gameid).delete()
         self.session.query(tables.AnalysisFoldEquity)  \
             .filter(tables.AnalysisFoldEquity.gameid == gameid).delete()
+        self.session.query(tables.UserComboGameEV)  \
+            .filter(tables.UserComboGameEV.gameid == gameid).delete()
+        self.session.query(tables.UserComboOrderEV)  \
+            .filter(tables.UserComboOrderEV.gameid == gameid).delete()
         self.session.query(tables.GameHistoryShowdownEquity)  \
             .filter(tables.GameHistoryShowdownEquity.gameid == gameid)  \
             .update({tables.GameHistoryShowdownEquity.equity: None})
