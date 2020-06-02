@@ -110,7 +110,7 @@ showdown_view = function(criterion) {
 <div class="tab-content pad-above">
 
 <div class="tab-pane" id="situation">
-<p><strong>Situation:</strong> {{game_details.situation.description}} (<a href="{{url_for('situation_page', situationid=situation.situationid)}}">leaderboard</a>)</p>
+<p><strong>Situation:</strong> {{game_details.situation.description}} (<a href="{{url_for('situation_page', situationid=game_details.situation.situationid)}}">leaderboard</a>)</p>
 <p><strong>Starting pot:</strong> {{game_details.situation.pot_pre}}</p>
 <table class="table table-bordered">
 <thead>
