@@ -1500,8 +1500,6 @@ class API(object):
                 replayer.analyse()
                 replayer.finalise()
                 found = True
-        if found:
-            recalculate_global_statistics(self.session)
 
     def _analyse_immediately(self, gameid):
         """
@@ -1536,6 +1534,13 @@ class API(object):
         Analyse games that haven't been analysed.
         """
         return self._run_pending_analysis()
+
+    @api
+    def recalculate_global_statistics(self):
+        """
+        Recalculate global statistics
+        """
+        recalculate_global_statistics(self.session)
 
     @api
     def reanalyse(self, gameid):

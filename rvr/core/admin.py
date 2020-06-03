@@ -413,6 +413,13 @@ class AdminCmd(Cmd):
         for situation in result:
             print situation
 
+    def do_recalculate(self, _details):
+        """
+        recalculate
+        Recalculate global statistics
+        """
+        self.api.recalculate_global_statistics()
+
     def do_analyse(self, details):
         """
         analyse
@@ -461,20 +468,20 @@ class AdminCmd(Cmd):
         else:
             print result, "timeouts processed."
 
-    def do_combo_evs(self, details):
+    def do_combos(self, details):
         """
-        combo_evs <gameid>
-        combo_evs <gameid> <order>
+        combos <gameid>
+        combos <gameid> <order>
         Show all combo EVs from the specified hand history item
         """
         args = details.split(None, 1)
         if len(args) not in (1, 2):
-            print "Need 1 or 2 parameters. Try 'help combo_evs'."
+            print "Need 1 or 2 parameters. Try 'help combos'."
             return
         try:
             gameid = int(args[0])
         except ValueError:
-            print "Bad syntax. See 'help combo_evs'."
+            print "Bad syntax. See 'help combos'."
             return
         if len(args) == 1:
             order = None
@@ -482,7 +489,7 @@ class AdminCmd(Cmd):
             try:
                 order = int(args[1])
             except ValueError:
-                print "Bad syntax. See 'help combo_evs'."
+                print "Bad syntax. See 'help combos'."
                 return
         result = self.api.get_combo_evs(gameid, order)
         if isinstance(result, APIError):
