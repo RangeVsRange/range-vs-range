@@ -1455,9 +1455,9 @@ class API(object):
     @api
     def get_combo_evs(self, gameid, order):
         """
-        returns list of tuples: (user, data)
+        returns list of tuples: (user, data), unordered
 
-        data is list of tuples: (combo, ev)
+        data is list of tuples: (combo, ev), sorted low to high
         """
         if order is None:
             q = self.session.query(tables.UserComboGameEV)  \
@@ -1467,14 +1467,17 @@ class API(object):
                 .filter(tables.UserComboOrderEV.gameid == gameid)  \
                 .filter(tables.UserComboOrderEV.order == order)
         combo_evs = q.all()
-        user_to_data = {}
+        userid_to_data = {}
+        userid_to_user = {}
         for ev in combo_evs:
             user = dtos.UserDetails.from_user(ev.user)
-            data = user_to_data.setdefault(user, [])
+            userid_to_user[user.userid] = user
+            data = userid_to_data.setdefault(user.userid, [])
             data.append((ev.combo, ev.ev))
-        for data in user_to_data.values():
+        for data in userid_to_data.values():
             data.sort(key=lambda ev: ev[1])
-        return user_to_data.items()
+        return [(user, userid_to_data[userid])
+                for userid, user in userid_to_user.iteritems()]
 
     def _run_pending_analysis(self, gameid=None):
         """

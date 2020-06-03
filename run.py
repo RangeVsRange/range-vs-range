@@ -27,7 +27,8 @@ def _main():
     APP.run(host=APP.config.get('HOST', '0.0.0.0'),
             port=APP.config.get('PORT', 80),
             debug=APP.config['DEBUG'],
-            use_reloader=APP.config.get('RELOADER', False))
+            use_reloader=APP.config.get('RELOADER', False),
+            threaded=True)  # https://stackoverflow.com/questions/17854713/error-errno-10053
 
 if  __name__ == '__main__':
     logging.basicConfig(format="%(asctime)s: %(message)s",
