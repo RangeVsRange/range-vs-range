@@ -1479,7 +1479,7 @@ class API(object):
         return [(user, userid_to_data[userid])
                 for userid, user in userid_to_user.iteritems()]
 
-    def _run_pending_analysis(self, gameid=None):
+    def _run_pending_analysis(self, gameid=None, debug_combo=""):
         """
         Look through all games for analysis that has not yet been done, and do
         it, and record the analysis in the database.
@@ -1496,7 +1496,7 @@ class API(object):
         games = q.all()
         for game in games:
             if not game.analysis_performed:
-                replayer = AnalysisReplayer(self.session, game)
+                replayer = AnalysisReplayer(self.session, game, debug_combo)
                 replayer.analyse()
                 replayer.finalise()
                 found = True
@@ -1543,7 +1543,7 @@ class API(object):
         recalculate_global_statistics(self.session)
 
     @api
-    def reanalyse(self, gameid):
+    def reanalyse(self, gameid, debug_combo=""):
         """
         Delete analysis for this game, reanalyse this game.
         """
@@ -1567,7 +1567,7 @@ class API(object):
             .filter(tables.RunningGame.gameid == gameid)  \
             .one().analysis_performed = False
         self.session.commit()
-        return self._run_pending_analysis(gameid)
+        return self._run_pending_analysis(gameid, debug_combo)
 
     @api
     def reanalyse_all(self):

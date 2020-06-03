@@ -194,11 +194,22 @@ class ComboOrderAccumulator(object):
         for event in self.events:
             logging.error("%r", event)
 
-    def vpip(self, contribution):
+    def log_details(self):
+        """
+        Log events so far for this combo.
+        """
+        logging.info("Combo EV calculations for userid=%r, combo=%r, "  \
+                      "order=%r, ev=%0.4f, factor=%0.4f, "  \
+                      "events follow...", self.userid, self.combo, self.order,
+                      self.ev, self.factor)
+        for event in self.events:
+            logging.info("%r", event)
+
+    def vpip(self, order, contribution):
         """
         Combo voluntarily puts money in pot, to bet or call
         """
-        self.events.append((self.EVENT_VPIP, contribution))
+        self.events.append((self.EVENT_VPIP, order, contribution))
         try:
             assert contribution > 0
         except AssertionError:
@@ -209,36 +220,21 @@ class ComboOrderAccumulator(object):
         # Hero's range for the rest of the game.
         self.ev -= contribution * self.factor
 
-    def fold(self):
+    def fold(self, order):
         """
         Combo folds. No more bets!
         """
-        self.events.append((self.EVENT_FOLD))
+        self.events.append((self.EVENT_FOLD, order))
         # Factor may already be zero, e.g. in the case where from this combo's
         # perspective the hand has already finished - but this combo is still in
         # Hero's range for the rest of the game.
         self.factor = 0.0
 
-    def showdown_call(self, contribution, weight):
-        """
-        Combo calls for a showdown that doesn't happen, with weight
-        """
-        self.events.append((self.EVENT_SHOWDOWN_CALL, contribution, weight))
-        try:
-            assert self.factor > 0.0
-            assert contribution >= 0
-            assert weight >= 0.0
-            assert weight <= 1.0
-        except AssertionError:
-            self._log_failure()
-            raise
-        self.ev -= contribution * weight * self.factor
-
-    def fold_equity(self, pot, weight):
+    def fold_equity(self, order, pot, weight):
         """
         Combo got folds and so wins pot (some of the time, at least)
         """
-        self.events.append((self.EVENT_FOLD_EQUITY, pot, weight))
+        self.events.append((self.EVENT_FOLD_EQUITY, order, pot, weight))
         try:
             assert self.factor > 0.0
             assert pot > 0
@@ -250,14 +246,30 @@ class ComboOrderAccumulator(object):
         self.ev += pot * weight * self.factor
         self.factor *= (1.0 - weight)
 
-    def showdown_ev(self, winnings, weight):
+    def showdown_call(self, order, contribution, weight):
+        """
+        Combo calls for a showdown that doesn't happen, with weight
+        """
+        self.events.append(
+            (self.EVENT_SHOWDOWN_CALL, order, contribution, weight))
+        try:
+            assert self.factor > 0.0
+            assert contribution >= 0
+            assert weight >= 0.0
+            assert weight <= 1.0
+        except AssertionError:
+            self._log_failure()
+            raise
+        self.ev -= contribution * weight * self.factor
+
+    def showdown_ev(self, order, winnings, weight):
         """
         Combo goes to showdown (some of the time, at least).
 
         It can happen that there are two showdowns but only one (combined)
         reduce.
         """
-        self.events.append((self.EVENT_SHOWDOWN_EV, winnings, weight))
+        self.events.append((self.EVENT_SHOWDOWN_EV, order, winnings, weight))
         try:
             assert self.factor > 0.0
             assert winnings >= 0.0
@@ -268,12 +280,12 @@ class ComboOrderAccumulator(object):
             raise
         self.ev += winnings * weight * self.factor
 
-    def showdown_reduce(self, weight):
+    def showdown_reduce(self, order, weight):
         """
         After one or two showdowns, apply a single weight reduction for all of
         them.
         """
-        self.events.append((self.EVENT_SHOWDOWN_REDUCE, weight))
+        self.events.append((self.EVENT_SHOWDOWN_REDUCE, order, weight))
         try:
             assert self.factor > 0.0
             assert weight >= 0.0
@@ -289,7 +301,7 @@ class AnalysisReplayer(object):
     database.
     """
     #pylint:disable=W0201
-    def __init__(self, session, game):
+    def __init__(self, session, game, debug_combo=""):
         logging.debug("gameid %d, AnalysisReplayer, initialising",
                       game.gameid)
         if not game.game_finished:
@@ -298,6 +310,7 @@ class AnalysisReplayer(object):
             raise ValueError("Game is already analysed.")
         self.session = session
         self.game = game
+        self.debug_combo = frozenset(Card.many_from_text(debug_combo))
         self.pot = self.game.situation.pot_pre +  \
             sum([p.contributed for p in self.game.situation.players])
         self.starting_pot = self.pot
@@ -339,7 +352,7 @@ class AnalysisReplayer(object):
         for combo in combos:
             combo_map[combo].add(ComboOrderAccumulator(userid, combo, order))
 
-    def _combo_vpips(self, userid, range_, contribution):
+    def _combo_vpips(self, order, userid, range_, contribution):
         """
         Apply vpip to Hero's combos
         """
@@ -347,14 +360,14 @@ class AnalysisReplayer(object):
         combos = range_.generate_options(self.board)
         for combo in combos:
             for ev in combo_map[combo]:
-                ev.vpip(contribution)
+                ev.vpip(order, contribution)
 
-    def _combo_fold_equity(self, userid, combo, pot, weight):
+    def _combo_fold_equity(self, order, userid, combo, pot, weight):
         """
         Apply a fold equity payment for a combo
         """
         for ev in self.combo_orders[userid][combo]:
-            ev.fold_equity(pot, weight)
+            ev.fold_equity(order, pot, weight)
 
     def _all_combos_fold(self, range_action):
         """
@@ -364,7 +377,7 @@ class AnalysisReplayer(object):
             .generate_options(self.board)
         for combo in combos:
             for ev in self.combo_orders[range_action.userid][combo]:
-                ev.fold()
+                ev.fold(range_action.order)
 
     def _fold_ratio(self, bettor_combo, all_combos, folding_combos):
         """
@@ -382,7 +395,7 @@ class AnalysisReplayer(object):
         else:
             return None
 
-    def _all_combos_fold_equity(self, range_action, folder, nonfolder):
+    def _all_combos_fold_equity(self, order, range_action, folder, nonfolder):
         """
         Unique fold equity payment for each combo of bettor's range.
 
@@ -397,28 +410,29 @@ class AnalysisReplayer(object):
         for combo in bettor_combos:
             fold_ratio = self._fold_ratio(combo, folder_combos, folding_combos)
             if fold_ratio is not None:
-                self._combo_fold_equity(nonfolder, combo, self.pot, fold_ratio)
+                self._combo_fold_equity(order, nonfolder, combo, self.pot,
+                                        fold_ratio)
 
-    def _combo_showdown_ev(self, userid, combo, winnings, weight):
+    def _combo_showdown_ev(self, order, userid, combo, winnings, weight):
         """
         Apply a showdown payment for a combo, but no weight reduction.
         """
         for ev in self.combo_orders[userid][combo]:
-            ev.showdown_ev(winnings, weight)
+            ev.showdown_ev(order, winnings, weight)
 
-    def _combo_showdown_call(self, userid, combo, contribution, weight):
+    def _combo_showdown_call(self, order, userid, combo, contribution, weight):
         """
         Apply a showdown call contribution, but no weight reduction
         """
         for ev in self.combo_orders[userid][combo]:
-            ev.showdown_call(contribution, weight)
+            ev.showdown_call(order, contribution, weight)
 
-    def _combo_showdown_reduce(self, userid, combo, weight):
+    def _combo_showdown_reduce(self, order, userid, combo, weight):
         """
         Apply weight reduction after al the showdowns for an action.
         """
         for ev in self.combo_orders[userid][combo]:
-            ev.showdown_reduce(weight)
+            ev.showdown_reduce(order, weight)
 
     def _one_combo_one_showdown(self, combo, board, ranges):
         """
@@ -551,24 +565,25 @@ class AnalysisReplayer(object):
             if len(others) > 1:
                 # multiway and we might get two showdowns
                 if eq_fold and w_fold:
-                    self._combo_showdown_ev(userid, combo, eq_fold * pot,
-                                            w_fold)
+                    self._combo_showdown_ev(item.order, userid, combo,
+                                            eq_fold * pot, w_fold)
             # from this combo's perspective, the call only happens sometimes
             if eq_call and w_call:
-                self._combo_showdown_ev(userid, combo,
+                self._combo_showdown_ev(item.order, userid, combo,
                                         eq_call * (pot + call_cost), w_call)
             if len(others) == 1:
                 # heads up, we got fold equity, reduce for call line only
                 if w_call:
-                    self._combo_showdown_reduce(userid, combo, w_call)
+                    self._combo_showdown_reduce(item.order, userid, combo,
+                                                w_call)
             else:
                 # reduce for the fold line and the call line
                 weight = 0
                 if w_fold: weight += w_fold
                 if w_call: weight += w_call
-                self._combo_showdown_reduce(userid, combo, weight)
+                self._combo_showdown_reduce(item.order, userid, combo, weight)
 
-    def _one_player_one_showdown(self, userid, pot, call_cost, board,
+    def _one_player_one_showdown(self, order, userid, pot, call_cost, board,
                                  passive_range, ranges):
         """
         Showdown payments for every combo of one player's range, for the
@@ -583,9 +598,10 @@ class AnalysisReplayer(object):
                 ranges=other_ranges)
             if eq is None:
                 continue
-            self._combo_showdown_call(userid, combo, call_cost, 1.0)
-            self._combo_showdown_ev(userid, combo, eq * (pot + call_cost), 1.0)
-            self._combo_showdown_reduce(userid, combo, 1.0)
+            self._combo_showdown_call(order, userid, combo, call_cost, 1.0)
+            self._combo_showdown_ev(order, userid, combo,
+                                    eq * (pot + call_cost), 1.0)
+            self._combo_showdown_reduce(order, userid, combo, 1.0)
 
     def _all_combos_both_showdowns(self, item, other_userids, pot, call_cost,
                                    board, ranges):
@@ -604,6 +620,7 @@ class AnalysisReplayer(object):
                 board=board,
                 ranges=ranges)
         self._one_player_one_showdown(
+            order=item.order,
             userid=item.userid,
             pot=pot,
             call_cost=call_cost,
@@ -690,7 +707,8 @@ class AnalysisReplayer(object):
         """
         if contribution == 0:
             return
-        self._combo_vpips(action_item.userid,
+        self._combo_vpips(action_item.order,
+                          action_item.userid,
                           HandRange(action_range),
                           contribution)
         amount = -action_item.factor * contribution
@@ -747,7 +765,8 @@ class AnalysisReplayer(object):
         nonfolder_payment.userid = nonfolder
         nonfolder_payment.amount = amount
         self.session.add(nonfolder_payment)
-        self._all_combos_fold_equity(range_action,
+        self._all_combos_fold_equity(range_action.order,
+                                     range_action,
                                      folder=range_action.userid,
                                      nonfolder=nonfolder)
 
@@ -1030,9 +1049,13 @@ class AnalysisReplayer(object):
 
     def finalise_combo_evs(self):
         """ Write combo EVs to UserComboGameEV andUserComboOrderEV """
+        if self.debug_combo:
+            logging.debug("Debugging combo: %r", self.debug_combo)
         for _userid, user_evs in self.combo_orders.iteritems():
             for _combo, accumulators in user_evs.iteritems():
                 for acc in accumulators:
+                    if _combo == self.debug_combo:
+                        acc.log_details()
                     if acc.factor != 0.0:
                         # Wormhole to another game?
                         #

@@ -426,7 +426,10 @@ class AdminCmd(Cmd):
         Run pending analysis
 
         analyse <gameid>
-        Re/analyse gameid
+        Re/analyse specified gameid
+
+        analyse <gameid> <debug_combo>
+        Re/analyse specified gameid and debug specified combo
 
         analyse [refresh]
         Reanalyse everything.
@@ -443,12 +446,18 @@ class AdminCmd(Cmd):
         elif details == "refresh confirm":
             result = self.api.reanalyse_all()
         else:
+            params = details.split(None, 1)
+            if len(params) > 1:
+                gameid, debug_combo = params
+            else:
+                gameid = details
+                debug_combo = ""
             try:
-                gameid = int(details)
+                gameid = int(gameid)
             except ValueError:
                 print "Bad syntax. See 'help analyse'."
                 return
-            result = self.api.reanalyse(gameid)
+            result = self.api.reanalyse(gameid, debug_combo)
         if isinstance(result, APIError):
             print "Error:", result.description
         else:
