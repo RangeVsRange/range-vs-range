@@ -568,13 +568,14 @@ class AnalysisReplayer(object):
                 if w_call: weight += w_call
                 self._combo_showdown_reduce(userid, combo, weight)
 
-    def _one_player_one_showdown(self, userid, pot, call_cost, board, ranges):
+    def _one_player_one_showdown(self, userid, pot, call_cost, board,
+                                 passive_range, ranges):
         """
         Showdown payments for every combo of one player's range, for the
         showdown where they call.
         """
         other_ranges = {k: v for k, v in ranges.iteritems() if k != userid}
-        combos = HandRange(ranges[userid]).generate_options(board)
+        combos = HandRange(passive_range).generate_options(board)
         for combo in combos:
             eq = self._one_combo_one_showdown(
                 combo=combo,
@@ -607,6 +608,7 @@ class AnalysisReplayer(object):
             pot=pot,
             call_cost=call_cost,
             board=board,
+            passive_range=item.passive_range,
             ranges=ranges)
 
     def process_board(self, item):
