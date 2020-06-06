@@ -608,7 +608,7 @@ class AnalysisReplayer(object):
                     self._combo_showdown_ev(fold_order, userid, combo,
                                             eq_fold, pot, w_fold)
             # from this combo's perspective, the call only happens sometimes
-            if eq_call and w_call:
+            if w_call and eq_call is not None:
                 self._combo_showdown_ev(call_order, userid, combo,
                                         eq_call, pot + call_cost, w_call)
             if len(others) == 1:
