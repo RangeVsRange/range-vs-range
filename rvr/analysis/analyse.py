@@ -18,7 +18,7 @@ from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
 from rvr.poker.showdown import showdown_equity, all_combos_ev, showdown,\
-    _impossible_deal
+    _impossible_deal, run_it_once
 from rvr.mail.notifications import notify_finished
 from rvr.compiled.eval7 import py_hand_vs_range_monte_carlo,\
     py_hand_vs_range_exact
@@ -486,8 +486,7 @@ class AnalysisReplayer(object):
                     continue
                 total += 1
                 # and see who wins!
-                # TODO: 0: memoize this
-                _shown_down, winners = showdown(board, dealt, {})
+                _shown_down, winners = run_it_once(board, dealt, {})
                 if None in winners:  # key for Hero, from before
                     wins += 1.0 / len(winners)
             eq = wins / total if total else None
@@ -554,17 +553,15 @@ class AnalysisReplayer(object):
                 if dealt[item.userid] in last_f:
                     # we have a non-passive showdown
                     f += 1
-                    # TODO: 0: memoize this
                     dealt.pop(item.userid)
                     assert len(dealt) >= 2
-                    _shown_down, winners = showdown(board, dealt, {})
+                    _shown_down, winners = run_it_once(board, dealt, {})
                     if None in winners:  # key for Hero, from before
                         wins_f += 1.0 / len(winners)
                 elif dealt[item.userid] in last_p:
                     # we have a passive showdown
                     p += 1
-                    # TODO: 0: memoize this
-                    _shown_down, winners = showdown(board, dealt, {})
+                    _shown_down, winners = run_it_once(board, dealt, {})
                     if None in winners:  # key for Hero, from before
                         wins_p += 1.0 / len(winners)
                 else:

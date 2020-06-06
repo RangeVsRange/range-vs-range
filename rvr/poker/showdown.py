@@ -60,6 +60,21 @@ def __showdown_equity(wins_by_player, fixed, options_by_player, board, memo):
                                             options_by_player, board, memo)
         return iterations
 
+def run_it_once(board, players_cards, memo):
+    """
+    Showdown, but might not be river.
+    """
+    excluded = concatenate(players_cards.values())
+    fixed_board = []
+    for i in range(5):
+        if i < len(board):
+            card = board[i]
+            excluded.append(card)
+        else:
+            card = cards.deal_card(excluded)  # extends excluded
+        fixed_board.append(card)
+    return showdown(fixed_board, players_cards, memo)
+
 def _simulate_showdown(wins_by_player, options_by_player, board, memo):
     """
     Run one simulated showdown based on ranges.
@@ -86,16 +101,7 @@ def _simulate_showdown(wins_by_player, options_by_player, board, memo):
             raise IncompatibleRangesError(
                 "simulate evidently incompatible set of options: %r (board is %r)" %
                 (options_by_player, board))
-    excluded = concatenate(fixed.values())
-    fixed_board = []
-    for i in range(5):
-        if i < len(board):
-            card = board[i]
-            excluded.append(card)
-        else:
-            card = cards.deal_card(excluded)  # extends excluded
-        fixed_board.append(card)
-    _shown_down, winners = showdown(fixed_board, fixed, memo)
+    _shown_down, winners = run_it_once(board, fixed, memo)
     for player in selected.keys():
         if player in winners:
             wins_by_player[player] += 1.0 / len(winners)
@@ -162,8 +168,8 @@ def showdown(board, players_cards, memo=None):
     best = None  # best hand shown down so far
     total_cards = board + concatenate(
         [c for _p, c in players_cards.iteritems()])
-    if len(set(total_cards)) != len(total_cards):
-        assert False
+    assert len(set(total_cards)) == len(total_cards)
+    assert len(board) == 5
     for player, cards_ in players_cards.iteritems():
         all_cards = frozenset(board + list(cards_))
         if memo is None:
