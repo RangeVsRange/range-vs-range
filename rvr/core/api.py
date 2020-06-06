@@ -1453,11 +1453,13 @@ class API(object):
         return situation.description, results
 
     @api
-    def get_combo_evs(self, gameid, order):
+    def get_combo_evs(self, gameid, order, brief):
         """
         returns list of tuples: (user, data), unordered
 
         data is list of tuples: (combo, ev), sorted low to high
+
+        if brief, omit items with EV of 0.0
         """
         if order is None:
             q = self.session.query(tables.UserComboGameEV)  \
@@ -1470,6 +1472,8 @@ class API(object):
         userid_to_data = {}
         userid_to_user = {}
         for ev in combo_evs:
+            if brief and ev.ev == 0.0:
+                continue
             user = dtos.UserDetails.from_user(ev.user)
             userid_to_user[user.userid] = user
             data = userid_to_data.setdefault(user.userid, [])

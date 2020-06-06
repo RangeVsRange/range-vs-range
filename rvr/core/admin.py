@@ -500,7 +500,7 @@ class AdminCmd(Cmd):
             except ValueError:
                 print "Bad syntax. See 'help combos'."
                 return
-        result = self.api.get_combo_evs(gameid, order)
+        result = self.api.get_combo_evs(gameid, order, False)
         if isinstance(result, APIError):
             print "Error:", result.description
             return

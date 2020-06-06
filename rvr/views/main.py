@@ -1198,23 +1198,12 @@ def ev_page():
     """
     All combos EV at a point in the game.
     """
-    gameid = request.args.get('gameid', None)
-    if gameid is None:
-        return error("Invalid game id.")
-    try:
-        gameid = int(gameid)
-    except ValueError:
-        return error("Invalid game id (not a number).")
-
-    order = request.args.get('order', None)
-    if order is not None:
-        try:
-            order = int(order)
-        except ValueError:
-            return error("Invalid order (not a number).")
+    gameid = request.args.get('gameid', None, int)
+    order = request.args.get('order', None, int)
+    brief = request.args.get('brief', 0, int)
 
     api = API()
-    response = api.get_combo_evs(gameid, order)
+    response = api.get_combo_evs(gameid, order, brief==1)
     if isinstance(response, APIError):
         if response is api.ERR_NO_SUCH_GAME:
             msg = "Invalid game id."
