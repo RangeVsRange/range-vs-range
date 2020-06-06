@@ -147,6 +147,14 @@ show_group_details = function(groupid) {
 };
 </script>
 <script>
+  $('#mode-finished-competition').click(function() {
+    $.cookie('selected-mode', 'mode-competition', { expires: 7 });
+  });
+  $('#mode-finished-public').click(function() {
+    $.cookie('selected-mode', 'mode-public', { expires: 7 });
+  });
+</script>
+<script>
 $('.mode-header').popover({trigger: 'hover'})
 </script>
 {% endblock %}
