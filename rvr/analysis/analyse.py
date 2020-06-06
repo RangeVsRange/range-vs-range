@@ -263,23 +263,25 @@ class ComboOrderAccumulator(object):
             raise
         self.ev -= contribution * weight * self.factor
 
-    def showdown_ev(self, order, winnings, weight):
+    def showdown_ev(self, order, eq, pot, weight):
         """
         Combo goes to showdown (some of the time, at least).
 
         It can happen that there are two showdowns but only one (combined)
         reduce.
         """
-        self.events.append((self.EVENT_SHOWDOWN_EV, order, winnings, weight))
+        self.events.append((self.EVENT_SHOWDOWN_EV, order, eq, pot, weight))
         try:
             assert self.factor > 0.0
-            assert winnings >= 0.0
+            assert eq >= 0.0
+            assert eq <= 1.0
+            assert pot >= 0.0
             assert weight >= 0.0
             assert weight <= 1.0
         except AssertionError:
             self._log_failure()
             raise
-        self.ev += winnings * weight * self.factor
+        self.ev += eq * pot * weight * self.factor
 
     def showdown_reduce(self, order, weight):
         """
@@ -426,7 +428,7 @@ class AnalysisReplayer(object):
                 self._combo_fold_equity(order, nonfolder, combo, self.pot,
                                         fold_ratio)
 
-    def _combo_showdown_ev(self, order, userid, combo, winnings, weight):
+    def _combo_showdown_ev(self, order, userid, combo, eq, pot, weight):
         """
         Apply a showdown payment for a combo, but no weight reduction.
 
@@ -434,9 +436,9 @@ class AnalysisReplayer(object):
         """
         for ev in self.combo_orders[userid][combo]:
             if ev.track:
-                ev.showdown_ev(order, winnings, weight)
+                ev.showdown_ev(order, eq, pot, weight)
         new_ev = self._new_combo_ev(userid, combo, order)
-        new_ev.showdown_ev(order, winnings, 1.0)
+        new_ev.showdown_ev(order, eq, pot, 1.0)
         new_ev.showdown_reduce(order, 1.0)
         new_ev.track = False
 
@@ -600,11 +602,11 @@ class AnalysisReplayer(object):
                 # multiway and we might get two showdowns
                 if w_fold and eq_fold is not None:
                     self._combo_showdown_ev(fold_order, userid, combo,
-                                            eq_fold * pot, w_fold)
+                                            eq_fold, pot, w_fold)
             # from this combo's perspective, the call only happens sometimes
             if eq_call and w_call:
                 self._combo_showdown_ev(call_order, userid, combo,
-                                        eq_call * (pot + call_cost), w_call)
+                                        eq_call, pot + call_cost, w_call)
             if len(others) == 1:
                 # heads up, we already got fold equity paid and reduced,
                 # now reduce to residual aggressive line.
@@ -645,7 +647,7 @@ class AnalysisReplayer(object):
                 continue
             self._combo_showdown_call(order, userid, combo, call_cost, 1.0)
             self._combo_showdown_ev(order, userid, combo,
-                                    eq * (pot + call_cost), 1.0)
+                                    eq, pot + call_cost, 1.0)
             self._combo_showdown_reduce(order, userid, combo, 1.0)
 
     def _all_combos_both_showdowns(self, item, other_userids, pot, call_cost,
