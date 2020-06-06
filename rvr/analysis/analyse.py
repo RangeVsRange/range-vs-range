@@ -621,7 +621,10 @@ class AnalysisReplayer(object):
                 # There's no fold equity in this situation.
                 # Reduce for both showdowns, residual is weight of the
                 # aggressive line.
-                weight = 1.0 - w_raise
+                if w_raise:
+                    weight = 1.0 - w_raise
+                else:
+                    weight = 1.0
                 self._combo_showdown_reduce(max(fold_order, call_order),
                                             userid, combo, weight)
 
