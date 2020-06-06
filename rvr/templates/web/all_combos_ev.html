@@ -20,6 +20,9 @@
   </tr>
   </thead>
   <tbody>
+  {% if not user_combo_evs %}
+  <tr><td colspan=3><em>(no data yet &ndash; wait for analysis to complete first)</em></td></tr>
+  {% endif %}
   {% for user, combos_and_ev in user_combo_evs %}
   {% for combo, ev in combos_and_ev %}
   <tr>
@@ -31,7 +34,6 @@
   {% endfor %}
   </tbody>
   </table>
-  <hr>
 {{ share_buttons() }}
 </div>
 {% endblock %}

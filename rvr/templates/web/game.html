@@ -237,12 +237,12 @@ showdown_view = function(criterion) {
 
           {# link to showdown page #}
           {% if hint == "SHOWDOWN" %}
-          <button class="btn btn-primary" type=button onclick="showdown_view('#showdown-{{item.order}}');">Details</a>
+          <button class="btn btn-primary" type=button onclick="showdown_view('#showdown-{{item.order}}');">View</button>&nbsp;<a class="btn btn-primary" href="{{url_for('ev_page', gameid=game_details.gameid, order=item.order)}}">Combos</a>
           {% endif %}
 
           {# button for inline range viewing #}
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
-          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>&nbsp;<a class="btn btn-primary" href="{{url_for('ev_page', gameid=game_details.gameid, order=item.order)}}">Combos</a>
           {% elif hint == "ACTION_RESULT" %}
           <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
           {% endif %}
@@ -268,13 +268,6 @@ showdown_view = function(criterion) {
       <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity * item.pot}}{% endif %}</td>
     </tr>
     {% endfor %}
-    <tr>
-      <td colspan=3>
-        <div class="pull-right">
-          <a class="btn btn-primary" href="{{url_for('showdown_page', gameid=game_details.gameid, order=item.order)}}">All Combos EV</a>
-        </div>
-      </td>
-    </tr>
     </tbody>
     </table>
     </td>
@@ -364,6 +357,9 @@ showdown_view = function(criterion) {
         {% set rgp = game_details.rgp_details[i] %}
         <td><strong>{% if not rgp.results or not rgp.results.has_key('ev') %}(not yet calculated){% else %}{{"%0.4f" % rgp.results['ev']}}{% endif %}</strong></td>
         {% endfor %}
+    </tr>
+    <tr>
+        <td colspan=9><a class="btn btn-primary pull-right" href="{{url_for('ev_page', gameid=game_details.gameid)}}">All Combos</a></td>
     </tr>
 </table>
 </div> <!-- results -->
