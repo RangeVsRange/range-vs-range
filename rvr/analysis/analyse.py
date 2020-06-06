@@ -673,7 +673,7 @@ class AnalysisReplayer(object):
                 fold_order=fold_order,
                 call_order=call_order)
         self._one_player_one_showdown(
-            base_order=call_order,
+            order=call_order,
             userid=item.userid,
             pot=pot,
             call_cost=call_cost,
