@@ -580,20 +580,18 @@ class AnalysisReplayer(object):
         return f_eq, c_eq, f_weight, c_weight, r_weight
 
     def _one_player_both_showdowns(self, item, userid, others, pot, call_cost,
-                                   board, ranges, has_fold, has_call):
+                                   board, ranges, fold_order, call_order):
         """
         Showdown payments for every combo of one player's range, for both the
         passive showdown, and the fold showdown.
         """
-        fold_order = item.order + 1
-        call_order = item.order + 2 if has_fold else item.order + 1
         if self.debug_combo:
             logging.debug("_one_player_both_showdowns for fold_order=%r, "
-                          "call_order=%r, userid=%r, has_fold=%r, has_call=%r, "
-                          "ranges=%r, f=%r, p=%r, a=%r",
-                          fold_order, call_order, userid, has_fold, has_call,
-                          ranges, item.fold_range, item.passive_range,
-                          item.aggressive_range)
+                          "call_order=%r, userid=%r, fold_order=%r, "
+                          "call_order=%r, ranges=%r, f=%r, p=%r, a=%r",
+                          fold_order, call_order, userid, fold_order,
+                          call_order, ranges, item.fold_range,
+                          item.passive_range, item.aggressive_range)
         other_ranges = {k: v for k, v in ranges.iteritems() if k != userid}
         combos = HandRange(ranges[userid]).generate_options(board)
         for combo in combos:
@@ -629,13 +627,12 @@ class AnalysisReplayer(object):
                 self._combo_showdown_reduce(max(fold_order, call_order),
                                             userid, combo, weight)
 
-    def _one_player_one_showdown(self, base_order, userid, pot, call_cost,
+    def _one_player_one_showdown(self, order, userid, pot, call_cost,
                                  board, passive_range, ranges):
         """
         Showdown payments for every combo of one player's range, for the
         showdown where they call.
         """
-        order = base_order + 1
         if self.debug_combo:
             logging.debug("_one_player_one_showdown for order=%r, "
                           "userid=%r, passive_range=%r, ranges=%r",
@@ -660,6 +657,9 @@ class AnalysisReplayer(object):
         Showdown payments for every combo of every player's range, for both the
         passive showdown, and the fold showdown.
         """
+        fold_order = item.order + 1
+        call_order = item.order + 2 if has_fold else item.order + 1
+        # TODO: 0: results not consistent with showdown page for game 6734
         for userid in other_userids:
             others = [u for u in other_userids if u != userid] + [item.userid]
             self._one_player_both_showdowns(
@@ -670,10 +670,10 @@ class AnalysisReplayer(object):
                 call_cost=call_cost,
                 board=board,
                 ranges=ranges,
-                has_fold=has_fold,
-                has_call=has_call)
+                fold_order=fold_order,
+                call_order=call_order)
         self._one_player_one_showdown(
-            base_order=item.order,
+            base_order=call_order,
             userid=item.userid,
             pot=pot,
             call_cost=call_cost,
