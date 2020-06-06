@@ -103,7 +103,7 @@
 <hr>
 {% endif %}
 
-<form action='{{url_for('range_editor')}}' method=post>
+<form action="{{url_for('range_editor')}}" method=post>
 {% for item in hidden_fields %}<input type=hidden name="{{item[0]}}" value="{{item[1]}}">
 {% endfor %}
 
@@ -116,7 +116,11 @@ The board is: {% for card in card_names %}<img alt="{{card}}" src="/static/small
 <td class="combo-table">
 
 <!-- Start Rank Combos -->
-  <label>Select rank combos:</label> <div class="btn-group"><a class="btn btn-default" onclick="select_all_rank(false)">None</a><a class="btn btn-default" onclick="select_all_rank(true)">All</a></div>
+  <label>Select rank combos:</label> <div class="btn-group"><a class="btn btn-default" onclick="select_all_rank(false)">None</a><a class="btn btn-default" onclick="select_all_rank(true)">All</a></div>&nbsp;<a class="btn btn-default btn-xs" onclick='$("#manual-entry").show("fast");'>show manual entry</a>
+  <div hidden class="pad-above" id="manual-entry">
+  <p>Manual entry:</p>
+  <textarea rows=4 name="range_manual" class="form-control"></textarea>
+  </div>
   <div class="pad-above">
   {{ rt.formatted_rank_table(rank_table, False) }}
   </div>

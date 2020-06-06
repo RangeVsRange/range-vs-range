@@ -156,11 +156,11 @@ def is_suit_selected(option):
                                 SUIT_INVERT[lower.suit])
     return request.form.get(field, "false") == "true"
 
-def get_selected_options(original, board):
+def get_selected_options(original, manual, board):
     """
     Get a list of options selected in the current range editor submission
     """
-    options = set()
+    options = set(manual).intersection(original)
     for row in range(13):
         for col in range(13):
             desc = rank_text(row, col)
@@ -491,6 +491,8 @@ def range_editor_post():
     board_raw = request.form.get('board', '')
     board = safe_board_form('board')
     images = card_names(board_raw)
+    opt_man = safe_hand_range_form('range_manual', NOTHING)  \
+        .generate_options(board)
     opt_ori = safe_hand_range_form('rng_original', ANYTHING)  \
         .generate_options(board)
     opt_una = safe_hand_range_form('rng_unassigned', rng_original)  \
@@ -505,7 +507,7 @@ def range_editor_post():
     l_fol = 'l_fol' in request.form
     l_pas = 'l_pas' in request.form
     l_agg = 'l_agg' in request.form
-    options_selected = get_selected_options(opt_ori, board)
+    options_selected = get_selected_options(opt_ori, opt_man, board)
     option_mover = OptionMover(opt_ori=opt_ori, opt_una=opt_una,
         opt_fol=opt_fol, opt_pas=opt_pas, opt_agg=opt_agg,
         l_una=l_una, l_fol=l_fol, l_pas=l_pas, l_agg=l_agg,
