@@ -471,14 +471,14 @@ class AnalysisReplayer(object):
             elif len(board) == 5:
                 eq = py_hand_vs_range_exact(combo, villain, board)
             else:
-                eq = py_hand_vs_range_monte_carlo(combo, villain, board, 1000)
+                eq = py_hand_vs_range_monte_carlo(combo, villain, board, 10000)
         else:
             # we must simulate
             players_options = {k: HandRange(v).generate_options(board)
                                for k, v in ranges.iteritems()}
             total = 0
             wins = 0.0
-            for i in xrange(1000 * len(ranges)):
+            for i in xrange(10000 * len(ranges)):
                 dealt = {None: combo}  # showdown requires a key, we'll use None
                 for player, options in players_options.iteritems():
                     dealt[player] = random.choice(options)
@@ -529,7 +529,8 @@ class AnalysisReplayer(object):
             elif len(board) == 5:
                 c_eq = py_hand_vs_range_exact(combo, villain, board)
             else:
-                c_eq = py_hand_vs_range_monte_carlo(combo, villain, board, 1000)
+                c_eq = py_hand_vs_range_monte_carlo(combo, villain, board,
+                                                    10000)
         else:
             # this is the only scenario where a combos gets multiple showdowns
             # we must simulate
@@ -540,7 +541,7 @@ class AnalysisReplayer(object):
             last_a = HandRange(item.aggressive_range).generate_options(board)
             f = p = a = 0  # count of times we hit the fold, the call, the raise
             wins_f = wins_p = 0.0  # wins in the fold showdown, call showdown
-            for _ in xrange(1000 * len(ranges)):
+            for _ in xrange(10000 * len(ranges)):
                 dealt = {None: combo}  # showdown requires a key, we'll use None
                 # we actually deal to all remaining players here, and use that
                 # deal to decide if it's the first showdown (because last player
