@@ -524,7 +524,7 @@ class AnalysisReplayer(object):
             total = f + p + a
             c_weight = 1.0 * p / total if total else None
             r_weight = 1.0 * a / total if total else None
-            villain = HandRange(ranges.values()[0])
+            villain = HandRange(item.passive_range)
             if c_weight is None:
                 c_eq = None
             elif len(board) == 5:
@@ -543,6 +543,10 @@ class AnalysisReplayer(object):
             wins_f = wins_p = 0.0  # wins in the fold showdown, call showdown
             for i in xrange(1000):
                 dealt = {None: combo}  # showdown requires a key, we'll use None
+                # we actually deal to all remaining players here, and use that
+                # deal to decide if it's the first showdown (because last player
+                # folds) or the second showdown (because last player calls), or
+                # no showdown (because they raise).
                 for player, options in players_options.iteritems():
                     dealt[player] = random.choice(options)
                 if _impossible_deal(dealt.values()):
