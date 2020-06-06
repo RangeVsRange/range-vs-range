@@ -514,6 +514,8 @@ class AdminCmd(Cmd):
         hack
         Some hack
         """
+        self.session.query(tables.UserComboGameEV).delete()
+        self.session.query(tables.UserComboOrderEV).delete()
         self.session.commit()
 
     def do_tree(self, params):
