@@ -8,7 +8,8 @@ from flask.globals import request
 from rvr.poker.handrange import NOTHING, ANYTHING, HandRange,  \
     unweighted_options_to_description
 from rvr.poker.cards import Card, SUIT_INVERT, SUITS_HIGH_TO_LOW
-from rvr.core.api import API
+from rvr.core.api import API, APIError
+from rvr.views.main import error
 
 # pylint:disable=R0903,R0913,R0914
 
@@ -605,7 +606,7 @@ def ev_hover_text(combos, ev_by_combo, row, col):
     options = set(options).intersection(set(combos))
     options = [sorted(option, reverse=True) for option in options]
     options = sorted(options, reverse=True)
-    items = ["%s: %0.4f" % ("".join([c.to_mnemonic() for c in option]),
+    items = ["%s: %+0.2f" % ("".join([c.to_mnemonic() for c in option]),
                             ev_by_combo[frozenset(option)])
              for option in options]
     return "<br>".join(items)
@@ -623,42 +624,38 @@ def make_ev_rank_table(ev_by_combo):
               'topthree': row < 7}
              for col in range(13)] for row in range(13)]
 
-@APP.route('/game-ev', methods=['GET'])
-def game_ev():
+@APP.route('/view-ev', methods=['GET'])
+def view_ev():
     """
     Displays a range viewer type thing with popovers to show EV of each combo.
-
-    Only for a single game - not for a group!
     """
-    gameid = request.args.get('gameid', None)
-    if gameid is None:
-        flash("Invalid gameid.")
-        return redirect(url_for('error_page'))
-    try:
-        gameid = int(gameid)
-    except ValueError:
-        flash("Invalid gameid.")
-        return redirect(url_for('error_page'))
-
-    screenname = request.args.get('user', None)
+    gameid = request.args.get('gameid', None, int)
+    order = request.args.get('order', None, int)
+    screenname = request.args.get('user', None, str)
     if screenname is None:
         flash("Invalid user.")
         return redirect(url_for('error_page'))
 
     api = API()
-    result = api.get_game_tree(gameid)
-    if result == API.ERR_NO_SUCH_GAME:
-        flash("No such game.")
-        return redirect(url_for('error_page'))
-    game_tree = result
-    matches = [user for user in game_tree.users
-               if user.screenname == screenname]
-    if len(matches) != 1:
-        flash("Invalid user.")
-        return redirect(url_for('error_page'))
-    userid = matches[0].userid
+    response = api.get_combo_evs(gameid, order, False)
+    if isinstance(response, APIError):
+        if response is api.ERR_NO_SUCH_GAME:
+            msg = "Invalid game id."
+        elif response is api.ERR_NO_SUCH_ORDER:
+            msg = "Invalid order."
+        else:
+            msg = "An unknown error occurred retrieving game %d, sorry." %  \
+                (gameid,)
+        return error(msg)
 
-    ev_by_combo = game_tree.root.all_combos_ev(userid, local=False)
+    for user, combo_evs in response:
+        if user.screenname == screenname:
+            break
+    else:
+        combo_evs = []  # list of (combo, ev)
+
+    ev_by_combo = {frozenset(Card.many_from_text(combo_txt)): ev
+                   for combo_txt, ev in combo_evs}
     rank_table = make_ev_rank_table(ev_by_combo)
     return render_template('web/range_viewer.html', title='EV Viewer',
         next_map=NEXT_MAP, rank_table=rank_table)

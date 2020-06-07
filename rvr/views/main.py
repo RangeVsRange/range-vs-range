@@ -1219,7 +1219,7 @@ def ev_page():
     return render_template('web/all_combos_ev.html',
         navbar_items=navbar_items, is_logged_in=is_logged_in(),
         my_screenname=get_my_screenname(),
-        user_combo_evs=user_combo_evs)
+        user_combo_evs=user_combo_evs, gameid=gameid, order=order)
 
 @APP.route('/analysis', methods=['GET'])
 def analysis_page():
