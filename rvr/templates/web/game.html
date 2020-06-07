@@ -242,7 +242,7 @@ showdown_view = function(criterion) {
 
           {# button for inline range viewing #}
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
-          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>{% if not is_running %}&nbsp;<a class="btn btn-primary" href="{{url_for('ev_page', gameid=game_details.gameid, order=item.order)}}">Combos</a>{% endif %}
+          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>{% if not is_running %}&nbsp;<a class="btn btn-primary" href="{{url_for('ev_page', gameid=game_details.gameid, order=item.action_result_order)}}">Combos</a>{% endif %}
           {% elif hint == "ACTION_RESULT" %}
           <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
           {% endif %}

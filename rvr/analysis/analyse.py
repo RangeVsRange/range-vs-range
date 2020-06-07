@@ -13,11 +13,11 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     GameHistoryShowdownEquity, \
     PaymentToPlayer, RunningGameParticipantResult, UserComboGameEV,\
     UserComboOrderEV
-from rvr.poker.handrange import HandRange, unweighted_options_to_description
+from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
 from rvr.poker.action import game_continues
-from rvr.poker.showdown import showdown_equity, all_combos_ev, showdown,\
+from rvr.poker.showdown import showdown_equity, \
     _impossible_deal, run_it_once
 from rvr.mail.notifications import notify_finished
 from rvr.compiled.eval7 import py_hand_vs_range_monte_carlo,\
@@ -383,16 +383,15 @@ class AnalysisReplayer(object):
             if ev.track:
                 ev.fold_equity(order, pot, weight)
 
-    def _all_combos_fold(self, range_action):
+    def _all_combos_fold(self, order, userid, fold_range):
         """
         Reduce weight to zero for all combos, they're done
         """
-        combos = HandRange(range_action.fold_range)  \
-            .generate_options(self.board)
+        combos = HandRange(fold_range).generate_options(self.board)
         for combo in combos:
-            for ev in self.combo_orders[range_action.userid][combo]:
+            for ev in self.combo_orders[userid][combo]:
                 if ev.track:
-                    ev.fold(range_action.order)
+                    ev.fold(order)
 
     def _fold_ratio(self, bettor_combo, all_combos, folding_combos):
         """
@@ -478,7 +477,7 @@ class AnalysisReplayer(object):
                                for k, v in ranges.iteritems()}
             total = 0
             wins = 0.0
-            for i in xrange(10000 * len(ranges)):
+            for i in xrange(1000 * len(ranges)):
                 dealt = {None: combo}  # showdown requires a key, we'll use None
                 for player, options in players_options.iteritems():
                     dealt[player] = random.choice(options)
@@ -530,7 +529,7 @@ class AnalysisReplayer(object):
                 c_eq = py_hand_vs_range_exact(combo, villain, board)
             else:
                 c_eq = py_hand_vs_range_monte_carlo(combo, villain, board,
-                                                    10000)
+                                                    1000)
         else:
             # this is the only scenario where a combos gets multiple showdowns
             # we must simulate
@@ -541,7 +540,7 @@ class AnalysisReplayer(object):
             last_a = HandRange(item.aggressive_range).generate_options(board)
             f = p = a = 0  # count of times we hit the fold, the call, the raise
             wins_f = wins_p = 0.0  # wins in the fold showdown, call showdown
-            for _ in xrange(10000 * len(ranges)):
+            for _ in xrange(1000 * len(ranges)):
                 dealt = {None: combo}  # showdown requires a key, we'll use None
                 # we actually deal to all remaining players here, and use that
                 # deal to decide if it's the first showdown (because last player
@@ -1036,7 +1035,9 @@ class AnalysisReplayer(object):
         self._new_combo_evs(userid=item.userid,
                             range_=HandRange(self.ranges[item.userid]),
                             order=item.order)
-        self._all_combos_fold(item)
+        self._all_combos_fold(order=item.order,
+                              userid=item.userid,
+                              fold_range=item.fold_range)
         fol = HandRange(item.fold_range).generate_options(self.board)
         pas = HandRange(item.passive_range).generate_options(self.board)
         agg = HandRange(item.aggressive_range).generate_options(self.board)
