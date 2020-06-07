@@ -359,7 +359,11 @@ showdown_view = function(criterion) {
         {% endfor %}
     </tr>
     <tr>
-        <td colspan=9><a class="btn btn-primary pull-right" href="{{url_for('ev_page', gameid=game_details.gameid)}}">All Combos</a></td>
+        <td/>
+        {% for i in range(num_players) %}
+        {% set rgp = game_details.rgp_details[i] %}
+        <td><strong>{% if not rgp.results or not rgp.results.has_key('ev') %}(not yet calculated){% else %}<a class="btn btn-primary" href="{{url_for('view_ev', gameid=game_details.gameid, user=rgp.user.screenname)}}">Combos</a>{% endif %}</strong></td>
+        {% endfor %}
     </tr>
 </table>
 </div> <!-- results -->
