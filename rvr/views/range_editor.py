@@ -594,7 +594,8 @@ def ev_class(combos, ev_by_combo, row, col):
     options = set(options).intersection(set(combos))
     if not options:
         return RANKS_HIDDEN
-    evs = [ev_by_combo[combo] for combo in combos]
+    evs = [ev_by_combo[combo] for combo in combos
+           if combo in options]
     has_pos = any(ev > 0 for ev in evs)
     has_neg = any(ev < 0 for ev in evs)
     if not has_pos and not has_neg:
