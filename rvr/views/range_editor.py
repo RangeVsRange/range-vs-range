@@ -585,7 +585,7 @@ def range_editor():
     else:
         return range_editor_post()
 
-def ev_class(combos, row, col):
+def ev_class(combos, ev_by_combo, row, col):
     """
     Class that determines show/hide status for this cell of the rank table.
     """
@@ -594,8 +594,16 @@ def ev_class(combos, row, col):
     options = set(options).intersection(set(combos))
     if not options:
         return RANKS_HIDDEN
-    else:
+    evs = [ev_by_combo[combo] for combo in combos]
+    has_pos = any(ev > 0 for ev in evs)
+    has_neg = any(ev < 0 for ev in evs)
+    if not has_pos and not has_neg:
         return RANKS_UNASSIGNED
+    if has_pos and not has_neg:
+        return RANKS_AGGRESSIVE
+    if has_neg and not has_pos:
+        return RANKS_FOLD
+    return RANKS_MIXED
 
 def ev_hover_text(combos, ev_by_combo, row, col):
     """
@@ -619,7 +627,7 @@ def make_ev_rank_table(ev_by_combo):
     combos = ev_by_combo.keys()
     return [[{'text': rank_text(row, col),
               'id': rank_id(row, col),
-              'class': ev_class(combos, row, col),
+              'class': ev_class(combos, ev_by_combo, row, col),
               'hover': ev_hover_text(combos, ev_by_combo, row, col),
               'topthree': row < 7}
              for col in range(13)] for row in range(13)]
