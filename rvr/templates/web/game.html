@@ -282,11 +282,13 @@ showdown_view = function(criterion) {
     </thead>
     <tbody>
     {% for equity in item.equities %}
-    <tr>
+    <tr id='showdown-{{item.order}}-{{equity.user.userid}}'>
       <td>{{equity.user.screenname}}</td>
       <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity}}{% endif %}</td>
       <td>{% if equity.equity is none %}(not yet calculated){% else %}{{equity.equity * item.pot}}{% endif %}</td>
-      <td><a class="btn btn-primary pull-right" href="{{url_for('view_ev', gameid=game_details.gameid, order=item.order, user=equity.user.screenname)}}">Combos</a></td>
+      <td>
+        <button class="btn btn-primary pull-right" type=button id="view-combos-{{item.order}}-{{equity.user.userid}}" onclick="combo_view('current-viewer-row', 'view-combos-{{item.order}}-{{equity.user.userid}}', 'showdown-{{item.order}}-{{equity.user.userid}}', '{{url_for('view_ev', gameid=game_details.gameid, order=item.order, user=equity.user.screenname)}}');">Combos</button>
+      </td>
     </tr>
     {% endfor %}
     </tbody>
