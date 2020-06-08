@@ -45,6 +45,24 @@ range_view = function(new_id, button_id, row_id, ori, fol, pas, agg, is_check, i
     tr.append(td);
     $('#' + row_id).after(tr);
 };
+combo_view = function(new_id, button_id, row_id, dynamic_url) {
+    $('#' + new_id).remove();  // if any
+    if (button_id == $CURRENT_BUTTON) {
+        $CURRENT_BUTTON = null;
+        return;
+    }
+    $CURRENT_BUTTON = button_id;
+    iframe = $('<iframe>', {id: 'viewer', style: 'border: 0px none transparent;', src: dynamic_url});
+    iframe.width(470);  // Could be as low as 461 (@ 2014-06-08)
+    iframe.height(410);  // Could be as low as 399 (@ 2014-06-08)
+    iframe.text('Sorry, your browser does not support iframes.');
+
+    td = $('<td colspan=9>'); {# needed for table in situation tab #}
+    td.append(iframe);
+    tr = $('<tr>').attr('id', new_id);
+    tr.append(td);
+    $('#' + row_id).after(tr);
+};
 showdown_view = function(criterion) {
     // toggle this one, hide all others
   was_visible = $(criterion).is(':visible');
@@ -242,7 +260,8 @@ showdown_view = function(criterion) {
 
           {# button for inline range viewing #}
           {% if hint == "RANGE_ACTION" or hint == "ACTION_SUMMARY" %}
-          <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>{% if not is_running %}&nbsp;<a class="btn btn-primary" href="{{url_for('view_ev', gameid=game_details.gameid, order=item.action_result_order or item.order, user=item.screenname)}}">Combos</a>{% endif %}
+            <button class="btn btn-primary" type=button id="view-action-{{item.order}}" onclick="range_view('current-viewer-row', 'view-action-{{item.order}}', 'history-table-{{item.order}}', '{{item.original}}', '{{item.fold}}', '{{item.passive}}', '{{item.aggressive}}', {{item.is_check|tojson}}, {{item.is_raise|tojson}});">View</button>
+            {% if not is_running %}&nbsp;<button class="btn btn-primary" type=button id="view-combos-{{item.order}}" onclick="combo_view('current-viewer-row', 'view-combos-{{item.order}}', 'history-table-{{item.order}}', '{{url_for('view_ev', gameid=game_details.gameid, order=item.action_result_order or item.order, user=item.screenname)}}');">Combos</button>{% endif %}
           {% elif hint == "ACTION_RESULT" %}
           <div title="Ranges hidden while hand is in progress"><button class="btn btn-primary" type=button disabled=disabled>View</button></div>
           {% endif %}
