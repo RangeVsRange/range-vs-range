@@ -53,8 +53,8 @@ combo_view = function(new_id, button_id, row_id, dynamic_url) {
     }
     $CURRENT_BUTTON = button_id;
     iframe = $('<iframe>', {id: 'viewer', style: 'border: 0px none transparent;', src: dynamic_url});
-    iframe.width(470);  // Could be as low as 461 (@ 2014-06-08)
-    iframe.height(410);  // Could be as low as 399 (@ 2014-06-08)
+    iframe.width(480);  // Could be as low as 461 (@ 2014-06-08)
+    iframe.height(430);  // Could be as low as 399 (@ 2014-06-08)
     iframe.text('Sorry, your browser does not support iframes.');
 
     td = $('<td colspan=9>'); {# needed for table in situation tab #}
@@ -381,11 +381,14 @@ showdown_view = function(criterion) {
         <td><strong>{% if not rgp.results or not rgp.results.has_key('ev') %}(not yet calculated){% else %}{{"%0.4f" % rgp.results['ev']}}{% endif %}</strong></td>
         {% endfor %}
     </tr>
-    <tr>
+    <tr id='final-results'>
         <td/>
         {% for i in range(num_players) %}
         {% set rgp = game_details.rgp_details[i] %}
-        <td><strong>{% if not rgp.results or not rgp.results.has_key('ev') %}(not yet calculated){% else %}<a class="btn btn-primary" href="{{url_for('view_ev', gameid=game_details.gameid, user=rgp.user.screenname)}}">Combos</a>{% endif %}</strong></td>
+        <td><strong>{% if not rgp.results or not rgp.results.has_key('ev') %}(not yet calculated){% else %}
+          <button class="btn btn-primary" type=button id="view-combos-results-{{rgp.user.userid}}" onclick="combo_view('current-viewer-row', 'view-combos-results-{{rgp.user.userid}}', 'final-results', '{{url_for('view_ev', gameid=game_details.gameid, user=rgp.user.screenname)}}');">Combos</button>
+          <!--a class="btn btn-primary" href="{{url_for('view_ev', gameid=game_details.gameid, user=rgp.user.screenname)}}">Combos</a-->
+        {% endif %}</strong></td>
         {% endfor %}
     </tr>
 </table>
