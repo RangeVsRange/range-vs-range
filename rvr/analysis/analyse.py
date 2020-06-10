@@ -210,7 +210,7 @@ class ComboOrderAccumulator(object):
         """
         Combo voluntarily puts money in pot, to bet or call
         """
-        self.events.append((self.EVENT_VPIP, order, contribution))
+        self.events.append((self.EVENT_VPIP, order, self.ev, contribution))
         try:
             assert contribution > 0
         except AssertionError:
@@ -225,7 +225,7 @@ class ComboOrderAccumulator(object):
         """
         Combo folds. No more bets!
         """
-        self.events.append((self.EVENT_FOLD, order))
+        self.events.append((self.EVENT_FOLD, order, self.ev))
         # Factor may already be zero, e.g. in the case where from this combo's
         # perspective the hand has already finished - but this combo is still in
         # Hero's range for the rest of the game.
@@ -235,7 +235,8 @@ class ComboOrderAccumulator(object):
         """
         Combo got folds and so wins pot (some of the time, at least)
         """
-        self.events.append((self.EVENT_FOLD_EQUITY, order, pot, weight))
+        self.events.append(
+            (self.EVENT_FOLD_EQUITY, order, self.ev, pot, weight))
         try:
             assert self.factor > 0.0
             assert pot > 0
@@ -252,7 +253,7 @@ class ComboOrderAccumulator(object):
         Combo calls for a showdown that doesn't happen, with weight
         """
         self.events.append(
-            (self.EVENT_SHOWDOWN_CALL, order, contribution, weight))
+            (self.EVENT_SHOWDOWN_CALL, order, self.ev, contribution, weight))
         try:
             assert self.factor > 0.0
             assert contribution >= 0
@@ -270,7 +271,8 @@ class ComboOrderAccumulator(object):
         It can happen that there are two showdowns but only one (combined)
         reduce.
         """
-        self.events.append((self.EVENT_SHOWDOWN_EV, order, eq, pot, weight))
+        self.events.append(
+            (self.EVENT_SHOWDOWN_EV, order, self.ev, eq, pot, weight))
         try:
             assert self.factor > 0.0
             assert eq >= 0.0
@@ -288,7 +290,7 @@ class ComboOrderAccumulator(object):
         After one or two showdowns, apply a single weight reduction for all of
         them.
         """
-        self.events.append((self.EVENT_SHOWDOWN_REDUCE, order, weight))
+        self.events.append((self.EVENT_SHOWDOWN_REDUCE, order, self.ev, weight))
         try:
             assert self.factor > 0.0
             assert weight >= 0.0
