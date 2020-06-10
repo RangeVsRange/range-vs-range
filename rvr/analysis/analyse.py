@@ -599,26 +599,27 @@ class AnalysisReplayer(object):
                                                combo=combo,
                                                board=board,
                                                ranges=other_ranges)
-            if len(others) > 1:
-                # multiway and we might get two showdowns
-                if w_fold and eq_fold is not None:
-                    self._combo_showdown_ev(fold_order, userid, combo,
-                                            eq_fold, pot, w_fold)
-            # from this combo's perspective, the call only happens sometimes
-            if w_call and eq_call is not None:
-                self._combo_showdown_ev(call_order, userid, combo,
-                                        eq_call, pot + call_cost, w_call)
             if len(others) == 1:
-                # heads up, we already got fold equity paid and reduced,
-                # now reduce to residual aggressive line.
+                # from this combo's perspective, the call only happens sometimes
                 if w_call:
+                    # heads up, we already got fold equity paid and reduced,
                     if w_raise:
                         weight = w_call / (w_call + w_raise)
                     else:
                         weight = 1.0
-                    self._combo_showdown_reduce(call_order, userid, combo,
-                                                weight)
+                    if eq_call is not None:
+                        self._combo_showdown_ev(call_order, userid, combo,
+                            eq_call, pot + call_cost, weight)
+                        # now reduce to residual aggressive line.
+                        self._combo_showdown_reduce(call_order, userid, combo,
+                                                    weight)
             else:
+                if w_fold and eq_fold is not None:
+                    self._combo_showdown_ev(fold_order, userid, combo,
+                                            eq_fold, pot, w_fold)
+                if w_call and eq_call is not None:
+                    self._combo_showdown_ev(call_order, userid, combo,
+                                            eq_call, pot + call_cost, w_call)
                 # There's no fold equity in this situation.
                 # Reduce for both showdowns, residual is weight of the
                 # aggressive line.
