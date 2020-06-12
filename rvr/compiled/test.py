@@ -74,6 +74,12 @@ class TestEval7(unittest.TestCase):
         equity = py_hand_vs_range_exact(hand, villain, board)
         self.assertEqual(equity, 0.5)
 
+        hand = Card.many_from_text("AcAh")
+        villain = HandRange("AcAd")
+        board = Card.many_from_text("KhJd8c5d2s")
+        equity = py_hand_vs_range_exact(hand, villain, board)
+        self.assertIs(equity, None)
+
         hand = Card.many_from_text("AsAd")
         villain = HandRange("AA,A3o,32s")
         board = Card.many_from_text("KhJd8c5d2s")
@@ -87,6 +93,14 @@ class TestEval7(unittest.TestCase):
         equity = py_hand_vs_range_monte_carlo(
             hand, villain, board, 10000000)
         self.assertAlmostEqual(equity, 0.85337, delta=0.002)
+
+    def test_hand_vs_range_monte_carlo_impossible(self):
+        hand = Card.many_from_text("AsAd")
+        villain = HandRange("AsAd,AcAd,AhAd,AsAc,AsAh,As5s")
+        board = []
+        equity = py_hand_vs_range_monte_carlo(
+            hand, villain, board, 1000)
+        self.assertIs(equity, None)
 
     def test_all_hands_vs_range(self):
         hero = HandRange("AsAd,3h2c")
@@ -111,5 +125,5 @@ class TestEval7(unittest.TestCase):
 if __name__ == '__main__':
     # 2013-02-09 28 seconds (old version)
     # 2014-12-29 28 seconds
-    # 2020-06-12 16 seconds (hardware must be faster now)
+    # 2020-06-12 15 seconds (hardware must be faster now)
     unittest.main()
