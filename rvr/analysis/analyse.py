@@ -472,13 +472,15 @@ class AnalysisReplayer(object):
             elif len(board) == 5:
                 eq = py_hand_vs_range_exact(combo, villain, board)
                 if eq is None:
-                    logging.warning("_one_combo_one_showdown, heads up, river, combo %r has %d options but equity None.",
-                                    combo, len(villain.generate_options(board + list(combo))))
+                    logging.warning("_one_combo_one_showdown, heads up, river, "
+                        "combo %r has %d options but equity None.", combo,
+                        len(villain.generate_options(board + list(combo))))
             else:
                 eq = py_hand_vs_range_monte_carlo(combo, villain, board, 10000)
                 if eq is None:
-                    logging.warning("_one_combo_one_showdown, heads up, all in (not river), combo %r has %d options but equity None.",
-                                    combo, len(villain.generate_options(board + list(combo))))
+                    logging.warning("_one_combo_one_showdown, heads up, all in "
+                        "(not river), combo %r has %d options but equity None.",
+                        combo, len(villain.generate_options(board + list(combo))))
         else:
             # we must simulate
             players_options = {k: HandRange(v).generate_options(board)
@@ -531,19 +533,20 @@ class AnalysisReplayer(object):
             c_weight = 1.0 * p / total if total else None
             r_weight = 1.0 * a / total if total else None
             villain = HandRange(item.passive_range)
-            if c_weight is None:
+            if c_weight is None or c_weight == 0.0:
                 c_eq = None
             elif len(board) == 5:
                 c_eq = py_hand_vs_range_exact(combo, villain, board)
                 if c_eq is None:
-                    logging.warning("_one_combo_both_showdowns, heads up, river, combo %r has weight %r but equity None.",
-                                    combo, c_weight)
+                    logging.warning("_one_combo_both_showdowns, heads up, "
+                        "river, combo %r has weight %r but equity None.",
+                        combo, c_weight)
             else:
-                c_eq = py_hand_vs_range_monte_carlo(combo, villain, board,
-                                                    1000)
+                c_eq = py_hand_vs_range_monte_carlo(combo, villain, board, 1000)
                 if c_eq is None:
-                    logging.warning("_one_combo_both_showdowns, heads up, all in (not river), combo %r has weight %r but equity None.",
-                                    combo, c_weight)
+                    logging.warning("_one_combo_both_showdowns, heads up, "
+                        "all in (not river), combo %r has weight %r but equity "
+                        "None.", combo, c_weight)
         else:
             # this is the only scenario where a combos gets multiple showdowns
             # we must simulate
