@@ -471,15 +471,21 @@ class AnalysisReplayer(object):
                 return None
             elif len(board) == 5:
                 eq = py_hand_vs_range_exact(combo, villain, board)
+                if eq is None:
+                    logging.warning("_one_combo_one_showdown, heads up, river, combo %r has %d options but equity None.",
+                                    combo, len(villain.generate_options(board + list(combo))))
             else:
                 eq = py_hand_vs_range_monte_carlo(combo, villain, board, 10000)
+                if eq is None:
+                    logging.warning("_one_combo_one_showdown, heads up, all in (not river), combo %r has %d options but equity None.",
+                                    combo, len(villain.generate_options(board + list(combo))))
         else:
             # we must simulate
             players_options = {k: HandRange(v).generate_options(board)
                                for k, v in ranges.iteritems()}
             total = 0
             wins = 0.0
-            for i in xrange(1000 * len(ranges)):
+            for _i in xrange(1000 * len(ranges)):
                 dealt = {None: combo}  # showdown requires a key, we'll use None
                 for player, options in players_options.iteritems():
                     dealt[player] = random.choice(options)
@@ -529,9 +535,15 @@ class AnalysisReplayer(object):
                 c_eq = None
             elif len(board) == 5:
                 c_eq = py_hand_vs_range_exact(combo, villain, board)
+                if c_eq is None:
+                    logging.warning("_one_combo_both_showdowns, heads up, river, combo %r has weight %r but equity None.",
+                                    combo, c_weight)
             else:
                 c_eq = py_hand_vs_range_monte_carlo(combo, villain, board,
                                                     1000)
+                if c_eq is None:
+                    logging.warning("_one_combo_both_showdowns, heads up, all in (not river), combo %r has weight %r but equity None.",
+                                    combo, c_weight)
         else:
             # this is the only scenario where a combos gets multiple showdowns
             # we must simulate

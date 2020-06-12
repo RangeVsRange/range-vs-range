@@ -46,7 +46,7 @@ def non_py_just_eval(cards_):
         mask |= 1L << (map_suit_to_offset[card.suit] +
                        map_rank_to_offset[card.rank])
     return eval7.non_py_evaluate(mask)  # @UndefinedVariable
-            
+
 class TestEval7(unittest.TestCase):
     def test_wh_random(self):
         # 0.9s
@@ -54,8 +54,8 @@ class TestEval7(unittest.TestCase):
         for i in xrange(1900000):
             result[py_wh_randint(52)] += 1
         for i in range(52):
-            self.assertAlmostEqual(result[i], 36500, delta=1000)    
-    
+            self.assertAlmostEqual(result[i], 36500, delta=1000)
+
     def test_hand_to_mask(self):
         # Highest and lowest cards
         result = py_hand_to_mask(Card.many_from_text("As2c"))
@@ -98,7 +98,7 @@ class TestEval7(unittest.TestCase):
         hand2 = frozenset(Card.many_from_text("3h2c"))
         self.assertAlmostEqual(equity_map[hand1], 0.85337, delta=0.002)
         self.assertAlmostEqual(equity_map[hand2], 0.22865, delta=0.002)
-        
+
         # Hero has an impossible hand in his range.
         hero = HandRange("JsJc,QsJs")
         villain = HandRange("JJ")
@@ -111,4 +111,5 @@ class TestEval7(unittest.TestCase):
 if __name__ == '__main__':
     # 2013-02-09 28 seconds (old version)
     # 2014-12-29 28 seconds
+    # 2020-06-12 16 seconds (hardware must be faster now)
     unittest.main()

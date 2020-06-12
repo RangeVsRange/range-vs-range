@@ -344,8 +344,10 @@ def py_hand_vs_range_monte_carlo(py_hand, py_villain, py_board, py_iterations):
     cdef cython.ulonglong mask
     for index, option in enumerate(py_options):
         options[index] = hand_to_mask(list(option))
-        num_options
     num_options = filter_options(options, options, num_options, start_board | hand)
+    if num_options == 0:
+        free(options)
+        return None
     equity = hand_vs_range_monte_carlo(hand, options, num_options, start_board, num_board, iterations)
     free(options)
     return equity
@@ -384,8 +386,10 @@ def py_hand_vs_range_exact(py_hand, py_villain, py_board):
     cdef cython.ulonglong dead = complete_board | hand
     for index, option in enumerate(py_options):
         options[index] = hand_to_mask(list(option))
-        num_options
     num_options = filter_options(options, options, num_options, complete_board | hand)
+    if num_options == 0:
+        free(options)
+        return None
     equity = hand_vs_range_exact(hand, options, num_options, complete_board)
     free(options)
     return equity
