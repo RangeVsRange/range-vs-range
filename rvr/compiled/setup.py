@@ -13,6 +13,8 @@ print "On Windows, follow:"  \
 # Steps on Windows (once set up):
 # - Launch Visual Studio for Python 32-bit command prompt (no other command
 #   prompt will do!)
+# - make sure it's the Python one
+# - make sure it's the 32-bit one
 # - SET DISTUTILS_USE_SDK=1
 # - SET MSSdk=1
 # - python.exe setup.py build_ext --inplace --compiler=msvc
