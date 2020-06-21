@@ -28,7 +28,7 @@ from rvr.db.tables import AnalysisFoldEquity, RangeItem, MAX_CHAT,\
 import datetime
 from rvr.local_settings import SUPPRESSED_SITUATIONS, SUPPRESSED_GAME_MAX
 import re
-from rvr.analysis import statistics
+from rvr.analysis import statistics, analyse
 from rvr.analysis.statistics import recalculate_global_statistics
 from sqlalchemy.orm.session import sessionmaker
 from rvr.core.gametree import GameTreeNode, GameTree
@@ -110,6 +110,7 @@ class API(object):
     ERR_DELETE_USER_PLAYING = APIError("User is playing")
     ERR_USER_NOT_IN_GAME = APIError("User is not in the specified game")
     ERR_DUPLICATE_SITUATION = APIError("Duplicate situation")
+    ERR_CANNOT_MERGE = APIError("Can't merge these games")
     ERR_CHAT_TOO_LONG = APIError("Chat too long, max %d chars" % (MAX_CHAT,))
 
     def __init__(self):
@@ -1451,6 +1452,32 @@ class API(object):
                     played=usp.hands_played))
             results.append((player.name, leaderboards))
         return situation.description, results
+
+    @api
+    def merge_games(self, gameids):
+        """
+        merges two or three games' combo EVs
+
+        games must be in the same spawn group
+
+        games should be merged (with other games) already back to the last
+        common action - but note that this function (currently) can't tell
+        """
+        if len(gameids) not in [2, 3]:
+            return self.ERR_CANNOT_MERGE
+        try:
+            games = [self.session.query(tables.RunningGame)  \
+                .filter(tables.RunningGame.gameid == gameid).one()
+                for gameid in gameids]
+        except NoResultFound:
+            return self.ERR_NO_SUCH_GAME
+        if any(game.spawn_group is None or
+               game.spawn_group != games[0].spawn_group or
+               not game.analysis_performed for game in games):
+            return self.ERR_CANNOT_MERGE
+        if len(set(game.gameid for game in games)) != len(games):
+            return self.ERR_CANNOT_MERGE
+        return analyse.merge_games(self.session, games)
 
     @api
     def get_combo_evs(self, gameid, order, brief):

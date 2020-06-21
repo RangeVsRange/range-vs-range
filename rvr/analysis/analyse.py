@@ -23,6 +23,7 @@ from rvr.mail.notifications import notify_finished
 from rvr.compiled.eval7 import py_hand_vs_range_monte_carlo,\
     py_hand_vs_range_exact
 import random
+from sqlalchemy.sql.expression import or_
 
 # pylint:disable=R0902,R0913,R0914,R0903
 
@@ -34,6 +35,94 @@ def _combo_to_mnemonic(combo):
 def _range_size_vs_combo(description, combo, board):
     return len([o for o in HandRange(description).generate_options()
                 if len(o.union(combo)) == 4])
+
+def _populate_actor_ev(session, games, range_action):
+    """
+    add new EVs into each game from the other games, to fill in all the gaps
+    """
+    # The player who acts just gets new (copied) EV to fill in their gaps,
+    # because from each of their combos perspective, they play only one of these
+    # betting lines, and they do so 100% of the time.
+    combo_order_evs = session.query(UserComboOrderEV)  \
+        .filter(or_(UserComboOrderEV.gameid == g.gameid for g in games))  \
+        .filter(UserComboOrderEV.userid == range_action.userid)  \
+        .filter(UserComboOrderEV.order <= range_action.order).all()
+    results_keys = set((r.userid, r.gameid, r.order, r.combo)
+                       for r in combo_order_evs)
+    for combo_ev in combo_order_evs:
+        # put it in every game it's not already in
+        for game in games:
+            key = (combo_ev.userid, game.gameid, combo_ev.order, combo_ev.combo)
+            if key not in results_keys:
+                ucoev = UserComboOrderEV()
+                ucoev.gameid = game.gameid
+                ucoev.userid = combo_ev.userid
+                ucoev.order = combo_ev.order
+                ucoev.combo = combo_ev.combo
+                ucoev.ev = combo_ev.ev
+                session.add(ucoev)
+
+def _merge_non_actor_ev(session, games, range_action, action_results):
+    """
+    average out EV for all combo EVs before this range action, based on the
+    weights (for each combo) with which the actor plays the different lines
+    """
+    # For other players we have to figure out how likely each action is, for
+    # each of their combos, and then, for every combo prior to this point in the
+    # game tree, for each game, set the combo EV to be a weighted average of all
+    # betting lines.
+
+def merge_games(session, games):
+    """
+    merges two or three games' combo EVs
+
+    games must be in the same spawn group
+
+    games should be merged (with other games) already back to the last
+    common action - but note that this method (currently) can't tell
+    """
+    assert all(game.spawn_group == games[0].spawn_group and
+               game.spawn_group is not None and
+               game.analysis_performed and
+               game.public_ranges
+               for game in games)
+    assert len(set(game.gameid for game in games)) == len(games)
+    logging.debug("merging combo EVs for games %r",
+                  [game.gameid for game in games])
+    # hmm, this almost feels like it would generalise to more than three
+    # branches, like if we allowed multiple betting sizes for a single action
+    histories = [[session.query(table).filter(table.gameid == game.gameid).all()
+                  for table in [GameHistoryActionResult,
+                                GameHistoryRangeAction]]
+                 for game in games]
+    histories = [sorted(concatenate(history), key=lambda c: c.order)
+                 for history in histories]
+    prev_range_action = None
+    for items in zip(*histories):
+        reference = items[0]
+        if isinstance(reference, GameHistoryActionResult):
+            assert all(isinstance(item, GameHistoryActionResult)
+                       for item in items)
+            if any(item.is_fold != reference.is_fold or
+                   item.is_passive != reference.is_passive or
+                   item.is_aggressive != reference.is_aggressive
+                   for item in items):
+                break
+        if isinstance(reference, GameHistoryRangeAction):
+            assert all(isinstance(item, GameHistoryRangeAction)
+                       for item in items)
+            prev_range_action = reference  # arbitrarily
+    assert prev_range_action is not None
+    # The player who acts just gets new (copied) EV to fill in their gaps,
+    # because from each of their combos perspective, they play only one of these
+    # betting lines, and they do so 100% of the time.
+    _populate_actor_ev(session, games, prev_range_action)
+    # For other players we have to figure out how likely each action is, for
+    # each of their combos, and then, for every combo prior to this point in the
+    # game tree, for each game, set the combo EV to be a weighted average of all
+    # betting lines.
+    _merge_non_actor_ev(session, games, prev_range_action, items)
+    session.commit()
 
 class FoldEquityAccumulator(object):
     """

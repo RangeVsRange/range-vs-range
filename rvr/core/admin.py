@@ -477,6 +477,25 @@ class AdminCmd(Cmd):
         else:
             print result, "timeouts processed."
 
+    def do_merge(self, details):
+        """
+        merge <gameid1> <gameid2> [<gameid 3>]
+        Merge combo EV of two or three lines of an optimisation mode game.
+        Assumes each game has already been merged back to their last common
+        action.
+        All games must be from the same spawn group.
+        """
+        params = details.split(None)
+        if len(params) not in [2, 3]:
+            print "Bad syntax. See 'help merge'."
+            return
+        gameids = map(int, params)
+        result = self.api.merge_games(gameids)
+        if isinstance(result, APIError):
+            print "Error:", result.description
+        else:
+            print "Games %r merged." % (gameids,)
+
     def do_combos(self, details):
         """
         combos <gameid>

@@ -268,7 +268,7 @@ ROUND_ORDER = [PREFLOP, FLOP, TURN, RIVER]
 LINE_STREET_SEPARATOR = ' - '
 
 def line_description(line):
-    """ e.g. "XBC | XBRC | B" """
+    """ e.g. 'XBC - XBRC - B' """
     # Maybe not the best place for this, but the line is not currently used
     # anywhere else.
     results = []
