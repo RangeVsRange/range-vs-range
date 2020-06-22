@@ -12,7 +12,7 @@ from rvr.db.tables import GameHistoryActionResult, GameHistoryRangeAction,  \
     AnalysisFoldEquityItem, GameHistoryShowdown,  \
     GameHistoryShowdownEquity, \
     PaymentToPlayer, RunningGameParticipantResult, UserComboGameEV,\
-    UserComboOrderEV
+    UserComboOrderEV, RunningGameParticipant
 from rvr.poker.handrange import HandRange
 from rvr.poker.cards import Card, RIVER, PREFLOP
 import unittest
@@ -36,6 +36,46 @@ def _range_size_vs_combo(description, combo, board):
     return len([o for o in HandRange(description).generate_options()
                 if len(o.union(combo)) == 4])
 
+def _calculate_weights(combo, range_action, others_ranges, board):
+    """
+    likelihoods of Villain range action resulting in fold, passive, aggressive
+    for Hero combo given other players ranges and board
+    """
+    f = p = a = 0  # count of times we hit the fold, the call, the raise
+    if len(others_ranges) == 1:
+        # heads-up
+        f = _range_size_vs_combo(range_action.fold_range, combo, board)
+        p = _range_size_vs_combo(range_action.passive_range, combo, board)
+        a = _range_size_vs_combo(range_action.aggressive_range, combo, board)
+    else:
+        villain_f = HandRange(range_action.fold_range)  \
+            .generate_options(board)
+        villain_p = HandRange(range_action.passive_range)  \
+            .generate_options(board)
+        villain_a = HandRange(range_action.aggressive_range)  \
+            .generate_options(board)
+        others_options = {k: HandRange(v).generate_options(board)
+                          for k, v in others_ranges.iteritems()}
+        for _ in xrange(1000 * len(others_ranges)):
+            dealt = {None: combo}  # None for Hero
+            for player, options in others_options.iteritems():
+                dealt[player] = random.choice(options)
+            if _impossible_deal(dealt.values()):
+                continue
+            if dealt[range_action.userid] in villain_f:
+                f += 1
+            elif dealt[range_action.userid] in villain_p:
+                p += 1
+            elif dealt[range_action.userid] in villain_a:
+                a += 1
+            else:
+                assert False
+    total = f + p + a
+    if total > 0:
+        return 1.0 * f / total, 1.0 * p / total, 1.0 * a / total
+    else:
+        return None
+
 def _populate_actor_ev(session, games, range_action):
     """
     add new EVs into each game from the other games, to fill in all the gaps
@@ -47,6 +87,7 @@ def _populate_actor_ev(session, games, range_action):
         .filter(or_(UserComboOrderEV.gameid == g.gameid for g in games))  \
         .filter(UserComboOrderEV.userid == range_action.userid)  \
         .filter(UserComboOrderEV.order <= range_action.order).all()
+    logging.debug('populating actor EV for %d combos', len(combo_order_evs))
     results_keys = set((r.userid, r.gameid, r.order, r.combo)
                        for r in combo_order_evs)
     for combo_ev in combo_order_evs:
@@ -61,16 +102,126 @@ def _populate_actor_ev(session, games, range_action):
                 ucoev.combo = combo_ev.combo
                 ucoev.ev = combo_ev.ev
                 session.add(ucoev)
+    # Same again for whole-game EV. Admittedly a bit ugly.
+    combo_game_evs = session.query(UserComboGameEV)  \
+        .filter(or_(UserComboGameEV.gameid == g.gameid for g in games))  \
+        .filter(UserComboGameEV.userid == range_action.userid).all()
+    results_keys = set((r.userid, r.gameid, r.combo)
+                       for r in combo_game_evs)
+    for combo_ev in combo_game_evs:
+        # put it in every game it's not already in
+        for game in games:
+            key = (combo_ev.userid, game.gameid, combo_ev.combo)
+            if key not in results_keys:
+                ucgev = UserComboGameEV()
+                ucgev.gameid = game.gameid
+                ucgev.userid = combo_ev.userid
+                ucgev.combo = combo_ev.combo
+                ucgev.ev = combo_ev.ev
+                session.add(ucgev)
 
-def _merge_non_actor_ev(session, games, range_action, action_results):
+def _get_combo_ev(session, userid, gameid, combo, order):
+    """
+    load a combo EV from the database, or None
+
+    if order is None, load the game's combo EV
+    """
+    table = UserComboGameEV if order is None else UserComboOrderEV
+    q = session.query(table)
+    if table == UserComboOrderEV:
+        q = q.filter(table.order == order)
+    q = q.filter(table.combo == combo)
+    q = q.filter(table.userid == userid)
+    q = q.filter(table.gameid == gameid)
+    results = q.all()
+    if results:
+        result, = results
+        return result
+    else:
+        return None
+
+def _average_ev(coe_f, coe_p, coe_a, w_f, w_p, w_a):
+    """ return the weighted average of three combo EVs """
+    if coe_f is None and coe_p is None and coe_a is None:
+        return None
+    result = 0.0
+    if coe_f:
+        result += coe_f.ev * w_f
+    if coe_p:
+        result += coe_p.ev * w_p
+    if coe_a:
+        result += coe_a.ev * w_a
+    return result
+
+def _merge_non_actor_combo(session, games, hero, combo, max_order,
+                           w_f, w_p, w_a, gameid_f, gameid_p, gameid_a):
+    """
+    average ev for combo, for all recorded combo evs in games, up to order,
+    with weights w_f, w_p, w_a respective games
+    """
+    for order in [None] + range(max_order):
+        logging.debug("merging combo %s at order %r for userid %d",
+                      combo, order, hero)
+        coe_f = _get_combo_ev(session, hero, gameid_f, combo, order)
+        coe_p = _get_combo_ev(session, hero, gameid_p, combo, order)
+        coe_a = _get_combo_ev(session, hero, gameid_a, combo, order)
+        ev = _average_ev(coe_f, coe_p, coe_a, w_f, w_p, w_a)
+        if coe_f:
+            coe_f.ev = ev
+        if coe_p:
+            coe_p.ev = ev
+        if coe_a:
+            coe_a.ev = ev
+
+def _merge_non_actor_ev(session, board, ranges, games, range_action,
+                        action_results):
     """
     average out EV for all combo EVs before this range action, based on the
-    weights (for each combo) with which the actor plays the different lines
+    weights (for each combo) with which the actor plays the different lines at
+    this point
+
+    games are games to be merged
+
+    range_action is the last common action in these games
+
+    action_results are the very next action, from each game
     """
-    # For other players we have to figure out how likely each action is, for
-    # each of their combos, and then, for every combo prior to this point in the
-    # game tree, for each game, set the combo EV to be a weighted average of all
-    # betting lines.
+    # For non-acting players we have to figure out how likely each action is,
+    # for each of their combos, and then, for every combo prior to this point in
+    # the game tree, for each game, set the combo EV to be a weighted average of
+    # all betting lines.
+    non_actors = [rgp.userid for rgp in games[0].rgps
+                  if rgp.userid != range_action.userid]
+    for hero in non_actors:
+        # for each Hero combo
+        #   establish weights of Villain's actions
+        #   for each combo EV before this point
+        #     update the combo EV with the weighted average from all games
+        options = HandRange(ranges[hero]).generate_options(board)
+        logging.debug('populating non-actor (userid %d) EV for %d combos',
+                      hero, len(options))
+        for combo in options:
+            others_ranges = {k: v for k, v in ranges.iteritems()
+                             if k != hero}
+            result = _calculate_weights(combo, range_action, others_ranges,
+                                        board)
+            if result is None:
+                continue  # Hero never has this combo
+            f, p, a = result  # weights summing to 1.0
+            gf = gp = ga = None
+            for ar in action_results:
+                if ar.is_fold:
+                    assert gf is None
+                    gf = ar.gameid
+                if ar.is_passive:
+                    assert gp is None
+                    gp = ar.gameid
+                if ar.is_aggressive:
+                    assert ga is None
+                    ga = ar.gameid
+            combo_raw = _combo_to_mnemonic(combo)
+            _merge_non_actor_combo(session, games, hero, combo_raw,
+                                   range_action.order, f, p, a, gf, gp, ga)
 
 def merge_games(session, games):
     """
@@ -93,11 +244,18 @@ def merge_games(session, games):
     # branches, like if we allowed multiple betting sizes for a single action
     histories = [[session.query(table).filter(table.gameid == game.gameid).all()
                   for table in [GameHistoryActionResult,
-                                GameHistoryRangeAction]]
+                                GameHistoryRangeAction,
+                                GameHistoryUserRange,
+                                GameHistoryBoard]]
                  for game in games]
     histories = [sorted(concatenate(history), key=lambda c: c.order)
                  for history in histories]
     prev_range_action = None
+    situation = games[0].situation
+    board = situation.board_raw
+    ranges = {games[0].rgps[i].userid:
+              situation.players[i].range_raw
+              for i in range(len(situation.players))}
     for items in zip(*histories):
         reference = items[0]
         if isinstance(reference, GameHistoryActionResult):
@@ -112,6 +270,14 @@ def merge_games(session, games):
             assert all(isinstance(item, GameHistoryRangeAction)
                        for item in items)
             prev_range_action = reference  # arbitrarily
+        if isinstance(reference, GameHistoryBoard):
+            assert all(isinstance(item, GameHistoryBoard)
+                       for item in items)
+            board = Card.many_from_text(reference.cards)  # arbitrarily
+        if isinstance(reference, GameHistoryUserRange):
+            assert all(isinstance(item, GameHistoryUserRange)
+                       for item in items)
+            ranges[reference.userid] = reference.range_raw
     assert prev_range_action is not None
     # The player who acts just gets new (copied) EV to fill in their gaps,
     # because from each of their combos perspective, they play only one of these
@@ -121,7 +287,7 @@ def merge_games(session, games):
     # each of their combos, and then, for every combo prior to this point in the
     # game tree, for each game, set the combo EV to be a weighted average of all
     # betting lines.
-    _merge_non_actor_ev(session, games, prev_range_action, items)
+    _merge_non_actor_ev(session, board, ranges, games, prev_range_action, items)
     session.commit()
 
 class FoldEquityAccumulator(object):
